@@ -97,7 +97,7 @@ abstract final class RoutineNodeCatalog {
           type: RoutineNodeType.readLesson,
           title: 'Đọc bài',
           subtitle: '15 phút đọc module',
-          position: Offset(240, 180),
+          position: Offset(240, 150),
         ),
         const RoutineNode(
           id: 'n4',

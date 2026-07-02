@@ -4,8 +4,8 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/features/routine/models/routine_workflow.dart';
 import 'package:gats_academy/features/routine/presentation/routine_editor_screen.dart';
-import 'package:gats_academy/features/routine/presentation/widgets/workflow_connection_painter.dart';
-import 'package:gats_academy/features/routine/presentation/widgets/workflow_node_widget.dart';
+import 'package:gats_academy/features/routine/presentation/widgets/workflow_canvas.dart';
+import 'package:gats_academy/features/routine/presentation/widgets/workflow_canvas_layout.dart';
 
 class RoutineWorkflowSection extends StatelessWidget {
   const RoutineWorkflowSection({
@@ -29,6 +29,7 @@ class RoutineWorkflowSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ordered = workflow.orderedNodes;
+    final previewHeight = WorkflowCanvasLayout.canvasSizeFor(workflow.nodes).height.clamp(180.0, 260.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,38 +54,14 @@ class RoutineWorkflowSection extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(
-                height: 200,
+                height: previewHeight,
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.md)),
-                  child: Container(
-                    color: AppColors.background,
-                    child: InteractiveViewer(
-                      minScale: 0.5,
-                      maxScale: 1.2,
-                      child: SizedBox(
-                        width: 700,
-                        height: 200,
-                        child: Stack(
-                          children: [
-                            CustomPaint(
-                              size: const Size(700, 200),
-                              painter: WorkflowConnectionPainter(
-                                connections: workflow.connections,
-                                nodes: workflow.nodes,
-                              ),
-                            ),
-                            ...workflow.nodes.map(
-                              (node) => WorkflowNodeWidget(
-                                node: node,
-                                isSelected: false,
-                                isConnectSource: false,
-                                readOnly: true,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  child: WorkflowCanvas(
+                    workflow: workflow,
+                    readOnly: true,
+                    useFittedBox: true,
+                    minHeight: previewHeight,
                   ),
                 ),
               ),

@@ -1,4 +1,4 @@
-import 'package:gats_academy/data/mock/mock_auth_service.dart';
+import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
@@ -9,6 +9,10 @@ abstract final class AuthL10n {
         AuthErrorCode.invalidEmail => l10n.authErrorInvalidEmail,
         AuthErrorCode.passwordTooShortLogin => l10n.authErrorPasswordTooShortLogin,
         AuthErrorCode.passwordTooShortSignup => l10n.authErrorPasswordTooShortSignup,
+        AuthErrorCode.networkError => l10n.authErrorNetwork,
+        AuthErrorCode.unauthorized => error.serverMessage ?? l10n.authErrorUnauthorized,
+        AuthErrorCode.serverError => error.serverMessage ?? l10n.authErrorServer,
+        AuthErrorCode.emailVerificationRequired => l10n.authRegisterSuccessVerify,
       };
 
   static String roleLabel(AppLocalizations l10n, UserRole role) => switch (role) {

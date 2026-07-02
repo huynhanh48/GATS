@@ -1,15 +1,9 @@
 import 'package:gats_academy/data/mock/mock_accounts.dart';
+import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 
-enum AuthErrorCode {
-  wrongDemoPassword,
-  invalidEmail,
-  passwordTooShortLogin,
-  passwordTooShortSignup,
-}
-
-/// Auth giả — 3 tài khoản demo theo role + email tùy ý (mặc định học viên).
+/// Auth giả — demo accounts + social (chưa có API).
 abstract final class MockAuthService {
   static Future<void> _delay() => Future<void>.delayed(const Duration(milliseconds: 700));
 
@@ -95,12 +89,3 @@ abstract final class MockAuthService {
   }
 }
 
-class AuthException implements Exception {
-  const AuthException(this.code, {this.arg});
-
-  final AuthErrorCode code;
-  final String? arg;
-
-  @override
-  String toString() => code.name;
-}

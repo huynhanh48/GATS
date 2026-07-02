@@ -1442,6 +1442,54 @@ abstract class AppLocalizations {
   /// **'Please enter a valid age'**
   String get authErrorAgeInvalid;
 
+  /// No description provided for @authErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your connection and try again.'**
+  String get authErrorNetwork;
+
+  /// No description provided for @authErrorUnauthorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid email or password'**
+  String get authErrorUnauthorized;
+
+  /// No description provided for @authErrorServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get authErrorServer;
+
+  /// No description provided for @authRegisterSuccessVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created. Enter the verification code from your email.'**
+  String get authRegisterSuccessVerify;
+
+  /// No description provided for @authVerifyEmailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email'**
+  String get authVerifyEmailTitle;
+
+  /// No description provided for @authVerifyEmailSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the verification token sent to your inbox.'**
+  String get authVerifyEmailSubtitle;
+
+  /// No description provided for @authVerifyEmailTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Verification token'**
+  String get authVerifyEmailTokenLabel;
+
+  /// No description provided for @authVerifyEmailButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify and continue'**
+  String get authVerifyEmailButton;
+
   /// No description provided for @entryGreeting.
   ///
   /// In en, this message translates to:

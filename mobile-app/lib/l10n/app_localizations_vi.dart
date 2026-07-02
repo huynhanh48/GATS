@@ -750,6 +750,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authErrorAgeInvalid => 'Vui lòng nhập tuổi hợp lệ';
 
   @override
+  String get authErrorNetwork => 'Lỗi mạng. Kiểm tra kết nối và thử lại.';
+
+  @override
+  String get authErrorUnauthorized => 'Email hoặc mật khẩu không đúng';
+
+  @override
+  String get authErrorServer => 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+
+  @override
+  String get authRegisterSuccessVerify =>
+      'Đã tạo tài khoản. Nhập mã xác minh từ email của bạn.';
+
+  @override
+  String get authVerifyEmailTitle => 'Xác minh email';
+
+  @override
+  String get authVerifyEmailSubtitle =>
+      'Dán mã xác minh đã gửi tới hộp thư của bạn.';
+
+  @override
+  String get authVerifyEmailTokenLabel => 'Mã xác minh';
+
+  @override
+  String get authVerifyEmailButton => 'Xác minh và tiếp tục';
+
+  @override
   String get entryGreeting => 'Xin chào ;)';
 
   @override

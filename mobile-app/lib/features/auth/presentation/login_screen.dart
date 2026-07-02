@@ -3,16 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/data/api/auth_api_service.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
-import 'package:gats_academy/data/mock/mock_auth_service.dart';
+import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
+import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/features/auth/presentation/widgets/auth_provider_button.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
 
 /// Ngữ cảnh mở auth — cùng một UI, khác headline / skip / demo / đích sau đăng nhập.
 enum AuthGate { entry, postOnboarding }
 
-enum _AuthStep { choice, emailSignUp, emailSignIn }
+enum _AuthStep { choice, emailSignUp, emailSignIn, emailVerify }
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({
@@ -39,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _ageController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _verifyTokenController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
   bool _showDemoAccounts = false;
@@ -55,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _ageController,
       _emailController,
       _passwordController,
+      _verifyTokenController,
     ]) {
       c.addListener(_onFieldsChanged);
     }
@@ -68,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _ageController,
       _emailController,
       _passwordController,
+      _verifyTokenController,
     ]) {
       c
         ..removeListener(_onFieldsChanged)
@@ -102,7 +107,21 @@ class _LoginScreenState extends State<LoginScreen> {
         _goTo(_AuthStep.choice);
       case _AuthStep.emailSignIn:
         _goTo(_AuthStep.choice);
+      case _AuthStep.emailVerify:
+        _goTo(_AuthStep.emailSignUp);
     }
+  }
+
+  Future<void> _completeSession(AuthSession session) async {
+    await AuthService.persistSession(session);
+    if (!mounted) return;
+    widget.onAuthenticated();
+  }
+
+  Future<void> _completeUser(AuthUser user) async {
+    await AuthPrefs.saveSession(user);
+    if (!mounted) return;
+    widget.onAuthenticated();
   }
 
   Future<void> _submitDemo(MockAccount account) async {
@@ -113,10 +132,8 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text = account.password;
     });
     try {
-      final user = await MockAuthService.signInWithDemoAccount(account);
-      await AuthPrefs.saveSession(user);
-      if (!mounted) return;
-      widget.onAuthenticated();
+      final user = await AuthService.signInWithDemoAccount(account);
+      await _completeUser(user);
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
     } finally {
@@ -156,16 +173,25 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final displayName =
           '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
-      final user = await MockAuthService.signUpWithEmail(
+      if (_passwordController.text.length < 6) {
+        throw const AuthException(AuthErrorCode.passwordTooShortSignup);
+      }
+      final session = await AuthService.registerWithEmail(
         email: _emailController.text,
         password: _passwordController.text,
         displayName: displayName,
       );
-      await AuthPrefs.saveSession(user);
-      if (!mounted) return;
-      widget.onAuthenticated();
+      await _completeSession(session);
     } on AuthException catch (e) {
-      if (mounted) setState(() => _error = AuthL10n.errorMessage(l10n, e));
+      if (!mounted) return;
+      if (e.code == AuthErrorCode.emailVerificationRequired) {
+        setState(() {
+          _error = AuthL10n.errorMessage(l10n, e);
+          _step = _AuthStep.emailVerify;
+        });
+      } else {
+        setState(() => _error = AuthL10n.errorMessage(l10n, e));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -178,14 +204,34 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      final user = await MockAuthService.signInWithEmail(
+      final session = await AuthService.signInWithEmail(
         email: _emailController.text,
         password: _passwordController.text,
         defaultDisplayName: l10n.authDefaultDisplayName,
       );
-      await AuthPrefs.saveSession(user);
-      if (!mounted) return;
-      widget.onAuthenticated();
+      await _completeSession(session);
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = AuthL10n.errorMessage(l10n, e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitVerify() async {
+    final l10n = context.l10n;
+    final token = _verifyTokenController.text.trim();
+    if (token.isEmpty) {
+      setState(() => _error = l10n.authVerifyEmailTokenLabel);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final session = await AuthService.verifyEmail(token: token);
+      await _completeSession(session);
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = AuthL10n.errorMessage(l10n, e));
     } finally {
@@ -200,9 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       final user = await signIn();
-      await AuthPrefs.saveSession(user);
-      if (!mounted) return;
-      widget.onAuthenticated();
+      await _completeUser(user);
     } on AuthException catch (e) {
       if (mounted) setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
     } finally {
@@ -221,9 +265,9 @@ class _LoginScreenState extends State<LoginScreen> {
               isLoading: _isLoading,
               error: _error,
               onBack: _handleBack,
-              onApple: () => _submitSocial(MockAuthService.signInWithApple),
-              onGoogle: () => _submitSocial(MockAuthService.signInWithGoogle),
-              onMomo: () => _submitSocial(MockAuthService.signInWithMomo),
+              onApple: () => _submitSocial(AuthService.signInWithApple),
+              onGoogle: () => _submitSocial(AuthService.signInWithGoogle),
+              onMomo: () => _submitSocial(AuthService.signInWithMomo),
               onContinueEmail: () => _goTo(_AuthStep.emailSignUp),
               onSignIn: () => _goTo(_AuthStep.emailSignIn),
               onSkip: widget.onSkip,
@@ -259,6 +303,13 @@ class _LoginScreenState extends State<LoginScreen> {
               onBack: _handleBack,
               onSubmit: _submitSignIn,
               onSignUp: () => _goTo(_AuthStep.emailSignUp),
+            ),
+          _AuthStep.emailVerify => _EmailVerifyStep(
+              isLoading: _isLoading,
+              error: _error,
+              tokenController: _verifyTokenController,
+              onBack: _handleBack,
+              onSubmit: _submitVerify,
             ),
         },
       ),
@@ -788,6 +839,76 @@ class _AuthInputField extends StatelessWidget {
           borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
         ),
       ),
+    );
+  }
+}
+
+class _EmailVerifyStep extends StatelessWidget {
+  const _EmailVerifyStep({
+    required this.isLoading,
+    required this.error,
+    required this.tokenController,
+    required this.onBack,
+    required this.onSubmit,
+  });
+
+  final bool isLoading;
+  final String? error;
+  final TextEditingController tokenController;
+  final VoidCallback onBack;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.xl),
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            onPressed: isLoading ? null : onBack,
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          l10n.authVerifyEmailTitle,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          l10n.authVerifyEmailSubtitle,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        _AuthInputField(
+          hint: l10n.authVerifyEmailTokenLabel,
+          controller: tokenController,
+          enabled: !isLoading,
+        ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(error!, style: const TextStyle(color: AppColors.accent, fontSize: 13)),
+        ],
+        const SizedBox(height: AppSpacing.xl),
+        SizedBox(
+          height: 56,
+          child: FilledButton(
+            onPressed: isLoading ? null : onSubmit,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.darkCanvas,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            ),
+            child: Text(
+              l10n.authVerifyEmailButton,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

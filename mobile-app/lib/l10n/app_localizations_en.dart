@@ -758,6 +758,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorAgeInvalid => 'Please enter a valid age';
 
   @override
+  String get authErrorNetwork =>
+      'Network error. Check your connection and try again.';
+
+  @override
+  String get authErrorUnauthorized => 'Invalid email or password';
+
+  @override
+  String get authErrorServer => 'Something went wrong. Please try again.';
+
+  @override
+  String get authRegisterSuccessVerify =>
+      'Account created. Enter the verification code from your email.';
+
+  @override
+  String get authVerifyEmailTitle => 'Verify your email';
+
+  @override
+  String get authVerifyEmailSubtitle =>
+      'Paste the verification token sent to your inbox.';
+
+  @override
+  String get authVerifyEmailTokenLabel => 'Verification token';
+
+  @override
+  String get authVerifyEmailButton => 'Verify and continue';
+
+  @override
   String get entryGreeting => 'Hello ;)';
 
   @override

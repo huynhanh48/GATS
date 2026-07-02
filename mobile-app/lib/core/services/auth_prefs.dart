@@ -11,10 +11,12 @@ abstract final class AuthPrefs {
   static const _emailKey = 'auth_email';
   static const _methodKey = 'auth_method';
   static const _roleKey = 'auth_role';
+  static const _tokenKey = 'auth_access_token';
 
   static SharedPreferences? _prefs;
   static bool _memoryFallback = false;
   static AuthUser? _memoryUser;
+  static String? _memoryToken;
 
   static Future<void> init() async {
     _prefs = null;
@@ -59,6 +61,20 @@ abstract final class AuthPrefs {
     }
   }
 
+  static Future<String?> accessToken() async {
+    if (_memoryFallback) return _memoryToken;
+    try {
+      final prefs = await _loadPrefs();
+      return prefs?.getString(_tokenKey) ?? _memoryToken;
+    } on PlatformException catch (e) {
+      _useMemoryFallback(e);
+      return _memoryToken;
+    } catch (e) {
+      _useMemoryFallback(e);
+      return _memoryToken;
+    }
+  }
+
   static Future<AuthUser?> currentUser() async {
     if (_memoryFallback) return _memoryUser;
     try {
@@ -89,8 +105,9 @@ abstract final class AuthPrefs {
     }
   }
 
-  static Future<void> saveSession(AuthUser user) async {
+  static Future<void> saveSession(AuthUser user, {String? token}) async {
     _memoryUser = user;
+    if (token != null) _memoryToken = token;
     if (_memoryFallback) return;
     try {
       final prefs = await _loadPrefs();
@@ -101,6 +118,9 @@ abstract final class AuthPrefs {
       await prefs.setString(_emailKey, user.email);
       await prefs.setString(_methodKey, user.method.name);
       await prefs.setString(_roleKey, user.role.name);
+      if (token != null) {
+        await prefs.setString(_tokenKey, token);
+      }
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {
@@ -110,6 +130,7 @@ abstract final class AuthPrefs {
 
   static Future<void> signOut() async {
     _memoryUser = null;
+    _memoryToken = null;
     if (_memoryFallback) return;
     try {
       final prefs = await _loadPrefs();
@@ -120,6 +141,7 @@ abstract final class AuthPrefs {
       await prefs.remove(_emailKey);
       await prefs.remove(_methodKey);
       await prefs.remove(_roleKey);
+      await prefs.remove(_tokenKey);
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {

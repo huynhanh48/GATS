@@ -7,6 +7,7 @@ import 'package:gats_academy/core/services/onboarding_prefs.dart';
 import 'package:gats_academy/core/services/review_prompt_service.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/auth/presentation/login_screen.dart';
+import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/features/onboarding/presentation/splash_screen.dart';
 import 'package:gats_academy/features/onboarding/presentation/entry_screen.dart';
 import 'package:gats_academy/features/onboarding/presentation/language_picker_screen.dart';
@@ -60,7 +61,18 @@ class _AppBootstrapState extends State<AppBootstrap> {
       }
 
       final onboarded = await OnboardingPrefs.isComplete();
-      final signedIn = await AuthPrefs.isSignedIn();
+      var signedIn = await AuthPrefs.isSignedIn();
+      if (signedIn && !isFlutterTest) {
+        try {
+          final restored = await AuthService.restoreSession();
+          if (restored != null) {
+            await AuthService.persistSession(restored);
+          }
+        } catch (_) {
+          await AuthPrefs.signOut();
+          signedIn = false;
+        }
+      }
       final hasLocale = AppLocaleController.instance.hasChosenLocale;
       if (!hasLocale) {
         next = _BootstrapPhase.language;

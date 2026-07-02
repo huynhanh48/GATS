@@ -1,11 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/routine/data/routine_node_catalog.dart';
 import 'package:gats_academy/features/routine/data/routine_workflow_store.dart';
 import 'package:gats_academy/features/routine/models/routine_workflow.dart';
-import 'package:gats_academy/features/routine/presentation/widgets/workflow_connection_painter.dart';
-import 'package:gats_academy/features/routine/presentation/widgets/workflow_node_widget.dart';
+import 'package:gats_academy/features/routine/presentation/widgets/workflow_canvas.dart';
+import 'package:gats_academy/features/routine/presentation/widgets/workflow_canvas_layout.dart';
 
 class RoutineEditorScreen extends StatefulWidget {
   const RoutineEditorScreen({super.key, required this.initialWorkflow});
@@ -21,6 +23,7 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
   String? _selectedNodeId;
   String? _connectingFromId;
   Offset? _pendingPointer;
+  bool _isDraggingNode = false;
   int _idCounter = 100;
 
   @override
@@ -40,14 +43,15 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
     });
   }
 
-  void _moveNode(String id, Offset delta) {
+  void _moveNode(String nodeId, Offset delta) {
     setState(() {
       _workflow = _workflow.copyWith(
         nodes: _workflow.nodes.map((n) {
-          if (n.id != id) return n;
+          if (n.id != nodeId) return n;
           return n.copyWith(position: n.position + delta);
         }).toList(),
       );
+      _selectedNodeId = nodeId;
     });
   }
 
@@ -87,9 +91,7 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
     });
   }
 
-  void _deleteSelected() {
-    final id = _selectedNodeId;
-    if (id == null) return;
+  void _deleteNode(String id) {
     setState(() {
       _workflow = _workflow.copyWith(
         nodes: _workflow.nodes.where((n) => n.id != id).toList(),
@@ -97,7 +99,11 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
             .where((c) => c.fromNodeId != id && c.toNodeId != id)
             .toList(),
       );
-      _selectedNodeId = null;
+      if (_selectedNodeId == id) _selectedNodeId = null;
+      if (_connectingFromId == id) {
+        _connectingFromId = null;
+        _pendingPointer = null;
+      }
     });
   }
 
@@ -151,7 +157,11 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
   }
 
   void _addNode(RoutineNodeTemplate template) {
-    final offset = Offset(40 + (_workflow.nodes.length * 24) % 200, 60 + (_workflow.nodes.length * 40) % 280);
+    final bounds = WorkflowCanvasLayout.boundsFor(_workflow.nodes);
+    final offset = Offset(
+      bounds.left + 24 + (_workflow.nodes.length * 20) % 180,
+      bounds.top + 24 + (_workflow.nodes.length * 36) % math.max(bounds.height - RoutineNode.nodeHeight - 48, 80),
+    );
     setState(() {
       _workflow = _workflow.copyWith(
         nodes: [
@@ -166,19 +176,18 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
           ),
         ],
       );
+      _selectedNodeId = _workflow.nodes.last.id;
     });
   }
 
-  RoutineNode? get _connectingFromNode {
-    if (_connectingFromId == null) return null;
-    for (final n in _workflow.nodes) {
-      if (n.id == _connectingFromId) return n;
-    }
-    return null;
-  }
+  bool get _canvasPanEnabled => !_isDraggingNode && _connectingFromId == null;
 
   @override
   Widget build(BuildContext context) {
+    final canvasSize = WorkflowCanvasLayout.canvasSizeFor(_workflow.nodes);
+    final editorWidth = canvasSize.width < 900 ? 900.0 : canvasSize.width + 120;
+    final editorHeight = canvasSize.height < 600 ? 600.0 : canvasSize.height + 120;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(AppStrings.routineEditorTitle),
@@ -186,7 +195,7 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
           if (_selectedNodeId != null)
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: _deleteSelected,
+              onPressed: () => _deleteNode(_selectedNodeId!),
             ),
           TextButton(onPressed: _save, child: Text(AppStrings.routineSave)),
         ],
@@ -220,51 +229,31 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
               ),
             ),
           Expanded(
-            child: Container(
-              color: AppColors.background,
-              child: InteractiveViewer(
-                boundaryMargin: const EdgeInsets.all(200),
-                minScale: 0.6,
-                maxScale: 1.6,
-                child: GestureDetector(
-                  onTap: () => _selectNode(null),
-                  onPanUpdate: _connectingFromId != null
-                      ? (details) => setState(() => _pendingPointer = details.localPosition)
-                      : null,
-                  child: SizedBox(
-                    width: 900,
-                    height: 600,
-                    child: Stack(
-                      children: [
-                        CustomPaint(
-                          size: const Size(900, 600),
-                          painter: WorkflowConnectionPainter(
-                            connections: _workflow.connections,
-                            nodes: _workflow.nodes,
-                            pendingFrom: _connectingFromNode,
-                            pendingTo: _pendingPointer,
-                          ),
-                        ),
-                        ..._workflow.nodes.map((node) {
-                          return WorkflowNodeWidget(
-                            key: ValueKey(node.id),
-                            node: node,
-                            isSelected: _selectedNodeId == node.id,
-                            isConnectSource: _connectingFromId == node.id,
-                            onTap: () => _selectNode(node.id),
-                            onLongPress: () {
-                              _selectNode(node.id);
-                              _deleteSelected();
-                            },
-                            onDragDelta: (d) => _moveNode(node.id, d),
-                            onOutputTap: () => _onOutputTap(node.id),
-                            onInputTap: () => _onInputTap(node.id),
-                          );
-                        }),
-                      ],
-                    ),
-                  ),
-                ),
+            child: InteractiveViewer(
+              boundaryMargin: const EdgeInsets.all(120),
+              minScale: 0.6,
+              maxScale: 1.6,
+              panEnabled: _canvasPanEnabled,
+              scaleEnabled: _connectingFromId == null,
+              child: WorkflowCanvas(
+                workflow: _workflow,
+                readOnly: false,
+                selectedNodeId: _selectedNodeId,
+                connectingFromId: _connectingFromId,
+                pendingPointer: _pendingPointer,
+                minWidth: editorWidth,
+                minHeight: editorHeight,
+                onCanvasTap: () => _selectNode(null),
+                onCanvasPanUpdate: _connectingFromId != null
+                    ? (details) => setState(() => _pendingPointer = details.localPosition)
+                    : null,
+                onSelectNode: _selectNode,
+                onDeleteNode: _deleteNode,
+                onMoveNode: _moveNode,
+                onOutputTap: _onOutputTap,
+                onInputTap: _onInputTap,
+                onDragStart: () => setState(() => _isDraggingNode = true),
+                onDragEnd: () => setState(() => _isDraggingNode = false),
               ),
             ),
           ),
