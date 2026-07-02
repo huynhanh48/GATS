@@ -1,0 +1,881 @@
+{
+  "@@locale": "en",
+  "appName": "GATS Academy",
+  "onboardingNext": "Next",
+  "onboardingFinish": "See recommendations",
+  "onboardingTitleLanguage": "Choose your language",
+  "onboardingTitleReferral": "Where did you hear about GATS?",
+  "onboardingTitleLevel": "What is your AI level?",
+  "onboardingTitleProfile": "What best describes you?",
+  "onboardingTitleMotivation": "What motivates you to learn AI?",
+  "onboardingTitleInterests": "Which AI skills do you want to master?",
+  "onboardingTitleAge": "What is your age range?",
+  "onboardingTitleDailyGoal": "How long do you want to learn each day?",
+  "onboardingTitlePurpose": "What is your learning goal?",
+  "onboardingSubtitleLanguage": "You can change this later in Settings",
+  "languagePickerTitle": "Choose your language",
+  "languagePickerSubtitle": "You can change this later in Settings",
+  "languagePickerContinue": "Continue",
+  "welcomeHeadline": "Learn Practical AI",
+  "welcomeBody": "Interactive practice to build real AI skills.",
+  "entryContinue": "Continue",
+  "entrySignIn": "Sign in",
+  "onboardingIntroCoach": "Let's build a learning path just for you.",
+  "onboardingSubtitleReferral": "Help us make GATS better for you",
+  "onboardingSubtitleLevel": "Pick the closest match - there is no wrong answer",
+  "onboardingSubtitleProfile": "This helps us understand your learning context",
+  "onboardingSubtitleMotivation": "Motivation helps you stay consistent",
+  "onboardingSubtitleInterests": "Choose one or more - you can update this later",
+  "onboardingSubtitleAge": "This helps us tune content and pacing",
+  "onboardingSubtitleDailyGoal": "Start small and build up as you go",
+  "onboardingSubtitlePurpose": "Your roadmap will adapt to this goal",
+  "onboardingCoachLanguage": "First, choose the language you feel most comfortable learning in.",
+  "onboardingCoachReferral": "Where did you first hear about GATS Academy?",
+  "onboardingCoachLevel": "Where are you with AI right now? It is totally fine to be new!",
+  "onboardingCoachProfile": "Tell me what you do so I can shape the roadmap around you.",
+  "onboardingCoachMotivation": "What brought you here? I want to understand your motivation.",
+  "onboardingCoachInterests": "Pick every skill you want to improve - the more signal, the better.",
+  "onboardingCoachAge": "Knowing your age range helps me recommend a better pace.",
+  "onboardingCoachDailyGoal": "A small daily goal is how consistency turns into progress.",
+  "onboardingCoachPurpose": "A clear goal makes the roadmap sharper.",
+  "languageEnglish": "English",
+  "languageVietnamese": "Tiếng Việt",
+  "languageEnglishSubtitle": "Use English for the app and onboarding",
+  "languageVietnameseSubtitle": "Use Vietnamese for the app and onboarding",
+  "referralTiktok": "TikTok",
+  "referralFacebook": "Facebook",
+  "referralYoutube": "YouTube",
+  "referralFriend": "A friend recommended it",
+  "referralSearch": "Google / search",
+  "referralOther": "Somewhere else",
+  "skillBeginner": "Beginner",
+  "skillIntermediate": "Intermediate",
+  "skillAdvanced": "Advanced",
+  "skillBeginnerSubtitle": "New to AI",
+  "skillIntermediateSubtitle": "Used ChatGPT basics",
+  "skillAdvancedSubtitle": "Want workflows and automation",
+  "profileStudent": "Student",
+  "profileOfficeWorker": "Office worker",
+  "profileFreelancer": "Freelancer",
+  "profileOther": "Other",
+  "profileStudentSubtitle": "College or university learner",
+  "profileOfficeWorkerSubtitle": "Working at a company or office",
+  "profileFreelancerSubtitle": "Independent, remote, or solo work",
+  "profileOtherSubtitle": "Not in the groups above",
+  "motivationCareer": "Career growth",
+  "motivationIncome": "Increase income",
+  "motivationKeepUp": "Do not fall behind",
+  "motivationCuriosity": "Curious to explore",
+  "motivationCareerSubtitle": "Open new opportunities at work",
+  "motivationIncomeSubtitle": "Earn more from AI skills",
+  "motivationKeepUpSubtitle": "Keep up with technology trends",
+  "motivationCuriositySubtitle": "Learn because it feels interesting",
+  "interestChatbot": "ChatGPT & chatbots",
+  "interestContentWriting": "Content writing",
+  "interestDataAnalysis": "Data analysis",
+  "interestImageGen": "AI image generation",
+  "interestAutomation": "Automation",
+  "interestCoding": "Coding with AI",
+  "ageUnder25": "Under 25",
+  "age26to35": "26 - 35",
+  "age36to45": "36 - 45",
+  "ageAbove45": "Above 45",
+  "dailyGoalCasual": "5 minutes / day",
+  "dailyGoalRegular": "10 minutes / day",
+  "dailyGoalSerious": "15 minutes / day",
+  "dailyGoalIntense": "30 minutes / day",
+  "dailyGoalCasualCaption": "Casual",
+  "dailyGoalRegularCaption": "Steady",
+  "dailyGoalSeriousCaption": "Serious",
+  "dailyGoalIntenseCaption": "Breakthrough",
+  "purposeOfficeWork": "AI for office work",
+  "purposeSkillUpgrade": "Upgrade my skills",
+  "purposeCareerChange": "Change careers / find a job",
+  "purposePersonalInterest": "Personal interest",
+  "ackHeadline": "Saved!",
+  "ackHeadlineGreat": "Great!",
+  "ackHeadlineNoted": "Got it!",
+  "ackHeadlineMilestone": "You are halfway there!",
+  "ackHeadlineCommitment": "Excellent commitment!",
+  "ackAnalyzingHeadline": "Analyzing...",
+  "ackLanguageEchoEnglish": "English - your learning language is set",
+  "ackLanguageEchoVietnamese": "Tiếng Việt - your learning language is set",
+  "ackReferralEcho": "{value} - thanks for finding GATS",
+  "@ackReferralEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackLevelEcho": "{value} - I will tune your learning pace",
+  "@ackLevelEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackProfileEcho": "{value} - your context is saved",
+  "@ackProfileEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackMotivationEcho": "{value} - that is a meaningful motivation!",
+  "@ackMotivationEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackInterestsEcho": "{count} skills selected - I will prioritize these",
+  "@ackInterestsEcho": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "ackAgeEcho": "{value} - saved, thank you!",
+  "@ackAgeEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackDailyGoalEcho": "{value} - I will keep lessons bite-sized",
+  "@ackDailyGoalEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackPurposeEcho": "{value} - analyzing matching courses",
+  "@ackPurposeEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "ackSocialReferral": "Join 10,000+ learners studying AI every day",
+  "ackSocialMilestone": "92% of learners complete this setup",
+  "ackSocialDailyGoal": "Daily learning can improve retention by 3x",
+  "onboardingResultsCongratsTitle": "Congratulations!",
+  "onboardingCoachResult": "Great! I found the right courses for you.",
+  "onboardingResultHeadline": "We found {count} matching courses",
+  "@onboardingResultHeadline": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingResultSubtitle": "Based on your answers",
+  "onboardingMatchBadge": "{percent}% match",
+  "@onboardingMatchBadge": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "course1Title": "AI for Office Workers",
+  "course1Description": "From zero to AI mastery in daily work",
+  "course1Tag": "AI for the workplace",
+  "course2Title": "Prompt Engineering",
+  "course2Description": "Write professional prompts for every situation",
+  "course2Tag": "AI for the workplace",
+  "course3Title": "Automation with AI",
+  "course3Description": "Build workflows that save hours every week",
+  "course3Tag": "Automation",
+  "aiCoachName": "GATS Coach",
+  "rateUsAppBarTitle": "Reviews",
+  "rateUsBasedOnReviews": "Based on {count} reviews",
+  "@rateUsBasedOnReviews": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "reviewFilterExcellent": "Excellent",
+  "reviewFilterGood": "Good",
+  "reviewFilterAverage": "Average",
+  "reviewFilterNeedsImprovement": "Needs improvement",
+  "rateUsContextLine": "You just received a personal AI roadmap — see what other learners say",
+  "rateUsNoReviewsForFilter": "No reviews in this group yet",
+  "rateUsLater": "Later",
+  "reviewDialogTitle": "Would you mind rating GATS Academy?",
+  "reviewDialogBody": "Your feedback helps us improve the AI learning experience for office workers.",
+  "reviewDialogRate": "Rate",
+  "reviewDialogNoThanks": "No, thanks",
+  "loadingCongratsBody": "Your learning roadmap is ready",
+  "loadingPersonalizing": "Analyzing your learning goals",
+  "loadingCourses": "Matching the right courses",
+  "loadingFlashcards": "Creating today's flashcards",
+  "loadingReady": "Ready to start!",
+  "review1Body": "A clear AI roadmap I could apply to office work right away.",
+  "review1TimeAgo": "2 weeks ago",
+  "review2Body": "Flashcards and quizzes help me remember prompts faster. AI Coach suggests great lessons.",
+  "review2TimeAgo": "1 month ago",
+  "review3Body": "The Prompt Engineering course is easy to follow. Mentors reply quickly in the group chat.",
+  "review3TimeAgo": "3 weeks ago",
+  "review4Body": "Solid app — hoping for more Excel + AI practice exercises.",
+  "review4TimeAgo": "1 week ago",
+  "courseLandingLearnOutcomes": "What you'll learn",
+  "courseLandingAbout": "About this course",
+  "courseLandingCurriculum": "Course content",
+  "courseLandingLessonCount": "{count} lessons",
+  "@courseLandingLessonCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "courseLandingPreviewFree": "Free preview",
+  "courseLandingRequirements": "Requirements",
+  "courseLandingStudents": "{count} students",
+  "@courseLandingStudents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "courseLandingLastUpdated": "Updated {date}",
+  "@courseLandingLastUpdated": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "durationMinutes": "{minutes} min",
+  "@durationMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHours": "{hours} hr",
+  "@durationHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHoursMinutes": "{hours} hr {minutes} min",
+  "@durationHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "splashTagline": "AI FOR THE WORKPLACE",
+  "authPostOnboardingTitle": "Sign up for free to discover your learning path",
+  "authPostOnboardingSkip": "Continue without signing in",
+  "authContinueEmail": "Continue with email",
+  "authEmailLabel": "Email",
+  "authPasswordLabel": "Password",
+  "authForgotPassword": "Forgot password?",
+  "authLoginButton": "Sign in",
+  "authSignUpButton": "Sign up",
+  "authLoginTitle": "Sign in now!",
+  "authLoginSubtitle": "Sign in to continue your courses",
+  "authSignUpTitle": "Create your account!",
+  "authSignUpSubtitle": "Start your AI learning journey with GATS",
+  "authRememberMe": "Remember me",
+  "authOrContinueWith": "Or continue with",
+  "authNoAccount": "Don't have an account?",
+  "authHasAccount": "Already have an account?",
+  "authSignUpLink": "SIGN UP",
+  "authSignInLink": "SIGN IN",
+  "authGoogle": "Google",
+  "authApple": "Apple",
+  "authMomo": "MoMo",
+  "authOrDivider": "or",
+  "authMockNotice": "Mock auth — use a demo account below or any email (defaults to learner).",
+  "authDemoAccounts": "Demo accounts",
+  "authSignOut": "Sign out",
+  "authSignedInAs": "Signed in as: {identity}",
+  "@authSignedInAs": {
+    "placeholders": {
+      "identity": {
+        "type": "String"
+      }
+    }
+  },
+  "authRoleLabel": "Role: {role}",
+  "@authRoleLabel": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "comingSoon": "Coming soon",
+  "roleGuest": "Guest",
+  "roleUser": "Learner",
+  "roleMentor": "Mentor",
+  "roleAdmin": "Admin",
+  "authMethodEmail": "Email",
+  "authMethodDemo": "Demo",
+  "authDefaultDisplayName": "GATS Learner",
+  "authErrorWrongDemoPassword": "Demo password: {password}",
+  "@authErrorWrongDemoPassword": {
+    "placeholders": {
+      "password": {
+        "type": "String"
+      }
+    }
+  },
+  "authErrorInvalidEmail": "Please enter a valid email",
+  "authErrorPasswordTooShortLogin": "Password must be at least 4 characters",
+  "authErrorPasswordTooShortSignup": "Sign-up password must be at least 6 characters",
+  "authTabSignIn": "Sign in",
+  "authTabSignUp": "Sign up",
+  "authFullNameLabel": "Full name",
+  "authConfirmPasswordLabel": "Confirm password",
+  "authPasswordHintSignup": "At least 6 characters",
+  "authAgreeTerms": "I agree to the Terms & Conditions",
+  "authErrorNameRequired": "Please enter your name",
+  "authErrorPasswordMismatch": "Passwords do not match",
+  "authErrorTermsRequired": "Please accept the Terms & Conditions",
+  "authExistingUserPrompt": "Existing user?",
+  "authFirstNameLabel": "First name",
+  "authLastNameLabel": "Last name",
+  "authAgeLabel": "Age",
+  "authLegalSignUpPrefix": "By tapping 'Sign up', I agree to GATS Academy's ",
+  "authTermsLink": "Terms",
+  "authLegalSignUpMiddle": " and ",
+  "authPrivacyLink": "Privacy Policy",
+  "authErrorFirstNameRequired": "Please enter your first name",
+  "authErrorLastNameRequired": "Please enter your last name",
+  "authErrorAgeRequired": "Please enter your age",
+  "authErrorAgeInvalid": "Please enter a valid age",
+  "entryGreeting": "Hello ;)",
+  "entrySubtitle": "Are you ready to learn AI?",
+  "entryStart": "Start",
+  "languagePickerVietnamese": "Tiếng Việt",
+  "languagePickerEnglish": "English",
+  "languagePickerVietnameseHint": "Use Vietnamese for the app and onboarding",
+  "languagePickerEnglishHint": "Use English for the app and onboarding",
+  "entrySkip": "Skip",
+  "entryGuestHint": "Want to explore first?",
+  "welcomeTitle": "MASTER AI",
+  "welcomeSubtitle": "Learn AI step-by-step — unlock your office future",
+  "welcomeTagline": "Transform your skills — anytime, anywhere",
+  "authTabLogin": "Sign In",
+  "navHome": "Home",
+  "navDaily": "Daily",
+  "navLibrary": "Library",
+  "navCoach": "Coach",
+  "navHub": "Hub",
+  "navStore": "Store",
+  "tabRoadmap": "Roadmap",
+  "tabQuiz": "Quiz",
+  "tabAiReport": "AI Report",
+  "homeGreeting": "Hello, {name}",
+  "@homeGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSubtitle": "What do you want to learn today?",
+  "homePromoTitle": "Continue learning AI",
+  "homePromoSubtitle": "Complete the Basic Prompt module today",
+  "homePromoBadge": "LEARNING",
+  "homeCategories": "Categories",
+  "homePopularCourses": "Popular Courses",
+  "seeAll": "See all",
+  "libraryFilterAll": "All",
+  "libraryFilterOngoing": "Ongoing",
+  "libraryFilterDone": "Completed",
+  "libraryAllCourses": "All Courses",
+  "statusNotStarted": "Not started",
+  "statusInProgress": "In progress",
+  "statusCompleted": "Completed",
+  "continueLearning": "Continue learning",
+  "continueButton": "Continue",
+  "quizEmptyTitle": "No quizzes yet",
+  "quizEmptyDesc": "Quizzes will appear as you study courses (every 10-15 minutes).",
+  "exploreLibrary": "Explore library",
+  "dailyTasksTitle": "Today's Tasks",
+  "dailyRoutineTitle": "Daily Routine",
+  "routineEdit": "Edit",
+  "routineEditorTitle": "Design Routine",
+  "routineSave": "Save",
+  "routineAddNode": "Add node",
+  "routineEditorHint": "Drag node · Tap right port to connect · Hold to delete",
+  "routineConnectHint": "Tap left port of target node to connect",
+  "routineCancelConnect": "Cancel",
+  "routinePreviewSubtitle": "Personal learning workflow — n8n style",
+  "flashcardSectionTitle": "Study Flashcards",
+  "flashcardDue": "{count} cards to review today",
+  "@flashcardDue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "startFlashcard": "Start studying",
+  "vpsBanner": "Want to automate your routine? Contact us to rent a company VPS.",
+  "flashcardTapFlip": "Tap to flip",
+  "flashcardUnknown": "Not memorized",
+  "flashcardKnown": "Memorized",
+  "flashcardSessionDone": "Session completed!",
+  "flashcardXpEarned": "+{xp} XP",
+  "@flashcardXpEarned": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "libraryEmptyTitle": "Courses coming soon",
+  "libraryEmptyDesc": "AI courses library for office workers is being prepared.",
+  "featuredCourse": "Featured",
+  "aiCoachWelcome": "Hello! I am your AI Coach. I will assist you based on your learning progress.",
+  "aiCoachMockReply": "I am analyzing your learning progress. Please continue completing the active module!",
+  "hubXpTitle": "Experience",
+  "hubBadgesTitle": "Badges",
+  "hubCertTitle": "Certificates",
+  "hubCertLocked": "Need {xp} more XP to unlock certificate exam",
+  "@hubCertLocked": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "hubCertReady": "You have enough XP! Ready for the certificate exam.",
+  "hubCertButton": "Start certificate exam",
+  "settingsTitle": "Settings",
+  "settingsAccount": "Account",
+  "settingsNotifications": "Notifications",
+  "settingsLanguage": "Language",
+  "settingsDarkMode": "Dark Mode",
+  "settingsDarkModeSubtitle": "Starry night — sleep app style",
+  "settingsAbout": "About App",
+  "settingsReplayOnboarding": "Reset onboarding",
+  "tagOfficeAi": "AI for workplace",
+  "streakDays": "{days} days streak",
+  "@streakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingWelcome": "Welcome to GATS Academy",
+  "onboardingSubtitle": "Tell us more about yourself",
+  "onboardingStart": "Start",
+  "onboardingSkip": "Skip",
+  "onboardingWelcomeSlide1Title": "Personalized AI roadmap",
+  "onboardingWelcomeSlide1Body": "Courses are suggested based on your level and goals — no waste of time.",
+  "onboardingWelcomeSlide2Title": "Daily practice with flashcards",
+  "onboardingWelcomeSlide2Body": "Review short, remember long. Just a few minutes a day is enough to progress.",
+  "onboardingWelcomeSlide3Title": "AI Coach 24/7 companion",
+  "onboardingWelcomeSlide3Body": "Q&A, lesson recommendations and progress tracking — always ready when you need.",
+  "onboardingCoachWelcome": "Hi! I am GATS Coach. Let's design your roadmap together!",
+  "onboardingReferralTitle": "Where did you hear about GATS?",
+  "onboardingReferralSubtitle": "Help us serve you better",
+  "onboardingLevelTitle": "What is your AI level?",
+  "onboardingLevelSubtitle": "Choose the closest match — there is no wrong answer",
+  "onboardingProfileTitle": "What best describes you?",
+  "onboardingProfileSubtitle": "Help us understand your learning context",
+  "onboardingMotivationTitle": "What motivates you to learn AI?",
+  "onboardingMotivationSubtitle": "Motivation helps you stay consistent",
+  "onboardingInterestsTitle": "Which AI skills do you want to master?",
+  "onboardingInterestsSubtitle": "Choose one or more — you can change this later",
+  "onboardingAgeTitle": "What is your age range?",
+  "onboardingAgeSubtitle": "Helps us suggest suitable content and pace",
+  "onboardingDailyGoalTitle": "How long do you want to learn each day?",
+  "onboardingDailyGoalSubtitle": "Start small, increase as you get used to it",
+  "onboardingPurposeTitle": "What is your learning goal?",
+  "onboardingPurposeSubtitle": "Your roadmap will adapt to this goal",
+  "onboardingAckHeadline": "Saved!",
+  "onboardingAckHeadlineGreat": "Great!",
+  "onboardingAckHeadlineNoted": "Got it!",
+  "onboardingAckHeadlineMilestone": "You are halfway there!",
+  "onboardingAckHeadlineCommitment": "Excellent commitment!",
+  "onboardingAckAnalyzingHeadline": "Analyzing...",
+  "onboardingAckReferralEcho": "{value} — thank you for finding GATS",
+  "@onboardingAckReferralEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckLevelEcho": "{value} — saving to adjust your pace",
+  "@onboardingAckLevelEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckProfileEcho": "{value} — saving your profile details",
+  "@onboardingAckProfileEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckMotivationEcho": "{value} — that's a very meaningful motivation!",
+  "@onboardingAckMotivationEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckInterestsEcho": "{count} skills selected — I will prioritize these",
+  "@onboardingAckInterestsEcho": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "onboardingAckAgeEcho": "{value} — saved, thank you!",
+  "@onboardingAckAgeEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckDailyGoalEcho": "{value} — I will keep lessons bite-sized",
+  "@onboardingAckDailyGoalEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckPurposeEcho": "{value} — analyzing to recommend the right courses",
+  "@onboardingAckPurposeEcho": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "onboardingAckSocialReferral": "Join 10,000+ learners studying AI every day",
+  "onboardingAckSocialMilestone": "92% of learners complete this setup",
+  "onboardingAckSocialDailyGoal": "Daily learning can improve retention by 3x",
+  "onboardingResultTitle": "Recommended courses for you",
+  "onboardingToRateUs": "Next",
+  "rateUsTitle": "GATS Learners Community",
+  "rateUsSubtitle": "See what other learners say about GATS Academy",
+  "rateUsSocialProof": "10,000+ AI learners",
+  "rateUsStoreRating": "4.8★ on App Store",
+  "loadingTitle": "Creating your learning path",
+  "loadingCongratsTitle": "Congratulations!",
+  "rateSheetTitle": "Do you like GATS Academy?",
+  "rateSheetSubtitle": "Your rating helps us improve the learning experience",
+  "rateSheetCta": "Rate now",
+  "rateSheetLater": "Later",
+  "settingsRateApp": "Rate App",
+  "courseTabOverview": "Overview",
+  "courseTabLectures": "Lectures",
+  "courseTabQuiz": "Quiz",
+  "courseTabPosts": "Posts",
+  "courseTabChat": "Group Chat",
+  "courseNotFound": "Course not found",
+  "courseEnroll": "Enroll in course",
+  "courseEnrollFree": "Join for free",
+  "courseEnrolled": "Enrolled in {name}",
+  "@courseEnrolled": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "courseAlreadyEnrolled": "You are already enrolled in this course",
+  "courseEnrollToView": "Enroll to view course content",
+  "courseLoginToEnroll": "Sign in to enroll in this course",
+  "courseMentorBadge": "You are mentoring this course",
+  "courseChatLocked": "GroupChat is only for enrolled students or mentors of the course",
+  "courseQuizPublished": "Quiz assigned to students",
+  "groupChatEmpty": "No messages yet — say hi to the class!",
+  "groupChatHint": "Type a message...",
+  "groupChatOnePerCourse": "1 course = 1 chat room",
+  "mentorNavCourses": "My Courses",
+  "mentorNavChats": "Group Chats",
+  "mentorShellSubtitle": "Mentor — manage lectures & student chats",
+  "mentorNoCourses": "No assigned courses yet",
+  "adminNavCourses": "Courses",
+  "adminNavUsers": "Learners",
+  "adminNavMentors": "Mentors",
+  "adminNavPosts": "Posts & Articles",
+  "adminShellSubtitle": "Admin — operate platform",
+  "adminAssignMentorHint": "Assign mentor ↔ course in production build (web admin).",
+  "adminPostCompose": "Post a GATS announcement",
+  "adminPostsEmpty": "No posts yet",
+  "postHomeSectionTitle": "Articles & News",
+  "postFeedEmpty": "No posts yet",
+  "postSeeAll": "See all",
+  "postByAuthor": "By {author}",
+  "@postByAuthor": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "postPreviewLocked": "Enroll in course to read full article",
+  "postPreviewLogin": "Sign in and enroll to read full article",
+  "postEnrollCta": "Enroll to read full article",
+  "postEnrollFreeCta": "Join for free to read full article",
+  "postComposeTitle": "Post Article",
+  "postComposeHintTitle": "Title",
+  "postComposeHintBody": "Article content...",
+  "postComposePublish": "Publish",
+  "postComposeGlobal": "Global announcement (GATS)",
+  "postComposeCourse": "Course-specific article",
+  "postPublished": "Article published",
+  "postEmptyCourse": "No articles in this course yet",
+  "postMentorCompose": "Post to class",
+  "postTimeAgo": "{time} ago",
+  "@postTimeAgo": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStreakBadge": "🔥 {days} days",
+  "@homeStreakBadge": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "homeContinueLearning": "Continue learning",
+  "homeContinueButton": "Continue",
+  "homeStatsHours": "Hours",
+  "homeStatsLessons": "Lessons",
+  "homeStatsStreak": "Streak",
+  "homeLeaderboard": "Leaderboard",
+  "homeYourRank": "Your Rank",
+  "homeXpUnit": "XP",
+  "dailyRewardTitle": "Daily Reward",
+  "dailyRewardSubtitle": "Open app daily to claim XP!",
+  "dailyRewardClaim": "Claim",
+  "dailyRewardClaimed": "Claimed!",
+  "dailyRewardDay": "Day {day}",
+  "@dailyRewardDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "streakCalendarTitle": "This Week",
+  "streakMotivation1": "Great! Keep it up! 🔥",
+  "streakMotivation2": "Your streak is hot! 💪",
+  "streakMotivation3": "Let's start the journey! 🚀",
+  "streakBonusTask": "Bonus: Chat with AI Coach",
+  "dailyXpToday": "XP today: +{xp}",
+  "@dailyXpToday": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "hubRank": "Rank",
+  "hubAchievements": "Achievements",
+  "hubViewAll": "View all",
+  "hubRankTanBinh": "Novice",
+  "hubRankHocVien": "Learner",
+  "hubRankThanhThao": "Proficient",
+  "hubRankChuyenGia": "Expert",
+  "hubRankBacThay": "Master",
+  "coachWelcomeCardTitle": "AI Coach is ready",
+  "coachWelcomeCardBody": "Ask anything about your learning path, assignments, or AI concepts.",
+  "coachThinking": "GATS Coach is thinking...",
+  "librarySearchHint": "Search by title or description...",
+  "libraryNoResults": "No courses found",
+  "libraryNoResultsDesc": "Try another keyword or clear filters",
+  "libraryGridView": "Grid",
+  "libraryListView": "List",
+  "quickActionTitle": "Quick Actions",
+  "quickActionPosts": "Articles",
+  "quickActionSearchCourses": "Search Courses",
+  "quickActionFlashcard": "Study Flashcards",
+  "quickActionCoach": "Coach Chat",
+  "quickActionContinue": "Continue Learning",
+  "quickActionStore": "Course Store",
+  "quickActionHub": "Hub",
+  "courseSearchTitle": "Search & Filter Courses",
+  "courseSearchHint": "Search AI courses, programming...",
+  "courseSearchResultCount": "{count} courses",
+  "@courseSearchResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "courseSearchEmpty": "No matching courses found.\\nTry changing keywords or filters.",
+  "headerSubtitleHome": "Hello, GATS Learner",
+  "headerSubtitleDaily": "Exercises & learning routine",
+  "headerSubtitleLibrary": "AI courses for office work",
+  "headerSubtitleAiCoach": "Personalized mentor",
+  "headerSubtitleHub": "Progress & rewards",
+  "headerSubtitleStore": "Browse and buy AI courses",
+  "onboardingBrowseMoreCourses": "Browse more courses",
+  "storeTitle": "Course Store",
+  "storeSearchHint": "Search courses...",
+  "storePromoAI": "Mega Offer: 40% Off!",
+  "storePromoAISub": "Master the best workplace AI skills",
+  "storeFilterTitle": "Search Filters",
+  "storeFilterCategory": "Topic / Category",
+  "storeFilterApply": "Apply Filters",
+  "storeFeatured": "Featured Recommendations",
+  "storeBestSellers": "Best Sellers",
+  "storeSeeAll": "See All",
+  "storeFree": "Free",
+  "storeAddedToCart": "Added \"{title}\" to cart!",
+  "@storeAddedToCart": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "storeViewCart": "View Cart",
+  "storeWishlistTooltip": "Wishlist",
+  "storeCartTooltip": "Cart",
+  "storeHoursOfLearning": "{hours} hours of learning",
+  "@storeHoursOfLearning": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "storeReviewsCount": "({count} reviews)",
+  "@storeReviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeCourseDetailTitle": "Course Details",
+  "storeSyllabusTitle": "Syllabus ({count} lectures)",
+  "@storeSyllabusTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeReviewsTitle": "Student Reviews",
+  "storeAddToCart": "Add to Cart",
+  "storeAddedSeatsToCart": "Added {seats} seats of \"{title}\" to cart!",
+  "@storeAddedSeatsToCart": {
+    "placeholders": {
+      "seats": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "storeCourseNotFound": "Course not found",
+  "cartTitle": "My Cart",
+  "cartEmptyTitle": "Your Cart is Empty",
+  "cartEmptyDesc": "Explore the store and pick the best courses for yourself!",
+  "cartContinueShopping": "Continue Shopping",
+  "cartTotal": "Total",
+  "cartCheckout": "Proceed to Checkout",
+  "wishlistTitle": "My Wishlist",
+  "wishlistEmptyTitle": "No Wishlist Items Yet",
+  "wishlistEmptyDesc": "Explore the store and tap the heart to save your favorite courses!",
+  "wishlistAddAll": "Add All to Cart",
+  "wishlistAllAdded": "Added all wishlist courses to cart!",
+  "checkoutSuccessTitle": "Checkout Successful!",
+  "checkoutSuccessDesc": "Congratulations on owning your new courses. Let's start your learning path today!",
+  "checkoutStartLearning": "Start Learning Now",
+  "mentorSearchHint": "Search assigned courses...",
+  "adminStatusPublished": "Published",
+  "adminStatusDraft": "Draft",
+  "adminGroupChatLabel": "Group Chat",
+  "adminMentorLabel": "Mentor",
+  "adminAssignedCourses": "Assigned courses: {courses}",
+  "@adminAssignedCourses": {
+    "placeholders": {
+      "courses": {
+        "type": "String"
+      }
+    }
+  },
+  "statusCompleted": "Completed",
+  "quizCountLabel": "{count} questions",
+  "@quizCountLabel": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportMinsPerWeek": "Learning mins/week",
+  "reportStreakDays": "Streak days",
+  "reportStrengths": "Strengths",
+  "reportImprovement": "Areas to improve",
+  "reportReviewSuggestions": "Review Suggestions",
+  "coursePercentCompleted": "{percent}% completed",
+  "@coursePercentCompleted": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "courseLessonsCount": "{lessons} lessons",
+  "@courseLessonsCount": {
+    "placeholders": {
+      "lessons": {
+        "type": "int"
+      }
+    }
+  },
+  "filterAll": "All",
+  "filterOfficeAi": "AI for Office",
+  "filterProgramming": "Programming",
+  "filterMarketing": "Marketing",
+  "filterLanguages": "Languages",
+  "filterSoftSkills": "Soft Skills",
+  "filterAutomation": "Automation",
+  "chipAll": "All",
+  "chipLearning": "Learning",
+  "chipNew": "New",
+  "chipFree": "Free"
+}

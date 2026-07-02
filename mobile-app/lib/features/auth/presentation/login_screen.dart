@@ -1,0 +1,866 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gats_academy/core/l10n/l10n.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/data/mock/mock_accounts.dart';
+import 'package:gats_academy/data/mock/mock_auth_service.dart';
+import 'package:gats_academy/features/auth/models/auth_user.dart';
+import 'package:gats_academy/features/auth/presentation/widgets/auth_provider_button.dart';
+import 'package:gats_academy/l10n/app_localizations.dart';
+
+/// Ngữ cảnh mở auth — cùng một UI, khác headline / skip / demo / đích sau đăng nhập.
+enum AuthGate { entry, postOnboarding }
+
+enum _AuthStep { choice, emailSignUp, emailSignIn }
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({
+    super.key,
+    this.gate = AuthGate.entry,
+    required this.onAuthenticated,
+    required this.onBack,
+    this.onSkip,
+  });
+
+  final AuthGate gate;
+  final VoidCallback onAuthenticated;
+  final VoidCallback onBack;
+  final VoidCallback? onSkip;
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  late _AuthStep _step;
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _rememberMe = false;
+  bool _showDemoAccounts = false;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _step = _AuthStep.choice;
+    for (final c in [
+      _firstNameController,
+      _lastNameController,
+      _ageController,
+      _emailController,
+      _passwordController,
+    ]) {
+      c.addListener(_onFieldsChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in [
+      _firstNameController,
+      _lastNameController,
+      _ageController,
+      _emailController,
+      _passwordController,
+    ]) {
+      c
+        ..removeListener(_onFieldsChanged)
+        ..dispose();
+    }
+    super.dispose();
+  }
+
+  void _onFieldsChanged() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _canSubmitSignUp =>
+      _emailController.text.trim().isNotEmpty &&
+      _passwordController.text.isNotEmpty &&
+      _firstNameController.text.trim().isNotEmpty &&
+      _lastNameController.text.trim().isNotEmpty &&
+      _ageController.text.trim().isNotEmpty;
+
+  void _goTo(_AuthStep step) {
+    setState(() {
+      _step = step;
+      _error = null;
+    });
+  }
+
+  void _handleBack() {
+    switch (_step) {
+      case _AuthStep.choice:
+        widget.onBack();
+      case _AuthStep.emailSignUp:
+        _goTo(_AuthStep.choice);
+      case _AuthStep.emailSignIn:
+        _goTo(_AuthStep.choice);
+    }
+  }
+
+  Future<void> _submitDemo(MockAccount account) async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _emailController.text = account.email;
+      _passwordController.text = account.password;
+    });
+    try {
+      final user = await MockAuthService.signInWithDemoAccount(account);
+      await AuthPrefs.saveSession(user);
+      if (!mounted) return;
+      widget.onAuthenticated();
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  bool _validateSignUp(AppLocalizations l10n) {
+    if (_firstNameController.text.trim().isEmpty) {
+      setState(() => _error = l10n.authErrorFirstNameRequired);
+      return false;
+    }
+    if (_lastNameController.text.trim().isEmpty) {
+      setState(() => _error = l10n.authErrorLastNameRequired);
+      return false;
+    }
+    final age = int.tryParse(_ageController.text.trim());
+    if (age == null) {
+      setState(() => _error = l10n.authErrorAgeInvalid);
+      return false;
+    }
+    if (age < 1 || age > 120) {
+      setState(() => _error = l10n.authErrorAgeInvalid);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _submitSignUp() async {
+    final l10n = context.l10n;
+    if (!_canSubmitSignUp || !_validateSignUp(l10n)) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final displayName =
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
+      final user = await MockAuthService.signUpWithEmail(
+        email: _emailController.text,
+        password: _passwordController.text,
+        displayName: displayName,
+      );
+      await AuthPrefs.saveSession(user);
+      if (!mounted) return;
+      widget.onAuthenticated();
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = AuthL10n.errorMessage(l10n, e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitSignIn() async {
+    final l10n = context.l10n;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final user = await MockAuthService.signInWithEmail(
+        email: _emailController.text,
+        password: _passwordController.text,
+        defaultDisplayName: l10n.authDefaultDisplayName,
+      );
+      await AuthPrefs.saveSession(user);
+      if (!mounted) return;
+      widget.onAuthenticated();
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = AuthL10n.errorMessage(l10n, e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _submitSocial(Future<AuthUser> Function() signIn) async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final user = await signIn();
+      await AuthPrefs.saveSession(user);
+      if (!mounted) return;
+      widget.onAuthenticated();
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: switch (_step) {
+          _AuthStep.choice => _ChoiceStep(
+              gate: widget.gate,
+              isLoading: _isLoading,
+              error: _error,
+              onBack: _handleBack,
+              onApple: () => _submitSocial(MockAuthService.signInWithApple),
+              onGoogle: () => _submitSocial(MockAuthService.signInWithGoogle),
+              onMomo: () => _submitSocial(MockAuthService.signInWithMomo),
+              onContinueEmail: () => _goTo(_AuthStep.emailSignUp),
+              onSignIn: () => _goTo(_AuthStep.emailSignIn),
+              onSkip: widget.onSkip,
+            ),
+          _AuthStep.emailSignUp => _EmailSignUpStep(
+              isLoading: _isLoading,
+              error: _error,
+              canSubmit: _canSubmitSignUp,
+              firstNameController: _firstNameController,
+              lastNameController: _lastNameController,
+              ageController: _ageController,
+              emailController: _emailController,
+              passwordController: _passwordController,
+              obscurePassword: _obscurePassword,
+              onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
+              onBack: _handleBack,
+              onSubmit: _submitSignUp,
+              onSignIn: () => _goTo(_AuthStep.emailSignIn),
+            ),
+          _AuthStep.emailSignIn => _EmailSignInStep(
+              isLoading: _isLoading,
+              error: _error,
+              showDemoAccounts: widget.gate == AuthGate.entry,
+              showDemoPanel: _showDemoAccounts,
+              onToggleDemoPanel: () => setState(() => _showDemoAccounts = !_showDemoAccounts),
+              onSelectDemo: _submitDemo,
+              emailController: _emailController,
+              passwordController: _passwordController,
+              obscurePassword: _obscurePassword,
+              rememberMe: _rememberMe,
+              onTogglePassword: () => setState(() => _obscurePassword = !_obscurePassword),
+              onRememberMeChanged: (v) => setState(() => _rememberMe = v),
+              onBack: _handleBack,
+              onSubmit: _submitSignIn,
+              onSignUp: () => _goTo(_AuthStep.emailSignUp),
+            ),
+        },
+      ),
+    );
+  }
+}
+
+class _ChoiceStep extends StatelessWidget {
+  const _ChoiceStep({
+    required this.gate,
+    required this.isLoading,
+    required this.error,
+    required this.onBack,
+    required this.onApple,
+    required this.onGoogle,
+    required this.onMomo,
+    required this.onContinueEmail,
+    required this.onSignIn,
+    this.onSkip,
+  });
+
+  final AuthGate gate;
+  final bool isLoading;
+  final String? error;
+  final VoidCallback onBack;
+  final VoidCallback onApple;
+  final VoidCallback onGoogle;
+  final VoidCallback onMomo;
+  final VoidCallback onContinueEmail;
+  final VoidCallback onSignIn;
+  final VoidCallback? onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final isEntry = gate == AuthGate.entry;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              onPressed: isLoading ? null : onBack,
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+          ),
+          const Spacer(flex: 2),
+          Text(
+            isEntry ? l10n.authLoginTitle : l10n.authPostOnboardingTitle,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                  letterSpacing: -0.5,
+                ),
+          ),
+          if (isEntry) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.authLoginSubtitle,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+          ],
+          const Spacer(flex: 3),
+          AuthProviderRow(
+            enabled: !isLoading,
+            onApple: onApple,
+            onGoogle: onGoogle,
+            onMomo: onMomo,
+            momoLabel: l10n.authMomo,
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Row(
+            children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Text(
+                  l10n.authOrDivider.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          SizedBox(
+            height: 56,
+            child: FilledButton(
+              onPressed: isLoading ? null : onContinueEmail,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.darkCanvas,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+              ),
+              child: Text(
+                l10n.authContinueEmail,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+            ),
+          ),
+          if (error != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(error!, style: const TextStyle(color: AppColors.accent, fontSize: 13), textAlign: TextAlign.center),
+          ],
+          const Spacer(),
+          _ExistingUserLink(
+            enabled: !isLoading,
+            onSignIn: onSignIn,
+          ),
+          if (onSkip != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Center(
+              child: TextButton(
+                onPressed: isLoading ? null : onSkip,
+                child: Text(
+                  l10n.authPostOnboardingSkip,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EmailSignUpStep extends StatelessWidget {
+  const _EmailSignUpStep({
+    required this.isLoading,
+    required this.error,
+    required this.canSubmit,
+    required this.firstNameController,
+    required this.lastNameController,
+    required this.ageController,
+    required this.emailController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onTogglePassword,
+    required this.onBack,
+    required this.onSubmit,
+    required this.onSignIn,
+  });
+
+  final bool isLoading;
+  final String? error;
+  final bool canSubmit;
+  final TextEditingController firstNameController;
+  final TextEditingController lastNameController;
+  final TextEditingController ageController;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final VoidCallback onTogglePassword;
+  final VoidCallback onBack;
+  final VoidCallback onSubmit;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.xl),
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            onPressed: isLoading ? null : onBack,
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _AuthInputField(
+          hint: l10n.authEmailLabel,
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          enabled: !isLoading,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _AuthInputField(
+          hint: l10n.authPasswordLabel,
+          controller: passwordController,
+          obscureText: obscurePassword,
+          enabled: !isLoading,
+          suffix: IconButton(
+            onPressed: onTogglePassword,
+            icon: Icon(obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: _AuthInputField(
+                hint: l10n.authFirstNameLabel,
+                controller: firstNameController,
+                textCapitalization: TextCapitalization.words,
+                enabled: !isLoading,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _AuthInputField(
+                hint: l10n.authLastNameLabel,
+                controller: lastNameController,
+                textCapitalization: TextCapitalization.words,
+                enabled: !isLoading,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _AuthInputField(
+          hint: l10n.authAgeLabel,
+          controller: ageController,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          enabled: !isLoading,
+        ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(error!, style: const TextStyle(color: AppColors.accent, fontSize: 13)),
+        ],
+        const SizedBox(height: AppSpacing.xl),
+        SizedBox(
+          height: 56,
+          child: FilledButton(
+            onPressed: isLoading || !canSubmit ? null : onSubmit,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.darkCanvas,
+              disabledBackgroundColor: AppColors.chipInactive,
+              disabledForegroundColor: AppColors.textSecondary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            ),
+            child: Text(
+              l10n.authSignUpButton,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        _ExistingUserLink(enabled: !isLoading, onSignIn: onSignIn),
+        const SizedBox(height: AppSpacing.xl),
+        _LegalSignUpText(l10n: l10n),
+      ],
+    );
+  }
+}
+
+class _EmailSignInStep extends StatelessWidget {
+  const _EmailSignInStep({
+    required this.isLoading,
+    required this.error,
+    required this.showDemoAccounts,
+    required this.showDemoPanel,
+    required this.onToggleDemoPanel,
+    required this.onSelectDemo,
+    required this.emailController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.rememberMe,
+    required this.onTogglePassword,
+    required this.onRememberMeChanged,
+    required this.onBack,
+    required this.onSubmit,
+    required this.onSignUp,
+  });
+
+  final bool isLoading;
+  final String? error;
+  final bool showDemoAccounts;
+  final bool showDemoPanel;
+  final VoidCallback onToggleDemoPanel;
+  final void Function(MockAccount account) onSelectDemo;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final bool rememberMe;
+  final VoidCallback onTogglePassword;
+  final ValueChanged<bool> onRememberMeChanged;
+  final VoidCallback onBack;
+  final VoidCallback onSubmit;
+  final VoidCallback onSignUp;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.xl),
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: IconButton(
+            onPressed: isLoading ? null : onBack,
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          l10n.authLoginTitle,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          l10n.authLoginSubtitle,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        _AuthInputField(
+          hint: l10n.authEmailLabel,
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          enabled: !isLoading,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _AuthInputField(
+          hint: l10n.authPasswordLabel,
+          controller: passwordController,
+          obscureText: obscurePassword,
+          enabled: !isLoading,
+          suffix: IconButton(
+            onPressed: onTogglePassword,
+            icon: Icon(obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Checkbox(
+              value: rememberMe,
+              onChanged: isLoading ? null : (v) => onRememberMeChanged(v ?? false),
+              activeColor: AppColors.primary,
+            ),
+            Text(l10n.authRememberMe, style: Theme.of(context).textTheme.bodySmall),
+            const Spacer(),
+            TextButton(
+              onPressed: isLoading
+                  ? null
+                  : () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.comingSoon))),
+              child: Text(l10n.authForgotPassword, style: const TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(error!, style: const TextStyle(color: AppColors.accent, fontSize: 13)),
+        ],
+        const SizedBox(height: AppSpacing.xl),
+        SizedBox(
+          height: 56,
+          child: FilledButton(
+            onPressed: isLoading ? null : onSubmit,
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.darkCanvas,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            ),
+            child: Text(l10n.authLoginButton, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        Center(
+          child: GestureDetector(
+            onTap: isLoading ? null : onSignUp,
+            child: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                children: [
+                  TextSpan(text: '${l10n.authNoAccount} '),
+                  TextSpan(
+                    text: l10n.authSignUpLink,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w800,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (showDemoAccounts) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _DemoAccountsPanel(
+            expanded: showDemoPanel,
+            isLoading: isLoading,
+            onToggle: onToggleDemoPanel,
+            onSelect: onSelectDemo,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ExistingUserLink extends StatelessWidget {
+  const _ExistingUserLink({required this.enabled, required this.onSignIn});
+
+  final bool enabled;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Center(
+      child: GestureDetector(
+        onTap: enabled ? onSignIn : null,
+        child: RichText(
+          text: TextSpan(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            children: [
+              TextSpan(text: '${l10n.authExistingUserPrompt} '),
+              TextSpan(
+                text: l10n.authSignInLink,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LegalSignUpText extends StatelessWidget {
+  const _LegalSignUpText({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final bodyStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: AppColors.textSecondary,
+          height: 1.45,
+          fontSize: 12,
+        );
+    final linkStyle = bodyStyle?.copyWith(
+      color: AppColors.textPrimary,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+    );
+
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: bodyStyle,
+        children: [
+          TextSpan(text: l10n.authLegalSignUpPrefix),
+          TextSpan(
+            text: l10n.authTermsLink,
+            style: linkStyle,
+            recognizer: null,
+          ),
+          TextSpan(text: l10n.authLegalSignUpMiddle),
+          TextSpan(text: l10n.authPrivacyLink, style: linkStyle),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthInputField extends StatelessWidget {
+  const _AuthInputField({
+    required this.hint,
+    required this.controller,
+    this.obscureText = false,
+    this.keyboardType,
+    this.textCapitalization = TextCapitalization.none,
+    this.inputFormatters,
+    this.enabled = true,
+    this.suffix,
+  });
+
+  final String hint;
+  final TextEditingController controller;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final TextCapitalization textCapitalization;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool enabled;
+  final Widget? suffix;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      enabled: enabled,
+      decoration: InputDecoration(
+        hintText: hint,
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: AppColors.surface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.divider),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderSide: const BorderSide(color: AppColors.textPrimary, width: 1.5),
+        ),
+      ),
+    );
+  }
+}
+
+class _DemoAccountsPanel extends StatelessWidget {
+  const _DemoAccountsPanel({
+    required this.expanded,
+    required this.isLoading,
+    required this.onToggle,
+    required this.onSelect,
+  });
+
+  final bool expanded;
+  final bool isLoading;
+  final VoidCallback onToggle;
+  final void Function(MockAccount account) onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              child: Row(
+                children: [
+                  const Icon(Icons.science_outlined, size: 18, color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      l10n.authDemoAccounts,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                    ),
+                  ),
+                  Icon(expanded ? Icons.expand_less : Icons.expand_more, color: AppColors.primary),
+                ],
+              ),
+            ),
+          ),
+          if (expanded) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+              child: Text(l10n.authMockNotice, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+              child: Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: MockAccounts.all.map((account) {
+                  return ActionChip(
+                    label: Text(AuthL10n.roleLabel(l10n, account.role)),
+                    onPressed: isLoading ? null : () => onSelect(account),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
