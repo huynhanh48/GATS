@@ -755,7 +755,7 @@
   "notificationsTestBanner": "Banner trong app",
   "notificationsTestPush": "Push hệ thống ngay",
   "notificationsTestPushDelayed": "Push sau 5 giây",
-  "notificationsTestHint": "Nhấn \"Push sau 5 giây\" rồi thu app xuống để xem trên thanh thông báo.",
+  "notificationsTestHint": "Khi app đang mở: push hiện banner trên màn hình. Thu app xuống để xem trên thanh thông báo hệ thống.",
   "notificationsPermissionDenied": "Chưa cấp quyền. Vào Cài đặt > Ứng dụng > GATS Academy > Thông báo để bật.",
   "notificationsTestScheduled": "Sẽ hiện push sau 5 giây — thu app xuống ngay!",
   "notificationsTestSent": "Đã gửi thông báo test.",

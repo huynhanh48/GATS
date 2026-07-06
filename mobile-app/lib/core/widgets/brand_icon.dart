@@ -1,6 +1,6 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gats_academy/core/constants/app_assets.dart';
 
 enum BrandIconType { google, apple, facebook, youtube, tiktok, momo }
 
@@ -8,142 +8,34 @@ class BrandIcon extends StatelessWidget {
   const BrandIcon({
     super.key,
     required this.type,
-    this.size = 28,
+    this.size = 24,
   });
 
   final BrandIconType type;
   final double size;
 
+  static const _assetByType = {
+    BrandIconType.google: AppAssets.brandGoogle,
+    BrandIconType.apple: AppAssets.brandApple,
+    BrandIconType.facebook: AppAssets.brandFacebook,
+    BrandIconType.youtube: AppAssets.brandYoutube,
+    BrandIconType.tiktok: AppAssets.brandTiktok,
+  };
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox.square(
-      dimension: size,
-      child: switch (type) {
-        BrandIconType.google => CustomPaint(painter: _GooglePainter()),
-        BrandIconType.apple => Icon(Icons.apple, size: size, color: Colors.black),
-        BrandIconType.facebook => _FacebookIcon(size: size),
-        BrandIconType.youtube => _YouTubeIcon(size: size),
-        BrandIconType.tiktok => _TikTokIcon(size: size),
-        BrandIconType.momo => _MoMoIcon(size: size),
-      },
-    );
-  }
-}
-
-class _GooglePainter extends CustomPainter {
-  static const _blue = Color(0xFF4285F4);
-  static const _red = Color(0xFFEA4335);
-  static const _yellow = Color(0xFFFBBC05);
-  static const _green = Color(0xFF34A853);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final stroke = size.width * 0.16;
-    final rect = Rect.fromLTWH(stroke / 2, stroke / 2, size.width - stroke, size.height - stroke);
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-
-    void arc(Color color, double start, double sweep) {
-      paint.color = color;
-      canvas.drawArc(rect, start, sweep, false, paint);
+    if (type == BrandIconType.momo) {
+      return _MoMoIcon(size: size);
     }
 
-    arc(_blue, -0.08 * math.pi, 0.50 * math.pi);
-    arc(_green, 0.45 * math.pi, 0.48 * math.pi);
-    arc(_yellow, 0.90 * math.pi, 0.38 * math.pi);
-    arc(_red, 1.22 * math.pi, 0.58 * math.pi);
-
-    final barPaint = Paint()
-      ..color = _blue
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.square;
-    canvas.drawLine(
-      Offset(size.width * 0.54, size.height * 0.50),
-      Offset(size.width * 0.88, size.height * 0.50),
-      barPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _FacebookIcon extends StatelessWidget {
-  const _FacebookIcon({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFF1877F2),
-      ),
-      child: Center(
-        child: Text(
-          'f',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: size * 0.82,
-            fontWeight: FontWeight.w800,
-            height: 0.95,
-            fontFamily: 'Arial',
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _YouTubeIcon extends StatelessWidget {
-  const _YouTubeIcon({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
+    return SizedBox.square(
+      dimension: size,
+      child: SvgPicture.asset(
+        _assetByType[type]!,
         width: size,
-        height: size * 0.70,
-        decoration: BoxDecoration(
-          color: const Color(0xFFFF0000),
-          borderRadius: BorderRadius.circular(size * 0.18),
-        ),
-        child: Icon(
-          Icons.play_arrow_rounded,
-          color: Colors.white,
-          size: size * 0.62,
-        ),
+        height: size,
+        fit: BoxFit.contain,
       ),
-    );
-  }
-}
-
-class _TikTokIcon extends StatelessWidget {
-  const _TikTokIcon({required this.size});
-
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Transform.translate(
-          offset: Offset(-size * 0.07, size * 0.05),
-          child: Icon(Icons.music_note_rounded, color: const Color(0xFF25F4EE), size: size),
-        ),
-        Transform.translate(
-          offset: Offset(size * 0.07, -size * 0.03),
-          child: Icon(Icons.music_note_rounded, color: const Color(0xFFFE2C55), size: size),
-        ),
-        Icon(Icons.music_note_rounded, color: Colors.black, size: size),
-      ],
     );
   }
 }
@@ -158,16 +50,18 @@ class _MoMoIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: size,
+      height: size,
       decoration: BoxDecoration(
         color: _pink,
         borderRadius: BorderRadius.circular(size * 0.22),
       ),
-      padding: EdgeInsets.all(size * 0.10),
+      padding: EdgeInsets.all(size * 0.12),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _MoMoRow(size: size),
-          SizedBox(height: size * 0.05),
+          SizedBox(height: size * 0.04),
           _MoMoRow(size: size),
         ],
       ),
@@ -202,20 +96,21 @@ class _MoMoCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: size * 0.31,
-      height: size * 0.31,
+      width: size * 0.34,
+      height: size * 0.34,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(size * 0.07),
+        borderRadius: BorderRadius.circular(size * 0.08),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: _MoMoIcon._pink,
-          fontSize: size * 0.19,
+          fontSize: size * 0.2,
           fontWeight: FontWeight.w900,
           height: 1,
+          decoration: TextDecoration.none,
         ),
       ),
     );

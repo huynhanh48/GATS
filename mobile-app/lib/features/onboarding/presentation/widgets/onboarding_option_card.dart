@@ -9,6 +9,7 @@ class OnboardingOptionCard extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.leading,
+    this.leadingBackgroundColor,
     required this.isSelected,
     required this.onTap,
   }) : assert(icon != null || leading != null);
@@ -17,6 +18,7 @@ class OnboardingOptionCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? leading;
+  final Color? leadingBackgroundColor;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -53,9 +55,10 @@ class OnboardingOptionCard extends StatelessWidget {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary.withValues(alpha: 0.15)
-                        : AppColors.background,
+                    color: leadingBackgroundColor ??
+                        (isSelected
+                            ? AppColors.primary.withValues(alpha: 0.15)
+                            : AppColors.background),
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Center(

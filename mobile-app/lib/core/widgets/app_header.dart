@@ -63,11 +63,7 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
                     )
                   : const Icon(Icons.shopping_cart_outlined),
               tooltip: 'Giỏ hàng',
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-                );
-              },
+              onPressed: () => openCart(context),
             );
           },
         ),

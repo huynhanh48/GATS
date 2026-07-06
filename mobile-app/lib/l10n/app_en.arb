@@ -951,7 +951,7 @@
   "notificationsTestBanner": "In-app banner",
   "notificationsTestPush": "System push now",
   "notificationsTestPushDelayed": "Push in 5 seconds",
-  "notificationsTestHint": "Tap \"Push in 5 seconds\" then minimize the app to see it in the status bar.",
+  "notificationsTestHint": "While the app is open, push appears as a top banner. Minimize the app to see it in the system notification shade.",
   "notificationsPermissionDenied": "Permission denied. Enable notifications in system Settings.",
   "notificationsTestScheduled": "Push in 5 seconds — minimize the app now!",
   "notificationsTestSent": "Test notification sent.",

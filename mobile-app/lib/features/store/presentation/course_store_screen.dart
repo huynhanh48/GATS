@@ -163,9 +163,10 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     GatsNotificationService.showInApp(
       message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
       actionLabel: AppStrings.storeViewCart,
-      onAction: () => rootNavigatorKey.currentState?.push(
-        MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-      ),
+      onAction: () {
+        final ctx = rootNavigatorKey.currentContext;
+        if (ctx != null) openCart(ctx);
+      },
     );
   }
 
@@ -369,9 +370,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                   IconButton(
                     icon: const Icon(Icons.shopping_cart_outlined),
                     tooltip: AppStrings.storeCartTooltip,
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-                    ),
+                    onPressed: () => openCart(context),
                   ),
                   if (qty > 0)
                     Positioned(

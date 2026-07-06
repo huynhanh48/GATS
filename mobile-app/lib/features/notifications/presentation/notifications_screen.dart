@@ -4,6 +4,7 @@ import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/gats_notification_service.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
+import 'package:gats_academy/core/widgets/gats_notification_banner.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/notifications/data/mock_notifications.dart';
 
@@ -17,30 +18,30 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _testing = false;
 
-  Future<void> _runTest(Future<bool> Function() action, {String? successMessage}) async {
+  Future<void> _runTest(
+    Future<bool> Function() action, {
+    String? successMessage,
+    bool skipSuccessBanner = false,
+  }) async {
     if (_testing) return;
     setState(() => _testing = true);
     try {
       final ok = await action();
       if (!mounted) return;
       if (!ok) {
-        _showSnack(AppStrings.notificationsPermissionDenied);
+        _showTopNotice(AppStrings.notificationsPermissionDenied, kind: GatsNotificationKind.warning);
         return;
       }
-      _showSnack(successMessage ?? AppStrings.notificationsTestSent);
+      if (!skipSuccessBanner) {
+        _showTopNotice(successMessage ?? AppStrings.notificationsTestSent);
+      }
     } finally {
       if (mounted) setState(() => _testing = false);
     }
   }
 
-  void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-      ),
-    );
+  void _showTopNotice(String message, {GatsNotificationKind kind = GatsNotificationKind.success}) {
+    GatsNotificationService.showInApp(message: message, kind: kind);
   }
 
   @override
@@ -81,8 +82,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         children: [
           _TestNotificationCard(
             loading: _testing,
-            onTestBanner: () => _runTest(GatsNotificationService.testInAppBanner),
-            onTestPush: () => _runTest(GatsNotificationService.testSystemPush),
+            onTestBanner: () => _runTest(
+              GatsNotificationService.testInAppBanner,
+              skipSuccessBanner: true,
+            ),
+            onTestPush: () => _runTest(
+              GatsNotificationService.testSystemPush,
+              skipSuccessBanner: true,
+            ),
             onTestDelayed: () => _runTest(
               GatsNotificationService.testDelayedSystemPush,
               successMessage: AppStrings.notificationsTestScheduled,
@@ -108,7 +115,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (items.isEmpty) continue;
 
       widgets
-        ..add(Text(label, style: Theme.of(context).textTheme.titleMedium))
+        ..add(Text(
+          label,
+          style: AppTypography.style(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: context.gatsColors.textPrimary,
+          ),
+        ))
         ..add(const SizedBox(height: AppSpacing.md));
 
       for (final item in items) {
@@ -121,7 +135,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     if (widgets.isEmpty) {
-      widgets.add(Center(child: Text(AppStrings.notificationsEmpty)));
+      widgets.add(Center(
+        child: Text(
+          AppStrings.notificationsEmpty,
+          style: AppTypography.style(color: context.gatsColors.textSecondary),
+        ),
+      ));
     }
 
     return widgets;
@@ -249,7 +268,9 @@ class _NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final iconBg = item.iconBackground ?? gats.surface;
+    final hasColoredBg = item.iconBackground != null;
+    final iconBg = item.iconBackground ?? gats.lavenderAccent.withValues(alpha: 0.12);
+    final iconColor = hasColoredBg ? Colors.white : gats.lavenderAccent;
 
     return Material(
       color: gats.surface.withValues(alpha: gats.isStarry ? 0.88 : 1),
@@ -268,11 +289,11 @@ class _NotificationTile extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: iconBg,
                   shape: BoxShape.circle,
-                  border: item.iconBackground == null
-                      ? Border.all(color: gats.divider.withValues(alpha: 0.5))
-                      : null,
+                  border: hasColoredBg
+                      ? null
+                      : Border.all(color: gats.divider.withValues(alpha: 0.5)),
                 ),
-                child: Icon(item.icon, color: gats.lavenderAccent, size: 22),
+                child: Icon(item.icon, color: iconColor, size: 22),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/theme/gats_main_app_theme.dart';
 
-/// Push màn trong app chính — transition nhẹ, kế thừa theme từ [RoleShell].
+/// Push màn trong app chính — transition nhẹ, kế thừa dark mode từ [GatsMainAppTheme].
 abstract final class GatsMainNavigator {
   static const _forward = Duration(milliseconds: 180);
   static const _reverse = Duration(milliseconds: 160);
@@ -16,7 +17,9 @@ abstract final class GatsMainNavigator {
 
   static Route<T> _route<T>(Widget page) {
     return PageRouteBuilder<T>(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return GatsMainAppTheme(child: page);
+      },
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
         final curved = CurvedAnimation(
           parent: animation,

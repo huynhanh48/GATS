@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
@@ -32,9 +33,7 @@ class _CartScreenState extends State<CartScreen> {
   void _onCartChanged() => setState(() {});
 
   void _goToPayment() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const PaymentScreen()),
-    );
+    GatsMainNavigator.push(context, const PaymentScreen());
   }
 
   @override
@@ -44,10 +43,11 @@ class _CartScreenState extends State<CartScreen> {
 
     return GatsThemedScaffold(
       appBar: AppBar(
-        backgroundColor: gats.background,
+        backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(Icons.arrow_back, color: gats.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -295,4 +295,8 @@ class _CartScreenState extends State<CartScreen> {
             ),
     );
   }
+}
+
+void openCart(BuildContext context) {
+  GatsMainNavigator.push(context, const CartScreen());
 }

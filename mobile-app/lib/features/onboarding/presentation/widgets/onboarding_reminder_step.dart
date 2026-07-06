@@ -9,12 +9,10 @@ import 'package:gats_academy/features/onboarding/models/onboarding_answers.dart'
 class OnboardingReminderStep extends StatefulWidget {
   const OnboardingReminderStep({
     super.key,
-    required this.answers,
-    required this.onAnswersChanged,
+    required this.initialAnswers,
   });
 
-  final OnboardingAnswers answers;
-  final ValueChanged<OnboardingAnswers> onAnswersChanged;
+  final OnboardingAnswers initialAnswers;
 
   @override
   State<OnboardingReminderStep> createState() => OnboardingReminderStepState();
@@ -23,66 +21,74 @@ class OnboardingReminderStep extends StatefulWidget {
 class OnboardingReminderStepState extends State<OnboardingReminderStep> {
   final GlobalKey<IosWheelTimePickerState> _pickerKey = GlobalKey();
 
-  OnboardingAnswers get committedAnswers {
+  late bool _enabled;
+  late int _hour;
+  late int _minute;
+
+  @override
+  void initState() {
+    super.initState();
+    _enabled = widget.initialAnswers.dailyReminderEnabled;
+    _hour = widget.initialAnswers.reminderHour;
+    _minute = widget.initialAnswers.reminderMinute;
+  }
+
+  OnboardingAnswers commit(OnboardingAnswers base) {
     final picked = _pickerKey.currentState?.time;
-    if (picked == null) return widget.answers;
-    return widget.answers.copyWith(
-      reminderHour: picked.hour,
-      reminderMinute: picked.minute,
+    return base.copyWith(
+      dailyReminderEnabled: _enabled,
+      reminderHour: picked?.hour ?? _hour,
+      reminderMinute: picked?.minute ?? _minute,
     );
   }
 
   void _setEnabled(bool enabled) {
-    widget.onAnswersChanged(widget.answers.copyWith(dailyReminderEnabled: enabled));
+    if (_enabled == enabled) return;
+    setState(() => _enabled = enabled);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final enabled = widget.answers.dailyReminderEnabled;
-    final time = TimeOfDay(
-      hour: widget.answers.reminderHour,
-      minute: widget.answers.reminderMinute,
-    );
 
-    return SingleChildScrollView(
-      physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.notifications_active_outlined, size: 40, color: AppColors.primary),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.notifications_active_outlined, size: 40, color: AppColors.primary),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  l10n.onboardingReminderEnable,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                value: _enabled,
+                activeThumbColor: AppColors.primary,
+                onChanged: _setEnabled,
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(
-              l10n.onboardingReminderEnable,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            value: enabled,
-            activeThumbColor: AppColors.primary,
-            onChanged: _setEnabled,
+        ),
+        if (_enabled) ...[
+          const SizedBox(height: AppSpacing.sm),
+          IosWheelTimePicker(
+            key: _pickerKey,
+            time: TimeOfDay(hour: _hour, minute: _minute),
           ),
-          const SizedBox(height: AppSpacing.md),
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 200),
-            crossFadeState: enabled ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: IosWheelTimePicker(
-              key: _pickerKey,
-              time: time,
-            ),
-            secondChild: const SizedBox.shrink(),
-          ),
-          const SizedBox(height: AppSpacing.lg),
         ],
-      ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
     );
   }
 }

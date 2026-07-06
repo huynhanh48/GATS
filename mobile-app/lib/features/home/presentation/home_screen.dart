@@ -118,11 +118,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 children: [
                   _HomeHeaderIconButton(
                     icon: Icons.shopping_cart_outlined,
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-                      );
-                    },
+                    onTap: () => openCart(context),
                   ),
                   if (qty > 0)
                     Positioned(

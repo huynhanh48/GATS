@@ -358,9 +358,10 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
                       .replaceFirst('%d', '$_seats')
                       .replaceFirst('%s', course.title),
                   actionLabel: AppStrings.storeViewCart,
-                  onAction: () => rootNavigatorKey.currentState?.push(
-                    MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-                  ),
+                  onAction: () {
+                    final ctx = rootNavigatorKey.currentContext;
+                    if (ctx != null) openCart(ctx);
+                  },
                 );
               },
             ),

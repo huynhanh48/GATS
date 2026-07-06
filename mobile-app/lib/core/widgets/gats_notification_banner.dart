@@ -9,6 +9,7 @@ enum GatsNotificationKind { success, info, warning, error }
 class GatsNotificationBanner extends StatefulWidget {
   const GatsNotificationBanner({
     super.key,
+    this.title,
     required this.message,
     this.actionLabel,
     this.onAction,
@@ -17,6 +18,7 @@ class GatsNotificationBanner extends StatefulWidget {
     this.duration = const Duration(seconds: 4),
   });
 
+  final String? title;
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
@@ -132,15 +134,35 @@ class _GatsNotificationBannerState extends State<GatsNotificationBanner>
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          widget.message,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: gats.textPrimary,
-                            height: 1.35,
-                            decoration: TextDecoration.none,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (widget.title != null && widget.title!.isNotEmpty) ...[
+                              Text(
+                                widget.title!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: gats.textPrimary,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                            ],
+                            Text(
+                              widget.message,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: gats.textPrimary,
+                                height: 1.35,
+                                decoration: TextDecoration.none,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       if (widget.actionLabel != null && widget.onAction != null) ...[

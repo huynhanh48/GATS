@@ -47,6 +47,7 @@ dependencies:
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.1.0
   crypto: ^3.0.7
+  flutter_svg: ^2.0.17
 
 dev_dependencies:
   flutter_test:
@@ -73,6 +74,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/brands/
     - assets/data/
     - assets/config/
     - .env

@@ -95,7 +95,7 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
   }
 
   Future<void> _onReminderContinue() async {
-    final answers = _reminderStepKey.currentState?.committedAnswers ?? widget.answers;
+    final answers = _reminderStepKey.currentState?.commit(widget.answers) ?? widget.answers;
     await _finishReminderStep(answers);
   }
 
@@ -228,8 +228,7 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
                 ),
                 OnboardingReminderStep(
                   key: _reminderStepKey,
-                  answers: widget.answers,
-                  onAnswersChanged: _update,
+                  initialAnswers: widget.answers,
                 ),
               ],
             ),
@@ -252,10 +251,10 @@ class _ReferralStep extends StatelessWidget {
   };
 
   static const _brandIcons = {
-    ReferralSource.tiktok: BrandIcon(type: BrandIconType.tiktok, size: 28),
-    ReferralSource.facebook: BrandIcon(type: BrandIconType.facebook, size: 27),
-    ReferralSource.youtube: BrandIcon(type: BrandIconType.youtube, size: 30),
-    ReferralSource.search: BrandIcon(type: BrandIconType.google, size: 27),
+    ReferralSource.tiktok: BrandIcon(type: BrandIconType.tiktok, size: 24),
+    ReferralSource.facebook: BrandIcon(type: BrandIconType.facebook, size: 24),
+    ReferralSource.youtube: BrandIcon(type: BrandIconType.youtube, size: 24),
+    ReferralSource.search: BrandIcon(type: BrandIconType.google, size: 24),
   };
 
   @override
@@ -269,6 +268,7 @@ class _ReferralStep extends StatelessWidget {
           OnboardingOptionCard(
             icon: _icons[source],
             leading: _brandIcons[source],
+            leadingBackgroundColor: _brandIcons[source] != null ? Colors.white : null,
             title: l10n.referralLabel(source),
             isSelected: selected == source,
             onTap: () => onSelect(source),

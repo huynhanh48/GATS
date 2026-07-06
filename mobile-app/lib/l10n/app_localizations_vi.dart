@@ -1954,7 +1954,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsTestHint =>
-      'Nhấn \"Push sau 5 giây\" rồi thu app xuống để xem trên thanh thông báo.';
+      'Khi app đang mở: push hiện banner trên màn hình. Thu app xuống để xem trên thanh thông báo hệ thống.';
 
   @override
   String get notificationsPermissionDenied =>

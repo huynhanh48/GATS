@@ -1971,7 +1971,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsTestHint =>
-      'Tap \"Push in 5 seconds\" then minimize the app to see it in the status bar.';
+      'While the app is open, push appears as a top banner. Minimize the app to see it in the system notification shade.';
 
   @override
   String get notificationsPermissionDenied =>
