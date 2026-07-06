@@ -38,6 +38,18 @@ class MockPostStore extends ChangeNotifier {
     return visible.take(limit).toList();
   }
 
+  /// Bài nổi bật trên Home — ưu tiên tin GATS + mới nhất.
+  List<CommunityPost> featuredForUser({
+    required String? userId,
+    required UserRole role,
+    int limit = 6,
+  }) {
+    final feed = feedForUser(userId: userId, role: role, limit: 20);
+    final global = feed.where((p) => p.scope == PostScope.global).toList();
+    final rest = feed.where((p) => p.scope != PostScope.global).toList();
+    return [...global, ...rest].take(limit).toList();
+  }
+
   List<CommunityPost> postsForCourse(String courseId) {
     return posts
         .where((p) => p.scope == PostScope.course && p.courseId == courseId)

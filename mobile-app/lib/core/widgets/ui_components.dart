@@ -127,30 +127,163 @@ class PillTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gats = context.gatsColors;
     final useFill = tabs.length <= 3;
+    final trackRadius = BorderRadius.circular(AppRadius.lg);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       padding: const EdgeInsets.all(4),
-      decoration: GatsSurfaceDecoration.track(context),
-      child: TabBar(
-        controller: controller,
-        dividerHeight: 0,
-        isScrollable: !useFill,
-        tabAlignment: useFill ? TabAlignment.fill : TabAlignment.start,
-        indicatorSize: TabBarIndicatorSize.tab,
-        labelPadding: useFill ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 14),
-        indicator: BoxDecoration(
-          color: GatsSurfaceDecoration.surfaceColor(context),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          boxShadow: gats.isStarry ? null : AppShadows.card,
+      decoration: GatsSurfaceDecoration.track(context, borderRadius: trackRadius),
+      child: ClipRRect(
+        borderRadius: trackRadius,
+        child: useFill
+            ? _FillPillTabBar(tabs: tabs, controller: controller)
+            : _ScrollPillTabBar(tabs: tabs, controller: controller),
+      ),
+    );
+  }
+}
+
+/// 3 tab trở xuống — 1 pill trượt, bo tròn cố định (không shadow).
+class _FillPillTabBar extends StatelessWidget {
+  const _FillPillTabBar({required this.tabs, required this.controller});
+
+  final List<String> tabs;
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = controller.animation ?? AlwaysStoppedAnimation(controller.index.toDouble());
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            final position = animation.value.clamp(0.0, (tabs.length - 1).toDouble());
+            final tabWidth = constraints.maxWidth / tabs.length;
+
+            return SizedBox(
+              height: 40,
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: position * tabWidth,
+                    width: tabWidth,
+                    top: 0,
+                    bottom: 0,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: GatsSurfaceDecoration.surfaceColor(context),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: List.generate(tabs.length, (index) {
+                      final selected = (position - index).abs() < 0.5;
+                      return Expanded(
+                        child: _PillTabLabel(
+                          label: tabs[index],
+                          selected: selected,
+                          onTap: () {
+                            if (controller.index != index) {
+                              controller.animateTo(index);
+                            }
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Nhiều tab — không trượt, đổi pill tức thì (không animate decoration).
+class _ScrollPillTabBar extends StatelessWidget {
+  const _ScrollPillTabBar({required this.tabs, required this.controller});
+
+  final List<String> tabs;
+  final TabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(tabs.length, (index) {
+              final selected = controller.index == index;
+              return _PillTabLabel(
+                label: tabs[index],
+                selected: selected,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                showBackground: selected,
+                onTap: () {
+                  if (controller.index != index) {
+                    controller.animateTo(index);
+                  }
+                },
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PillTabLabel extends StatelessWidget {
+  const _PillTabLabel({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.padding = const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 10),
+    this.showBackground = false,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final EdgeInsets padding;
+  final bool showBackground;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: padding,
+        decoration: showBackground
+            ? BoxDecoration(
+                color: GatsSurfaceDecoration.surfaceColor(context),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              )
+            : null,
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+            fontSize: 12,
+            color: selected ? gats.lavenderAccent : gats.textSecondary,
+            decoration: TextDecoration.none,
+          ),
         ),
-        labelColor: gats.lavenderAccent,
-        unselectedLabelColor: gats.textSecondary,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-        tabs: tabs.map((t) => Tab(text: t)).toList(),
       ),
     );
   }

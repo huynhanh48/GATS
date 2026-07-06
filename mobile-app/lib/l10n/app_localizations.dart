@@ -1754,6 +1754,18 @@ abstract class AppLocalizations {
   /// **'Popular Courses'**
   String get homePopularCourses;
 
+  /// No description provided for @homeFeaturedPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Featured Articles'**
+  String get homeFeaturedPosts;
+
+  /// No description provided for @homeLearningTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning & Progress'**
+  String get homeLearningTools;
+
   /// No description provided for @homeMyCourses.
   ///
   /// In en, this message translates to:

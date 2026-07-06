@@ -433,6 +433,8 @@
   "homePromoBadge": "LEARNING",
   "homeCategories": "Categories",
   "homePopularCourses": "Popular Courses",
+  "homeFeaturedPosts": "Featured Articles",
+  "homeLearningTools": "Learning & Progress",
   "homeMyCourses": "My Courses",
   "homeYourCourses": "Your Courses",
   "homeYourCoursesEmpty": "You haven't purchased any courses yet.",

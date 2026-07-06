@@ -369,7 +369,9 @@
   "homePromoSubtitle": "Hoàn thành module Prompt cơ bản hôm nay",
   "homePromoBadge": "ĐANG HỌC",
   "homeCategories": "Danh mục",
-  "homePopularCourses": "Khóa nổi bật",
+  "homePopularCourses": "Khóa học nổi bật",
+  "homeFeaturedPosts": "Bài viết nổi bật",
+  "homeLearningTools": "Học tập & tiến độ",
   "homeMyCourses": "Khóa của tôi",
   "homeYourCourses": "Khóa của bạn",
   "homeYourCoursesEmpty": "Bạn chưa mua khóa học nào.",
@@ -729,7 +731,7 @@
       }
     }
   },
-  "courseLessonsCount": "{lessons} bài",
+  "courseLessonsCount": "{lessons} bài học",
   "@courseLessonsCount": {
     "placeholders": {
       "lessons": {

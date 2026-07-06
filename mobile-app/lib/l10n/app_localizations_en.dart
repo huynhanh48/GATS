@@ -931,6 +931,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homePopularCourses => 'Popular Courses';
 
   @override
+  String get homeFeaturedPosts => 'Featured Articles';
+
+  @override
+  String get homeLearningTools => 'Learning & Progress';
+
+  @override
   String get homeMyCourses => 'My Courses';
 
   @override

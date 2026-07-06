@@ -6,6 +6,7 @@ import 'package:gats_academy/core/widgets/ted/ted.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/post/presentation/post_detail_screen.dart';
+import 'package:gats_academy/features/post/presentation/posts_feed_screen.dart';
 import 'package:gats_academy/features/post/presentation/widgets/post_card.dart';
 
 class HomePostsSection extends StatelessWidget {
@@ -22,19 +23,19 @@ class HomePostsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final posts = MockPostStore.instance.feedForUser(userId: userId, role: role);
+    final posts = MockPostStore.instance.featuredForUser(userId: userId, role: role);
     if (posts.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TedSectionHeader(
-          title: AppStrings.postHomeSectionTitle,
+          title: AppStrings.homeFeaturedPosts,
           actionLabel: AppStrings.postSeeAll,
-          onAction: () {},
+          onAction: () => GatsMainNavigator.push(context, const PostsFeedScreen()),
         ),
         const SizedBox(height: AppSpacing.md),
-        ...posts.take(3).map((post) {
+        ...posts.map((post) {
           final canReadFull = MockPostStore.instance.canReadFull(
             post: post,
             userId: userId,

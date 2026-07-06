@@ -1,30 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
-import 'package:gats_academy/features/store/presentation/cart_screen.dart';
+import 'package:gats_academy/core/services/gats_notification_service.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/core/widgets/lazy_indexed_stack.dart';
 import 'package:gats_academy/core/widgets/shimmer_loading.dart';
-import 'package:gats_academy/core/widgets/ted/ted.dart';
-import 'package:gats_academy/core/widgets/ui_components.dart';
+import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
 import 'package:gats_academy/core/widgets/xp_popup.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
-import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
+import 'package:gats_academy/features/home/presentation/widgets/home_course_carousel_section.dart';
 import 'package:gats_academy/features/home/presentation/widgets/your_courses_section.dart';
-import 'package:gats_academy/features/home/presentation/widgets/ai_report_tab.dart';
 import 'package:gats_academy/features/home/presentation/widgets/continue_learning_card.dart';
 import 'package:gats_academy/features/home/presentation/widgets/daily_reward_sheet.dart';
-import 'package:gats_academy/features/home/presentation/widgets/nested_tab_scroll.dart';
-import 'package:gats_academy/features/home/presentation/widgets/quiz_tab.dart';
-import 'package:gats_academy/features/home/presentation/widgets/roadmap_tab.dart';
+import 'package:gats_academy/features/home/presentation/widgets/learning_tools_entry.dart';
+import 'package:gats_academy/features/post/presentation/widgets/home_posts_section.dart';
 import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
 import 'package:gats_academy/features/settings/presentation/settings_screen.dart';
+import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,8 +31,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _HomeScreenState extends State<HomeScreen> {
   AuthUser? _user;
   String _userName = 'Học viên GATS';
   List<CourseItem> _courses = MockData.courses;
@@ -45,9 +42,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _loadSession();
     CourseModule.repository.addListener(_onCoursesChanged);
+    CartController.instance.addListener(_onCartChanged);
+  }
+
+  void _onCartChanged() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  void _addToCart(CourseItem course) {
+    CartController.instance.addToCart(course.id);
+    GatsNotificationService.showInApp(
+      message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
+      actionLabel: AppStrings.storeViewCart,
+      onAction: () {
+        final ctx = rootNavigatorKey.currentContext;
+        if (ctx != null) openCart(ctx);
+      },
+    );
   }
 
   Future<void> _loadSession() async {
@@ -99,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void dispose() {
     CourseModule.repository.removeListener(_onCoursesChanged);
-    _tabController.dispose();
+    CartController.instance.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -242,35 +256,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 onCourseTap: (course) => _openCourse(course, learn: true),
               ),
               const SizedBox(height: AppSpacing.lg),
-              TedSectionHeader(
+              HomeCourseCarouselSection(
                 title: AppStrings.homePopularCourses,
+                courses: previewCourses,
                 actionLabel: AppStrings.seeAll,
                 onAction: () => openCourseSearch(context),
+                onCourseTap: (course) => _openCourse(course),
+                showAddToCart: true,
+                onAddToCart: _addToCart,
               ),
-              if (previewCourses.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.md),
-                SizedBox(
-                  height: 92,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: previewCourses.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      final course = previewCourses[index];
-                      return SizedBox(
-                        width: 300,
-                        child: TedCourseCard(
-                          course: course,
-                          compact: true,
-                          bookmarked: course.isEnrolled,
-                          onTap: () => _openCourse(course),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
               const SizedBox(height: AppSpacing.lg),
+              LearningToolsEntry(userId: _user?.id),
+              const SizedBox(height: AppSpacing.xl),
+              HomePostsSection(
+                userId: _user?.id,
+                role: _user?.role ?? UserRole.user,
+              ),
+              const SizedBox(height: AppSpacing.xl),
             ],
           ),
         ),
@@ -294,36 +296,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: RefreshIndicator(
         onRefresh: _loadSession,
         color: AppColors.primary,
-        child: NestedScrollView(
-          floatHeaderSlivers: true,
-          headerSliverBuilder: (context, innerBoxIsScrolled) {
-            return [
-              SliverOverlapAbsorber(
-                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                sliver: SliverToBoxAdapter(child: _buildHeader(previewCourses)),
-              ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: HomeTabBarDelegate(
-                  child: PillTabBar(
-                    controller: _tabController,
-                    tabs: [AppStrings.tabRoadmap, AppStrings.tabQuiz, AppStrings.tabAiReport],
-                  ),
-                ),
-              ),
-            ];
-          },
-          body: LazyTabBarView(
-            controller: _tabController,
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return switch (index) {
-                0 => RoadmapTab(nestedScroll: true, userId: _user?.id),
-                1 => QuizTab(userId: _user?.id, nestedScroll: true),
-                _ => const AiReportTab(nestedScroll: true),
-              };
-            },
-          ),
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: _buildHeader(previewCourses)),
+            SliverPadding(
+              padding: EdgeInsets.only(bottom: FloatingNavBar.scrollBottomPadding(context)),
+            ),
+          ],
         ),
       ),
     );

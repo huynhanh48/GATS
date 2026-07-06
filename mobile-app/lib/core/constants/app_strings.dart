@@ -72,6 +72,8 @@ abstract final class AppStrings {
   static String get homePromoBadge => _l10n.homePromoBadge;
   static String get homeCategories => _l10n.homeCategories;
   static String get homePopularCourses => _l10n.homePopularCourses;
+  static String get homeFeaturedPosts => _l10n.homeFeaturedPosts;
+  static String get homeLearningTools => _l10n.homeLearningTools;
   static String get homeMyCourses => _l10n.homeMyCourses;
   static String get homeYourCourses => _l10n.homeYourCourses;
   static String get homeYourCoursesEmpty => _l10n.homeYourCoursesEmpty;

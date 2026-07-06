@@ -918,7 +918,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeCategories => 'Danh mục';
 
   @override
-  String get homePopularCourses => 'Khóa nổi bật';
+  String get homePopularCourses => 'Khóa học nổi bật';
+
+  @override
+  String get homeFeaturedPosts => 'Bài viết nổi bật';
+
+  @override
+  String get homeLearningTools => 'Học tập & tiến độ';
 
   @override
   String get homeMyCourses => 'Khóa của tôi';
@@ -1895,7 +1901,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String courseLessonsCount(int lessons) {
-    return '$lessons bài';
+    return '$lessons bài học';
   }
 
   @override

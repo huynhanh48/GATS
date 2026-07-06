@@ -25,6 +25,29 @@ class FloatingNavBar extends StatelessWidget {
     this.centerAction,
   });
 
+  /// Đệm đáy list khi [Scaffold.extendBody] = true (nav nổi che nội dung).
+  static double scrollBottomPadding(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    const barBody = 104.0;
+    const centerButtonLift = 28.0;
+    return bottomInset + AppSpacing.md + barBody + centerButtonLift + AppSpacing.sm;
+  }
+
+  /// Đệm đáy cho ô nhập / widget cố định — chỉ né pill nav (không thêm khoảng FAB giữa).
+  static double bodyBottomPadding(BuildContext context) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    const navPillHeight = 68.0;
+    return bottomInset + AppSpacing.md + navPillHeight;
+  }
+
+  /// Ô chat: mép dưới cách đỉnh nút quick action (⚡) đúng [gap] px.
+  static double chatInputBottomPadding(BuildContext context, {double gap = 5}) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    const navMaterialHeight = 85.0; // top 24 + item ~53 + bottom 8
+    const quickActionTopOffset = 6.0;
+    return bottomInset + AppSpacing.md + navMaterialHeight + quickActionTopOffset - gap;
+  }
+
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
   final List<FloatingNavDestination> destinations;

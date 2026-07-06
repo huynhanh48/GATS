@@ -267,6 +267,21 @@ class _TedPromoBannerState extends State<TedPromoBanner> {
   }
 }
 
+class _TedCourseCover extends StatelessWidget {
+  const _TedCourseCover({required this.seed});
+
+  final int seed;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: AppGradients.courseCover(seed),
+      ),
+    );
+  }
+}
+
 class TedCourseCard extends StatelessWidget {
   const TedCourseCard({
     super.key,
@@ -307,132 +322,130 @@ class TedCourseCard extends StatelessWidget {
             ? context.l10n.storeFree
             : '${course.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final maxH = constraints.maxHeight;
-        final coverHeight = maxH.isFinite && maxH > 120
-            ? (maxH * 0.48).clamp(72.0, 110.0)
-            : 88.0;
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          height: double.infinity,
+          decoration: GatsSurfaceDecoration.card(
+            context,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            child: Container(
-              decoration: GatsSurfaceDecoration.card(
-                context,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    height: coverHeight,
-                    width: double.infinity,
-                    child: Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: AppGradients.courseCover(course.id.hashCode),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: const Icon(Icons.play_circle_outline, color: Colors.white, size: 36),
-                        ),
-                        if (isPurchased)
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade600,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                context.l10n.storePurchased,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    course.tag,
-                    style: TextStyle(
-                      color: gats.lavenderAccent,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    course.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
+          ),
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      Icon(Icons.star_rounded, color: gats.lavenderAccent, size: 14),
-                      const SizedBox(width: 2),
-                      Expanded(
-                        child: Text(
-                          '4.${course.id.hashCode % 5 + 2}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      Text(
-                        priceLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: isPurchased
-                              ? Colors.green.shade700
-                              : course.isFree
-                                  ? gats.lavenderAccent
-                                  : AppColors.accent,
-                        ),
-                      ),
-                      if (showAddToCart && !isPurchased) ...[
-                        const SizedBox(width: 6),
-                        GestureDetector(
-                          onTap: onAddToCart,
-                          behavior: HitTestBehavior.opaque,
+                      _TedCourseCover(seed: course.id.hashCode),
+                      if (isPurchased)
+                        Positioned(
+                          top: 6,
+                          right: 6,
                           child: Container(
-                            width: 28,
-                            height: 28,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: inCart
-                                  ? gats.lavenderAccent.withValues(alpha: 0.12)
-                                  : gats.lavenderAccent,
-                              shape: BoxShape.circle,
+                              color: Colors.green.shade600,
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(
-                              inCart ? Icons.check : Icons.add,
-                              color: inCart ? gats.lavenderAccent : Colors.white,
-                              size: 16,
+                            child: Text(
+                              context.l10n.storePurchased,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         ),
-                      ],
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: AppSpacing.sm),
+              SizedBox(
+                height: 78,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      course.tag,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: gats.lavenderAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Expanded(
+                      child: Text(
+                        course.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Icon(Icons.star_rounded, color: gats.lavenderAccent, size: 14),
+                        const SizedBox(width: 2),
+                        Expanded(
+                          child: Text(
+                            '4.${course.id.hashCode % 5 + 2}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        Text(
+                          priceLabel,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: isPurchased
+                                ? Colors.green.shade700
+                                : course.isFree
+                                    ? gats.lavenderAccent
+                                    : AppColors.accent,
+                          ),
+                        ),
+                        if (showAddToCart && !isPurchased) ...[
+                          const SizedBox(width: 6),
+                          GestureDetector(
+                            onTap: onAddToCart,
+                            behavior: HitTestBehavior.opaque,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: inCart
+                                    ? gats.lavenderAccent.withValues(alpha: 0.12)
+                                    : gats.lavenderAccent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                inCart ? Icons.check : Icons.add,
+                                color: inCart ? gats.lavenderAccent : Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -440,95 +453,102 @@ class TedCourseCard extends StatelessWidget {
     final gats = context.gatsColors;
     final thumbSize = compact ? 64.0 : 88.0;
     final effectiveShowProgress = showProgress && !compact;
+    final hasProgress = effectiveShowProgress && course.progress > 0;
+    final cardHeight = compact ? 76.0 : (hasProgress ? 132.0 : 120.0);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Container(
-          decoration: GatsSurfaceDecoration.card(
-            context,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: thumbSize,
-                height: thumbSize,
-                decoration: BoxDecoration(
-                  gradient: AppGradients.courseCover(course.id.hashCode),
+    return SizedBox(
+      height: cardHeight,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          child: Container(
+            decoration: GatsSurfaceDecoration.card(
+              context,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: SizedBox(
+                    width: thumbSize,
+                    height: thumbSize,
+                    child: _TedCourseCover(seed: course.id.hashCode),
+                  ),
                 ),
-                child: Icon(Icons.play_circle_outline, color: Colors.white, size: compact ? 26 : 32),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            course.tag,
-                            style: const TextStyle(
-                              color: AppColors.accent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              course.tag,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                        ),
-                        Icon(
-                          bookmarked ? Icons.bookmark : Icons.bookmark_border,
-                          color: bookmarked ? gats.lavenderAccent : gats.textSecondary,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      course.title,
-                      maxLines: compact ? 1 : 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: (compact
-                              ? Theme.of(context).textTheme.bodyMedium
-                              : Theme.of(context).textTheme.titleSmall)
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    SizedBox(height: compact ? 2 : 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.star_rounded, color: AppColors.accent, size: 16),
-                        const SizedBox(width: 2),
-                        Flexible(
-                          child: Text(
-                            '4.${course.id.hashCode % 5 + 2} · ${course.lessonCount} bài',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
+                          Icon(
+                            bookmarked ? Icons.bookmark : Icons.bookmark_border,
+                            color: bookmarked ? gats.lavenderAccent : gats.textSecondary,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        course.title,
+                        maxLines: compact ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: (compact
+                                ? Theme.of(context).textTheme.bodyMedium
+                                : Theme.of(context).textTheme.titleSmall)
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      SizedBox(height: compact ? 2 : 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: AppColors.accent, size: 16),
+                          const SizedBox(width: 2),
+                          Flexible(
+                            child: Text(
+                              '4.${course.id.hashCode % 5 + 2} · ${course.lessonCount} bài',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (hasProgress) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: course.progress,
+                            minHeight: 6,
+                            backgroundColor: gats.divider,
+                            color: gats.lavenderAccent,
                           ),
                         ),
                       ],
-                    ),
-                    if (effectiveShowProgress && course.progress > 0) ...[
-                      const SizedBox(height: AppSpacing.sm),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: course.progress,
-                          minHeight: 6,
-                          backgroundColor: gats.divider,
-                          color: gats.lavenderAccent,
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

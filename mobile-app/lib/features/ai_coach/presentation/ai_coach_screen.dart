@@ -1,8 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/core/theme/gats_surface.dart';
+import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 
 class AiCoachScreen extends StatefulWidget {
@@ -17,13 +19,6 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   final _scrollController = ScrollController();
   late List<ChatMessage> _messages;
   bool _isTyping = false;
-
-  static const _contextPrompts = [
-    'Giải thích Zero-shot prompt',
-    'Tóm tắt tiến độ tuần này',
-    'Quiz nhanh về Prompt',
-    'Gợi ý bài tập hôm nay',
-  ];
 
   @override
   void initState() {
@@ -73,206 +68,249 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final gats = context.gatsColors;
     final hasConversation = _messages.length > 1;
 
     return Column(
       children: [
-        // Smart prompts — auto-hide after conversation starts
-        if (!hasConversation)
-          SizedBox(
-            height: 48,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              itemCount: _contextPrompts.length,
-              separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (context, index) {
-                final prompt = _contextPrompts[index];
-                return ActionChip(
-                  label: Text(prompt),
-                  onPressed: () => _sendMessage(prompt),
-                  side: BorderSide(color: gats.lavenderAccent.withValues(alpha: 0.3)),
-                  avatar: Icon(
-                    index == 0 ? Icons.lightbulb_outline :
-                    index == 1 ? Icons.trending_up :
-                    index == 2 ? Icons.quiz_outlined :
-                    Icons.task_alt,
-                    size: 16,
-                    color: gats.lavenderAccent,
-                  ),
-                );
-              },
-            ),
-          ),
         Expanded(
-          child: _messages.length <= 1 && !hasConversation
-              ? _WelcomeCard(onPrompt: _sendMessage)
-              : ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  itemCount: _messages.length + (_isTyping ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (_isTyping && index == _messages.length) {
-                      return const _TypingBubble();
-                    }
-                    return _AnimatedChatBubble(
-                      message: _messages[index],
-                      isLatest: index == _messages.length - 1,
-                    );
-                  },
+          child: !hasConversation
+              ? _WelcomeHero(onPrompt: _sendMessage)
+              : _ChatBody(
+                  messages: _messages,
+                  isTyping: _isTyping,
+                  scrollController: _scrollController,
                 ),
         ),
-        Container(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: GatsSurfaceDecoration.surfaceColor(context),
-            boxShadow: gats.isStarry ? null : AppShadows.card,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    hintText: AppStrings.aiCoachInputHint,
-                    filled: true,
-                    fillColor: gats.background,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
-                  onSubmitted: _sendMessage,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              IconButton.filled(
-                onPressed: _isTyping ? null : () => _sendMessage(_controller.text),
-                icon: const Icon(Icons.send_rounded),
-                style: IconButton.styleFrom(
-                  backgroundColor: gats.lavenderAccent,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
+        _ChatInputBar(
+          controller: _controller,
+          isTyping: _isTyping,
+          onSend: _sendMessage,
         ),
       ],
     );
   }
 }
 
-/// Welcome card shown when no conversation has started yet
-class _WelcomeCard extends StatelessWidget {
-  const _WelcomeCard({required this.onPrompt});
+// ─────────────────────────────────────────────────────────────
+// Welcome Hero — shown when no conversation has started yet
+// ─────────────────────────────────────────────────────────────
+
+class _WelcomeHero extends StatelessWidget {
+  const _WelcomeHero({required this.onPrompt});
 
   final ValueChanged<String> onPrompt;
 
+  static const _suggestions = [
+    _Suggestion('Tôi nên học gì tiếp?', Icons.school_rounded, [Color(0xFF3D8FEF), Color(0xFF7C3AED)]),
+    _Suggestion('Giải thích AI cơ bản', Icons.lightbulb_rounded, [Color(0xFFFF9A56), Color(0xFFFF7622)]),
+    _Suggestion('Lên lịch học hôm nay', Icons.calendar_month_rounded, [Color(0xFF10B981), Color(0xFF059669)]),
+    _Suggestion('Quiz nhanh về Prompt', Icons.quiz_rounded, [Color(0xFFEC4899), Color(0xFF8B5CF6)]),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              gradient: AppGradients.primary,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  spreadRadius: 4,
+    final gats = context.gatsColors;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Animated avatar ──
+                const _PulsingCoachAvatar(),
+
+                const SizedBox(height: AppSpacing.xl),
+
+                // ── Title ──
+                Text(
+                  AppStrings.coachWelcomeCardTitle,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // ── Subtitle ──
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Text(
+                    AppStrings.coachWelcomeCardBody,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: gats.textSecondary,
+                          height: 1.5,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.xxl),
+
+                // ── Suggestion cards ──
+                ...List.generate(_suggestions.length, (i) {
+                  final s = _suggestions[i];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: _SuggestionCard(
+                      suggestion: s,
+                      onTap: () => onPrompt(s.label),
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: AppSpacing.xl),
               ],
             ),
-            child: const Icon(Icons.psychology_rounded, color: Colors.white, size: 40),
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            AppStrings.coachWelcomeCardTitle,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 20,
-                ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            AppStrings.coachWelcomeCardBody,
-            style: Theme.of(context).textTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          // Suggested topics
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            alignment: WrapAlignment.center,
-            children: [
-              _SuggestionChip(
-                label: 'Tôi nên học gì tiếp?',
-                icon: Icons.school_outlined,
-                onTap: () => onPrompt('Tôi nên học gì tiếp?'),
-              ),
-              _SuggestionChip(
-                label: 'Giải thích AI cơ bản',
-                icon: Icons.lightbulb_outline,
-                onTap: () => onPrompt('Giải thích AI cơ bản cho người mới'),
-              ),
-              _SuggestionChip(
-                label: 'Lên lịch học hôm nay',
-                icon: Icons.calendar_today_outlined,
-                onTap: () => onPrompt('Lên lịch học hôm nay cho tôi'),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _SuggestionChip extends StatelessWidget {
-  const _SuggestionChip({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-
+class _Suggestion {
+  const _Suggestion(this.label, this.icon, this.gradientColors);
   final String label;
   final IconData icon;
+  final List<Color> gradientColors;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pulsing coach avatar with glow effect
+// ─────────────────────────────────────────────────────────────
+
+class _PulsingCoachAvatar extends StatefulWidget {
+  const _PulsingCoachAvatar();
+
+  @override
+  State<_PulsingCoachAvatar> createState() => _PulsingCoachAvatarState();
+}
+
+class _PulsingCoachAvatarState extends State<_PulsingCoachAvatar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final pulse = 0.85 + (_controller.value * 0.15);
+        final glowAlpha = 0.15 + (_controller.value * 0.2);
+
+        return Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: glowAlpha),
+                blurRadius: 30 * pulse,
+                spreadRadius: 8 * pulse,
+              ),
+            ],
+          ),
+          child: Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
+              ),
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.white,
+              size: 44,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Suggestion card — gradient icon with frosted surface
+// ─────────────────────────────────────────────────────────────
+
+class _SuggestionCard extends StatelessWidget {
+  const _SuggestionCard({required this.suggestion, required this.onTap});
+
+  final _Suggestion suggestion;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
+
     return Material(
-      color: gats.lavenderAccent.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(AppRadius.pill),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: gats.lavenderAccent),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: gats.lavenderAccent,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Ink(
+          decoration: GatsSurfaceDecoration.card(
+            context,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 14),
+            child: Row(
+              children: [
+                // Gradient icon circle
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: suggestion.gradientColors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(suggestion.icon, color: Colors.white, size: 20),
                 ),
-              ),
-            ],
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    suggestion.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      color: gats.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, size: 14, color: gats.textSecondary),
+              ],
+            ),
           ),
         ),
       ),
@@ -280,7 +318,44 @@ class _SuggestionChip extends StatelessWidget {
   }
 }
 
-/// Chat bubble with slide-in animation for latest message
+// ─────────────────────────────────────────────────────────────
+// Chat body — messages list
+// ─────────────────────────────────────────────────────────────
+
+class _ChatBody extends StatelessWidget {
+  const _ChatBody({
+    required this.messages,
+    required this.isTyping,
+    required this.scrollController,
+  });
+
+  final List<ChatMessage> messages;
+  final bool isTyping;
+  final ScrollController scrollController;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      controller: scrollController,
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
+      itemCount: messages.length + (isTyping ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (isTyping && index == messages.length) {
+          return const _TypingIndicator();
+        }
+        return _AnimatedChatBubble(
+          message: messages[index],
+          isLatest: index == messages.length - 1,
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Chat bubble with slide-in animation
+// ─────────────────────────────────────────────────────────────
+
 class _AnimatedChatBubble extends StatefulWidget {
   const _AnimatedChatBubble({
     required this.message,
@@ -303,7 +378,7 @@ class _AnimatedChatBubbleState extends State<_AnimatedChatBubble>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 350),
+      duration: const Duration(milliseconds: 400),
     );
     if (widget.isLatest) {
       _controller.forward();
@@ -322,93 +397,180 @@ class _AnimatedChatBubbleState extends State<_AnimatedChatBubble>
   Widget build(BuildContext context) {
     return SlideTransition(
       position: Tween<Offset>(
-        begin: const Offset(0, 0.3),
+        begin: Offset(widget.message.isUser ? 0.2 : -0.2, 0.15),
         end: Offset.zero,
       ).animate(CurvedAnimation(
         parent: _controller,
         curve: Curves.easeOutCubic,
       )),
       child: FadeTransition(
-        opacity: _controller,
-        child: _ChatBubbleContent(message: widget.message),
+        opacity: CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+        child: _ChatBubble(message: widget.message),
       ),
     );
   }
 }
 
-class _ChatBubbleContent extends StatelessWidget {
-  const _ChatBubbleContent({required this.message});
+// ─────────────────────────────────────────────────────────────
+// Chat bubble content — user vs coach
+// ─────────────────────────────────────────────────────────────
+
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({required this.message});
 
   final ChatMessage message;
 
   @override
   Widget build(BuildContext context) {
-    final isUser = message.isUser;
-    if (isUser) {
-      return Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-          decoration: BoxDecoration(
-            gradient: AppGradients.primary,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-              bottomLeft: Radius.circular(16),
-              bottomRight: Radius.circular(4),
-            ),
-            boxShadow: AppShadows.card,
+    return message.isUser ? _UserBubble(message: message) : _CoachBubble(message: message);
+  }
+}
+
+class _UserBubble extends StatelessWidget {
+  const _UserBubble({required this.message});
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14, left: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF3D8FEF), Color(0xFF0052B4)],
           ),
-          child: Text(message.text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(6),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-      );
-    }
+        child: Text(
+          message.text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            height: 1.45,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoachBubble extends StatelessWidget {
+  const _CoachBubble({required this.message});
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 14, right: 32),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Coach avatar with gradient ring
           Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(gradient: AppGradients.primary, shape: BoxShape.circle),
-            child: const Icon(Icons.psychology, color: Colors.white, size: 18),
+            width: 34,
+            height: 34,
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: gats.surface,
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF3D8FEF)),
+            ),
           ),
-          const SizedBox(width: 8),
+
+          const SizedBox(width: 10),
+
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppStrings.aiCoachName, style: Theme.of(context).textTheme.bodySmall),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: GatsSurfaceDecoration.card(
-                    context,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(4),
-                      topRight: Radius.circular(16),
-                      bottomLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
+                // Coach name
+                Padding(
+                  padding: const EdgeInsets.only(left: 2, bottom: 4),
+                  child: Text(
+                    AppStrings.aiCoachName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: gats.textSecondary,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+
+                // Message bubble
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: gats.surface,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      topRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                    ),
+                    border: gats.isStarry
+                        ? Border.all(color: gats.divider.withValues(alpha: 0.5))
+                        : null,
+                    boxShadow: gats.isStarry
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                  ),
+                  child: Text(
+                    message.text,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: gats.textPrimary,
+                    ),
+                  ),
+                ),
+
+                // Reactions
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, top: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(message.text, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(height: 6),
-                      // Reaction buttons
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _ReactionButton(icon: Icons.thumb_up_outlined, onTap: () {}),
-                          const SizedBox(width: 4),
-                          _ReactionButton(icon: Icons.thumb_down_outlined, onTap: () {}),
-                        ],
-                      ),
+                      _ReactionPill(icon: Icons.thumb_up_rounded, onTap: () {}),
+                      const SizedBox(width: 6),
+                      _ReactionPill(icon: Icons.thumb_down_rounded, onTap: () {}),
+                      const SizedBox(width: 6),
+                      _ReactionPill(icon: Icons.content_copy_rounded, onTap: () {}),
                     ],
                   ),
                 ),
@@ -421,8 +583,12 @@ class _ChatBubbleContent extends StatelessWidget {
   }
 }
 
-class _ReactionButton extends StatelessWidget {
-  const _ReactionButton({required this.icon, required this.onTap});
+// ─────────────────────────────────────────────────────────────
+// Reaction pill button
+// ─────────────────────────────────────────────────────────────
+
+class _ReactionPill extends StatelessWidget {
+  const _ReactionPill({required this.icon, required this.onTap});
 
   final IconData icon;
   final VoidCallback onTap;
@@ -430,65 +596,94 @@ class _ReactionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Icon(icon, size: 14, color: gats.textSecondary),
+    return Material(
+      color: gats.divider.withValues(alpha: 0.3),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 12, color: gats.textSecondary),
+        ),
       ),
     );
   }
 }
 
-class _TypingBubble extends StatelessWidget {
-  const _TypingBubble();
+// ─────────────────────────────────────────────────────────────
+// Typing indicator with bouncing dots
+// ─────────────────────────────────────────────────────────────
+
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator();
 
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 14, right: 32),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Coach avatar
           Container(
-            width: 32,
-            height: 32,
-            decoration: const BoxDecoration(gradient: AppGradients.primary, shape: BoxShape.circle),
-            child: const Icon(Icons.psychology, color: Colors.white, size: 18),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: GatsSurfaceDecoration.card(
-                  context,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(
-                      width: 40,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _Dot(delay: 0),
-                          _Dot(delay: 150),
-                          _Dot(delay: 300),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      AppStrings.coachThinking,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
-                    ),
-                  ],
-                ),
+            width: 34,
+            height: 34,
+            padding: const EdgeInsets.all(2),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+            ),
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: gats.surface,
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF3D8FEF)),
+            ),
+          ),
+
+          const SizedBox(width: 10),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+            decoration: BoxDecoration(
+              color: gats.surface,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(6),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+              border: gats.isStarry
+                  ? Border.all(color: gats.divider.withValues(alpha: 0.5))
+                  : null,
+              boxShadow: gats.isStarry
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                _BouncingDot(delay: 0),
+                SizedBox(width: 5),
+                _BouncingDot(delay: 150),
+                SizedBox(width: 5),
+                _BouncingDot(delay: 300),
+              ],
+            ),
           ),
         ],
       ),
@@ -496,24 +691,26 @@ class _TypingBubble extends StatelessWidget {
   }
 }
 
-class _Dot extends StatefulWidget {
-  const _Dot({required this.delay});
+class _BouncingDot extends StatefulWidget {
+  const _BouncingDot({required this.delay});
   final int delay;
 
   @override
-  State<_Dot> createState() => _DotState();
+  State<_BouncingDot> createState() => _BouncingDotState();
 }
 
-class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
+class _BouncingDotState extends State<_BouncingDot> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
-      ..repeat(reverse: true);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
     Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) _controller.forward();
+      if (mounted) _controller.repeat(reverse: true);
     });
   }
 
@@ -526,12 +723,143 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    return FadeTransition(
-      opacity: _controller,
-      child: Container(
-        width: 6,
-        height: 6,
-        decoration: BoxDecoration(color: gats.textSecondary, shape: BoxShape.circle),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final value = _controller.value;
+        return Transform.translate(
+          offset: Offset(0, -4 * math.sin(value * math.pi)),
+          child: Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: Color.lerp(
+                gats.textSecondary.withValues(alpha: 0.4),
+                gats.lavenderAccent,
+                value,
+              ),
+              shape: BoxShape.circle,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Chat input bar
+// ─────────────────────────────────────────────────────────────
+
+class _ChatInputBar extends StatelessWidget {
+  const _ChatInputBar({
+    required this.controller,
+    required this.isTyping,
+    required this.onSend,
+  });
+
+  final TextEditingController controller;
+  final bool isTyping;
+  final ValueChanged<String> onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        FloatingNavBar.chatInputBottomPadding(context, gap: 80),
+      ),
+      decoration: BoxDecoration(
+        color: GatsSurfaceDecoration.surfaceColor(context),
+        border: Border(
+          top: BorderSide(
+            color: gats.divider.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: gats.background,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(
+                  color: gats.divider.withValues(alpha: 0.6),
+                  width: 0.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        hintText: AppStrings.aiCoachInputHint,
+                        hintStyle: TextStyle(
+                          color: gats.textSecondary.withValues(alpha: 0.6),
+                          fontSize: 14,
+                        ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 12,
+                        ),
+                      ),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: gats.textPrimary,
+                      ),
+                      onSubmitted: onSend,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          // Send button with gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF3D8FEF), Color(0xFF0052B4)],
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: InkWell(
+                onTap: isTyping ? null : () => onSend(controller.text),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.arrow_upward_rounded,
+                    color: Colors.white.withValues(alpha: isTyping ? 0.5 : 1),
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
