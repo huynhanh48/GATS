@@ -97,7 +97,7 @@ class PostCard extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 AppStrings.postByAuthor.replaceFirst('%s', post.authorName),
-                style: theme.textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
+                style: theme.textTheme.labelSmall?.copyWith(color: gats.textSecondary),
               ),
             ],
           ),

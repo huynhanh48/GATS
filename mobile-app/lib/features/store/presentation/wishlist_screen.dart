@@ -4,6 +4,7 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/features/store/presentation/course_store_detail_screen.dart';
 
@@ -28,21 +29,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
   }
 
   void _onCartChanged() => setState(() {});
-
-  String _formatPrice(double price) {
-    if (price <= 0) return AppStrings.storeFree;
-    final buffer = StringBuffer();
-    final str = price.toInt().toString();
-    int len = str.length;
-    for (int i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(str[i]);
-    }
-    buffer.write(' đ');
-    return buffer.toString();
-  }
 
   void _addAllToCart(Set<String> wishItems) {
     for (final courseId in wishItems) {
@@ -165,7 +151,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _formatPrice(course.price),
+                                      formatVndPrice(course.price),
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w800,

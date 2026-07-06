@@ -17,9 +17,10 @@ class OnboardingIntroScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final gats = context.gatsColors;
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: gats.background,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

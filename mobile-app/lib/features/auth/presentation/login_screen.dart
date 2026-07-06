@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
-import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/data/api/auth_api_service.dart';
-import 'package:gats_academy/data/mock/mock_accounts.dart';
 import 'package:gats_academy/features/auth/models/auth_exception.dart';
-import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/features/auth/presentation/widgets/auth_provider_button.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
@@ -44,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _verifyTokenController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
-  bool _showDemoAccounts = false;
   bool _isLoading = false;
   String? _error;
 
@@ -118,24 +114,33 @@ class _LoginScreenState extends State<LoginScreen> {
     widget.onAuthenticated();
   }
 
-  Future<void> _completeUser(AuthUser user) async {
-    await AuthPrefs.saveSession(user);
-    if (!mounted) return;
-    widget.onAuthenticated();
+  Future<void> _submitGoogle() async {
+    await _submitSocial(AuthService.signInWithGoogle);
   }
 
-  Future<void> _submitDemo(MockAccount account) async {
+  Future<void> _submitApple() async {
+    await _submitSocial(AuthService.signInWithApple);
+  }
+
+  Future<void> _submitMomo() async {
+    await _submitSocial(AuthService.signInWithMomo);
+  }
+
+  Future<void> _submitSocial(Future<AuthSession> Function() signIn) async {
     setState(() {
       _isLoading = true;
       _error = null;
-      _emailController.text = account.email;
-      _passwordController.text = account.password;
     });
     try {
-      final user = await AuthService.signInWithDemoAccount(account);
-      await _completeUser(user);
+      final session = await signIn();
+      await _completeSession(session);
     } on AuthException catch (e) {
-      if (mounted) setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
+      if (!mounted) return;
+      if (e.code == AuthErrorCode.socialCancelled) {
+        setState(() => _error = null);
+        return;
+      }
+      setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -239,21 +244,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _submitSocial(Future<AuthUser> Function() signIn) async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final user = await signIn();
-      await _completeUser(user);
-    } on AuthException catch (e) {
-      if (mounted) setState(() => _error = AuthL10n.errorMessage(context.l10n, e));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -265,9 +255,9 @@ class _LoginScreenState extends State<LoginScreen> {
               isLoading: _isLoading,
               error: _error,
               onBack: _handleBack,
-              onApple: () => _submitSocial(AuthService.signInWithApple),
-              onGoogle: () => _submitSocial(AuthService.signInWithGoogle),
-              onMomo: () => _submitSocial(AuthService.signInWithMomo),
+              onApple: _submitApple,
+              onGoogle: _submitGoogle,
+              onMomo: _submitMomo,
               onContinueEmail: () => _goTo(_AuthStep.emailSignUp),
               onSignIn: () => _goTo(_AuthStep.emailSignIn),
               onSkip: widget.onSkip,
@@ -290,10 +280,6 @@ class _LoginScreenState extends State<LoginScreen> {
           _AuthStep.emailSignIn => _EmailSignInStep(
               isLoading: _isLoading,
               error: _error,
-              showDemoAccounts: widget.gate == AuthGate.entry,
-              showDemoPanel: _showDemoAccounts,
-              onToggleDemoPanel: () => setState(() => _showDemoAccounts = !_showDemoAccounts),
-              onSelectDemo: _submitDemo,
               emailController: _emailController,
               passwordController: _passwordController,
               obscurePassword: _obscurePassword,
@@ -576,10 +562,6 @@ class _EmailSignInStep extends StatelessWidget {
   const _EmailSignInStep({
     required this.isLoading,
     required this.error,
-    required this.showDemoAccounts,
-    required this.showDemoPanel,
-    required this.onToggleDemoPanel,
-    required this.onSelectDemo,
     required this.emailController,
     required this.passwordController,
     required this.obscurePassword,
@@ -593,10 +575,6 @@ class _EmailSignInStep extends StatelessWidget {
 
   final bool isLoading;
   final String? error;
-  final bool showDemoAccounts;
-  final bool showDemoPanel;
-  final VoidCallback onToggleDemoPanel;
-  final void Function(MockAccount account) onSelectDemo;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final bool obscurePassword;
@@ -698,7 +676,7 @@ class _EmailSignInStep extends StatelessWidget {
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w800,
-                      decoration: TextDecoration.underline,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ],
@@ -706,15 +684,6 @@ class _EmailSignInStep extends StatelessWidget {
             ),
           ),
         ),
-        if (showDemoAccounts) ...[
-          const SizedBox(height: AppSpacing.lg),
-          _DemoAccountsPanel(
-            expanded: showDemoPanel,
-            isLoading: isLoading,
-            onToggle: onToggleDemoPanel,
-            onSelect: onSelectDemo,
-          ),
-        ],
       ],
     );
   }
@@ -742,7 +711,7 @@ class _ExistingUserLink extends StatelessWidget {
                 style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontWeight: FontWeight.w800,
-                  decoration: TextDecoration.underline,
+                  decoration: TextDecoration.none,
                 ),
               ),
             ],
@@ -768,7 +737,7 @@ class _LegalSignUpText extends StatelessWidget {
     final linkStyle = bodyStyle?.copyWith(
       color: AppColors.textPrimary,
       fontWeight: FontWeight.w700,
-      decoration: TextDecoration.underline,
+      decoration: TextDecoration.none,
     );
 
     return RichText(
@@ -909,79 +878,6 @@ class _EmailVerifyStep extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _DemoAccountsPanel extends StatelessWidget {
-  const _DemoAccountsPanel({
-    required this.expanded,
-    required this.isLoading,
-    required this.onToggle,
-    required this.onSelect,
-  });
-
-  final bool expanded;
-  final bool isLoading;
-  final VoidCallback onToggle;
-  final void Function(MockAccount account) onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.12)),
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-              child: Row(
-                children: [
-                  const Icon(Icons.science_outlined, size: 18, color: AppColors.primary),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      l10n.authDemoAccounts,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
-                          ),
-                    ),
-                  ),
-                  Icon(expanded ? Icons.expand_less : Icons.expand_more, color: AppColors.primary),
-                ],
-              ),
-            ),
-          ),
-          if (expanded) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
-              child: Text(l10n.authMockNotice, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
-              child: Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: MockAccounts.all.map((account) {
-                  return ActionChip(
-                    label: Text(AuthL10n.roleLabel(l10n, account.role)),
-                    onPressed: isLoading ? null : () => onSelect(account),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

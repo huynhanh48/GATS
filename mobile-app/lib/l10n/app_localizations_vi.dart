@@ -45,6 +45,42 @@ class AppLocalizationsVi extends AppLocalizations {
   String get onboardingTitlePurpose => 'Mục đích học là gì?';
 
   @override
+  String get onboardingTitleReminder => 'Nhắc học mỗi ngày';
+
+  @override
+  String get onboardingSubtitleReminder =>
+      'Chúng tôi sẽ nhắc bạn đúng giờ — có thể đổi trong Cài đặt';
+
+  @override
+  String get onboardingCoachReminder =>
+      'Kiên trì mỗi ngày quan trọng hơn học dồn! Chọn giờ phù hợp với bạn nhé.';
+
+  @override
+  String get onboardingReminderEnable => 'Bật nhắc nhở hàng ngày';
+
+  @override
+  String get onboardingReminderNoThanks => 'Không, cảm ơn';
+
+  @override
+  String get onboardingReminderContinue => 'Tiếp tục';
+
+  @override
+  String ackReminderEcho(String time) {
+    return 'Nhắc lúc $time — hẹn gặp bạn!';
+  }
+
+  @override
+  String get ackReminderSkippedEcho =>
+      'Không sao — bạn có thể bật nhắc nhở sau trong Cài đặt.';
+
+  @override
+  String get dailyReminderTitle => 'GATS Academy';
+
+  @override
+  String get dailyReminderBody =>
+      'Đến giờ học rồi! Điểm danh và giữ streak nhé.';
+
+  @override
   String get onboardingSubtitleLanguage => 'Bạn có thể đổi lại trong Cài đặt';
 
   @override
@@ -637,6 +673,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authSignOut => 'Đăng xuất';
 
   @override
+  String get authNotSignedIn => 'Chưa đăng nhập — vui lòng đăng nhập tài khoản';
+
+  @override
   String authSignedInAs(String identity) {
     return 'Đang đăng nhập: $identity';
   }
@@ -759,6 +798,20 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authErrorServer => 'Đã có lỗi xảy ra. Vui lòng thử lại.';
 
   @override
+  String get authSocialCancelled => 'Đã hủy đăng nhập';
+
+  @override
+  String get authSocialTokenMissing =>
+      'Không lấy được token từ nhà cung cấp. Kiểm tra cấu hình OAuth.';
+
+  @override
+  String get authSocialFailed => 'Đăng nhập mạng xã hội thất bại';
+
+  @override
+  String get authSocialGoogleConfigHint =>
+      'Google Sign-In chưa cấu hình đúng. Trên Google Cloud Console, tạo OAuth client loại Web application, copy Client ID vào GOOGLE_SERVER_CLIENT_ID (.env) và default_web_client_id (strings.xml). Client Android (package + SHA-1) và Web phải cùng project.';
+
+  @override
   String get authRegisterSuccessVerify =>
       'Đã tạo tài khoản. Nhập mã xác minh từ email của bạn.';
 
@@ -866,6 +919,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get homePopularCourses => 'Khóa nổi bật';
+
+  @override
+  String get homeMyCourses => 'Khóa của tôi';
+
+  @override
+  String get homeYourCourses => 'Khóa của bạn';
+
+  @override
+  String get homeYourCoursesEmpty => 'Bạn chưa mua khóa học nào.';
+
+  @override
+  String get homeYourCoursesBrowse => 'Xem cửa hàng';
 
   @override
   String get seeAll => 'Xem tất cả';
@@ -988,6 +1053,9 @@ class AppLocalizationsVi extends AppLocalizations {
       'Tôi đang phân tích tiến độ học của bạn. Hãy tiếp tục hoàn thành module đang học nhé!';
 
   @override
+  String get aiCoachInputHint => 'Hỏi AI Coach...';
+
+  @override
   String get hubXpTitle => 'Kinh nghiệm';
 
   @override
@@ -1030,6 +1098,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsReplayOnboarding => 'Làm lại onboarding';
+
+  @override
+  String get settingsSignOutSuccess =>
+      'Đã đăng xuất. Khởi động lại app để về màn hình chính.';
+
+  @override
+  String get settingsReplaySuccess =>
+      'Đã reset onboarding. Khởi động lại app để xem lại flow.';
 
   @override
   String get tagOfficeAi => 'AI cho công sở';
@@ -1235,6 +1311,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get rateSheetLater => 'Để sau';
 
   @override
+  String get reviewOpenedPlayStore => 'Đang mở Google Play để bạn đánh giá.';
+
+  @override
+  String get reviewNativeUnavailable =>
+      'Dialog đánh giá trong app chỉ hiện khi cài từ Google Play. Đang mở trang cửa hàng.';
+
+  @override
   String get settingsRateApp => 'Đánh giá ứng dụng';
 
   @override
@@ -1251,6 +1334,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get courseTabChat => 'Nhóm chat';
+
+  @override
+  String get courseTabGroup => 'Nhóm';
 
   @override
   String get courseNotFound => 'Không tìm thấy khóa học';
@@ -1631,6 +1717,16 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get storeSyllabusPreviewNote =>
+      'Mua khóa học để mở khóa toàn bộ bài giảng, quiz và nhóm chat.';
+
+  @override
+  String get storeLecturePreview => 'Xem thử';
+
+  @override
+  String get storePurchased => 'Đã mua';
+
+  @override
   String get storeReviewsTitle => 'Đánh giá học viên';
 
   @override
@@ -1689,6 +1785,68 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get checkoutStartLearning => 'Bắt đầu học ngay';
+
+  @override
+  String get paymentTitle => 'Thanh toán';
+
+  @override
+  String get paymentChooseMethod => 'Chọn phương thức thanh toán';
+
+  @override
+  String get paymentOrderSummary => 'Tóm tắt đơn hàng';
+
+  @override
+  String paymentItemCount(int count) {
+    return '$count khóa trong giỏ';
+  }
+
+  @override
+  String get paymentPayNow => 'Thanh toán ngay';
+
+  @override
+  String get paymentPayWithApple => 'Thanh toán với Apple Pay';
+
+  @override
+  String get paymentApplePayHint =>
+      'Xác nhận bằng Face ID, Touch ID hoặc mật mã trên thiết bị Apple.';
+
+  @override
+  String get paymentMomoHint =>
+      'Bạn sẽ được chuyển sang ứng dụng MoMo để hoàn tất thanh toán.';
+
+  @override
+  String get paymentVnpayHint =>
+      'Bạn sẽ được chuyển sang cổng thanh toán VNPay.';
+
+  @override
+  String get paymentRedirectNote =>
+      'Thanh toán mô phỏng — sẽ nối cổng thật trong giai đoạn sau.';
+
+  @override
+  String get paymentQrHint => 'Quét mã QR bằng app ngân hàng';
+
+  @override
+  String get paymentQrScanNote =>
+      'Hỗ trợ VietQR · Napas247 · hầu hết ngân hàng Việt Nam';
+
+  @override
+  String get paymentSecureNote =>
+      'Thông tin thanh toán được mã hóa và bảo mật.';
+
+  @override
+  String get paymentCardDetails => 'Thông tin thẻ';
+
+  @override
+  String get paymentCardNumber => 'Số thẻ';
+
+  @override
+  String get paymentCardName => 'Tên in trên thẻ';
+
+  @override
+  String get paymentCardExpiry => 'MM/YY';
+
+  @override
+  String get paymentCardCvv => 'CVV';
 
   @override
   String get mentorSearchHint => 'Tìm khóa được gán...';
@@ -1772,4 +1930,46 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chipFree => 'Miễn phí';
+
+  @override
+  String get notificationsScreenTitle => 'Thông báo';
+
+  @override
+  String get notificationsToday => 'Hôm nay';
+
+  @override
+  String get notificationsYesterday => 'Hôm qua';
+
+  @override
+  String get notificationsTestSection => 'Kiểm tra thông báo';
+
+  @override
+  String get notificationsTestBanner => 'Banner trong app';
+
+  @override
+  String get notificationsTestPush => 'Push hệ thống ngay';
+
+  @override
+  String get notificationsTestPushDelayed => 'Push sau 5 giây';
+
+  @override
+  String get notificationsTestHint =>
+      'Nhấn \"Push sau 5 giây\" rồi thu app xuống để xem trên thanh thông báo.';
+
+  @override
+  String get notificationsPermissionDenied =>
+      'Chưa cấp quyền. Vào Cài đặt > Ứng dụng > GATS Academy > Thông báo để bật.';
+
+  @override
+  String get notificationsTestScheduled =>
+      'Sẽ hiện push sau 5 giây — thu app xuống ngay!';
+
+  @override
+  String get notificationsTestSent => 'Đã gửi thông báo test.';
+
+  @override
+  String get notificationsEmpty => 'Chưa có thông báo';
+
+  @override
+  String get headerSubtitleNotifications => 'Tin tức & nhắc nhở học tập';
 }

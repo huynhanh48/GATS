@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
+import 'package:gats_academy/core/navigation/shell_tab_scope.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
+import 'package:gats_academy/core/widgets/lazy_indexed_stack.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/ai_coach/presentation/ai_coach_screen.dart';
 import 'package:gats_academy/features/daily/presentation/daily_screen.dart';
@@ -14,6 +17,16 @@ import 'package:gats_academy/features/library/presentation/library_screen.dart';
 import 'package:gats_academy/features/post/presentation/posts_feed_screen.dart';
 import 'package:gats_academy/features/store/presentation/course_store_screen.dart';
 
+/// Tab indices trong [LazyIndexedStack].
+abstract final class MainShellTabs {
+  static const home = 0;
+  static const daily = 1;
+  static const library = 2;
+  static const coach = 3;
+  static const store = 4;
+  static const count = 5;
+}
+
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -22,36 +35,44 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
-
-  static const _screens = [
-    HomeScreen(),
-    DailyScreen(),
-    LibraryScreen(),
-    AiCoachScreen(),
-    CourseStoreScreen(embeddedInShell: true),
-  ];
+  int _currentIndex = MainShellTabs.home;
 
   /// Map screen index → nav bar index (4 tabs, không gồm Thư viện).
   int _navSelectedIndex(int screenIndex) {
     return switch (screenIndex) {
-      0 => 0,
-      1 => 1,
-      3 => 2,
-      4 => 3,
+      MainShellTabs.home => 0,
+      MainShellTabs.daily => 1,
+      MainShellTabs.coach => 2,
+      MainShellTabs.store => 3,
       _ => 0,
     };
   }
 
   void _onNavDestinationSelected(int navIndex) {
     final screenIndex = switch (navIndex) {
-      0 => 0,
-      1 => 1,
-      2 => 3,
-      3 => 4,
-      _ => 0,
+      0 => MainShellTabs.home,
+      1 => MainShellTabs.daily,
+      2 => MainShellTabs.coach,
+      3 => MainShellTabs.store,
+      _ => MainShellTabs.home,
     };
     setState(() => _currentIndex = screenIndex);
+  }
+
+  Widget _screenAt(BuildContext context, int index) {
+    return switch (index) {
+      MainShellTabs.home => const HomeScreen(),
+      MainShellTabs.daily => const DailyScreen(),
+      MainShellTabs.library => const LibraryScreen(),
+      MainShellTabs.coach => const AiCoachScreen(),
+      MainShellTabs.store => const CourseStoreScreen(embeddedInShell: true),
+      _ => const SizedBox.shrink(),
+    };
+  }
+
+  void _openQuickAction(Widget page) {
+    Navigator.of(context).pop();
+    GatsMainNavigator.push(context, page);
   }
 
   void _showQuickActions() {
@@ -61,71 +82,58 @@ class _MainShellState extends State<MainShell> {
       builder: (context) {
         final gats = context.gatsColors;
         return Container(
-        margin: const EdgeInsets.all(AppSpacing.lg),
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        decoration: GatsSurfaceDecoration.card(
-          context,
-          borderRadius: BorderRadius.circular(AppRadius.xl),
-          lightShadow: AppShadows.elevated,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: gats.divider,
-                borderRadius: BorderRadius.circular(2),
+          margin: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          decoration: GatsSurfaceDecoration.card(
+            context,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            lightShadow: AppShadows.elevated,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: gats.divider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              AppStrings.quickActionTitle,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                AppStrings.quickActionTitle,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _QuickActionButton(
+                    icon: Icons.article_outlined,
+                    label: AppStrings.quickActionPosts,
+                    color: AppColors.primary,
+                    onTap: () => _openQuickAction(const PostsFeedScreen()),
                   ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _QuickActionButton(
-                  icon: Icons.article_outlined,
-                  label: AppStrings.quickActionPosts,
-                  color: AppColors.primary,
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.of(this.context).push(
-                      MaterialPageRoute<void>(builder: (_) => const PostsFeedScreen()),
-                    );
-                  },
-                ),
-                _QuickActionButton(
-                  icon: Icons.search_rounded,
-                  label: AppStrings.quickActionSearchCourses,
-                  color: const Color(0xFF0EA5E9),
-                  onTap: () {
-                    Navigator.pop(context);
-                    openCourseSearch(this.context);
-                  },
-                ),
-                _QuickActionButton(
-                  icon: Icons.emoji_events_outlined,
-                  label: AppStrings.quickActionHub,
-                  color: AppColors.accent,
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.of(this.context).push(
-                      MaterialPageRoute<void>(builder: (_) => const HubScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ),
+                  _QuickActionButton(
+                    icon: Icons.search_rounded,
+                    label: AppStrings.quickActionSearchCourses,
+                    color: const Color(0xFF0EA5E9),
+                    onTap: () => _openQuickAction(const CourseSearchScreen()),
+                  ),
+                  _QuickActionButton(
+                    icon: Icons.emoji_events_outlined,
+                    label: AppStrings.quickActionHub,
+                    color: AppColors.accent,
+                    onTap: () => _openQuickAction(const HubScreen()),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+          ),
         );
       },
     );
@@ -133,7 +141,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isHome = _currentIndex == 0;
+    final isHome = _currentIndex == MainShellTabs.home;
 
     final titles = [
       AppStrings.navHome,
@@ -151,48 +159,52 @@ class _MainShellState extends State<MainShell> {
       AppHeaderSubtitles.store,
     ];
 
-    return GatsThemedScaffold(
-      extendBody: true,
-      appBar: isHome
-          ? null
-          : AppHeader(title: titles[_currentIndex], subtitle: subtitles[_currentIndex]),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: KeyedSubtree(
-          key: ValueKey(_currentIndex),
-          child: _screens[_currentIndex],
+    return ShellTabScope(
+      activeIndex: _currentIndex,
+      child: GatsThemedScaffold(
+        extendBody: true,
+        appBar: isHome
+            ? null
+            : AppHeader(
+                title: titles[_currentIndex],
+                subtitle: subtitles[_currentIndex],
+              ),
+        body: LazyIndexedStack(
+          index: _currentIndex,
+          itemCount: MainShellTabs.count,
+          itemBuilder: _screenAt,
         ),
-      ),
-      floatingActionButton: null,
-      bottomNavigationBar: FloatingNavBar(
-        selectedIndex: _navSelectedIndex(_currentIndex),
-        onDestinationSelected: _onNavDestinationSelected,
-        centerAction: FloatingNavCenterButton(onPressed: _showQuickActions),
-        destinations: [
-          FloatingNavDestination(
-            icon: Icons.home_outlined,
-            selectedIcon: Icons.home_rounded,
-            label: AppStrings.navHome,
+        floatingActionButton: null,
+        bottomNavigationBar: RepaintBoundary(
+          child: FloatingNavBar(
+            selectedIndex: _navSelectedIndex(_currentIndex),
+            onDestinationSelected: _onNavDestinationSelected,
+            centerAction: FloatingNavCenterButton(onPressed: _showQuickActions),
+            destinations: [
+              FloatingNavDestination(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: AppStrings.navHome,
+              ),
+              FloatingNavDestination(
+                icon: Icons.today_outlined,
+                selectedIcon: Icons.today_rounded,
+                label: AppStrings.navDaily,
+                badgeLabel: '3',
+              ),
+              FloatingNavDestination(
+                icon: Icons.psychology_outlined,
+                selectedIcon: Icons.psychology_rounded,
+                label: AppStrings.navCoach,
+              ),
+              FloatingNavDestination(
+                icon: Icons.storefront_outlined,
+                selectedIcon: Icons.storefront_rounded,
+                label: AppStrings.navStore,
+              ),
+            ],
           ),
-          FloatingNavDestination(
-            icon: Icons.today_outlined,
-            selectedIcon: Icons.today_rounded,
-            label: AppStrings.navDaily,
-            badgeLabel: '3',
-          ),
-          FloatingNavDestination(
-            icon: Icons.psychology_outlined,
-            selectedIcon: Icons.psychology_rounded,
-            label: AppStrings.navCoach,
-          ),
-          FloatingNavDestination(
-            icon: Icons.storefront_outlined,
-            selectedIcon: Icons.storefront_rounded,
-            label: AppStrings.navStore,
-          ),
-        ],
+        ),
       ),
     );
   }

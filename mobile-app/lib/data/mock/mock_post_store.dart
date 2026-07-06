@@ -64,7 +64,7 @@ class MockPostStore extends ChangeNotifier {
 
     if (role == UserRole.admin) return true;
     if (role == UserRole.mentor && course.isManagedBy(userId)) return true;
-    if (role == UserRole.user && course.isEnrolledBy(userId)) return true;
+    if (role == UserRole.user && course.isOwnedBy(userId)) return true;
     return false;
   }
 

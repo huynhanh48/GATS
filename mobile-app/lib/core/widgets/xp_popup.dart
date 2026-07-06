@@ -108,6 +108,7 @@ class _XpPopupWidgetState extends State<_XpPopupWidget>
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),

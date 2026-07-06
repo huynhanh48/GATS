@@ -274,17 +274,169 @@ class TedCourseCard extends StatelessWidget {
     this.showProgress = true,
     this.bookmarked = false,
     this.compact = false,
+    this.vertical = false,
+    this.showAddToCart = false,
+    this.inCart = false,
+    this.isPurchased = false,
     this.onTap,
+    this.onAddToCart,
   });
 
   final CourseItem course;
   final bool showProgress;
   final bool bookmarked;
   final bool compact;
+  final bool vertical;
+  final bool showAddToCart;
+  final bool inCart;
+  final bool isPurchased;
   final VoidCallback? onTap;
+  final VoidCallback? onAddToCart;
 
   @override
   Widget build(BuildContext context) {
+    if (vertical) return _buildVertical(context);
+    return _buildHorizontal(context);
+  }
+
+  Widget _buildVertical(BuildContext context) {
+    final gats = context.gatsColors;
+    final priceLabel = isPurchased
+        ? context.l10n.storePurchased
+        : course.isFree
+            ? context.l10n.storeFree
+            : '${course.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxH = constraints.maxHeight;
+        final coverHeight = maxH.isFinite && maxH > 120
+            ? (maxH * 0.48).clamp(72.0, 110.0)
+            : 88.0;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            child: Container(
+              decoration: GatsSurfaceDecoration.card(
+                context,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: coverHeight,
+                    width: double.infinity,
+                    child: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: AppGradients.courseCover(course.id.hashCode),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: const Icon(Icons.play_circle_outline, color: Colors.white, size: 36),
+                        ),
+                        if (isPurchased)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade600,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                context.l10n.storePurchased,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    course.tag,
+                    style: TextStyle(
+                      color: gats.lavenderAccent,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    course.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.star_rounded, color: gats.lavenderAccent, size: 14),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          '4.${course.id.hashCode % 5 + 2}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      Text(
+                        priceLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: isPurchased
+                              ? Colors.green.shade700
+                              : course.isFree
+                                  ? gats.lavenderAccent
+                                  : AppColors.accent,
+                        ),
+                      ),
+                      if (showAddToCart && !isPurchased) ...[
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: onAddToCart,
+                          behavior: HitTestBehavior.opaque,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: inCart
+                                  ? gats.lavenderAccent.withValues(alpha: 0.12)
+                                  : gats.lavenderAccent,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              inCart ? Icons.check : Icons.add,
+                              color: inCart ? gats.lavenderAccent : Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHorizontal(BuildContext context) {
     final gats = context.gatsColors;
     final thumbSize = compact ? 64.0 : 88.0;
     final effectiveShowProgress = showProgress && !compact;

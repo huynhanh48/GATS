@@ -1,13 +1,23 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
+import 'package:gats_academy/core/navigation/shell_tab_scope.dart';
+import 'package:gats_academy/shell/main_shell.dart';
+import 'package:gats_academy/core/navigation/root_navigator.dart';
+import 'package:gats_academy/core/services/gats_notification_service.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
+import 'package:gats_academy/core/theme/gats_surface.dart';
+import 'package:gats_academy/core/widgets/ted/ted.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
+import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
+import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
-import 'package:gats_academy/features/store/presentation/course_store_detail_screen.dart';
 import 'package:gats_academy/features/store/presentation/wishlist_screen.dart';
 
 class CourseStoreScreen extends StatefulWidget {
@@ -27,6 +37,8 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'Tất cả';
   String _selectedLevel = 'Tất cả';
+  String? _userId;
+  UserRole _role = UserRole.user;
 
   final List<Map<String, dynamic>> _promos = [
     {
@@ -52,16 +64,47 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
   @override
   void initState() {
     super.initState();
-    _startPromoTimer();
-    MockCourseStore.instance.addListener(_onStoreChanged);
+    _loadUser();
+    if (!widget.embeddedInShell) {
+      _startPromoTimer();
+    }
+    CourseModule.repository.addListener(_onStoreChanged);
     CartController.instance.addListener(_onCartChanged);
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!widget.embeddedInShell) return;
+    _syncPromoTimerWithVisibility();
+  }
+
+  void _syncPromoTimerWithVisibility() {
+    final visible = ShellTabScope.isActive(context, MainShellTabs.store);
+    if (visible) {
+      _startPromoTimer();
+    } else {
+      _pausePromoTimer();
+    }
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthPrefs.currentUser();
+    if (!mounted) return;
+    setState(() {
+      _userId = user?.id;
+      _role = user?.role ?? UserRole.user;
+    });
+  }
+
+  bool _isOwned(AppCourse course) =>
+      CourseModule.repository.isOwned(course.id, _userId, role: _role);
+
+  @override
   void dispose() {
-    _promoTimer?.cancel();
+    _pausePromoTimer();
     _promoController.dispose();
-    MockCourseStore.instance.removeListener(_onStoreChanged);
+    CourseModule.repository.removeListener(_onStoreChanged);
     CartController.instance.removeListener(_onCartChanged);
     super.dispose();
   }
@@ -70,8 +113,9 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
   void _onCartChanged() => setState(() {});
 
   void _startPromoTimer() {
+    if (_promoTimer != null) return;
     _promoTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-      if (!mounted) return;
+      if (!mounted || !_promoController.hasClients) return;
       final nextIndex = (_currentPromoIndex + 1) % _promos.length;
       _promoController.animateToPage(
         nextIndex,
@@ -81,8 +125,13 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     });
   }
 
+  void _pausePromoTimer() {
+    _promoTimer?.cancel();
+    _promoTimer = null;
+  }
+
   List<AppCourse> get _filteredCourses {
-    var list = MockCourseStore.instance.publishedCourses();
+    var list = CourseModule.repository.listPublishedCourses();
     
     // Category filter
     if (_selectedCategory != 'Tất cả') {
@@ -99,6 +148,47 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     }
 
     return list;
+  }
+
+  void _openCourse(AppCourse course) {
+    CourseNavigator.open(
+      context,
+      courseId: course.id,
+      mode: _isOwned(course) ? CourseOpenMode.learn : CourseOpenMode.browse,
+    );
+  }
+
+  void _addToCart(AppCourse course) {
+    CartController.instance.addToCart(course.id);
+    GatsNotificationService.showInApp(
+      message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
+      actionLabel: AppStrings.storeViewCart,
+      onAction: () => rootNavigatorKey.currentState?.push(
+        MaterialPageRoute<void>(builder: (_) => const CartScreen()),
+      ),
+    );
+  }
+
+  Widget _storeCourseCard(AppCourse course, {double? width}) {
+    final item = course.toListItem(userId: _userId);
+    final owned = _isOwned(course);
+    final inCart = CartController.instance.isInCart(course.id);
+    final card = TedCourseCard(
+      course: item,
+      vertical: true,
+      showProgress: owned,
+      isPurchased: owned,
+      showAddToCart: !owned,
+      inCart: inCart,
+      onTap: () => _openCourse(course),
+      onAddToCart: owned ? null : () => _addToCart(course),
+    );
+    if (width != null) return SizedBox(width: width, child: card);
+    return card;
+  }
+
+  void _openCourseSearch() {
+    GatsMainNavigator.push(context, const CourseSearchScreen());
   }
 
   void _openFilterDialog() {
@@ -309,7 +399,8 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     List<AppCourse> bestSellers,
   ) {
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      padding: EdgeInsets.fromLTRB(0, 8, 0, widget.embeddedInShell ? 120 : 24),
       children: [
         if (widget.embeddedInShell)
           Padding(
@@ -343,11 +434,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                 Expanded(
                   child: Container(
                     height: 48,
-                    decoration: BoxDecoration(
-                      color: gats.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: AppShadows.card,
-                    ),
+                    decoration: GatsSurfaceDecoration.pill(context),
                     child: TextField(
                       onChanged: (val) => setState(() => _searchQuery = val),
                       decoration: InputDecoration(
@@ -468,26 +555,10 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
           if (exclusiveOffers.isNotEmpty) ...[
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              child: Row(
-                children: [
-                  Text(
-                    AppStrings.storeFeatured,
-                    style: AppTypography.style(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: gats.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    AppStrings.storeSeeAll,
-                    style: AppTypography.style(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: gats.lavenderAccent,
-                    ),
-                  ),
-                ],
+              child: TedSectionHeader(
+                title: AppStrings.storeFeatured,
+                actionLabel: AppStrings.storeSeeAll,
+                onAction: _openCourseSearch,
               ),
             ),
             const SizedBox(height: 12),
@@ -499,37 +570,23 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                 itemCount: exclusiveOffers.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 14),
                 itemBuilder: (context, index) {
-                  final course = exclusiveOffers[index];
-                  return _StoreCourseCard(course: course);
+                  return SizedBox(
+                    width: 155,
+                    height: 220,
+                    child: _storeCourseCard(exclusiveOffers[index]),
+                  );
                 },
               ),
             ),
             const SizedBox(height: 24),
           ],
 
-          // Best Selling (All courses)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            child: Row(
-              children: [
-                Text(
-                  AppStrings.storeBestSellers,
-                  style: AppTypography.style(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: gats.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  AppStrings.storeSeeAll,
-                  style: AppTypography.style(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: gats.lavenderAccent,
-                  ),
-                ),
-              ],
+            child: TedSectionHeader(
+              title: AppStrings.storeBestSellers,
+              actionLabel: AppStrings.storeSeeAll,
+              onAction: _openCourseSearch,
             ),
           ),
           const SizedBox(height: 12),
@@ -545,187 +602,10 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
             ),
             itemCount: bestSellers.length,
             itemBuilder: (context, index) {
-              final course = bestSellers[index];
-              return _StoreCourseCard(course: course);
+              return _storeCourseCard(bestSellers[index]);
             },
           ),
         ],
-    );
-  }
-}
-
-class _StoreCourseCard extends StatelessWidget {
-  const _StoreCourseCard({required this.course});
-
-  final AppCourse course;
-
-  String _formatPrice(double price) {
-    if (price <= 0) return AppStrings.storeFree;
-    final buffer = StringBuffer();
-    final str = price.toInt().toString();
-    int len = str.length;
-    for (int i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(str[i]);
-    }
-    buffer.write(' đ');
-    return buffer.toString();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final gats = context.gatsColors;
-    final isWishlist = CartController.instance.isInWishlist(course.id);
-    final inCart = CartController.instance.isInCart(course.id);
-
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => CourseStoreDetailScreen(courseId: course.id),
-        ),
-      ),
-      child: Container(
-        width: 155,
-        decoration: BoxDecoration(
-          color: gats.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: AppShadows.card,
-          border: Border.all(color: gats.divider.withValues(alpha: 0.5)),
-        ),
-        child: Stack(
-          children: [
-            // Course Content Layout
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Illustration Cover (SaaS Flat Vector style)
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.cardSoft,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        course.isFree ? Icons.lightbulb_outline : Icons.workspace_premium_outlined,
-                        size: 40,
-                        color: course.isFree ? gats.lavenderAccent : AppColors.accent,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    course.tag,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.accent,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    course.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.style(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: gats.textPrimary,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: Colors.amber, size: 13),
-                      const SizedBox(width: 2),
-                      Text(
-                        '4.8',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: gats.textPrimary),
-                      ),
-                      Text(
-                        ' (120)',
-                        style: TextStyle(fontSize: 9, color: gats.textSecondary),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _formatPrice(course.price),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: gats.lavenderAccent,
-                        ),
-                      ),
-                      // Add Button
-                      GestureDetector(
-                        onTap: () {
-                          CartController.instance.addToCart(course.id, quantity: 1);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
-                              ),
-                              action: SnackBarAction(
-                                label: AppStrings.storeViewCart,
-                                textColor: AppColors.accent,
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: inCart ? gats.lavenderAccent.withValues(alpha: 0.12) : gats.lavenderAccent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            inCart ? Icons.check : Icons.add,
-                            color: inCart ? gats.lavenderAccent : Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Wishlist button
-            Positioned(
-              top: 6,
-              right: 6,
-              child: GestureDetector(
-                onTap: () => CartController.instance.toggleWishlist(course.id),
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Colors.white70,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isWishlist ? Icons.favorite : Icons.favorite_border,
-                    color: isWishlist ? Colors.red : Colors.grey,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

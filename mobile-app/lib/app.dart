@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/keyboard_dismiss_scope.dart';
 import 'package:gats_academy/features/onboarding/presentation/app_bootstrap.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
 
@@ -14,6 +16,7 @@ class GatsAcademyApp extends StatelessWidget {
       animation: AppLocaleController.instance,
       builder: (context, _) {
         return MaterialApp(
+          navigatorKey: rootNavigatorKey,
           title: 'GATS Academy',
           locale: AppLocaleController.instance.locale,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -26,6 +29,11 @@ class GatsAcademyApp extends StatelessWidget {
           theme: AppTheme.light,
           themeMode: ThemeMode.light,
           debugShowCheckedModeBanner: false,
+          builder: (context, child) {
+            return KeyboardDismissScope(
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
           home: const AppBootstrap(),
         );
       },

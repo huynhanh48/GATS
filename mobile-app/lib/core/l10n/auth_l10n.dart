@@ -9,14 +9,17 @@ abstract final class AuthL10n {
         AuthErrorCode.invalidEmail => l10n.authErrorInvalidEmail,
         AuthErrorCode.passwordTooShortLogin => l10n.authErrorPasswordTooShortLogin,
         AuthErrorCode.passwordTooShortSignup => l10n.authErrorPasswordTooShortSignup,
-        AuthErrorCode.networkError => l10n.authErrorNetwork,
+        AuthErrorCode.networkError => error.serverMessage ?? l10n.authErrorNetwork,
         AuthErrorCode.unauthorized => error.serverMessage ?? l10n.authErrorUnauthorized,
         AuthErrorCode.serverError => error.serverMessage ?? l10n.authErrorServer,
         AuthErrorCode.emailVerificationRequired => l10n.authRegisterSuccessVerify,
+        AuthErrorCode.socialCancelled => l10n.authSocialCancelled,
+        AuthErrorCode.socialTokenMissing => l10n.authSocialTokenMissing,
+        AuthErrorCode.socialFailed => error.serverMessage ?? l10n.authSocialFailed,
+        AuthErrorCode.socialGoogleMisconfigured => l10n.authSocialGoogleConfigHint,
       };
 
   static String roleLabel(AppLocalizations l10n, UserRole role) => switch (role) {
-        UserRole.guest => l10n.roleGuest,
         UserRole.user => l10n.roleUser,
         UserRole.mentor => l10n.roleMentor,
         UserRole.admin => l10n.roleAdmin,

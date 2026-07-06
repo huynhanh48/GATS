@@ -89,8 +89,11 @@ class AppCourse {
   final List<CourseQuiz> quizzes;
   final Map<String, double> progressByUser;
 
-  bool isEnrolledBy(String? userId) =>
-      userId != null && (isFree || enrolledUserIds.contains(userId));
+  bool isEnrolledBy(String? userId) => isOwnedBy(userId);
+
+  /// Khóa user thực sự đã đăng ký / mua (có trong enrolledUserIds).
+  bool isOwnedBy(String? userId) =>
+      userId != null && enrolledUserIds.contains(userId);
 
   bool isManagedBy(String? userId) => userId != null && mentorId == userId;
 

@@ -1,0 +1,74 @@
+{
+  "mappings": [
+    {
+      "courseId": "course-1",
+      "skillLevels": ["beginner", "intermediate"],
+      "purposes": ["officeWork", "careerChange", "personalInterest"],
+      "profiles": ["officeWorker", "other"],
+      "interests": ["chatbot", "contentWriting"],
+      "motivations": ["keepUp", "career"],
+      "ageRanges": ["age36to45", "above45"],
+      "dailyGoals": ["casual", "regular"]
+    },
+    {
+      "courseId": "course-2",
+      "skillLevels": ["intermediate", "advanced"],
+      "purposes": ["skillUpgrade", "careerChange"],
+      "profiles": ["student", "officeWorker", "freelancer"],
+      "interests": ["dataAnalysis", "automation", "contentWriting"],
+      "motivations": ["career", "income", "keepUp"],
+      "ageRanges": ["under25", "age26to35"],
+      "dailyGoals": ["regular", "serious"]
+    },
+    {
+      "courseId": "course-3",
+      "skillLevels": ["advanced", "intermediate"],
+      "purposes": ["skillUpgrade", "personalInterest"],
+      "profiles": ["freelancer", "officeWorker"],
+      "interests": ["automation", "coding", "imageGen"],
+      "motivations": ["curiosity", "income"],
+      "ageRanges": ["age26to35", "age36to45"],
+      "dailyGoals": ["serious", "intense"]
+    },
+    {
+      "courseId": "course-4",
+      "skillLevels": ["beginner", "intermediate"],
+      "purposes": ["careerChange", "skillUpgrade"],
+      "profiles": ["student", "freelancer"],
+      "interests": ["coding"],
+      "motivations": ["career", "income"],
+      "ageRanges": ["under25", "age26to35"],
+      "dailyGoals": ["serious", "intense"]
+    },
+    {
+      "courseId": "course-5",
+      "skillLevels": ["beginner", "intermediate"],
+      "purposes": ["skillUpgrade", "careerChange", "personalInterest"],
+      "profiles": ["freelancer", "student", "other"],
+      "interests": ["contentWriting"],
+      "motivations": ["income", "career"],
+      "ageRanges": ["under25", "age26to35", "age36to45"],
+      "dailyGoals": ["casual", "regular"]
+    },
+    {
+      "courseId": "course-6",
+      "skillLevels": ["beginner"],
+      "purposes": ["personalInterest", "skillUpgrade", "careerChange"],
+      "profiles": ["student", "officeWorker", "other"],
+      "interests": [],
+      "motivations": ["career", "keepUp"],
+      "ageRanges": ["under25", "age26to35", "age36to45", "above45"],
+      "dailyGoals": ["casual", "regular", "serious"]
+    },
+    {
+      "courseId": "course-7",
+      "skillLevels": ["beginner", "intermediate"],
+      "purposes": ["personalInterest", "skillUpgrade", "officeWork"],
+      "profiles": ["officeWorker", "student", "other"],
+      "interests": ["contentWriting"],
+      "motivations": ["career", "keepUp"],
+      "ageRanges": ["age26to35", "age36to45", "above45"],
+      "dailyGoals": ["regular", "serious"]
+    }
+  ]
+}

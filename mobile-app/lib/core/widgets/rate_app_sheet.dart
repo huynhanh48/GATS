@@ -1,10 +1,16 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/config/store_config.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
 import 'package:in_app_review/in_app_review.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+enum RateAppOutcome { nativeRequested, storeOpened, failed }
 
 class RateAppSheet {
   static bool _reviewInFlight = false;
@@ -19,29 +25,97 @@ class RateAppSheet {
   }
 
   static Future<void> openStoreListing() async {
-    if (kIsWeb) return;
-    await InAppReview.instance.openStoreListing();
+    await _openPlayStore(feedbackContext: null);
   }
 
-  /// Gọi dialog đánh giá native (iOS/Android). Web bỏ qua.
-  static Future<bool> requestNativeReview() async {
-    if (kIsWeb) return false;
-    if (_reviewInFlight) return false;
+  /// Gọi dialog đánh giá native (iOS/Android). Fallback sang Google Play / App Store.
+  static Future<RateAppOutcome> requestNativeReview({BuildContext? feedbackContext}) async {
+    if (kIsWeb) return RateAppOutcome.failed;
+    if (_reviewInFlight) return RateAppOutcome.failed;
 
     _reviewInFlight = true;
     try {
       final review = InAppReview.instance;
-      if (await review.isAvailable()) {
+      final available = await review.isAvailable();
+      debugPrint('[RateApp] isAvailable=$available, release=$kReleaseMode');
+
+      // flutter run / sideload: Google thường không cho hiện in-app review.
+      final skipNativeOnDebugAndroid =
+          kDebugMode && !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+      if (!skipNativeOnDebugAndroid && available) {
         await review.requestReview();
-        return true;
+        // Google có thể gọi thành công nhưng không vẽ UI (quota) — không detect được.
+        return RateAppOutcome.nativeRequested;
       }
-      await review.openStoreListing();
-      return true;
-    } catch (_) {
-      return false;
+
+      if (!available) {
+        _showSnackIfMounted(
+          feedbackContext,
+          AppStrings.reviewNativeUnavailable,
+        );
+      }
+
+      final opened = await _openPlayStore(feedbackContext: feedbackContext);
+      return opened ? RateAppOutcome.storeOpened : RateAppOutcome.failed;
+    } catch (e, st) {
+      debugPrint('[RateApp] requestNativeReview failed: $e\n$st');
+      final opened = await _openPlayStore(feedbackContext: feedbackContext);
+      return opened ? RateAppOutcome.storeOpened : RateAppOutcome.failed;
     } finally {
       _reviewInFlight = false;
     }
+  }
+
+  static Future<bool> _openPlayStore({BuildContext? feedbackContext}) async {
+    if (kIsWeb) return false;
+
+    try {
+      await InAppReview.instance.openStoreListing();
+      _showSnackIfMounted(feedbackContext, AppStrings.reviewOpenedPlayStore);
+      return true;
+    } catch (e) {
+      debugPrint('[RateApp] openStoreListing plugin failed: $e');
+    }
+
+    if (!Platform.isAndroid) return false;
+
+    final marketOk = await _launchExternal(StoreConfig.playStoreMarketUri);
+    if (marketOk) {
+      _showSnackIfMounted(feedbackContext, AppStrings.reviewOpenedPlayStore);
+      return true;
+    }
+
+    final httpsOk = await _launchExternal(StoreConfig.playStoreHttpsUri);
+    if (httpsOk) {
+      _showSnackIfMounted(feedbackContext, AppStrings.reviewOpenedPlayStore);
+    }
+    return httpsOk;
+  }
+
+  static Future<bool> _launchExternal(Uri uri) async {
+    try {
+      if (!await canLaunchUrl(uri)) return false;
+      return launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[RateApp] launchUrl failed ($uri): $e');
+      return false;
+    }
+  }
+
+  static void _showSnackIfMounted(BuildContext? context, String message) {
+    if (context == null || !context.mounted) return;
+    _showSnack(context, message);
+  }
+
+  static void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      ),
+    );
   }
 }
 
@@ -59,7 +133,7 @@ class _RateAppSheetContentState extends State<_RateAppSheetContent> {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
     try {
-      await RateAppSheet.requestNativeReview();
+      await RateAppSheet.requestNativeReview(feedbackContext: context);
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

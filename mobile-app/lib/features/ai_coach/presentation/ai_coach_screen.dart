@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
@@ -46,6 +47,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     });
     _controller.clear();
     _scrollToEnd();
+    HapticFeedback.lightImpact();
 
     await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
@@ -76,32 +78,33 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
 
     return Column(
       children: [
-        // Smart prompts
-        SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            itemCount: _contextPrompts.length,
-            separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (context, index) {
-              final prompt = _contextPrompts[index];
-              return ActionChip(
-                label: Text(prompt),
-                onPressed: () => _sendMessage(prompt),
-                side: BorderSide(color: gats.lavenderAccent.withValues(alpha: 0.3)),
-                avatar: Icon(
-                  index == 0 ? Icons.lightbulb_outline :
-                  index == 1 ? Icons.trending_up :
-                  index == 2 ? Icons.quiz_outlined :
-                  Icons.task_alt,
-                  size: 16,
-                  color: gats.lavenderAccent,
-                ),
-              );
-            },
+        // Smart prompts — auto-hide after conversation starts
+        if (!hasConversation)
+          SizedBox(
+            height: 48,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              itemCount: _contextPrompts.length,
+              separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.sm),
+              itemBuilder: (context, index) {
+                final prompt = _contextPrompts[index];
+                return ActionChip(
+                  label: Text(prompt),
+                  onPressed: () => _sendMessage(prompt),
+                  side: BorderSide(color: gats.lavenderAccent.withValues(alpha: 0.3)),
+                  avatar: Icon(
+                    index == 0 ? Icons.lightbulb_outline :
+                    index == 1 ? Icons.trending_up :
+                    index == 2 ? Icons.quiz_outlined :
+                    Icons.task_alt,
+                    size: 16,
+                    color: gats.lavenderAccent,
+                  ),
+                );
+              },
+            ),
           ),
-        ),
         Expanded(
           child: _messages.length <= 1 && !hasConversation
               ? _WelcomeCard(onPrompt: _sendMessage)
@@ -132,7 +135,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                 child: TextField(
                   controller: _controller,
                   decoration: InputDecoration(
-                    hintText: 'Hỏi AI Coach...',
+                    hintText: AppStrings.aiCoachInputHint,
                     filled: true,
                     fillColor: gats.background,
                     border: OutlineInputBorder(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
@@ -54,23 +56,37 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     setState(() {});
   }
 
+  void _openPost(String postId, {String? courseId}) {
+    GatsMainNavigator.push(
+      context,
+      PostDetailScreen(
+        postId: postId,
+        onEnroll: courseId != null ? () => _enrollFromPost(courseId) : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
     final userId = _user?.id;
-    final role = _user?.role ?? UserRole.guest;
+    final role = _user?.role ?? UserRole.user;
     final posts = MockPostStore.instance.feedForUser(userId: userId, role: role);
 
-    return Scaffold(
-      backgroundColor: context.gatsColors.background,
+    return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.postHomeSectionTitle),
-        backgroundColor: AppColors.surface,
+        backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: gats.textPrimary,
       ),
       body: posts.isEmpty
           ? Center(
               child: Text(
                 AppStrings.postFeedEmpty,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: gats.textSecondary,
+                    ),
               ),
             )
           : ListView.separated(
@@ -84,22 +100,13 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                   userId: userId,
                   role: role,
                 );
-                return PostCard(
-                  post: post,
-                  canReadFull: canReadFull,
-                  courseTitle: MockPostStore.instance.courseTitleFor(post),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => PostDetailScreen(
-                          postId: post.id,
-                          onEnroll: post.courseId != null
-                              ? () => _enrollFromPost(post.courseId!)
-                              : null,
-                        ),
-                      ),
-                    );
-                  },
+                return RepaintBoundary(
+                  child: PostCard(
+                    post: post,
+                    canReadFull: canReadFull,
+                    courseTitle: MockPostStore.instance.courseTitleFor(post),
+                    onTap: () => _openPost(post.id, courseId: post.courseId),
+                  ),
                 );
               },
             ),

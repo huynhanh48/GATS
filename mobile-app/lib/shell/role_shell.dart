@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gats_academy/core/services/app_theme_controller.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/gats_main_app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/shell/admin_shell.dart';
@@ -21,6 +24,12 @@ class _RoleShellState extends State<RoleShell> {
   void initState() {
     super.initState();
     _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (AppThemeController.instance.isDarkMode) {
+        StarrySkyBackgroundCache.ensurePrecached(context);
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -31,14 +40,27 @@ class _RoleShellState extends State<RoleShell> {
 
   @override
   Widget build(BuildContext context) {
-    final role = _user?.role ?? UserRole.guest;
+    final role = _user?.role ?? UserRole.user;
+
+    if (_user == null) {
+      return const GatsMainAppTheme(
+        child: Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
 
     final shell = switch (role) {
       UserRole.admin => const AdminShell(),
       UserRole.mentor => const MentorShell(),
-      UserRole.user || UserRole.guest => const MainShell(),
+      UserRole.user => const MainShell(),
     };
 
-    return GatsMainAppTheme(child: shell);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        SystemNavigator.pop();
+      },
+      child: GatsMainAppTheme(child: shell),
+    );
   }
 }

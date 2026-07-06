@@ -17,6 +17,9 @@ class RoadmapModule {
     required this.status,
     required this.progress,
     required this.icon,
+    this.courseId,
+    this.lectureId,
+    this.quizId,
   });
 
   final String title;
@@ -24,6 +27,9 @@ class RoadmapModule {
   final RoadmapStatus status;
   final double progress;
   final IconData icon;
+  final String? courseId;
+  final String? lectureId;
+  final String? quizId;
 }
 
 class QuizItem {
@@ -60,12 +66,18 @@ class DailyTask {
     required this.title,
     required this.isDone,
     this.deckId,
+    this.courseId,
+    this.quizId,
+    this.type,
   });
 
   final String id;
   final String title;
   final bool isDone;
   final String? deckId;
+  final String? courseId;
+  final String? quizId;
+  final String? type;
 }
 
 class RoutineStep {
@@ -346,14 +358,14 @@ abstract final class MockData {
     return user?.displayName ?? 'Học viên GATS';
   }
 
-  static List<CourseItem> coursesFor({String? userId, UserRole role = UserRole.guest}) {
+  static List<CourseItem> coursesFor({String? userId, UserRole role = UserRole.user}) {
     return MockCourseStore.instance.courseItemsFor(userId, role: role);
   }
 
   static List<CourseItem> get courses =>
       MockCourseStore.instance.courseItemsFor(MockAccounts.user.id, role: UserRole.user);
 
-  static const roadmapModules = [
+  static const staticRoadmapModules = [
     RoadmapModule(
       title: 'Nền tảng AI',
       description: 'Hiểu khái niệm AI, ML và ứng dụng cơ bản',
@@ -394,7 +406,9 @@ abstract final class MockData {
         'Nên dành 20 phút/ngày cho module "Ứng dụng công sở" để cân bằng lý thuyết và thực hành.',
   );
 
-  static const dailyTasks = [
+  static List<RoadmapModule> get roadmapModules => staticRoadmapModules;
+
+  static const staticDailyTasks = [
     DailyTask(
       id: 'flashcard',
       title: 'Ôn lại 5 flashcard Prompt cơ bản',
@@ -423,7 +437,9 @@ abstract final class MockData {
     ),
   ];
 
-  static const flashcardDecks = [
+  static List<DailyTask> get dailyTasks => staticDailyTasks;
+
+  static const staticFlashcardDecks = [
     FlashcardDeck(
       id: 'deck-prompt',
       title: 'Prompt cơ bản',
@@ -498,6 +514,8 @@ abstract final class MockData {
     'Tóm tắt tiến độ tuần này',
     'Gợi ý bài tập hôm nay',
   ];
+
+  static List<FlashcardDeck> get flashcardDecks => staticFlashcardDecks;
 
   static const badges = [
     BadgeItem(name: 'Khởi đầu', icon: Icons.eco_outlined, isUnlocked: true),

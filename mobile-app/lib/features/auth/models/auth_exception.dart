@@ -7,6 +7,10 @@ enum AuthErrorCode {
   unauthorized,
   serverError,
   emailVerificationRequired,
+  socialCancelled,
+  socialTokenMissing,
+  socialFailed,
+  socialGoogleMisconfigured,
 }
 
 class AuthException implements Exception {

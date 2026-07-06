@@ -4,4 +4,6 @@ abstract final class AppAssets {
   static const coach = 'assets/images/coach.png';
   static const gatsLogoIcon = 'assets/images/gats_logo_icon.png';
   static const starryMoonGlow = 'assets/images/starry_moon_glow.png';
+  static const starrySkyBackground = 'assets/images/starry_sky_bg.png';
+  static const coachNotetaking = 'assets/images/coach_notetaking.png';
 }

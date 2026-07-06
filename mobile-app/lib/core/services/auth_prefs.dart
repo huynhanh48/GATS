@@ -47,6 +47,8 @@ abstract final class AuthPrefs {
   }
 
   static Future<bool> isSignedIn() async {
+    final token = await accessToken();
+    if (token == null || token.isEmpty) return false;
     if (_memoryFallback) return _memoryUser != null;
     try {
       final prefs = await _loadPrefs();
@@ -81,10 +83,14 @@ abstract final class AuthPrefs {
       final prefs = await _loadPrefs();
       if (prefs == null) return _memoryUser;
       if (!(prefs.getBool(_signedInKey) ?? false)) return null;
+      final token = prefs.getString(_tokenKey);
+      if (token == null || token.isEmpty) return null;
       final methodName = prefs.getString(_methodKey);
       final roleName = prefs.getString(_roleKey);
+      final userId = prefs.getString(_userIdKey);
+      if (userId == null || userId.isEmpty) return null;
       return AuthUser(
-        id: prefs.getString(_userIdKey) ?? 'guest',
+        id: userId,
         displayName: prefs.getString(_displayNameKey) ?? 'Học viên GATS',
         email: prefs.getString(_emailKey) ?? '',
         method: AuthMethod.values.firstWhere(
@@ -105,9 +111,9 @@ abstract final class AuthPrefs {
     }
   }
 
-  static Future<void> saveSession(AuthUser user, {String? token}) async {
+  static Future<void> saveSession(AuthUser user, {required String token}) async {
     _memoryUser = user;
-    if (token != null) _memoryToken = token;
+    _memoryToken = token;
     if (_memoryFallback) return;
     try {
       final prefs = await _loadPrefs();
@@ -118,9 +124,7 @@ abstract final class AuthPrefs {
       await prefs.setString(_emailKey, user.email);
       await prefs.setString(_methodKey, user.method.name);
       await prefs.setString(_roleKey, user.role.name);
-      if (token != null) {
-        await prefs.setString(_tokenKey, token);
-      }
+      await prefs.setString(_tokenKey, token);
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {

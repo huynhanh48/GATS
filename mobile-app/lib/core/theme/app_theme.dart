@@ -17,13 +17,13 @@ abstract final class AppColors {
   static const accent = Color(0xFFFF7622);
   static const primary = Color(0xFF0070EB);
 
-  static const primaryLight = primary;
+  static const primaryLight = Color(0xFF3D8FEF);
   static const surfaceElevated = background;
   static const textPrimary = Color(0xFF101828);
   static const textSecondary = Color(0xFF667085);
-  static const success = primary;
-  static const warning = accent;
-  static const error = accent;
+  static const success = Color(0xFF10B981);
+  static const warning = Color(0xFFF59E0B);
+  static const error = Color(0xFFEF4444);
   static const divider = Color(0xFFE5E7F0);
   static const darkCanvas = Color(0xFF101828);
   static const darkCanvasElevated = Color(0xFF1A2234);
@@ -62,7 +62,7 @@ abstract final class AppTheme {
       fontFamilyFallback: AppTypography.fallbacks,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: baseText.copyWith(
+      textTheme: AppTypography.withoutUnderline(baseText.copyWith(
         headlineSmall: baseText.headlineSmall?.copyWith(
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -73,7 +73,7 @@ abstract final class AppTheme {
         ),
         bodyMedium: baseText.bodyMedium?.copyWith(color: AppColors.textPrimary),
         bodySmall: baseText.bodySmall?.copyWith(color: AppColors.textSecondary),
-      ),
+      )),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
@@ -121,6 +121,26 @@ abstract final class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        contentTextStyle: AppTypography.style(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: Colors.white,
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      dialogTheme: DialogThemeData(
+        titleTextStyle: AppTypography.style(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimary,
+        ),
+        contentTextStyle: AppTypography.style(
+          fontSize: 14,
+          color: AppColors.textSecondary,
+        ),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surface,
         labelStyle: AppTypography.style(
@@ -129,6 +149,15 @@ abstract final class AppTheme {
         ),
         side: const BorderSide(color: AppColors.divider),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          textStyle: AppTypography.style(fontWeight: FontWeight.w600).copyWith(
+            decoration: TextDecoration.none,
+            decorationColor: Colors.transparent,
+          ),
+        ),
       ),
       dividerTheme: const DividerThemeData(color: AppColors.divider),
       extensions: const [GatsThemeExtension.light],
@@ -156,7 +185,7 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.nightSkyBottom,
       canvasColor: AppColors.nightSkyBottom,
-      textTheme: baseText.copyWith(
+      textTheme: AppTypography.withoutUnderline(baseText.copyWith(
         headlineSmall: baseText.headlineSmall?.copyWith(
           fontWeight: FontWeight.w700,
           color: const Color(0xFFF4F6FF),
@@ -167,7 +196,7 @@ abstract final class AppTheme {
         ),
         bodyMedium: baseText.bodyMedium?.copyWith(color: const Color(0xFFF4F6FF)),
         bodySmall: baseText.bodySmall?.copyWith(color: const Color(0xFF9AA3C7)),
-      ),
+      )),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: const Color(0xFFF4F6FF),
@@ -200,6 +229,26 @@ abstract final class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        contentTextStyle: AppTypography.style(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFFF4F6FF),
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      dialogTheme: DialogThemeData(
+        titleTextStyle: AppTypography.style(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFFF4F6FF),
+        ),
+        contentTextStyle: AppTypography.style(
+          fontSize: 14,
+          color: const Color(0xFF9AA3C7),
+        ),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.nightSurfaceElevated,
         labelStyle: AppTypography.style(
@@ -208,6 +257,15 @@ abstract final class AppTheme {
         ),
         side: const BorderSide(color: Color(0xFF2A3158)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.nightLavender,
+          textStyle: AppTypography.style(fontWeight: FontWeight.w600).copyWith(
+            decoration: TextDecoration.none,
+            decorationColor: Colors.transparent,
+          ),
+        ),
       ),
       dividerTheme: const DividerThemeData(color: Color(0xFF2A3158)),
       extensions: const [GatsThemeExtension.dark],

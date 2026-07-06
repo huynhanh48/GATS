@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/core/theme/gats_surface.dart';
+import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/ui_components.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 import 'package:gats_academy/features/hub/presentation/widgets/achievement_timeline.dart';
@@ -13,61 +14,88 @@ class HubScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
     final progress = MockData.hubProgress;
     final xpRemaining = progress.certXpRequired - progress.currentXp;
     final canTakeCert = xpRemaining <= 0;
     final rankTitle = MockData.rankTitle(progress.level);
 
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        // XP Level Card — Enhanced
-        _XpLevelCard(progress: progress, rankTitle: rankTitle),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // Badges — Enhanced
-        Text(AppStrings.hubBadgesTitle, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.md),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.3,
+    return GatsThemedScaffold(
+      appBar: AppBar(
+        backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+        surfaceTintColor: Colors.transparent,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: gats.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppStrings.quickActionHub,
+              style: AppTypography.style(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: gats.textPrimary,
+              ),
+            ),
+            Text(
+              AppHeaderSubtitles.hub,
+              style: AppTypography.style(
+                fontSize: 12,
+                color: gats.textSecondary,
+              ).copyWith(decoration: TextDecoration.none),
+            ),
+          ],
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
+          _XpLevelCard(progress: progress, rankTitle: rankTitle),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            AppStrings.hubBadgesTitle,
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          itemCount: MockData.badges.length,
-          itemBuilder: (context, index) {
-            final badge = MockData.badges[index];
-            return _BadgeCard(badge: badge);
-          },
-        ),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // Leaderboard
-        Text(AppStrings.homeLeaderboard, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.md),
-        const LeaderboardSection(),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // Achievements Timeline
-        Text(AppStrings.hubAchievements, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.md),
-        const AchievementTimeline(),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // Certificate Card — Enhanced
-        _CertificateCard(
-          progress: progress,
-          canTakeCert: canTakeCert,
-          xpRemaining: xpRemaining,
-        ),
-      ],
+          const SizedBox(height: AppSpacing.md),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 1.3,
+            ),
+            itemCount: MockData.badges.length,
+            itemBuilder: (context, index) {
+              final badge = MockData.badges[index];
+              return _BadgeCard(badge: badge);
+            },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            AppStrings.homeLeaderboard,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const LeaderboardSection(),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            AppStrings.hubAchievements,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const AchievementTimeline(),
+          const SizedBox(height: AppSpacing.xl),
+          _CertificateCard(
+            progress: progress,
+            canTakeCert: canTakeCert,
+            xpRemaining: xpRemaining,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -95,7 +123,7 @@ class _XpLevelCardState extends State<_XpLevelCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 500),
     );
     _progressAnim = Tween<double>(
       begin: 0,
@@ -126,6 +154,7 @@ class _XpLevelCardState extends State<_XpLevelCard>
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.85),
                   fontSize: 13,
+                  decoration: TextDecoration.none,
                 ),
               ),
               const Spacer(),
@@ -141,6 +170,7 @@ class _XpLevelCardState extends State<_XpLevelCard>
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
                     fontSize: 11,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),
@@ -161,6 +191,7 @@ class _XpLevelCardState extends State<_XpLevelCard>
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
+                    decoration: TextDecoration.none,
                   ),
                 ),
               ),
@@ -170,6 +201,7 @@ class _XpLevelCardState extends State<_XpLevelCard>
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.none,
                 ),
               ),
             ],
@@ -267,6 +299,7 @@ class _BadgeCard extends StatelessWidget {
                       fontWeight: badge.isUnlocked
                           ? FontWeight.w600
                           : FontWeight.normal,
+                      decoration: TextDecoration.none,
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -302,7 +335,6 @@ class _CertificateCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.lg),
-          // Certificate preview
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.xl),
@@ -311,8 +343,8 @@ class _CertificateCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.primary.withValues(alpha: 0.06),
-                  AppColors.accent.withValues(alpha: 0.06),
+                  AppColors.primary.withValues(alpha: gats.isStarry ? 0.12 : 0.06),
+                  AppColors.accent.withValues(alpha: gats.isStarry ? 0.12 : 0.06),
                 ],
               ),
               borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -338,6 +370,7 @@ class _CertificateCard extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     letterSpacing: 3,
                     color: canTakeCert ? gats.lavenderAccent : gats.textSecondary,
+                    decoration: TextDecoration.none,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -347,6 +380,7 @@ class _CertificateCard extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: canTakeCert ? gats.textPrimary : gats.textSecondary,
+                    decoration: TextDecoration.none,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -361,6 +395,7 @@ class _CertificateCard extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: canTakeCert ? gats.lavenderAccent : gats.textSecondary,
+                      decoration: TextDecoration.none,
                     ),
                   ),
                 ),
@@ -372,7 +407,9 @@ class _CertificateCard extends StatelessWidget {
             canTakeCert
                 ? AppStrings.hubCertReady
                 : AppStrings.hubCertLocked.replaceFirst('%d', '$xpRemaining'),
-            style: Theme.of(context).textTheme.bodySmall,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  decoration: TextDecoration.none,
+                ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),

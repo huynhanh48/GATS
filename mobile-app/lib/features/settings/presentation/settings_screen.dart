@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:gats_academy/core/services/app_theme_controller.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
+import 'package:gats_academy/core/services/app_theme_controller.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/services/onboarding_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
 import 'package:gats_academy/core/widgets/rate_app_sheet.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
-import 'package:gats_academy/features/auth/models/user_role.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -23,19 +25,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    AppThemeController.instance.addListener(_onThemeChanged);
     AppLocaleController.instance.addListener(_onLocaleChanged);
   }
 
   @override
   void dispose() {
-    AppThemeController.instance.removeListener(_onThemeChanged);
     AppLocaleController.instance.removeListener(_onLocaleChanged);
     super.dispose();
-  }
-
-  void _onThemeChanged() {
-    if (mounted) setState(() {});
   }
 
   void _onLocaleChanged() {
@@ -52,7 +48,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
+        final sheetGats = sheetContext.gatsColors;
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -67,7 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: AppTypography.style(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: gats.textPrimary,
+                      color: sheetGats.textPrimary,
                     ),
                   ),
                 ),
@@ -76,54 +73,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   leading: const Text('🇻🇳', style: TextStyle(fontSize: 24)),
                   title: Text(
                     'Tiếng Việt',
-                    style: AppTypography.style(
-                      fontSize: 16,
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: gats.textPrimary,
+                      color: sheetGats.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     'Vietnamese',
-                    style: AppTypography.style(
-                      fontSize: 13,
-                      color: gats.textSecondary,
-                    ),
+                    style: TextStyle(color: sheetGats.textSecondary),
                   ),
                   trailing: currentLocale.languageCode == 'vi'
-                      ? const Icon(Icons.check_circle, color: AppColors.primary, size: 24)
+                      ? Icon(Icons.check_circle, color: sheetGats.lavenderAccent, size: 24)
                       : null,
                   onTap: () async {
                     await AppLocaleController.instance.setLocale(const Locale('vi'));
-                    if (context.mounted) Navigator.pop(context);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
                   },
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: Divider(height: 1),
-                ),
+                Divider(height: 1, color: sheetGats.divider),
                 ListTile(
                   leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
                   title: Text(
                     'English',
-                    style: AppTypography.style(
-                      fontSize: 16,
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: gats.textPrimary,
+                      color: sheetGats.textPrimary,
                     ),
                   ),
                   subtitle: Text(
                     'Tiếng Anh',
-                    style: AppTypography.style(
-                      fontSize: 13,
-                      color: gats.textSecondary,
-                    ),
+                    style: TextStyle(color: sheetGats.textSecondary),
                   ),
                   trailing: currentLocale.languageCode == 'en'
-                      ? const Icon(Icons.check_circle, color: AppColors.primary, size: 24)
+                      ? Icon(Icons.check_circle, color: sheetGats.lavenderAccent, size: 24)
                       : null,
                   onTap: () async {
                     await AppLocaleController.instance.setLocale(const Locale('en'));
-                    if (context.mounted) Navigator.pop(context);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
                   },
                 ),
               ],
@@ -142,18 +128,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: AppThemeController.instance,
+      builder: (context, _) {
+        final isDark = AppThemeController.instance.isDarkMode;
+        return Theme(
+          data: isDark ? AppTheme.dark : AppTheme.light,
+          child: Builder(builder: _buildScaffold),
+        );
+      },
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     final gats = context.gatsColors;
 
-    return Scaffold(
-      backgroundColor: gats.background,
-      appBar: AppBar(title: Text(AppStrings.settingsTitle)),
+    return GatsThemedScaffold(
+      appBar: AppBar(
+        title: Text(AppStrings.settingsTitle),
+        backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: gats.textPrimary,
+      ),
       body: FutureBuilder<AuthUser?>(
         future: _loadUser(),
         builder: (context, snapshot) {
           final user = snapshot.data;
           final accountSubtitle = user != null
               ? '${AppStrings.authSignedInAs.replaceFirst('%s', '${user.displayName} (${user.methodLabel})')}\n${AppStrings.authRoleLabel.replaceFirst('%s', user.roleLabel)}'
-              : 'Khách — chưa đăng nhập (vai trò: ${UserRole.guest.label})';
+              : AppStrings.authNotSignedIn;
 
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -169,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onTap: () => _showComingSoon(context),
                     ),
                     if (user != null) ...[
-                      const Divider(height: 1),
+                      Divider(height: 1, color: gats.divider),
                       _SettingsTile(
                         icon: Icons.logout_rounded,
                         title: AppStrings.authSignOut,
@@ -178,36 +181,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Đã đăng xuất. Hot restart app (R) để về màn Entry.'),
+                              content: Text(AppStrings.settingsSignOutSuccess),
                             ),
                           );
                         },
                       ),
                     ],
-                    const Divider(height: 1),
+                    Divider(height: 1, color: gats.divider),
                     SwitchListTile(
                       secondary: Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.nightLavender.withValues(alpha: 0.15),
+                          color: gats.lavenderAccent.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.dark_mode_outlined, color: AppColors.nightLavender, size: 20),
+                        child: Icon(
+                          Icons.dark_mode_outlined,
+                          color: gats.lavenderAccent,
+                          size: 20,
+                        ),
                       ),
-                      title: Text(AppStrings.settingsDarkMode),
-                      subtitle: Text(AppStrings.settingsDarkModeSubtitle),
+                      title: Text(
+                        AppStrings.settingsDarkMode,
+                        style: TextStyle(color: gats.textPrimary),
+                      ),
+                      subtitle: Text(
+                        AppStrings.settingsDarkModeSubtitle,
+                        style: TextStyle(color: gats.textSecondary),
+                      ),
                       value: AppThemeController.instance.isDarkMode,
-                      activeThumbColor: AppColors.nightLavender,
-                      onChanged: (_) => AppThemeController.instance.toggleDarkMode(),
+                      activeThumbColor: gats.lavenderAccent,
+                      activeTrackColor: gats.lavenderAccent.withValues(alpha: 0.35),
+                      onChanged: (_) async {
+                        await StarrySkyBackgroundCache.ensurePrecached(context);
+                        await AppThemeController.instance.toggleDarkMode();
+                      },
                     ),
-                    const Divider(height: 1),
+                    Divider(height: 1, color: gats.divider),
                     _SettingsTile(
                       icon: Icons.notifications_outlined,
                       title: AppStrings.settingsNotifications,
-                      onTap: () => _showComingSoon(context),
+                      onTap: () => openNotifications(context),
                     ),
-                    const Divider(height: 1),
+                    Divider(height: 1, color: gats.divider),
                     _SettingsTile(
                       icon: Icons.language_outlined,
                       title: AppStrings.settingsLanguage,
@@ -216,13 +233,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           : 'English',
                       onTap: () => _showLanguagePicker(context),
                     ),
-                    const Divider(height: 1),
+                    Divider(height: 1, color: gats.divider),
                     _SettingsTile(
                       icon: Icons.star_outline_rounded,
                       title: AppStrings.settingsRateApp,
-                      onTap: () => RateAppSheet.openStoreListing(),
+                      onTap: () => RateAppSheet.requestNativeReview(feedbackContext: context),
                     ),
-                    const Divider(height: 1),
+                    Divider(height: 1, color: gats.divider),
                     _SettingsTile(
                       icon: Icons.replay_outlined,
                       title: AppStrings.settingsReplayOnboarding,
@@ -231,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (!context.mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('Đã reset onboarding. Hot restart app (R) để xem lại flow.'),
+                            content: Text(AppStrings.settingsReplaySuccess),
                           ),
                         );
                       },
@@ -274,19 +291,26 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
     return ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: gats.lavenderAccent.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: gats.lavenderAccent, size: 20),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: gats.lavenderAccent.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
         ),
-        title: Text(title),
-        subtitle: subtitle != null ? Text(subtitle!) : null,
-        trailing: Icon(Icons.chevron_right, color: gats.textSecondary),
-        onTap: onTap,
-      );
+        child: Icon(icon, color: gats.lavenderAccent, size: 20),
+      ),
+      title: Text(title, style: TextStyle(color: gats.textPrimary)),
+      subtitle: subtitle != null
+          ? Text(subtitle!, style: TextStyle(color: gats.textSecondary))
+          : null,
+      trailing: Icon(Icons.chevron_right, color: gats.textSecondary),
+      onTap: onTap,
+    );
   }
+}
+
+/// Mở Settings với dark mode đồng bộ.
+void openSettings(BuildContext context) {
+  GatsMainNavigator.push(context, const SettingsScreen());
 }

@@ -30,7 +30,7 @@ class _ReviewPromptDialogState extends State<_ReviewPromptDialog> {
     if (_isSubmitting) return;
     setState(() => _isSubmitting = true);
     try {
-      await RateAppSheet.requestNativeReview();
+      await RateAppSheet.requestNativeReview(feedbackContext: context);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } finally {

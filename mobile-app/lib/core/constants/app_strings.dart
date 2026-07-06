@@ -53,6 +53,7 @@ abstract final class AppStrings {
     static String get authMockNotice => _l10n.authMockNotice;
   static String get authDemoAccounts => _l10n.authDemoAccounts;
   static String get authSignOut => _l10n.authSignOut;
+  static String get authNotSignedIn => _l10n.authNotSignedIn;
   static String get authSignedInAs => _l10n.authSignedInAs('%s');
   static String get authRoleLabel => _l10n.authRoleLabel('%s');
   static String get navHome => _l10n.navHome;
@@ -71,6 +72,10 @@ abstract final class AppStrings {
   static String get homePromoBadge => _l10n.homePromoBadge;
   static String get homeCategories => _l10n.homeCategories;
   static String get homePopularCourses => _l10n.homePopularCourses;
+  static String get homeMyCourses => _l10n.homeMyCourses;
+  static String get homeYourCourses => _l10n.homeYourCourses;
+  static String get homeYourCoursesEmpty => _l10n.homeYourCoursesEmpty;
+  static String get homeYourCoursesBrowse => _l10n.homeYourCoursesBrowse;
   static String get seeAll => _l10n.seeAll;
   static String get libraryFilterAll => _l10n.libraryFilterAll;
   static String get libraryFilterOngoing => _l10n.libraryFilterOngoing;
@@ -118,11 +123,27 @@ abstract final class AppStrings {
   static String get settingsTitle => _l10n.settingsTitle;
   static String get settingsAccount => _l10n.settingsAccount;
   static String get settingsNotifications => _l10n.settingsNotifications;
+  static String get notificationsScreenTitle => _l10n.notificationsScreenTitle;
+  static String get notificationsToday => _l10n.notificationsToday;
+  static String get notificationsYesterday => _l10n.notificationsYesterday;
+  static String get notificationsTestSection => _l10n.notificationsTestSection;
+  static String get notificationsTestBanner => _l10n.notificationsTestBanner;
+  static String get notificationsTestPush => _l10n.notificationsTestPush;
+  static String get notificationsTestPushDelayed => _l10n.notificationsTestPushDelayed;
+  static String get notificationsTestHint => _l10n.notificationsTestHint;
+  static String get notificationsPermissionDenied => _l10n.notificationsPermissionDenied;
+  static String get notificationsTestScheduled => _l10n.notificationsTestScheduled;
+  static String get notificationsTestSent => _l10n.notificationsTestSent;
+  static String get notificationsEmpty => _l10n.notificationsEmpty;
+  static String get dailyReminderTitle => _l10n.dailyReminderTitle;
+  static String get dailyReminderBody => _l10n.dailyReminderBody;
   static String get settingsLanguage => _l10n.settingsLanguage;
   static String get settingsDarkMode => _l10n.settingsDarkMode;
   static String get settingsDarkModeSubtitle => _l10n.settingsDarkModeSubtitle;
   static String get settingsAbout => _l10n.settingsAbout;
   static String get settingsReplayOnboarding => _l10n.settingsReplayOnboarding;
+  static String get settingsSignOutSuccess => _l10n.settingsSignOutSuccess;
+  static String get settingsReplaySuccess => _l10n.settingsReplaySuccess;
   static String get comingSoon => _l10n.comingSoon;
   static String get tagOfficeAi => _l10n.tagOfficeAi;
   static String get streakDays => _l10n.streakDays(0).replaceFirst('0', '%d');
@@ -211,12 +232,15 @@ abstract final class AppStrings {
   static String get rateSheetSubtitle => _l10n.rateSheetSubtitle;
   static String get rateSheetCta => _l10n.rateSheetCta;
   static String get rateSheetLater => _l10n.rateSheetLater;
+  static String get reviewOpenedPlayStore => _l10n.reviewOpenedPlayStore;
+  static String get reviewNativeUnavailable => _l10n.reviewNativeUnavailable;
   static String get settingsRateApp => _l10n.settingsRateApp;
   static String get courseTabOverview => _l10n.courseTabOverview;
   static String get courseTabLectures => _l10n.courseTabLectures;
   static String get courseTabQuiz => _l10n.courseTabQuiz;
   static String get courseTabPosts => _l10n.courseTabPosts;
   static String get courseTabChat => _l10n.courseTabChat;
+  static String get courseTabGroup => _l10n.courseTabGroup;
   static String get courseNotFound => _l10n.courseNotFound;
   static String get courseEnroll => _l10n.courseEnroll;
   static String get courseEnrollFree => _l10n.courseEnrollFree;
@@ -296,6 +320,7 @@ abstract final class AppStrings {
   static String get coachWelcomeCardTitle => _l10n.coachWelcomeCardTitle;
   static String get coachWelcomeCardBody => _l10n.coachWelcomeCardBody;
   static String get coachThinking => _l10n.coachThinking;
+  static String get aiCoachInputHint => _l10n.aiCoachInputHint;
     // Library enhancements
   static String get librarySearchHint => _l10n.librarySearchHint;
   static String get libraryNoResults => _l10n.libraryNoResults;
@@ -336,6 +361,9 @@ abstract final class AppStrings {
   static String get storeReviewsCount => _l10n.storeReviewsCount(0).replaceFirst('0', '%d');
   static String get storeCourseDetailTitle => _l10n.storeCourseDetailTitle;
   static String get storeSyllabusTitle => _l10n.storeSyllabusTitle(0).replaceFirst('0', '%d');
+  static String get storeSyllabusPreviewNote => _l10n.storeSyllabusPreviewNote;
+  static String get storeLecturePreview => _l10n.storeLecturePreview;
+  static String get storePurchased => _l10n.storePurchased;
   static String get storeReviewsTitle => _l10n.storeReviewsTitle;
   static String get storeAddToCart => _l10n.storeAddToCart;
   static String get storeAddedSeatsToCart => _l10n.storeAddedSeatsToCart(0, '%s');
@@ -354,6 +382,25 @@ abstract final class AppStrings {
   static String get checkoutSuccessTitle => _l10n.checkoutSuccessTitle;
   static String get checkoutSuccessDesc => _l10n.checkoutSuccessDesc;
   static String get checkoutStartLearning => _l10n.checkoutStartLearning;
+
+  static String get paymentTitle => _l10n.paymentTitle;
+  static String get paymentChooseMethod => _l10n.paymentChooseMethod;
+  static String get paymentOrderSummary => _l10n.paymentOrderSummary;
+  static String get paymentItemCount => _l10n.paymentItemCount(0).replaceFirst('0', '%d');
+  static String get paymentPayNow => _l10n.paymentPayNow;
+  static String get paymentPayWithApple => _l10n.paymentPayWithApple;
+  static String get paymentApplePayHint => _l10n.paymentApplePayHint;
+  static String get paymentMomoHint => _l10n.paymentMomoHint;
+  static String get paymentVnpayHint => _l10n.paymentVnpayHint;
+  static String get paymentRedirectNote => _l10n.paymentRedirectNote;
+  static String get paymentQrHint => _l10n.paymentQrHint;
+  static String get paymentQrScanNote => _l10n.paymentQrScanNote;
+  static String get paymentSecureNote => _l10n.paymentSecureNote;
+  static String get paymentCardDetails => _l10n.paymentCardDetails;
+  static String get paymentCardNumber => _l10n.paymentCardNumber;
+  static String get paymentCardName => _l10n.paymentCardName;
+  static String get paymentCardExpiry => _l10n.paymentCardExpiry;
+  static String get paymentCardCvv => _l10n.paymentCardCvv;
 
   static String get mentorSearchHint => _l10n.mentorSearchHint;
   static String get adminStatusPublished => _l10n.adminStatusPublished;

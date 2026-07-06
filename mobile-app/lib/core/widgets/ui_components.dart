@@ -128,6 +128,8 @@ class PillTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
+    final useFill = tabs.length <= 3;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       padding: const EdgeInsets.all(4),
@@ -135,7 +137,10 @@ class PillTabBar extends StatelessWidget {
       child: TabBar(
         controller: controller,
         dividerHeight: 0,
+        isScrollable: !useFill,
+        tabAlignment: useFill ? TabAlignment.fill : TabAlignment.start,
         indicatorSize: TabBarIndicatorSize.tab,
+        labelPadding: useFill ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 14),
         indicator: BoxDecoration(
           color: GatsSurfaceDecoration.surfaceColor(context),
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -143,8 +148,8 @@ class PillTabBar extends StatelessWidget {
         ),
         labelColor: gats.lavenderAccent,
         unselectedLabelColor: gats.textSecondary,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
         tabs: tabs.map((t) => Tab(text: t)).toList(),
       ),
     );

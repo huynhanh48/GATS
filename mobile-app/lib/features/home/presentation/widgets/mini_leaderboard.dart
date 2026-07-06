@@ -61,9 +61,10 @@ class MiniLeaderboard extends StatelessWidget {
                   children: [
                     Text(
                       AppStrings.seeAll,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
+                        decoration: TextDecoration.none,
                       ),
                     ),
                     const Icon(Icons.chevron_right, size: 18),

@@ -12,13 +12,14 @@ class GatsMainAppTheme extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: AppThemeController.instance,
-      builder: (context, _) {
-        if (!AppThemeController.instance.isDarkMode) return child;
+      builder: (context, child) {
+        if (!AppThemeController.instance.isDarkMode) return child!;
         return Theme(
           data: AppTheme.dark,
-          child: child,
+          child: child!,
         );
       },
+      child: child,
     );
   }
 }

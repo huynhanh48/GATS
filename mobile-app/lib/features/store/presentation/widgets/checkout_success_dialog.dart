@@ -4,11 +4,17 @@ import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/xp_popup.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 
 class CheckoutSuccessDialog extends StatefulWidget {
-  const CheckoutSuccessDialog({super.key, required this.userId});
+  const CheckoutSuccessDialog({
+    super.key,
+    required this.userId,
+    this.courseIds = const [],
+  });
 
   final String userId;
+  final List<String> courseIds;
 
   @override
   State<CheckoutSuccessDialog> createState() => _CheckoutSuccessDialogState();
@@ -128,16 +134,25 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
                     minimumSize: const Size.fromHeight(48),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   ),
-                  onPressed: () {
-                    // Close success dialog
-                    Navigator.pop(context); // Pop dialog
-                    Navigator.pop(context); // Pop Cart Screen (goes back to store or main shell)
-                    
-                    // Show a fun XP reward popup on main dashboard
+                  onPressed: () async {
+                    final courseId = widget.courseIds.isNotEmpty ? widget.courseIds.first : null;
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+
+                    if (courseId != null && context.mounted) {
+                      await CourseNavigator.open(
+                        context,
+                        courseId: courseId,
+                        mode: CourseOpenMode.learn,
+                      );
+                    }
+
+                    if (!context.mounted) return;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!context.mounted) return;
                       XpPopup.show(
                         Navigator.of(context).overlay!.context,
-                        xp: 150, // Reward XP for checkout
+                        xp: 150,
                       );
                     });
                   },

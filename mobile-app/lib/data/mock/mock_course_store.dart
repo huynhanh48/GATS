@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:gats_academy/data/catalog/course_catalog_loader.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
@@ -28,7 +29,29 @@ class MockCourseStore extends ChangeNotifier {
     ),
   ];
 
-  List<AppCourse> _courses = _seedCourses();
+  List<AppCourse> _courses = [];
+
+  /// Nạp catalog JSON; fallback Dart seed nếu JSON trống.
+  static Future<void> ensureLoaded() async {
+    final store = instance;
+    if (store._courses.isNotEmpty) return;
+
+    final catalog = CourseCatalogLoader.instance;
+    if (!catalog.isLoaded) await catalog.init();
+
+    if (catalog.courses.isNotEmpty) {
+      store._courses = catalog.courses
+          .map(
+            (c) => c.copyWith(
+              enrolledUserIds: Set.of(c.enrolledUserIds),
+              progressByUser: Map.of(c.progressByUser),
+            ),
+          )
+          .toList();
+    } else {
+      store._courses = _seedCourses();
+    }
+  }
 
   List<MockUserRecord> get users => List.unmodifiable(_users);
   List<AppCourse> get courses => List.unmodifiable(_courses);
@@ -36,7 +59,7 @@ class MockCourseStore extends ChangeNotifier {
   List<AppCourse> publishedCourses() =>
       _courses.where((c) => c.isPublished).toList();
 
-  List<AppCourse> coursesForUser(String? userId, {UserRole role = UserRole.guest}) {
+  List<AppCourse> coursesForUser(String? userId, {UserRole role = UserRole.user}) {
     if (role == UserRole.admin) return publishedCourses();
     if (role == UserRole.mentor && userId != null) {
       return _courses.where((c) => c.mentorId == userId && c.isPublished).toList();
@@ -44,7 +67,7 @@ class MockCourseStore extends ChangeNotifier {
     return publishedCourses();
   }
 
-  List<CourseItem> courseItemsFor(String? userId, {UserRole role = UserRole.guest}) {
+  List<CourseItem> courseItemsFor(String? userId, {UserRole role = UserRole.user}) {
     return coursesForUser(userId, role: role)
         .map((c) => c.toListItem(userId: userId))
         .toList();
@@ -71,7 +94,7 @@ class MockCourseStore extends ChangeNotifier {
   }) {
     if (role == UserRole.admin) return true;
     if (role == UserRole.mentor && userId == course.mentorId) return true;
-    if (role == UserRole.user && course.isEnrolledBy(userId)) return true;
+    if (role == UserRole.user && course.isOwnedBy(userId)) return true;
     return false;
   }
 

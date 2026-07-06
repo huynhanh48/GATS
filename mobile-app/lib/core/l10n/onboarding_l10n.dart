@@ -13,6 +13,7 @@ extension OnboardingL10n on AppLocalizations {
         QuizStepId.age => onboardingTitleAge,
         QuizStepId.dailyGoal => onboardingTitleDailyGoal,
         QuizStepId.purpose => onboardingTitlePurpose,
+        QuizStepId.reminder => onboardingTitleReminder,
       };
 
   String subtitleForStep(QuizStepId step) => switch (step) {
@@ -25,6 +26,7 @@ extension OnboardingL10n on AppLocalizations {
         QuizStepId.age => onboardingSubtitleAge,
         QuizStepId.dailyGoal => onboardingSubtitleDailyGoal,
         QuizStepId.purpose => onboardingSubtitlePurpose,
+        QuizStepId.reminder => onboardingSubtitleReminder,
       };
 
   String coachForStep(QuizStepId step) => switch (step) {
@@ -37,6 +39,7 @@ extension OnboardingL10n on AppLocalizations {
         QuizStepId.age => onboardingCoachAge,
         QuizStepId.dailyGoal => onboardingCoachDailyGoal,
         QuizStepId.purpose => onboardingCoachPurpose,
+        QuizStepId.reminder => onboardingCoachReminder,
       };
 
   String languageLabel(AppLanguage language) => switch (language) {

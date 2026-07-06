@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
@@ -9,7 +10,7 @@ import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
-import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
+import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 
 /// Tìm kiếm + lọc khóa học (mở từ nút sấm sét giữa).
 class CourseSearchScreen extends StatefulWidget {
@@ -59,7 +60,7 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
   }
 
   void _refreshCourses() {
-    final role = _user?.role ?? UserRole.guest;
+    final role = _user?.role ?? UserRole.user;
     _courses = MockCourseStore.instance.courseItemsFor(_user?.id, role: role);
   }
 
@@ -91,9 +92,7 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
   }
 
   void _openCourse(CourseItem course) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => CourseDetailScreen(courseId: course.id)),
-    );
+    CourseNavigator.open(context, courseId: course.id);
   }
 
   @override
@@ -128,6 +127,9 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
     return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.courseSearchTitle),
+        backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: gats.textPrimary,
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xl),
@@ -209,7 +211,5 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
 
 /// Mở màn tìm kiếm khóa học từ MainShell hoặc Home.
 void openCourseSearch(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(builder: (_) => const CourseSearchScreen()),
-  );
+  GatsMainNavigator.push(context, const CourseSearchScreen());
 }

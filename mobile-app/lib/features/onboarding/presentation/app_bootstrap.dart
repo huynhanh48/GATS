@@ -21,9 +21,8 @@ import 'package:gats_academy/shell/role_shell.dart';
 enum _BootstrapPhase { checking, language, entry, onboarding, rateUs, loading, auth, main }
 
 bool _shouldResetFlowForDebug() {
-  if (!kDebugMode) return false;
-  if (kIsWeb) return true;
-  return !isFlutterTest;
+  // Chỉ reset flow trên web dev — tránh xóa session MoMo mỗi lần chạy trên máy thật.
+  return kDebugMode && kIsWeb;
 }
 
 class AppBootstrap extends StatefulWidget {
@@ -67,6 +66,9 @@ class _AppBootstrapState extends State<AppBootstrap> {
           final restored = await AuthService.restoreSession();
           if (restored != null) {
             await AuthService.persistSession(restored);
+          } else {
+            await AuthPrefs.signOut();
+            signedIn = false;
           }
         } catch (_) {
           await AuthPrefs.signOut();
@@ -76,8 +78,13 @@ class _AppBootstrapState extends State<AppBootstrap> {
       final hasLocale = AppLocaleController.instance.hasChosenLocale;
       if (!hasLocale) {
         next = _BootstrapPhase.language;
+      } else if (signedIn) {
+        next = _BootstrapPhase.main;
+      } else if (onboarded) {
+        _authGate = AuthGate.postOnboarding;
+        next = _BootstrapPhase.auth;
       } else {
-        next = (onboarded || signedIn) ? _BootstrapPhase.main : _BootstrapPhase.entry;
+        next = _BootstrapPhase.entry;
       }
     } catch (e, st) {
       debugPrint('AppBootstrap._load thất bại: $e\n$st');
@@ -112,7 +119,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
       final answers = await OnboardingPrefs.loadPendingAnswers();
       final courseIds = await OnboardingPrefs.recommendedCourseIds();
       await OnboardingSyncService.syncAfterAuth(
-        userId: user?.id ?? 'guest',
+        userId: user!.id,
         recommendedCourseIds: courseIds,
         answers: answers,
       );

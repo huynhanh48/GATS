@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
+import 'package:gats_academy/core/config/api_config.dart';
 import 'package:gats_academy/core/network/api_client.dart';
 import 'package:gats_academy/core/network/api_exception.dart';
 import 'package:gats_academy/data/api/auth_api_paths.dart';
 import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
+import 'package:gats_academy/features/auth/models/social_auth_credential.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:http/http.dart' as http;
 
@@ -75,6 +78,88 @@ abstract final class AuthApiService {
     }
   }
 
+  static Future<AuthSession> loginWithSocial(SocialAuthCredential credential) async {
+    final attempts = <_SocialLoginAttempt>[
+      _SocialLoginAttempt(
+        label: 'login+type+token',
+        path: AuthApiPaths.login,
+        body: {
+          'type': credential.providerType,
+          'token': credential.idToken,
+          if (credential.email != null && credential.email!.isNotEmpty)
+            'email': credential.email,
+          if (credential.displayName != null && credential.displayName!.isNotEmpty)
+            'user_name': credential.displayName,
+        },
+      ),
+      _SocialLoginAttempt(
+        label: 'login+type+id_token',
+        path: AuthApiPaths.login,
+        body: {
+          'type': credential.providerType,
+          'id_token': credential.idToken,
+          if (credential.email != null && credential.email!.isNotEmpty)
+            'email': credential.email,
+        },
+      ),
+      _SocialLoginAttempt(
+        label: 'provider path + token',
+        path: credential.provider == AuthMethod.google
+            ? AuthApiPaths.loginGoogle
+            : AuthApiPaths.loginApple,
+        body: {
+          'token': credential.idToken,
+          'id_token': credential.idToken,
+          if (credential.authorizationCode != null)
+            'authorization_code': credential.authorizationCode,
+        },
+      ),
+    ];
+
+    ApiException? lastError;
+    for (final attempt in attempts) {
+      try {
+        if (kDebugMode) {
+          debugPrint(
+            'AuthApiService.social: try ${attempt.label} → ${attempt.path}',
+          );
+        }
+        final json = await ApiClient.post(attempt.path, body: attempt.body);
+        return _sessionFromResponse(
+          json,
+          fallbackEmail: credential.email,
+          fallbackName: credential.displayName,
+          fallbackMethod: credential.provider,
+        );
+      } on ApiException catch (e) {
+        lastError = e;
+        if (kDebugMode) {
+          debugPrint(
+            'AuthApiService.social: ${attempt.label} failed '
+            '(${e.statusCode}) ${e.message}',
+          );
+        }
+        if (e.statusCode == 404) continue;
+        throw _mapApiException(e);
+      } on http.ClientException catch (e) {
+        if (kDebugMode) {
+          debugPrint('AuthApiService.social: network — ${ApiConfig.baseUrl}${attempt.path} — $e');
+        }
+        throw AuthException(AuthErrorCode.networkError, serverMessage: _networkHint());
+      } on Exception catch (e) {
+        if (kDebugMode) {
+          debugPrint('AuthApiService.social: error — ${ApiConfig.baseUrl}${attempt.path} — $e');
+        }
+        throw AuthException(AuthErrorCode.networkError, serverMessage: _networkHint());
+      }
+    }
+
+    if (lastError != null) {
+      throw _mapApiException(lastError);
+    }
+    throw const AuthException(AuthErrorCode.serverError);
+  }
+
   static Future<AuthSession> getMe({required String token}) async {
     try {
       final json = await ApiClient.get(AuthApiPaths.me, token: token);
@@ -91,6 +176,7 @@ abstract final class AuthApiService {
     String? token,
     String? fallbackEmail,
     String? fallbackName,
+    AuthMethod? fallbackMethod,
   }) {
     final payload = _unwrap(json);
     final resolvedToken = _readToken(payload) ?? token;
@@ -103,6 +189,7 @@ abstract final class AuthApiService {
       userJson,
       fallbackEmail: fallbackEmail,
       fallbackName: fallbackName,
+      fallbackMethod: fallbackMethod,
     );
 
     return AuthSession(user: user, token: resolvedToken);
@@ -134,6 +221,7 @@ abstract final class AuthApiService {
     Map<String, dynamic> json, {
     String? fallbackEmail,
     String? fallbackName,
+    AuthMethod? fallbackMethod,
   }) {
     final id = json['id'] ?? json['_id'] ?? json['user_id'];
     final email = (json['email'] as String?)?.trim() ?? fallbackEmail ?? '';
@@ -147,9 +235,19 @@ abstract final class AuthApiService {
       id: id?.toString() ?? email,
       displayName: displayName.isEmpty ? 'GATS Learner' : displayName,
       email: email,
-      method: AuthMethod.email,
+      method: _mapMethod(json['type'] as String?) ?? fallbackMethod ?? AuthMethod.email,
       role: _mapRole(json['type'] as String?),
     );
+  }
+
+  static AuthMethod? _mapMethod(String? type) {
+    return switch (type?.toLowerCase()) {
+      'google' => AuthMethod.google,
+      'apple' => AuthMethod.apple,
+      'default' || 'email' => AuthMethod.email,
+      'mentor' || 'admin' => null,
+      _ => null,
+    };
   }
 
   static UserRole _mapRole(String? type) {
@@ -160,6 +258,11 @@ abstract final class AuthApiService {
     };
   }
 
+  static String _networkHint() =>
+      'Không kết nối được API tại ${ApiConfig.baseUrl}. '
+      'Bật backend, cùng WiFi với điện thoại, và sửa API_BASE_URL trong .env '
+      '(IP máy tính hiện tại, ví dụ http://192.168.1.45:3000).';
+
   static AuthException _mapApiException(ApiException error) {
     final message = error.message;
     if (error.statusCode == 401 || error.statusCode == 403) {
@@ -167,4 +270,16 @@ abstract final class AuthApiService {
     }
     return AuthException(AuthErrorCode.serverError, serverMessage: message);
   }
+}
+
+class _SocialLoginAttempt {
+  const _SocialLoginAttempt({
+    required this.label,
+    required this.path,
+    required this.body,
+  });
+
+  final String label;
+  final String path;
+  final Map<String, dynamic> body;
 }

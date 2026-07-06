@@ -78,7 +78,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"token\":\"82d5208c-1697-4a21-9f6b-23ac0faa09a1\"\n}",
+              "raw": "{\n    \"email\": \"user@gmail.com\",\n    \"password\": \"Anh@0868299464\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -86,17 +86,59 @@
               }
             },
             "url": {
-              "raw": "http://localhost:3000/api/user/verify-email",
+              "raw": "http://localhost:3000/api/user/login",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "3000",
-              "path": [
-                "api",
-                "user",
-                "verify-email"
-              ]
+              "path": ["api", "user", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "login-google",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"google\",\n    \"token\": \"<GOOGLE_ID_TOKEN>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/user/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "user", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "login-apple",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"type\": \"apple\",\n    \"token\": \"<APPLE_IDENTITY_TOKEN>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/user/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "3000",
+              "path": ["api", "user", "login"]
             }
           },
           "response": []
@@ -108,28 +150,19 @@
           },
           "request": {
             "method": "GET",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"token\":\"82d5208c-1697-4a21-9f6b-23ac0faa09a1\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer <ACCESS_TOKEN>",
+                "type": "text"
               }
-            },
+            ],
             "url": {
-              "raw": "http://localhost:3000/api/user/verify-email",
+              "raw": "http://localhost:3000/api/user/me",
               "protocol": "http",
-              "host": [
-                "localhost"
-              ],
+              "host": ["localhost"],
               "port": "3000",
-              "path": [
-                "api",
-                "user",
-                "verify-email"
-              ]
+              "path": ["api", "user", "me"]
             }
           },
           "response": []

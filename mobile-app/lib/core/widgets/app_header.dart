@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/gats_logo.dart';
+import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
 import 'package:gats_academy/features/settings/presentation/settings_screen.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
@@ -71,13 +72,17 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
           },
         ),
         IconButton(
+          icon: const Badge(
+            smallSize: 8,
+            child: Icon(Icons.notifications_none_rounded),
+          ),
+          tooltip: AppStrings.notificationsScreenTitle,
+          onPressed: () => openNotifications(context),
+        ),
+        IconButton(
           icon: const Icon(Icons.settings_outlined),
           tooltip: AppStrings.settingsTitle,
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-            );
-          },
+          onPressed: () => openSettings(context),
         ),
       ],
     );
@@ -93,5 +98,6 @@ abstract final class AppHeaderSubtitles {
   static String get aiCoach => _l10n.headerSubtitleAiCoach;
   static String get hub => _l10n.headerSubtitleHub;
   static String get store => _l10n.headerSubtitleStore;
+  static String get notifications => _l10n.headerSubtitleNotifications;
 }
 

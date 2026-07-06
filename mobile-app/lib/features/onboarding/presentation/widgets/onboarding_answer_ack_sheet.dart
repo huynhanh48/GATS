@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/core/widgets/illustrations/flat_vector/flat_vector.dart';
 import 'package:gats_academy/features/onboarding/models/onboarding_answers.dart';
+import 'package:gats_academy/features/onboarding/presentation/widgets/coach_notetaking_illustration.dart';
 
 enum OnboardingAckScene { recording, analyzing, encouraging, milestone }
 
@@ -22,13 +22,6 @@ class OnboardingAckConfig {
   final String echoLine;
   final OnboardingAckScene scene;
   final String? socialProof;
-
-  FlatCoachAckScene get illustrationScene => switch (scene) {
-        OnboardingAckScene.recording => FlatCoachAckScene.recording,
-        OnboardingAckScene.analyzing => FlatCoachAckScene.analyzing,
-        OnboardingAckScene.encouraging => FlatCoachAckScene.encouraging,
-        OnboardingAckScene.milestone => FlatCoachAckScene.milestone,
-      };
 
   static OnboardingAckConfig forStep(QuizStepId step, OnboardingAnswers answers, AppLocalizations l10n) {
     return switch (step) {
@@ -94,7 +87,20 @@ class OnboardingAckConfig {
           ),
           scene: OnboardingAckScene.analyzing,
         ),
+      QuizStepId.reminder => OnboardingAckConfig(
+          headline: l10n.ackHeadlineNoted,
+          echoLine: answers.dailyReminderEnabled
+              ? l10n.ackReminderEcho(_formatReminderTime(answers))
+              : l10n.ackReminderSkippedEcho,
+          scene: OnboardingAckScene.encouraging,
+        ),
     };
+  }
+
+  static String _formatReminderTime(OnboardingAnswers answers) {
+    final h = answers.reminderHour.toString().padLeft(2, '0');
+    final m = answers.reminderMinute.toString().padLeft(2, '0');
+    return '$h:$m';
   }
 }
 
@@ -181,9 +187,14 @@ class _OnboardingAnswerAckSheetState extends State<_OnboardingAnswerAckSheet>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    FlatCoachNotetakingIllustration(
-                      scene: widget.config.illustrationScene,
-                      size: 140,
+                    CoachNotetakingIllustration(
+                      height: 200,
+                      bobAmplitude: switch (widget.config.scene) {
+                        OnboardingAckScene.analyzing => 2.5,
+                        OnboardingAckScene.milestone => 4,
+                        OnboardingAckScene.encouraging => 3.5,
+                        OnboardingAckScene.recording => 3,
+                      },
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     Text(

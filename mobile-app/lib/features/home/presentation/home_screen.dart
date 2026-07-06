@@ -4,20 +4,26 @@ import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/lazy_indexed_stack.dart';
+import 'package:gats_academy/core/widgets/shimmer_loading.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
 import 'package:gats_academy/core/widgets/ui_components.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
+import 'package:gats_academy/core/widgets/xp_popup.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
+import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
-import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
+import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
+import 'package:gats_academy/features/home/presentation/widgets/your_courses_section.dart';
 import 'package:gats_academy/features/home/presentation/widgets/ai_report_tab.dart';
 import 'package:gats_academy/features/home/presentation/widgets/continue_learning_card.dart';
 import 'package:gats_academy/features/home/presentation/widgets/daily_reward_sheet.dart';
 import 'package:gats_academy/features/home/presentation/widgets/nested_tab_scroll.dart';
 import 'package:gats_academy/features/home/presentation/widgets/quiz_tab.dart';
 import 'package:gats_academy/features/home/presentation/widgets/roadmap_tab.dart';
+import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
 import 'package:gats_academy/features/settings/presentation/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,12 +39,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   String _userName = 'Học viên GATS';
   List<CourseItem> _courses = MockData.courses;
 
+  List<CourseItem> _yourCourses = [];
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadSession();
-    MockCourseStore.instance.addListener(_onStoreChanged);
+    CourseModule.repository.addListener(_onCoursesChanged);
   }
 
   Future<void> _loadSession() async {
@@ -49,38 +58,47 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       _user = user;
       _userName = name;
       _refreshCourses();
+      _isLoading = false;
     });
     if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) DailyRewardSheet.showIfNeeded(context);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        await Future<void>.delayed(const Duration(milliseconds: 350));
+        if (!mounted) return;
+        final xp = await DailyRewardSheet.showIfNeeded(context);
+        if (!mounted || xp == null) return;
+        XpPopup.show(context, xp: xp);
       });
     }
   }
 
-  void _onStoreChanged() {
+  void _onCoursesChanged() {
     if (!mounted) return;
     setState(_refreshCourses);
   }
 
   void _refreshCourses() {
-    final role = _user?.role ?? UserRole.guest;
-    _courses = MockCourseStore.instance.courseItemsFor(_user?.id, role: role);
+    final role = _user?.role ?? UserRole.user;
+    _courses = CourseModule.repository.listPublished(userId: _user?.id, role: role);
+    _yourCourses = CourseModule.repository.listOwned(userId: _user?.id, role: role);
   }
 
   CourseItem? get _continueCourse {
-    final enrolled = _courses.where((c) => c.isEnrolled && c.progress > 0 && c.progress < 1);
+    final enrolled = _yourCourses.where((c) => c.progress > 0 && c.progress < 1);
     return enrolled.isNotEmpty ? enrolled.first : null;
   }
 
-  void _openCourse(CourseItem course) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => CourseDetailScreen(courseId: course.id)),
+  void _openCourse(CourseItem course, {bool learn = false}) {
+    CourseNavigator.open(
+      context,
+      courseId: course.id,
+      mode: learn ? CourseOpenMode.learn : CourseOpenMode.browse,
     );
   }
 
   @override
   void dispose() {
-    MockCourseStore.instance.removeListener(_onStoreChanged);
+    CourseModule.repository.removeListener(_onCoursesChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -122,16 +140,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           _HomeHeaderIconButton(
             icon: Icons.notifications_none_rounded,
             showDot: true,
-            onTap: () {},
+            onTap: () => openNotifications(context),
           ),
           const SizedBox(width: AppSpacing.sm),
           _HomeHeaderIconButton(
             icon: Icons.settings_outlined,
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-              );
-            },
+            onTap: () => openSettings(context),
           ),
         ],
       ),
@@ -223,10 +237,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   courseTitle: continueCourse.title,
                   progress: continueCourse.progress,
                   lessonCount: continueCourse.lessonCount,
-                  onTap: () => _openCourse(continueCourse),
+                  onTap: () => _openCourse(continueCourse, learn: true),
                 ),
                 const SizedBox(height: AppSpacing.lg),
               ],
+              YourCoursesSection(
+                courses: _yourCourses,
+                onCourseTap: (course) => _openCourse(course, learn: true),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               TedSectionHeader(
                 title: AppStrings.homePopularCourses,
                 actionLabel: AppStrings.seeAll,
@@ -267,33 +286,48 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     final previewCourses = _courses.take(5).toList();
 
+    if (_isLoading) {
+      return const SafeArea(
+        bottom: false,
+        child: HomeScreenSkeleton(),
+      );
+    }
+
     return SafeArea(
       bottom: false,
-      child: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverOverlapAbsorber(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-              sliver: SliverToBoxAdapter(child: _buildHeader(previewCourses)),
-            ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: HomeTabBarDelegate(
-                child: PillTabBar(
-                  controller: _tabController,
-                  tabs: [AppStrings.tabRoadmap, AppStrings.tabQuiz, AppStrings.tabAiReport],
+      child: RefreshIndicator(
+        onRefresh: _loadSession,
+        color: AppColors.primary,
+        child: NestedScrollView(
+          floatHeaderSlivers: true,
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverOverlapAbsorber(
+                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                sliver: SliverToBoxAdapter(child: _buildHeader(previewCourses)),
+              ),
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: HomeTabBarDelegate(
+                  child: PillTabBar(
+                    controller: _tabController,
+                    tabs: [AppStrings.tabRoadmap, AppStrings.tabQuiz, AppStrings.tabAiReport],
+                  ),
                 ),
               ),
-            ),
-          ];
-        },
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            const RoadmapTab(nestedScroll: true),
-            QuizTab(userId: _user?.id, nestedScroll: true),
-            const AiReportTab(nestedScroll: true),
-          ],
+            ];
+          },
+          body: LazyTabBarView(
+            controller: _tabController,
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              return switch (index) {
+                0 => RoadmapTab(nestedScroll: true, userId: _user?.id),
+                1 => QuizTab(userId: _user?.id, nestedScroll: true),
+                _ => const AiReportTab(nestedScroll: true),
+              };
+            },
+          ),
         ),
       ),
     );

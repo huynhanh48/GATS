@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
-import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
+import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/features/course/navigation/course_navigator.dart';
+import 'package:gats_academy/features/home/presentation/my_courses_screen.dart';
 import 'package:gats_academy/features/home/presentation/widgets/nested_tab_scroll.dart';
 
 class QuizTab extends StatelessWidget {
@@ -13,11 +14,13 @@ class QuizTab extends StatelessWidget {
   final bool nestedScroll;
 
   List<({String courseId, String courseName, String quizTitle, int count})> _quizzes() {
-    final store = MockCourseStore.instance;
+    final store = CourseModule.repository;
     final quizzes = <({String courseId, String courseName, String quizTitle, int count})>[];
 
-    for (final course in store.publishedCourses()) {
-      if (userId != null && !course.isEnrolledBy(userId)) continue;
+    for (final courseItem in store.listPublished(userId: userId)) {
+      final course = store.getCourse(courseItem.id);
+      if (course == null) continue;
+      if (userId != null && !course.isOwnedBy(userId)) continue;
       for (final quiz in course.quizzes.where((q) => q.isPublished)) {
         quizzes.add((
           courseId: course.id,
@@ -30,12 +33,17 @@ class QuizTab extends StatelessWidget {
     return quizzes;
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(BuildContext context) {
     return EmptyState(
       icon: Icons.quiz_outlined,
       title: AppStrings.quizEmptyTitle,
       description: AppStrings.quizEmptyDesc,
-      action: OutlinedButton(onPressed: () {}, child: Text(AppStrings.exploreLibrary)),
+      action: OutlinedButton(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const MyCoursesScreen()),
+        ),
+        child: Text(AppStrings.exploreLibrary),
+      ),
     );
   }
 
@@ -47,10 +55,10 @@ class QuizTab extends StatelessWidget {
         title: Text(item.quizTitle),
         subtitle: Text('${item.courseName} · ${AppStrings.quizCountLabel.replaceFirst('%d', '${item.count}')}'),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => CourseDetailScreen(courseId: item.courseId),
-          ),
+        onTap: () => CourseNavigator.open(
+          context,
+          courseId: item.courseId,
+          mode: CourseOpenMode.learn,
         ),
       ),
     );
@@ -65,7 +73,7 @@ class QuizTab extends StatelessWidget {
         return NestedTabScrollView(
           storageKey: 'home_quiz',
           slivers: [
-            SliverFillRemaining(hasScrollBody: false, child: _emptyState()),
+            SliverFillRemaining(hasScrollBody: false, child: _emptyState(context)),
           ],
         );
       }
@@ -86,7 +94,7 @@ class QuizTab extends StatelessWidget {
     }
 
     if (quizzes.isEmpty) {
-      return _emptyState();
+      return _emptyState(context);
     }
 
     return ListView.separated(

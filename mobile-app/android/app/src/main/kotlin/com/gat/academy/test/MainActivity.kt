@@ -1,4 +1,4 @@
-package com.gatsacademy.gats_academy
+package com.gat.academy.test
 
 import io.flutter.embedding.android.FlutterActivity
 

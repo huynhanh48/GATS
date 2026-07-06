@@ -1,29 +1,54 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 
-/// Nền gradient đêm + sao + mây + trăng — kiểu app sleep.
+/// Precache nền đêm một lần — các màn sau chỉ blit texture đã decode.
+abstract final class StarrySkyBackgroundCache {
+  static const asset = AssetImage(AppAssets.starrySkyBackground);
+
+  static bool _precached = false;
+
+  static Future<void> ensurePrecached(BuildContext context) async {
+    if (_precached) return;
+    await precacheImage(asset, context);
+    _precached = true;
+  }
+}
+
+/// Nền gradient đêm + sao + mây — raster PNG (cùng thuật toán CustomPaint cũ).
+///
+/// PNG/WebP phù hợp hơn SVG ở đây: decode một lần, GPU vẽ một texture.
+/// SVG vẫn phải rasterize mỗi kích thước và thường không nhẹ hơn cho nền phức tạp.
 class StarrySkyBackground extends StatelessWidget {
   const StarrySkyBackground({
     super.key,
     required this.child,
     this.showMoon = true,
-    this.showClouds = true,
   });
 
   final Widget child;
   final bool showMoon;
-  final bool showClouds;
 
   @override
   Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final width = MediaQuery.sizeOf(context).width;
+    final cacheWidth = (width * dpr).round().clamp(360, 1440);
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        const CustomPaint(painter: _StarrySkyPainter()),
-        if (showClouds) const CustomPaint(painter: _NightCloudsPainter()),
+        RepaintBoundary(
+          child: Image.asset(
+            AppAssets.starrySkyBackground,
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+            filterQuality: FilterQuality.medium,
+            cacheWidth: cacheWidth,
+            gaplessPlayback: true,
+            excludeFromSemantics: true,
+          ),
+        ),
         if (showMoon)
           Positioned(
             top: MediaQuery.paddingOf(context).top + 8,
@@ -35,7 +60,7 @@ class StarrySkyBackground extends StatelessWidget {
                 width: 72,
                 height: 72,
                 fit: BoxFit.contain,
-                filterQuality: FilterQuality.high,
+                filterQuality: FilterQuality.medium,
               ),
             ),
           ),
@@ -43,97 +68,6 @@ class StarrySkyBackground extends StatelessWidget {
       ],
     );
   }
-}
-
-class _StarrySkyPainter extends CustomPainter {
-  const _StarrySkyPainter();
-
-  static final _stars = _generateStars(120, 42);
-
-  static List<_Star> _generateStars(int count, int seed) {
-    final random = math.Random(seed);
-    return List.generate(count, (_) {
-      return _Star(
-        x: random.nextDouble(),
-        y: random.nextDouble() * 0.85,
-        radius: random.nextDouble() * 1.6 + 0.4,
-        opacity: random.nextDouble() * 0.55 + 0.25,
-      );
-    });
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.nightSkyTop, AppColors.nightSkyBottom],
-        ).createShader(rect),
-    );
-
-    for (final star in _stars) {
-      canvas.drawCircle(
-        Offset(star.x * size.width, star.y * size.height),
-        star.radius,
-        Paint()..color = Colors.white.withValues(alpha: star.opacity),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _NightCloudsPainter extends CustomPainter {
-  const _NightCloudsPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = AppColors.nightCloud.withValues(alpha: 0.55);
-
-    _drawCloud(canvas, paint, centerX: size.width * 0.2, centerY: size.height * 0.78, scale: 1.1);
-    _drawCloud(canvas, paint, centerX: size.width * 0.75, centerY: size.height * 0.88, scale: 0.9);
-    _drawCloud(canvas, paint, centerX: size.width * 0.5, centerY: size.height * 0.95, scale: 1.4);
-  }
-
-  void _drawCloud(Canvas canvas, Paint paint, {
-    required double centerX,
-    required double centerY,
-    required double scale,
-  }) {
-    final r = 36.0 * scale;
-    canvas.drawCircle(Offset(centerX - r * 0.8, centerY), r * 0.9, paint);
-    canvas.drawCircle(Offset(centerX, centerY - r * 0.2), r, paint);
-    canvas.drawCircle(Offset(centerX + r * 0.85, centerY), r * 0.85, paint);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(centerX, centerY + r * 0.15), width: r * 3.2, height: r * 1.1),
-        const Radius.circular(24),
-      ),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _Star {
-  const _Star({
-    required this.x,
-    required this.y,
-    required this.radius,
-    required this.opacity,
-  });
-
-  final double x;
-  final double y;
-  final double radius;
-  final double opacity;
 }
 
 /// Bọc scaffold chính — tự bật trời sao khi dark mode.
@@ -145,6 +79,7 @@ class GatsThemedScaffold extends StatelessWidget {
     this.bottomNavigationBar,
     this.floatingActionButton,
     this.extendBody = false,
+    this.showStarryBackground = true,
   });
 
   final Widget body;
@@ -152,6 +87,9 @@ class GatsThemedScaffold extends StatelessWidget {
   final Widget? bottomNavigationBar;
   final Widget? floatingActionButton;
   final bool extendBody;
+
+  /// false khi màn nằm trên shell đã có nền sao (tránh vẽ lại).
+  final bool showStarryBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +103,7 @@ class GatsThemedScaffold extends StatelessWidget {
       floatingActionButton: floatingActionButton,
     );
 
-    if (!gats.isStarry) return content;
+    if (!gats.isStarry || !showStarryBackground) return content;
 
     return StarrySkyBackground(child: content);
   }

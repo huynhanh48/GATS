@@ -1,0 +1,26 @@
+{
+  "decks": [
+    {
+      "id": "deck-prompt",
+      "courseId": "course-1",
+      "quizId": "course-1-q1",
+      "title": "Prompt cơ bản",
+      "moduleName": "Prompt cơ bản",
+      "dueToday": 5,
+      "cards": [
+        {
+          "id": "p1",
+          "front": "Zero-shot prompt là gì?",
+          "back": "Prompt không kèm ví dụ, chỉ mô tả yêu cầu trực tiếp.",
+          "hint": "Không có example"
+        },
+        {
+          "id": "p2",
+          "front": "Few-shot prompt là gì?",
+          "back": "Prompt kèm vài ví dụ mẫu để AI học theo.",
+          "hint": "Có example"
+        }
+      ]
+    }
+  ]
+}

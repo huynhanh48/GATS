@@ -29,16 +29,16 @@ class AchievementTimeline extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: _typeColor(achievement.type).withValues(alpha: 0.15),
+                        color: _typeColor(achievement.type, context).withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _typeColor(achievement.type),
+                          color: _typeColor(achievement.type, context),
                           width: 2,
                         ),
                       ),
                       child: Icon(
                         achievement.icon,
-                        color: _typeColor(achievement.type),
+                        color: _typeColor(achievement.type, context),
                         size: 14,
                       ),
                     ),
@@ -83,7 +83,7 @@ class AchievementTimeline extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: _typeColor(achievement.type).withValues(alpha: 0.1),
+                              color: _typeColor(achievement.type, context).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -91,7 +91,7 @@ class AchievementTimeline extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
-                                color: _typeColor(achievement.type),
+                                color: _typeColor(achievement.type, context),
                               ),
                             ),
                           ),
@@ -121,12 +121,13 @@ class AchievementTimeline extends StatelessWidget {
     );
   }
 
-  Color _typeColor(String type) {
+  Color _typeColor(String type, BuildContext context) {
+    final gats = context.gatsColors;
     return switch (type) {
       'milestone' => AppColors.primary,
       'streak' => const Color(0xFFEF4444),
       'quiz' => AppColors.accent,
-      _ => AppColors.textSecondary,
+      _ => gats.textSecondary,
     };
   }
 

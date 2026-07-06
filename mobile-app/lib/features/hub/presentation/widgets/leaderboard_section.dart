@@ -61,28 +61,34 @@ class _LeaderboardSectionState extends State<LeaderboardSection> {
                 _LeaderboardRow(entry: currentUser),
               ],
               // Expand/Collapse
-              InkWell(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: Padding(
+              TextButton(
+                onPressed: () => setState(() => _expanded = !_expanded),
+                style: TextButton.styleFrom(
+                  foregroundColor: gats.lavenderAccent,
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _expanded ? 'Thu gọn' : AppStrings.hubViewAll,
-                        style: TextStyle(
-                          color: gats.lavenderAccent,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                      Icon(
-                        _expanded ? Icons.expand_less : Icons.expand_more,
+                  textStyle: AppTypography.style(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ).copyWith(decoration: TextDecoration.none),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _expanded ? 'Thu gọn' : AppStrings.hubViewAll,
+                      style: AppTypography.style(
                         color: gats.lavenderAccent,
-                        size: 18,
-                      ),
-                    ],
-                  ),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ).copyWith(decoration: TextDecoration.none),
+                    ),
+                    Icon(
+                      _expanded ? Icons.expand_less : Icons.expand_more,
+                      color: gats.lavenderAccent,
+                      size: 18,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -127,10 +133,11 @@ class _PodiumPlace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(medal, style: const TextStyle(fontSize: 24)),
+        Text(medal, style: const TextStyle(fontSize: 24, decoration: TextDecoration.none)),
         const SizedBox(height: 4),
         CircleAvatar(
           radius: 22,
@@ -140,21 +147,27 @@ class _PodiumPlace extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w800,
               color: entry.avatarColor,
+              decoration: TextDecoration.none,
             ),
           ),
         ),
         const SizedBox(height: 4),
         Text(
           entry.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 12,
+            color: gats.textPrimary,
+            decoration: TextDecoration.none,
           ),
           overflow: TextOverflow.ellipsis,
         ),
         Text(
           '${entry.xp} XP',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontSize: 11,
+                decoration: TextDecoration.none,
+              ),
         ),
         const SizedBox(height: 6),
         Container(
@@ -180,6 +193,7 @@ class _PodiumPlace extends StatelessWidget {
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: entry.avatarColor,
+                decoration: TextDecoration.none,
               ),
             ),
           ),

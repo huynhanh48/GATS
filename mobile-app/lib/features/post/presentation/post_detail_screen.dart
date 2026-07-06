@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
@@ -76,15 +77,20 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
     final post = MockPostStore.instance.postById(widget.postId);
+
     if (post == null) {
-      return Scaffold(
-        appBar: AppBar(),
+      return GatsThemedScaffold(
+        appBar: AppBar(
+          backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+          surfaceTintColor: Colors.transparent,
+        ),
         body: Center(child: Text(AppStrings.courseNotFound)),
       );
     }
 
-    final role = _user?.role ?? UserRole.guest;
+    final role = _user?.role ?? UserRole.user;
     final canReadFull = MockPostStore.instance.canReadFull(
       post: post,
       userId: _user?.id,
@@ -95,8 +101,13 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ? MockCourseStore.instance.courseById(post.courseId!)
         : null;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(post.badgeLabel)),
+    return GatsThemedScaffold(
+      appBar: AppBar(
+        title: Text(post.badgeLabel),
+        backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: gats.textPrimary,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
@@ -105,22 +116,32 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
                 courseTitle,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.primary),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: gats.lavenderAccent,
+                    ),
               ),
             ),
           Text(
             post.title,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: gats.textPrimary,
+                ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
             '${AppStrings.postByAuthor.replaceFirst('%s', post.authorName)} · ${formatPostTimeAgo(post.publishedAt)}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: gats.textSecondary,
+                ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
             canReadFull ? post.body : post.previewExcerpt,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.55),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  height: 1.55,
+                  color: gats.textPrimary,
+                ),
           ),
           if (!canReadFull) ...[
             const SizedBox(height: AppSpacing.lg),
@@ -128,21 +149,26 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.06),
+                color: gats.lavenderAccent.withValues(alpha: gats.isStarry ? 0.12 : 0.06),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                border: Border.all(
+                  color: gats.lavenderAccent.withValues(alpha: 0.25),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.lock_outline, color: AppColors.primary),
+                      Icon(Icons.lock_outline, color: gats.lavenderAccent),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           AppStrings.postPreviewLocked,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: gats.textPrimary,
+                          ),
                         ),
                       ),
                     ],
@@ -150,7 +176,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     _user == null ? AppStrings.postPreviewLogin : AppStrings.postPreviewLocked,
-                    style: const TextStyle(color: AppColors.textSecondary, height: 1.45),
+                    style: TextStyle(color: gats.textSecondary, height: 1.45),
                   ),
                   if (post.courseId != null && course != null) ...[
                     const SizedBox(height: AppSpacing.lg),

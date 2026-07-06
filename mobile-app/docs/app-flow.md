@@ -174,7 +174,27 @@ Sau mỗi lần bấm **Tiếp theo**: popup ~1.8s (illustration coach + echo đ
 
 ## Phase 8 — MainShell (app chính)
 
-5 tab: Trang chủ · Hàng ngày · Thư viện · Coach · Hub
+4 tab: Trang chủ · Hàng ngày · Coach · Cửa hàng (Store)
+
+### Home — Khóa của tôi
+
+- Section **Khóa của tôi** (giữa Continue learning và Popular courses) — horizontal `TedCourseCard` cho khóa đã enroll
+- **See all** → `MyCoursesScreen` (full-screen, không thêm tab nav)
+- `LibraryScreen` redirect → `MyCoursesScreen`
+
+### Course navigation (`CourseNavigator.open`)
+
+| Nguồn | Hành vi |
+|---|---|
+| Home / My courses (enrolled) | `CourseDetailScreen` |
+| Store card (chưa mua) | `CourseStoreDetailScreen` hoặc detail nếu free |
+| Checkout success → Bắt đầu học | `CourseDetailScreen` khóa vừa mua |
+| Onboarding landing CTA | `enroll` + `CourseDetailScreen` |
+
+### Data layer
+
+- `CourseRepository` (abstract) → `MockCourseRepository` → `MockCourseStore`
+- Stub API paths: `lib/data/api/course_api_paths.dart`
 
 ---
 
@@ -247,7 +267,7 @@ sequenceDiagram
 | Quiz + Results | Custom GATS | `onboarding_quiz_screen.dart` |
 | Rate + sheet | Ted Lead | `rate_us_screen.dart` |
 | Loading | Ted Lead | `onboarding_loading_screen.dart` |
-| Home, Library | Ted Lead | `home_screen.dart`, `library_screen.dart` |
+| Home, My courses | Ted Lead | `home_screen.dart`, `my_courses_screen.dart` |
 
 ---
 
@@ -270,4 +290,8 @@ sequenceDiagram
 - [ ] Quiz Back bước 1 → Entry
 - [ ] Settings đăng xuất → restart → Entry
 - [ ] Đã onboarding: mở app thẳng Main
-- [ ] Auth xong, thoát giữa quiz → mở lại → resume Quiz
+- [ ] Home → Khóa của tôi → See all → MyCoursesScreen
+- [ ] Store → card → CourseStoreDetail → Add to cart → Checkout → Bắt đầu học → CourseDetail
+- [ ] Onboarding results → landing → Đăng ký → CourseDetail
+- [ ] Guest: free course enroll từ CourseDetail
+- [ ] Enrolled user: Store card mở thẳng CourseDetail

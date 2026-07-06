@@ -1,3 +1,5 @@
+import 'package:gats_academy/core/services/daily_reminder_prefs.dart';
+
 enum SkillLevel { beginner, intermediate, advanced }
 
 enum AgeRange { under25, age26to35, age36to45, above45 }
@@ -17,7 +19,7 @@ enum DailyGoal { casual, regular, serious, intense }
 enum AppLanguage { english, vietnamese }
 
 /// Thứ tự các bước quiz onboarding (retention-optimized).
-enum QuizStepId { language, referral, level, profile, motivation, interests, age, dailyGoal, purpose }
+enum QuizStepId { language, referral, level, profile, motivation, interests, age, dailyGoal, purpose, reminder }
 
 class OnboardingAnswers {
   const OnboardingAnswers({
@@ -30,6 +32,9 @@ class OnboardingAnswers {
     this.ageRange,
     this.dailyGoal,
     this.purpose,
+    this.dailyReminderEnabled = true,
+    this.reminderHour = DailyReminderPrefs.defaultHour,
+    this.reminderMinute = DailyReminderPrefs.defaultMinute,
   });
 
   final AppLanguage? language;
@@ -41,6 +46,9 @@ class OnboardingAnswers {
   final AgeRange? ageRange;
   final DailyGoal? dailyGoal;
   final LearningPurpose? purpose;
+  final bool dailyReminderEnabled;
+  final int reminderHour;
+  final int reminderMinute;
 
   bool get isComplete =>
       language != null &&
@@ -63,6 +71,9 @@ class OnboardingAnswers {
     AgeRange? ageRange,
     DailyGoal? dailyGoal,
     LearningPurpose? purpose,
+    bool? dailyReminderEnabled,
+    int? reminderHour,
+    int? reminderMinute,
   }) {
     return OnboardingAnswers(
       language: language ?? this.language,
@@ -74,6 +85,9 @@ class OnboardingAnswers {
       ageRange: ageRange ?? this.ageRange,
       dailyGoal: dailyGoal ?? this.dailyGoal,
       purpose: purpose ?? this.purpose,
+      dailyReminderEnabled: dailyReminderEnabled ?? this.dailyReminderEnabled,
+      reminderHour: reminderHour ?? this.reminderHour,
+      reminderMinute: reminderMinute ?? this.reminderMinute,
     );
   }
 
@@ -95,6 +109,9 @@ class OnboardingAnswers {
         if (ageRange != null) 'ageRange': ageRange!.name,
         if (dailyGoal != null) 'dailyGoal': dailyGoal!.name,
         if (purpose != null) 'purpose': purpose!.name,
+        'dailyReminderEnabled': dailyReminderEnabled,
+        'reminderHour': reminderHour,
+        'reminderMinute': reminderMinute,
       };
 
   factory OnboardingAnswers.fromJson(Map<String, dynamic> json) {
@@ -126,6 +143,9 @@ class OnboardingAnswers {
       ageRange: readEnum(AgeRange.values, json['ageRange']),
       dailyGoal: readEnum(DailyGoal.values, json['dailyGoal']),
       purpose: readEnum(LearningPurpose.values, json['purpose']),
+      dailyReminderEnabled: json['dailyReminderEnabled'] as bool? ?? true,
+      reminderHour: json['reminderHour'] as int? ?? DailyReminderPrefs.defaultHour,
+      reminderMinute: json['reminderMinute'] as int? ?? DailyReminderPrefs.defaultMinute,
     );
   }
 }

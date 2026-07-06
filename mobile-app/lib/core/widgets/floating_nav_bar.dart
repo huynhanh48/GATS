@@ -81,8 +81,8 @@ class FloatingNavBar extends StatelessWidget {
               children: [
                 Material(
                   color: gats.surface.withValues(alpha: gats.isStarry ? 0.92 : 1),
-                  elevation: 12,
-                  shadowColor: gats.textPrimary.withValues(alpha: 0.12),
+                  elevation: gats.isStarry ? 4 : 8,
+                  shadowColor: gats.textPrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                   child: navContent,
                 ),
@@ -91,8 +91,8 @@ class FloatingNavBar extends StatelessWidget {
             )
           : Material(
               color: gats.surface.withValues(alpha: gats.isStarry ? 0.92 : 1),
-              elevation: 12,
-              shadowColor: gats.textPrimary.withValues(alpha: 0.12),
+              elevation: gats.isStarry ? 4 : 8,
+              shadowColor: gats.textPrimary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.pill),
               child: navContent,
             ),
@@ -168,8 +168,8 @@ class _FloatingNavItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: selected ? selectedFill : Colors.transparent,

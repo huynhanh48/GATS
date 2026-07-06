@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gats_academy/core/navigation/root_navigator.dart';
+import 'package:gats_academy/core/services/gats_notification_service.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/data/mock/models/course_models.dart';
+import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
+import 'package:gats_academy/features/course/presentation/widgets/course_action_bar.dart';
+import 'package:gats_academy/features/course/presentation/widgets/course_hero_header.dart';
+import 'package:gats_academy/features/course/presentation/widgets/course_meta_row.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 
 class CourseStoreDetailScreen extends StatefulWidget {
@@ -18,42 +29,65 @@ class CourseStoreDetailScreen extends StatefulWidget {
 class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
   int _seats = 1;
   bool _descExpanded = true;
-  bool _syllabusExpanded = false;
+  bool _syllabusExpanded = true;
   bool _reviewsExpanded = false;
+  String? _userId;
+  UserRole _role = UserRole.user;
+  bool _owned = false;
 
   @override
   void initState() {
     super.initState();
+    _loadUser();
     CartController.instance.addListener(_onCartChanged);
+    CourseModule.repository.addListener(_onCartChanged);
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthPrefs.currentUser();
+    if (!mounted) return;
+    setState(() {
+      _userId = user?.id;
+      _role = user?.role ?? UserRole.user;
+      _owned = CourseModule.repository.isOwned(widget.courseId, _userId, role: _role);
+    });
   }
 
   @override
   void dispose() {
     CartController.instance.removeListener(_onCartChanged);
+    CourseModule.repository.removeListener(_onCartChanged);
     super.dispose();
   }
 
-  void _onCartChanged() => setState(() {});
+  void _onCartChanged() {
+    if (!mounted) return;
+    setState(() {
+      _owned = CourseModule.repository.isOwned(widget.courseId, _userId, role: _role);
+    });
+  }
 
-  String _formatPrice(double price) {
-    if (price <= 0) return AppStrings.storeFree;
-    final buffer = StringBuffer();
-    final str = price.toInt().toString();
-    int len = str.length;
-    for (int i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(str[i]);
+  void _enrollFree(AppCourse course) {
+    final userId = _userId;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.courseLoginToEnroll)),
+      );
+      return;
     }
-    buffer.write(' đ');
-    return buffer.toString();
+    CourseModule.repository.enroll(course.id, userId);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => CourseDetailScreen(courseId: course.id),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final course = MockCourseStore.instance.courseById(widget.courseId);
+    final course = CourseModule.repository.getCourse(widget.courseId);
 
     if (course == null) {
       return Scaffold(
@@ -74,50 +108,20 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                // 1. Header Cover Image Container
-                Stack(
-                  children: [
-                    Container(
-                      height: 280,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gats.isStarry
-                              ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
-                              : [const Color(0xFFE2E8F0), const Color(0xFFCBD5E1)],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          course.isFree ? Icons.lightbulb_outline : Icons.workspace_premium_outlined,
-                          size: 96,
-                          color: course.isFree ? gats.lavenderAccent : AppColors.accent,
-                        ),
-                      ),
+                CourseHeroHeader(
+                  course: course,
+                  progress: course.progressFor(_userId),
+                  showProgress: _owned,
+                  onBack: () => Navigator.pop(context),
+                  trailing: IconButton(
+                    icon: Icon(
+                      isWishlist ? Icons.favorite : Icons.favorite_border,
+                      color: isWishlist ? Colors.red : (gats.isStarry ? Colors.white : Colors.black87),
                     ),
-                    SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: Icon(Icons.arrow_back, color: gats.isStarry ? Colors.white : Colors.black87),
-                              onPressed: () => Navigator.pop(context),
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.share_outlined, color: gats.isStarry ? Colors.white : Colors.black87),
-                              onPressed: () {},
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    onPressed: () => CartController.instance.toggleWishlist(course.id),
+                  ),
                 ),
 
-                // 2. Details Pane (White background, rounded top corners)
                 Transform.translate(
                   offset: const Offset(0, -20),
                   child: Container(
@@ -129,141 +133,90 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Title & Wishlist Button
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                        Text(
+                          course.title,
+                          style: AppTypography.style(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: gats.textPrimary,
+                            height: 1.25,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CourseMetaRow(course: course, reviewCount: 120),
+                        if (!_owned && !course.isFree) ...[
+                          const SizedBox(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
                                 children: [
-                                  Text(
-                                    course.tag.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.accent,
+                                  GestureDetector(
+                                    onTap: () {
+                                      if (_seats > 1) {
+                                        setState(() => _seats--);
+                                        HapticFeedback.selectionClick();
+                                      }
+                                    },
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: gats.divider),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.remove, size: 18),
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    course.title,
-                                    style: AppTypography.style(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w800,
-                                      color: gats.textPrimary,
-                                      height: 1.25,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Text(
+                                      '$_seats',
+                                      style: AppTypography.style(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                        color: gats.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() => _seats++);
+                                      HapticFeedback.selectionClick();
+                                    },
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: gats.divider),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Icon(Icons.add, size: 18),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            const SizedBox(width: 12),
-                            IconButton(
-                              icon: Icon(
-                                isWishlist ? Icons.favorite : Icons.favorite_border,
-                                color: isWishlist ? Colors.red : Colors.grey,
-                                size: 28,
-                              ),
-                              onPressed: () => CartController.instance.toggleWishlist(course.id),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Stats & Duration
-                        Row(
-                          children: [
-                            const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              '4.8 ${AppStrings.storeReviewsCount.replaceFirst('%d', '120')}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: gats.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.access_time_rounded, color: Colors.grey, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              AppStrings.storeHoursOfLearning.replaceFirst('%d', '${course.durationMinutes ~/ 60}'),
-                              style: TextStyle(fontSize: 13, color: gats.textSecondary),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Seats licensing quantity selector & Price side-by-side
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Seats selector (- 1 +)
-                            Row(
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    if (_seats > 1) {
-                                      setState(() => _seats--);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: gats.divider),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.remove, size: 18),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text(
-                                    '$_seats',
-                                    style: AppTypography.style(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                      color: gats.textPrimary,
-                                    ),
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() => _seats++);
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: gats.divider),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: const Icon(Icons.add, size: 18),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            // Price
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  _formatPrice(totalPriceVal),
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w800,
-                                    color: gats.lavenderAccent,
-                                  ),
-                                ),
-                                if (_seats > 1)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
                                   Text(
-                                    '(${_formatPrice(singlePrice)} / slot)',
-                                    style: TextStyle(fontSize: 11, color: gats.textSecondary),
+                                    formatVndPrice(totalPriceVal),
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                      color: gats.lavenderAccent,
+                                    ),
                                   ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                  if (_seats > 1)
+                                    Text(
+                                      '(${formatVndPrice(singlePrice)} / slot)',
+                                      style: TextStyle(fontSize: 11, color: gats.textSecondary),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
                         const Divider(height: 40),
 
                         // 3. Expandable Panels (Accordions)
@@ -290,27 +243,76 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
                           onTap: () => setState(() => _syllabusExpanded = !_syllabusExpanded),
                           content: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: course.lectures.map((l) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.play_circle_outline, color: gats.lavenderAccent, size: 18),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        l.title,
-                                        style: TextStyle(fontSize: 13, color: gats.textPrimary, fontWeight: FontWeight.w600),
-                                      ),
+                            children: [
+                              if (!_owned)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: Text(
+                                    AppStrings.storeSyllabusPreviewNote,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: gats.textSecondary,
+                                      height: 1.4,
                                     ),
-                                    Text(
-                                      '${l.durationMinutes}m',
-                                      style: TextStyle(fontSize: 12, color: gats.textSecondary),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              );
-                            }).toList(),
+                              ...course.lectures.asMap().entries.map((entry) {
+                                final index = entry.key;
+                                final l = entry.value;
+                                final isPreview = !_owned && index == 0;
+                                final isLocked = !_owned && index > 0;
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isLocked
+                                            ? Icons.lock_outline
+                                            : Icons.play_circle_outline,
+                                        color: isLocked
+                                            ? gats.textSecondary
+                                            : gats.lavenderAccent,
+                                        size: 18,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          l.title,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isLocked ? gats.textSecondary : gats.textPrimary,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      if (isPreview)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: gats.lavenderAccent.withValues(alpha: 0.12),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            AppStrings.storeLecturePreview,
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w700,
+                                              color: gats.lavenderAccent,
+                                            ),
+                                          ),
+                                        ),
+                                      if (!isPreview) ...[
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${l.durationMinutes}m',
+                                          style: TextStyle(fontSize: 12, color: gats.textSecondary),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
                           ),
                         ),
                         const Divider(height: 1),
@@ -335,45 +337,32 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
             ),
           ),
 
-          // Sticky Bottom Checkout Button
           Positioned(
-            left: 24,
-            right: 24,
-            bottom: 24,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(54),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(27)),
-                elevation: 4,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: CourseActionBar(
+              course: course,
+              isEnrolled: _owned,
+              priceLabel: formatVndPrice(totalPriceVal),
+              onContinue: () => Navigator.of(context).pushReplacement(
+                MaterialPageRoute<void>(
+                  builder: (_) => CourseDetailScreen(courseId: course.id),
+                ),
               ),
-              onPressed: () {
+              onEnrollFree: () => _enrollFree(course),
+              onAddToCart: () {
                 CartController.instance.addToCart(course.id, quantity: _seats);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      AppStrings.storeAddedSeatsToCart
-                          .replaceFirst('%d', '$_seats')
-                          .replaceFirst('%s', course.title),
-                    ),
-                    action: SnackBarAction(
-                      label: AppStrings.storeViewCart,
-                      textColor: AppColors.accent,
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => const CartScreen()),
-                      ),
-                    ),
+                GatsNotificationService.showInApp(
+                  message: AppStrings.storeAddedSeatsToCart
+                      .replaceFirst('%d', '$_seats')
+                      .replaceFirst('%s', course.title),
+                  actionLabel: AppStrings.storeViewCart,
+                  onAction: () => rootNavigatorKey.currentState?.push(
+                    MaterialPageRoute<void>(builder: (_) => const CartScreen()),
                   ),
                 );
               },
-              child: Text(
-                AppStrings.storeAddToCart,
-                style: AppTypography.style(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
             ),
           ),
         ],

@@ -47,6 +47,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingTitlePurpose => 'What is your learning goal?';
 
   @override
+  String get onboardingTitleReminder => 'Daily learning reminder';
+
+  @override
+  String get onboardingSubtitleReminder =>
+      'We\'ll nudge you at the time you pick — you can change this in Settings';
+
+  @override
+  String get onboardingCoachReminder =>
+      'Consistency beats intensity. Pick a time that works every day!';
+
+  @override
+  String get onboardingReminderEnable => 'Enable daily reminder';
+
+  @override
+  String get onboardingReminderNoThanks => 'No thanks';
+
+  @override
+  String get onboardingReminderContinue => 'Continue';
+
+  @override
+  String ackReminderEcho(String time) {
+    return 'Reminder at $time — see you then!';
+  }
+
+  @override
+  String get ackReminderSkippedEcho =>
+      'No problem — you can turn reminders on later in Settings.';
+
+  @override
+  String get dailyReminderTitle => 'GATS Academy';
+
+  @override
+  String get dailyReminderBody =>
+      'Time to learn! Check in and keep your streak going.';
+
+  @override
   String get onboardingSubtitleLanguage =>
       'You can change this later in Settings';
 
@@ -644,6 +680,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSignOut => 'Sign out';
 
   @override
+  String get authNotSignedIn =>
+      'Not signed in — please log in with your account';
+
+  @override
   String authSignedInAs(String identity) {
     return 'Signed in as: $identity';
   }
@@ -768,6 +808,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authErrorServer => 'Something went wrong. Please try again.';
 
   @override
+  String get authSocialCancelled => 'Sign-in cancelled';
+
+  @override
+  String get authSocialTokenMissing =>
+      'Could not get a token from the provider. Check OAuth setup.';
+
+  @override
+  String get authSocialFailed => 'Social sign-in failed';
+
+  @override
+  String get authSocialGoogleConfigHint =>
+      'Google Sign-In is misconfigured. In Google Cloud Console, create a Web application OAuth client, copy its Client ID to GOOGLE_SERVER_CLIENT_ID (.env) and default_web_client_id (strings.xml). Android (package + SHA-1) and Web clients must be in the same project.';
+
+  @override
   String get authRegisterSuccessVerify =>
       'Account created. Enter the verification code from your email.';
 
@@ -875,6 +929,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homePopularCourses => 'Popular Courses';
+
+  @override
+  String get homeMyCourses => 'My Courses';
+
+  @override
+  String get homeYourCourses => 'Your Courses';
+
+  @override
+  String get homeYourCoursesEmpty => 'You haven\'t purchased any courses yet.';
+
+  @override
+  String get homeYourCoursesBrowse => 'Browse store';
 
   @override
   String get seeAll => 'See all';
@@ -998,6 +1064,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'I am analyzing your learning progress. Please continue completing the active module!';
 
   @override
+  String get aiCoachInputHint => 'Ask AI Coach...';
+
+  @override
   String get hubXpTitle => 'Experience';
 
   @override
@@ -1041,6 +1110,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsReplayOnboarding => 'Reset onboarding';
+
+  @override
+  String get settingsSignOutSuccess =>
+      'Signed out. Restart the app to return to entry screen.';
+
+  @override
+  String get settingsReplaySuccess =>
+      'Onboarding reset. Restart the app to replay the flow.';
 
   @override
   String get tagOfficeAi => 'AI for workplace';
@@ -1252,6 +1329,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateSheetLater => 'Later';
 
   @override
+  String get reviewOpenedPlayStore =>
+      'Opening Google Play so you can rate the app.';
+
+  @override
+  String get reviewNativeUnavailable =>
+      'In-app rating only works for apps installed from Google Play. Opening the store page instead.';
+
+  @override
   String get settingsRateApp => 'Rate App';
 
   @override
@@ -1268,6 +1353,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get courseTabChat => 'Group Chat';
+
+  @override
+  String get courseTabGroup => 'Group';
 
   @override
   String get courseNotFound => 'Course not found';
@@ -1647,6 +1735,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get storeSyllabusPreviewNote =>
+      'Purchase the course to unlock all lectures, quizzes, and group chat.';
+
+  @override
+  String get storeLecturePreview => 'Preview';
+
+  @override
+  String get storePurchased => 'Purchased';
+
+  @override
   String get storeReviewsTitle => 'Student Reviews';
 
   @override
@@ -1704,6 +1802,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkoutStartLearning => 'Start Learning Now';
+
+  @override
+  String get paymentTitle => 'Payment';
+
+  @override
+  String get paymentChooseMethod => 'Choose payment method';
+
+  @override
+  String get paymentOrderSummary => 'Order summary';
+
+  @override
+  String paymentItemCount(int count) {
+    return '$count item(s) in cart';
+  }
+
+  @override
+  String get paymentPayNow => 'Pay now';
+
+  @override
+  String get paymentPayWithApple => 'Pay with Apple Pay';
+
+  @override
+  String get paymentApplePayHint =>
+      'Confirm with Face ID, Touch ID or passcode on your Apple device.';
+
+  @override
+  String get paymentMomoHint =>
+      'You will be redirected to the MoMo app to complete payment.';
+
+  @override
+  String get paymentVnpayHint =>
+      'You will be redirected to VNPay secure gateway.';
+
+  @override
+  String get paymentRedirectNote =>
+      'Mock payment — real gateway integration coming soon.';
+
+  @override
+  String get paymentQrHint => 'Scan QR with your banking app';
+
+  @override
+  String get paymentQrScanNote =>
+      'Supports VietQR · Napas247 · most Vietnamese banks';
+
+  @override
+  String get paymentSecureNote =>
+      'Your payment information is encrypted and secure.';
+
+  @override
+  String get paymentCardDetails => 'Card details';
+
+  @override
+  String get paymentCardNumber => 'Card number';
+
+  @override
+  String get paymentCardName => 'Name on card';
+
+  @override
+  String get paymentCardExpiry => 'MM/YY';
+
+  @override
+  String get paymentCardCvv => 'CVV';
 
   @override
   String get mentorSearchHint => 'Search assigned courses...';
@@ -1787,4 +1947,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chipFree => 'Free';
+
+  @override
+  String get notificationsScreenTitle => 'Notifications';
+
+  @override
+  String get notificationsToday => 'Today';
+
+  @override
+  String get notificationsYesterday => 'Yesterday';
+
+  @override
+  String get notificationsTestSection => 'Test notifications';
+
+  @override
+  String get notificationsTestBanner => 'In-app banner';
+
+  @override
+  String get notificationsTestPush => 'System push now';
+
+  @override
+  String get notificationsTestPushDelayed => 'Push in 5 seconds';
+
+  @override
+  String get notificationsTestHint =>
+      'Tap \"Push in 5 seconds\" then minimize the app to see it in the status bar.';
+
+  @override
+  String get notificationsPermissionDenied =>
+      'Permission denied. Enable notifications in system Settings.';
+
+  @override
+  String get notificationsTestScheduled =>
+      'Push in 5 seconds — minimize the app now!';
+
+  @override
+  String get notificationsTestSent => 'Test notification sent.';
+
+  @override
+  String get notificationsEmpty => 'No notifications yet';
+
+  @override
+  String get headerSubtitleNotifications => 'News & learning reminders';
 }

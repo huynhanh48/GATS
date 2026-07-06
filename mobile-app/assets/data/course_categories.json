@@ -1,0 +1,10 @@
+{
+  "categories": [
+    { "id": "ai-office", "name": "AI cho công sở", "icon": "psychology" },
+    { "id": "automation", "name": "Automation", "icon": "hub_outlined" },
+    { "id": "programming", "name": "Lập trình", "icon": "code" },
+    { "id": "marketing", "name": "Marketing", "icon": "campaign" },
+    { "id": "language", "name": "Ngoại ngữ", "icon": "translate" },
+    { "id": "soft-skills", "name": "Kỹ năng mềm", "icon": "record_voice_over" }
+  ]
+}

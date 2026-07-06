@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:flutter/services.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/data/mock/mock_course_store.dart';
-import 'package:gats_academy/features/store/presentation/widgets/checkout_success_dialog.dart';
+import 'package:gats_academy/features/store/presentation/payment_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -30,32 +31,9 @@ class _CartScreenState extends State<CartScreen> {
 
   void _onCartChanged() => setState(() {});
 
-  String _formatPrice(double price) {
-    if (price <= 0) return AppStrings.storeFree;
-    final buffer = StringBuffer();
-    final str = price.toInt().toString();
-    int len = str.length;
-    for (int i = 0; i < len; i++) {
-      if (i > 0 && (len - i) % 3 == 0) {
-        buffer.write('.');
-      }
-      buffer.write(str[i]);
-    }
-    buffer.write(' đ');
-    return buffer.toString();
-  }
-
-  Future<void> _performCheckout() async {
-    final user = await AuthPrefs.currentUser();
-    final userId = user?.id ?? 'mock_user';
-    
-    if (!mounted) return;
-    
-    // Show success dialog which handles checkout internal logic and Confetti
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => CheckoutSuccessDialog(userId: userId),
+  void _goToPayment() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const PaymentScreen()),
     );
   }
 
@@ -176,18 +154,20 @@ class _CartScreenState extends State<CartScreen> {
                                       GestureDetector(
                                         onTap: () {
                                           CartController.instance.updateQuantity(courseId, quantity - 1);
+                                          HapticFeedback.selectionClick();
                                         },
                                         child: Container(
-                                          padding: const EdgeInsets.all(4),
+                                          width: 36,
+                                          height: 36,
                                           decoration: BoxDecoration(
                                             border: Border.all(color: gats.divider),
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
-                                          child: const Icon(Icons.remove, size: 14),
+                                          child: const Icon(Icons.remove, size: 16),
                                         ),
                                       ),
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        padding: const EdgeInsets.symmetric(horizontal: 14),
                                         child: Text(
                                           '$quantity',
                                           style: AppTypography.style(
@@ -200,14 +180,16 @@ class _CartScreenState extends State<CartScreen> {
                                       GestureDetector(
                                         onTap: () {
                                           CartController.instance.updateQuantity(courseId, quantity + 1);
+                                          HapticFeedback.selectionClick();
                                         },
                                         child: Container(
-                                          padding: const EdgeInsets.all(4),
+                                          width: 36,
+                                          height: 36,
                                           decoration: BoxDecoration(
                                             border: Border.all(color: gats.divider),
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(8),
                                           ),
-                                          child: const Icon(Icons.add, size: 14),
+                                          child: const Icon(Icons.add, size: 16),
                                         ),
                                       ),
                                     ],
@@ -227,7 +209,7 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  _formatPrice(totalItemPrice),
+                                  formatVndPrice(totalItemPrice),
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w800,
@@ -278,7 +260,7 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                               ),
                               Text(
-                                _formatPrice(CartController.instance.totalPrice),
+                                formatVndPrice(CartController.instance.totalPrice),
                                 style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
@@ -295,7 +277,7 @@ class _CartScreenState extends State<CartScreen> {
                               minimumSize: const Size.fromHeight(50),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
                             ),
-                            onPressed: _performCheckout,
+                            onPressed: _goToPayment,
                             child: Text(
                               AppStrings.cartCheckout,
                               style: AppTypography.style(

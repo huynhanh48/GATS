@@ -170,6 +170,66 @@ abstract class AppLocalizations {
   /// **'What is your learning goal?'**
   String get onboardingTitlePurpose;
 
+  /// No description provided for @onboardingTitleReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily learning reminder'**
+  String get onboardingTitleReminder;
+
+  /// No description provided for @onboardingSubtitleReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll nudge you at the time you pick — you can change this in Settings'**
+  String get onboardingSubtitleReminder;
+
+  /// No description provided for @onboardingCoachReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Consistency beats intensity. Pick a time that works every day!'**
+  String get onboardingCoachReminder;
+
+  /// No description provided for @onboardingReminderEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable daily reminder'**
+  String get onboardingReminderEnable;
+
+  /// No description provided for @onboardingReminderNoThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'No thanks'**
+  String get onboardingReminderNoThanks;
+
+  /// No description provided for @onboardingReminderContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onboardingReminderContinue;
+
+  /// No description provided for @ackReminderEcho.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder at {time} — see you then!'**
+  String ackReminderEcho(String time);
+
+  /// No description provided for @ackReminderSkippedEcho.
+  ///
+  /// In en, this message translates to:
+  /// **'No problem — you can turn reminders on later in Settings.'**
+  String get ackReminderSkippedEcho;
+
+  /// No description provided for @dailyReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GATS Academy'**
+  String get dailyReminderTitle;
+
+  /// No description provided for @dailyReminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to learn! Check in and keep your streak going.'**
+  String get dailyReminderBody;
+
   /// No description provided for @onboardingSubtitleLanguage.
   ///
   /// In en, this message translates to:
@@ -1232,6 +1292,12 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get authSignOut;
 
+  /// No description provided for @authNotSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in — please log in with your account'**
+  String get authNotSignedIn;
+
   /// No description provided for @authSignedInAs.
   ///
   /// In en, this message translates to:
@@ -1460,6 +1526,30 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Please try again.'**
   String get authErrorServer;
 
+  /// No description provided for @authSocialCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-in cancelled'**
+  String get authSocialCancelled;
+
+  /// No description provided for @authSocialTokenMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get a token from the provider. Check OAuth setup.'**
+  String get authSocialTokenMissing;
+
+  /// No description provided for @authSocialFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Social sign-in failed'**
+  String get authSocialFailed;
+
+  /// No description provided for @authSocialGoogleConfigHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Sign-In is misconfigured. In Google Cloud Console, create a Web application OAuth client, copy its Client ID to GOOGLE_SERVER_CLIENT_ID (.env) and default_web_client_id (strings.xml). Android (package + SHA-1) and Web clients must be in the same project.'**
+  String get authSocialGoogleConfigHint;
+
   /// No description provided for @authRegisterSuccessVerify.
   ///
   /// In en, this message translates to:
@@ -1663,6 +1753,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Popular Courses'**
   String get homePopularCourses;
+
+  /// No description provided for @homeMyCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'My Courses'**
+  String get homeMyCourses;
+
+  /// No description provided for @homeYourCourses.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Courses'**
+  String get homeYourCourses;
+
+  /// No description provided for @homeYourCoursesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t purchased any courses yet.'**
+  String get homeYourCoursesEmpty;
+
+  /// No description provided for @homeYourCoursesBrowse.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse store'**
+  String get homeYourCoursesBrowse;
 
   /// No description provided for @seeAll.
   ///
@@ -1886,6 +2000,12 @@ abstract class AppLocalizations {
   /// **'I am analyzing your learning progress. Please continue completing the active module!'**
   String get aiCoachMockReply;
 
+  /// No description provided for @aiCoachInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask AI Coach...'**
+  String get aiCoachInputHint;
+
   /// No description provided for @hubXpTitle.
   ///
   /// In en, this message translates to:
@@ -1969,6 +2089,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reset onboarding'**
   String get settingsReplayOnboarding;
+
+  /// No description provided for @settingsSignOutSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out. Restart the app to return to entry screen.'**
+  String get settingsSignOutSuccess;
+
+  /// No description provided for @settingsReplaySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Onboarding reset. Restart the app to replay the flow.'**
+  String get settingsReplaySuccess;
 
   /// No description provided for @tagOfficeAi.
   ///
@@ -2318,6 +2450,18 @@ abstract class AppLocalizations {
   /// **'Later'**
   String get rateSheetLater;
 
+  /// No description provided for @reviewOpenedPlayStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Google Play so you can rate the app.'**
+  String get reviewOpenedPlayStore;
+
+  /// No description provided for @reviewNativeUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app rating only works for apps installed from Google Play. Opening the store page instead.'**
+  String get reviewNativeUnavailable;
+
   /// No description provided for @settingsRateApp.
   ///
   /// In en, this message translates to:
@@ -2353,6 +2497,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Group Chat'**
   String get courseTabChat;
+
+  /// No description provided for @courseTabGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Group'**
+  String get courseTabGroup;
 
   /// No description provided for @courseNotFound.
   ///
@@ -3056,6 +3206,24 @@ abstract class AppLocalizations {
   /// **'Syllabus ({count} lectures)'**
   String storeSyllabusTitle(int count);
 
+  /// No description provided for @storeSyllabusPreviewNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase the course to unlock all lectures, quizzes, and group chat.'**
+  String get storeSyllabusPreviewNote;
+
+  /// No description provided for @storeLecturePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get storeLecturePreview;
+
+  /// No description provided for @storePurchased.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchased'**
+  String get storePurchased;
+
   /// No description provided for @storeReviewsTitle.
   ///
   /// In en, this message translates to:
@@ -3163,6 +3331,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Learning Now'**
   String get checkoutStartLearning;
+
+  /// No description provided for @paymentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment'**
+  String get paymentTitle;
+
+  /// No description provided for @paymentChooseMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose payment method'**
+  String get paymentChooseMethod;
+
+  /// No description provided for @paymentOrderSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Order summary'**
+  String get paymentOrderSummary;
+
+  /// No description provided for @paymentItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} item(s) in cart'**
+  String paymentItemCount(int count);
+
+  /// No description provided for @paymentPayNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay now'**
+  String get paymentPayNow;
+
+  /// No description provided for @paymentPayWithApple.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay with Apple Pay'**
+  String get paymentPayWithApple;
+
+  /// No description provided for @paymentApplePayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm with Face ID, Touch ID or passcode on your Apple device.'**
+  String get paymentApplePayHint;
+
+  /// No description provided for @paymentMomoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You will be redirected to the MoMo app to complete payment.'**
+  String get paymentMomoHint;
+
+  /// No description provided for @paymentVnpayHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You will be redirected to VNPay secure gateway.'**
+  String get paymentVnpayHint;
+
+  /// No description provided for @paymentRedirectNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Mock payment — real gateway integration coming soon.'**
+  String get paymentRedirectNote;
+
+  /// No description provided for @paymentQrHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR with your banking app'**
+  String get paymentQrHint;
+
+  /// No description provided for @paymentQrScanNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Supports VietQR · Napas247 · most Vietnamese banks'**
+  String get paymentQrScanNote;
+
+  /// No description provided for @paymentSecureNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment information is encrypted and secure.'**
+  String get paymentSecureNote;
+
+  /// No description provided for @paymentCardDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Card details'**
+  String get paymentCardDetails;
+
+  /// No description provided for @paymentCardNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Card number'**
+  String get paymentCardNumber;
+
+  /// No description provided for @paymentCardName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name on card'**
+  String get paymentCardName;
+
+  /// No description provided for @paymentCardExpiry.
+  ///
+  /// In en, this message translates to:
+  /// **'MM/YY'**
+  String get paymentCardExpiry;
+
+  /// No description provided for @paymentCardCvv.
+  ///
+  /// In en, this message translates to:
+  /// **'CVV'**
+  String get paymentCardCvv;
 
   /// No description provided for @mentorSearchHint.
   ///
@@ -3313,6 +3589,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Free'**
   String get chipFree;
+
+  /// No description provided for @notificationsScreenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get notificationsScreenTitle;
+
+  /// No description provided for @notificationsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get notificationsToday;
+
+  /// No description provided for @notificationsYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get notificationsYesterday;
+
+  /// No description provided for @notificationsTestSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notifications'**
+  String get notificationsTestSection;
+
+  /// No description provided for @notificationsTestBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app banner'**
+  String get notificationsTestBanner;
+
+  /// No description provided for @notificationsTestPush.
+  ///
+  /// In en, this message translates to:
+  /// **'System push now'**
+  String get notificationsTestPush;
+
+  /// No description provided for @notificationsTestPushDelayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Push in 5 seconds'**
+  String get notificationsTestPushDelayed;
+
+  /// No description provided for @notificationsTestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap \"Push in 5 seconds\" then minimize the app to see it in the status bar.'**
+  String get notificationsTestHint;
+
+  /// No description provided for @notificationsPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission denied. Enable notifications in system Settings.'**
+  String get notificationsPermissionDenied;
+
+  /// No description provided for @notificationsTestScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Push in 5 seconds — minimize the app now!'**
+  String get notificationsTestScheduled;
+
+  /// No description provided for @notificationsTestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Test notification sent.'**
+  String get notificationsTestSent;
+
+  /// No description provided for @notificationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notificationsEmpty;
+
+  /// No description provided for @headerSubtitleNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'News & learning reminders'**
+  String get headerSubtitleNotifications;
 }
 
 class _AppLocalizationsDelegate

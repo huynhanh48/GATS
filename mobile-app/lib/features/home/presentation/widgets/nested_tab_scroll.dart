@@ -14,14 +14,20 @@ class NestedTabScrollView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      key: PageStorageKey<String>(storageKey),
-      slivers: [
-        SliverOverlapInjector(
-          handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-        ),
-        ...slivers,
-      ],
+    // Builder + primary:false — tránh body TabBarView trắng/đen sau modal bottom sheet.
+    return Builder(
+      builder: (context) {
+        return CustomScrollView(
+          key: PageStorageKey<String>(storageKey),
+          primary: false,
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            ),
+            ...slivers,
+          ],
+        );
+      },
     );
   }
 }

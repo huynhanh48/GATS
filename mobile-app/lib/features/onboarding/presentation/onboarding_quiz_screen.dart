@@ -7,6 +7,7 @@ import 'package:gats_academy/features/onboarding/models/onboarding_answers.dart'
 import 'package:gats_academy/features/onboarding/presentation/widgets/onboarding_answer_ack_sheet.dart';
 import 'package:gats_academy/features/onboarding/presentation/widgets/onboarding_option_card.dart';
 import 'package:gats_academy/features/onboarding/presentation/widgets/onboarding_pill_grid.dart';
+import 'package:gats_academy/features/onboarding/presentation/widgets/onboarding_reminder_step.dart';
 import 'package:gats_academy/features/onboarding/presentation/widgets/onboarding_shell.dart';
 
 class OnboardingQuizScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class OnboardingQuizScreen extends StatefulWidget {
 
 class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
   final _pageController = PageController();
+  final _reminderStepKey = GlobalKey<OnboardingReminderStepState>();
   int _step = 0;
   bool _isTransitioning = false;
 
@@ -41,6 +43,7 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
     QuizStepId.age,
     QuizStepId.dailyGoal,
     QuizStepId.purpose,
+    QuizStepId.reminder,
   ];
   static int get _totalSteps => _steps.length;
 
@@ -58,11 +61,14 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
       QuizStepId.age => a.ageRange != null,
       QuizStepId.dailyGoal => a.dailyGoal != null,
       QuizStepId.purpose => a.purpose != null,
+      QuizStepId.reminder => true,
     };
   }
 
   Future<void> _next() async {
     if (!_canProceed || _isTransitioning) return;
+    if (_currentStep == QuizStepId.reminder) return;
+
     _isTransitioning = true;
 
     final config = OnboardingAckConfig.forStep(_currentStep, widget.answers, context.l10n);
@@ -78,6 +84,35 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
     } else {
       widget.onComplete();
     }
+
+    if (mounted) {
+      setState(() => _isTransitioning = false);
+    }
+  }
+
+  Future<void> _onReminderNoThanks() async {
+    await _finishReminderStep(widget.answers.copyWith(dailyReminderEnabled: false));
+  }
+
+  Future<void> _onReminderContinue() async {
+    final answers = _reminderStepKey.currentState?.committedAnswers ?? widget.answers;
+    await _finishReminderStep(answers);
+  }
+
+  Future<void> _finishReminderStep(OnboardingAnswers answers) async {
+    if (_isTransitioning) return;
+    _isTransitioning = true;
+
+    widget.onAnswersChanged(answers);
+
+    await applyOnboardingReminderSettings(answers);
+    if (!mounted) return;
+
+    final config = OnboardingAckConfig.forStep(QuizStepId.reminder, answers, context.l10n);
+    await OnboardingAnswerAckSheet.show(context, config);
+    if (!mounted) return;
+
+    widget.onComplete();
 
     if (mounted) {
       setState(() => _isTransitioning = false);
@@ -115,13 +150,19 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
       currentStep: _step,
       totalSteps: _totalSteps,
       onBack: _back,
-      bottom: SizedBox(
-        width: double.infinity,
-        child: FilledButton(
-          onPressed: _canProceed && !_isTransitioning ? _next : null,
-          child: Text(_step == _totalSteps - 1 ? l10n.onboardingFinish : l10n.onboardingNext),
-        ),
-      ),
+      bottom: _currentStep == QuizStepId.reminder
+          ? OnboardingReminderBottomBar(
+              isLoading: _isTransitioning,
+              onNoThanks: _onReminderNoThanks,
+              onContinue: _onReminderContinue,
+            )
+          : SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _canProceed && !_isTransitioning ? _next : null,
+                child: Text(l10n.onboardingNext),
+              ),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -184,6 +225,11 @@ class _OnboardingQuizScreenState extends State<OnboardingQuizScreen> {
                 _PurposeStep(
                   selected: widget.answers.purpose,
                   onSelect: (v) => _update(widget.answers.copyWith(purpose: v)),
+                ),
+                OnboardingReminderStep(
+                  key: _reminderStepKey,
+                  answers: widget.answers,
+                  onAnswersChanged: _update,
                 ),
               ],
             ),

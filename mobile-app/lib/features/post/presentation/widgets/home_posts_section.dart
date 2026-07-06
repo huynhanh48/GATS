@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
@@ -47,14 +48,13 @@ class HomePostsSection extends StatelessWidget {
               courseTitle: MockPostStore.instance.courseTitleFor(post),
               compact: true,
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => PostDetailScreen(
-                      postId: post.id,
-                      onEnroll: post.courseId != null && onEnrollFromPost != null
-                          ? () => onEnrollFromPost!(post.courseId!)
-                          : null,
-                    ),
+                GatsMainNavigator.push(
+                  context,
+                  PostDetailScreen(
+                    postId: post.id,
+                    onEnroll: post.courseId != null && onEnrollFromPost != null
+                        ? () => onEnrollFromPost!(post.courseId!)
+                        : null,
                   ),
                 );
               },

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
 import 'package:gats_academy/core/widgets/xp_popup.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/data/catalog/learning_activities_catalog.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 import 'package:gats_academy/core/services/review_prompt_helper.dart';
+import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/daily/presentation/widgets/streak_calendar.dart';
 import 'package:gats_academy/features/flashcard/presentation/flashcard_deck_section.dart';
 import 'package:gats_academy/features/flashcard/presentation/flashcard_study_screen.dart';
@@ -29,8 +33,19 @@ class _DailyScreenState extends State<DailyScreen> {
   @override
   void initState() {
     super.initState();
-    _tasks = List.of(MockData.dailyTasks);
+    _tasks = List.of(MockData.staticDailyTasks);
+    _loadTasks();
     _loadWorkflow();
+  }
+
+  Future<void> _loadTasks() async {
+    final user = await AuthPrefs.currentUser();
+    final tasks = await LearningActivitiesCatalog.instance.dailyTasks(
+      userId: user?.id,
+      role: user?.role ?? UserRole.user,
+    );
+    if (!mounted) return;
+    setState(() => _tasks = List.of(tasks));
   }
 
   Future<void> _loadWorkflow() async {
@@ -43,6 +58,7 @@ class _DailyScreenState extends State<DailyScreen> {
   void _showXpPopup(int xp) {
     _xpToday += xp;
     XpPopup.show(context, xp: xp);
+    HapticFeedback.mediumImpact();
   }
 
   Future<void> _completeFlashcardTask() async {
@@ -90,7 +106,13 @@ class _DailyScreenState extends State<DailyScreen> {
   Widget build(BuildContext context) {
     final progress = _tasks.isEmpty ? 0.0 : _doneCount / _tasks.length;
 
-    return ListView(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadTasks();
+        await _loadWorkflow();
+      },
+      color: AppColors.primary,
+      child: ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         // Streak Calendar
@@ -303,6 +325,7 @@ class _DailyScreenState extends State<DailyScreen> {
           ),
         ),
       ],
+    ),
     );
   }
 }
