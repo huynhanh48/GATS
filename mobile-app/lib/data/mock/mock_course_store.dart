@@ -112,6 +112,16 @@ class MockCourseStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setUserProgress(String courseId, String userId, double progress) {
+    final index = _courses.indexWhere((c) => c.id == courseId);
+    if (index < 0) return;
+    final course = _courses[index];
+    final map = Map<String, double>.from(course.progressByUser);
+    map[userId] = progress.clamp(0.0, 1.0);
+    _courses[index] = course.copyWith(progressByUser: map);
+    notifyListeners();
+  }
+
   void assignMentor(String courseId, String mentorId) {
     final index = _courses.indexWhere((c) => c.id == courseId);
     if (index < 0) return;

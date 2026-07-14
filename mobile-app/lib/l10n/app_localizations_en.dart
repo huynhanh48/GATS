@@ -1393,6 +1393,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get courseQuizPublished => 'Quiz assigned to students';
 
   @override
+  String get lectureStatusCompleted => 'Completed';
+
+  @override
+  String get lectureStatusCurrent => 'In progress';
+
+  @override
+  String get lectureStatusUpcoming => 'Not started';
+
+  @override
+  String lectureLearningCaption(String title) {
+    return 'Learning: $title';
+  }
+
+  @override
+  String get lectureStartCaption => 'Start with lesson 1';
+
+  @override
+  String get lectureAllDoneCaption => 'You have finished every lecture';
+
+  @override
+  String lectureMeta(int count, int minutes) {
+    return '$count lessons · $minutes min';
+  }
+
+  @override
+  String lectureProgressCount(int done, int total) {
+    return '$done/$total lessons done';
+  }
+
+  @override
+  String get lectureContinue => 'Continue learning';
+
+  @override
+  String get lectureStartNext => 'Start next lesson';
+
+  @override
+  String get lectureMarkComplete => 'Mark as complete';
+
+  @override
+  String get lectureStartLearning => 'Start lesson';
+
+  @override
+  String lectureLessonOf(int index, int total) {
+    return 'Lesson $index / $total';
+  }
+
+  @override
+  String get lecturesEmptyTitle => 'No lectures yet';
+
+  @override
+  String get lecturesEmptyDesc => 'Course content is being prepared.';
+
+  @override
+  String get lectureMarkedDone => 'Lecture marked as complete';
+
+  @override
+  String get lecturePlayerSoon =>
+      'The lesson player is coming soon — you can still mark lessons as done.';
+
+  @override
   String get groupChatEmpty => 'No messages yet — say hi to the class!';
 
   @override
@@ -1481,6 +1541,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get postComposeCourse => 'Course-specific article';
+
+  @override
+  String get postCommentsTitle => 'Comments';
+
+  @override
+  String postCommentsCount(int count) {
+    return '$count comments';
+  }
+
+  @override
+  String get postCommentsEmpty => 'No comments yet — be the first!';
+
+  @override
+  String get postCommentHint => 'Write a comment...';
+
+  @override
+  String get postCommentSend => 'Send';
+
+  @override
+  String get postCommentLogin => 'Sign in to comment';
 
   @override
   String get postPublished => 'Article published';

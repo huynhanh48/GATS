@@ -60,6 +60,10 @@ final class MockCourseRepository implements CourseRepository {
   void enroll(String courseId, String userId) => _store.enrollUser(courseId, userId);
 
   @override
+  void setUserProgress(String courseId, String userId, double progress) =>
+      _store.setUserProgress(courseId, userId, progress);
+
+  @override
   bool canAccessGroupChat({
     required AppCourse course,
     required String? userId,

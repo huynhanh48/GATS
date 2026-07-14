@@ -4,15 +4,28 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/widgets/ui_components.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
+import 'package:gats_academy/features/home/data/streak_controller.dart';
 import 'package:gats_academy/features/home/presentation/widgets/nested_tab_scroll.dart';
 
-class AiReportTab extends StatelessWidget {
+class AiReportTab extends StatefulWidget {
   const AiReportTab({super.key, this.nestedScroll = false});
 
   final bool nestedScroll;
 
+  @override
+  State<AiReportTab> createState() => _AiReportTabState();
+}
+
+class _AiReportTabState extends State<AiReportTab> {
+  @override
+  void initState() {
+    super.initState();
+    StreakController.instance.ensureLoaded();
+  }
+
   Widget _content(BuildContext context) {
     final report = MockData.aiReport;
+    final streak = StreakController.instance.streakDays;
 
     return Column(
       children: [
@@ -29,7 +42,7 @@ class AiReportTab extends StatelessWidget {
             Expanded(
               child: StatTile(
                 icon: Icons.local_fire_department_outlined,
-                value: '${MockData.streakDays}',
+                value: '$streak',
                 label: AppStrings.reportStreakDays,
                 color: AppColors.accent,
                 backgroundColor: AppColors.accent.withValues(alpha: 0.1),
@@ -90,21 +103,26 @@ class AiReportTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (nestedScroll) {
-      return NestedTabScrollView(
-        storageKey: 'home_ai_report',
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            sliver: SliverToBoxAdapter(child: _content(context)),
-          ),
-        ],
-      );
-    }
+    return ListenableBuilder(
+      listenable: StreakController.instance,
+      builder: (context, _) {
+        if (widget.nestedScroll) {
+          return NestedTabScrollView(
+            storageKey: 'home_ai_report',
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                sliver: SliverToBoxAdapter(child: _content(context)),
+              ),
+            ],
+          );
+        }
 
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [_content(context)],
+        return ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [_content(context)],
+        );
+      },
     );
   }
 }

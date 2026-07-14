@@ -1375,6 +1375,66 @@ class AppLocalizationsVi extends AppLocalizations {
   String get courseQuizPublished => 'Đã giao quiz cho học viên';
 
   @override
+  String get lectureStatusCompleted => 'Đã học';
+
+  @override
+  String get lectureStatusCurrent => 'Đang học';
+
+  @override
+  String get lectureStatusUpcoming => 'Chưa học';
+
+  @override
+  String lectureLearningCaption(String title) {
+    return 'Đang học: $title';
+  }
+
+  @override
+  String get lectureStartCaption => 'Bắt đầu bài 1';
+
+  @override
+  String get lectureAllDoneCaption => 'Bạn đã hoàn thành mọi bài giảng';
+
+  @override
+  String lectureMeta(int count, int minutes) {
+    return '$count bài · $minutes phút';
+  }
+
+  @override
+  String lectureProgressCount(int done, int total) {
+    return 'Đã xong $done/$total bài';
+  }
+
+  @override
+  String get lectureContinue => 'Tiếp tục học';
+
+  @override
+  String get lectureStartNext => 'Học bài tiếp theo';
+
+  @override
+  String get lectureMarkComplete => 'Đánh dấu hoàn thành';
+
+  @override
+  String get lectureStartLearning => 'Bắt đầu học';
+
+  @override
+  String lectureLessonOf(int index, int total) {
+    return 'Bài $index / $total';
+  }
+
+  @override
+  String get lecturesEmptyTitle => 'Chưa có bài giảng';
+
+  @override
+  String get lecturesEmptyDesc => 'Nội dung khóa học đang được cập nhật.';
+
+  @override
+  String get lectureMarkedDone => 'Đã đánh dấu hoàn thành bài học';
+
+  @override
+  String get lecturePlayerSoon =>
+      'Trình phát bài giảng sắp có — bạn vẫn có thể đánh dấu đã học.';
+
+  @override
   String get groupChatEmpty => 'Chưa có tin nhắn — hãy chào cả lớp!';
 
   @override
@@ -1464,6 +1524,26 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get postComposeCourse => 'Bài trong khóa';
+
+  @override
+  String get postCommentsTitle => 'Bình luận';
+
+  @override
+  String postCommentsCount(int count) {
+    return '$count bình luận';
+  }
+
+  @override
+  String get postCommentsEmpty => 'Chưa có bình luận — hãy là người đầu tiên!';
+
+  @override
+  String get postCommentHint => 'Viết bình luận...';
+
+  @override
+  String get postCommentSend => 'Gửi';
+
+  @override
+  String get postCommentLogin => 'Đăng nhập để bình luận';
 
   @override
   String get postPublished => 'Đã đăng bài viết';

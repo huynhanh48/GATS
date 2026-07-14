@@ -2,6 +2,24 @@ import 'package:gats_academy/features/auth/models/user_role.dart';
 
 enum PostScope { global, course }
 
+class PostComment {
+  const PostComment({
+    required this.id,
+    required this.postId,
+    required this.authorId,
+    required this.authorName,
+    required this.body,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String postId;
+  final String authorId;
+  final String authorName;
+  final String body;
+  final DateTime createdAt;
+}
+
 class CommunityPost {
   const CommunityPost({
     required this.id,

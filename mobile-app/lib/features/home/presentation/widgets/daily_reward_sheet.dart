@@ -3,6 +3,7 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/home/data/daily_check_in_store.dart';
+import 'package:gats_academy/features/home/data/streak_controller.dart';
 
 class DailyRewardSheet extends StatefulWidget {
   const DailyRewardSheet({
@@ -85,6 +86,7 @@ class _DailyRewardSheetState extends State<DailyRewardSheet>
     setState(() => _claiming = true);
     try {
       final xp = await DailyCheckInStore.claimToday();
+      await StreakController.instance.refresh();
       if (!mounted) return;
       setState(() {
         _claimed = true;

@@ -9,6 +9,7 @@ import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
 import 'package:gats_academy/core/widgets/lazy_indexed_stack.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/ai_coach/presentation/ai_coach_screen.dart';
+import 'package:gats_academy/features/daily/data/daily_tasks_controller.dart';
 import 'package:gats_academy/features/daily/presentation/daily_screen.dart';
 import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
 import 'package:gats_academy/features/home/presentation/home_screen.dart';
@@ -36,6 +37,12 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = MainShellTabs.home;
+
+  @override
+  void initState() {
+    super.initState();
+    DailyTasksController.instance.ensureLoaded();
+  }
 
   /// Map screen index → nav bar index (4 tabs, không gồm Thư viện).
   int _navSelectedIndex(int screenIndex) {
@@ -176,33 +183,38 @@ class _MainShellState extends State<MainShell> {
         ),
         floatingActionButton: null,
         bottomNavigationBar: RepaintBoundary(
-          child: FloatingNavBar(
-            selectedIndex: _navSelectedIndex(_currentIndex),
-            onDestinationSelected: _onNavDestinationSelected,
-            centerAction: FloatingNavCenterButton(onPressed: _showQuickActions),
-            destinations: [
-              FloatingNavDestination(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home_rounded,
-                label: AppStrings.navHome,
-              ),
-              FloatingNavDestination(
-                icon: Icons.today_outlined,
-                selectedIcon: Icons.today_rounded,
-                label: AppStrings.navDaily,
-                badgeLabel: '3',
-              ),
-              FloatingNavDestination(
-                icon: Icons.psychology_outlined,
-                selectedIcon: Icons.psychology_rounded,
-                label: AppStrings.navCoach,
-              ),
-              FloatingNavDestination(
-                icon: Icons.storefront_outlined,
-                selectedIcon: Icons.storefront_rounded,
-                label: AppStrings.navStore,
-              ),
-            ],
+          child: ListenableBuilder(
+            listenable: DailyTasksController.instance,
+            builder: (context, _) {
+              return FloatingNavBar(
+                selectedIndex: _navSelectedIndex(_currentIndex),
+                onDestinationSelected: _onNavDestinationSelected,
+                centerAction: FloatingNavCenterButton(onPressed: _showQuickActions),
+                destinations: [
+                  FloatingNavDestination(
+                    icon: Icons.home_outlined,
+                    selectedIcon: Icons.home_rounded,
+                    label: AppStrings.navHome,
+                  ),
+                  FloatingNavDestination(
+                    icon: Icons.today_outlined,
+                    selectedIcon: Icons.today_rounded,
+                    label: AppStrings.navDaily,
+                    badgeLabel: DailyTasksController.instance.badgeLabel,
+                  ),
+                  FloatingNavDestination(
+                    icon: Icons.psychology_outlined,
+                    selectedIcon: Icons.psychology_rounded,
+                    label: AppStrings.navCoach,
+                  ),
+                  FloatingNavDestination(
+                    icon: Icons.storefront_outlined,
+                    selectedIcon: Icons.storefront_rounded,
+                    label: AppStrings.navStore,
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),

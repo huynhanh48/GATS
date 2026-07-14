@@ -10,10 +10,42 @@ class MockPostStore extends ChangeNotifier {
   static final MockPostStore instance = MockPostStore._();
 
   List<CommunityPost> _posts = _seedPosts();
+  List<PostComment> _comments = _seedComments();
 
   List<CommunityPost> get posts => List.unmodifiable(_posts.where((p) => p.isPublished));
 
   List<CommunityPost> get allPosts => List.unmodifiable(_posts);
+
+  List<PostComment> commentsFor(String postId) {
+    return _comments.where((c) => c.postId == postId).toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  }
+
+  int commentCount(String postId) =>
+      _comments.where((c) => c.postId == postId).length;
+
+  void addComment({
+    required String postId,
+    required String authorId,
+    required String authorName,
+    required String body,
+  }) {
+    final trimmed = body.trim();
+    if (trimmed.isEmpty || postById(postId) == null) return;
+
+    _comments = [
+      ..._comments,
+      PostComment(
+        id: 'comment-${DateTime.now().millisecondsSinceEpoch}',
+        postId: postId,
+        authorId: authorId,
+        authorName: authorName,
+        body: trimmed,
+        createdAt: DateTime.now(),
+      ),
+    ];
+    notifyListeners();
+  }
 
   CommunityPost? postById(String id) {
     for (final post in _posts) {
@@ -168,6 +200,36 @@ class MockPostStore extends ChangeNotifier {
         courseId: 'course-2',
         coverImage: CourseCoverAssets.pathForIndex(2),
         publishedAt: now.subtract(const Duration(days: 1)),
+      ),
+    ];
+  }
+
+  static List<PostComment> _seedComments() {
+    final now = DateTime.now();
+    return [
+      PostComment(
+        id: 'c-1',
+        postId: 'post-global-1',
+        authorId: MockAccounts.user.id,
+        authorName: MockAccounts.user.displayName,
+        body: 'Tuyệt vời! Mình đang học khóa AI văn phòng, lộ trình rất rõ ràng.',
+        createdAt: now.subtract(const Duration(hours: 1, minutes: 20)),
+      ),
+      PostComment(
+        id: 'c-2',
+        postId: 'post-global-1',
+        authorId: MockAccounts.mentor.id,
+        authorName: MockAccounts.mentor.displayName,
+        body: 'Welcome cả nhà! Có câu hỏi cứ hỏi trong GroupChat của khóa nhé.',
+        createdAt: now.subtract(const Duration(minutes: 40)),
+      ),
+      PostComment(
+        id: 'c-3',
+        postId: 'post-course-1',
+        authorId: MockAccounts.user.id,
+        authorName: MockAccounts.user.displayName,
+        body: 'Prompt số 2 cực hữu ích cho họp chiều nay 🙌',
+        createdAt: now.subtract(const Duration(hours: 2)),
       ),
     ];
   }

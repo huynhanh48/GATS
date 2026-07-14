@@ -661,6 +661,46 @@
   "courseMentorBadge": "You are mentoring this course",
   "courseChatLocked": "GroupChat is only for enrolled students or mentors of the course",
   "courseQuizPublished": "Quiz assigned to students",
+  "lectureStatusCompleted": "Completed",
+  "lectureStatusCurrent": "In progress",
+  "lectureStatusUpcoming": "Not started",
+  "lectureLearningCaption": "Learning: {title}",
+  "@lectureLearningCaption": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "lectureStartCaption": "Start with lesson 1",
+  "lectureAllDoneCaption": "You have finished every lecture",
+  "lectureMeta": "{count} lessons · {minutes} min",
+  "@lectureMeta": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "lectureProgressCount": "{done}/{total} lessons done",
+  "@lectureProgressCount": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "lectureContinue": "Continue learning",
+  "lectureStartNext": "Start next lesson",
+  "lectureMarkComplete": "Mark as complete",
+  "lectureStartLearning": "Start lesson",
+  "lectureLessonOf": "Lesson {index} / {total}",
+  "@lectureLessonOf": {
+    "placeholders": {
+      "index": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "lecturesEmptyTitle": "No lectures yet",
+  "lecturesEmptyDesc": "Course content is being prepared.",
+  "lectureMarkedDone": "Lecture marked as complete",
+  "lecturePlayerSoon": "The lesson player is coming soon — you can still mark lessons as done.",
   "groupChatEmpty": "No messages yet — say hi to the class!",
   "groupChatHint": "Type a message...",
   "groupChatOnePerCourse": "1 course = 1 chat room",
@@ -697,6 +737,17 @@
   "postComposePublish": "Publish",
   "postComposeGlobal": "Global announcement (GATS)",
   "postComposeCourse": "Course-specific article",
+  "postCommentsTitle": "Comments",
+  "postCommentsCount": "{count} comments",
+  "@postCommentsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "postCommentsEmpty": "No comments yet — be the first!",
+  "postCommentHint": "Write a comment...",
+  "postCommentSend": "Send",
+  "postCommentLogin": "Sign in to comment",
   "postPublished": "Article published",
   "postEmptyCourse": "No articles in this course yet",
   "postMentorCompose": "Post to class",

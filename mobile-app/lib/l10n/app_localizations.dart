@@ -2576,6 +2576,108 @@ abstract class AppLocalizations {
   /// **'Quiz assigned to students'**
   String get courseQuizPublished;
 
+  /// No description provided for @lectureStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get lectureStatusCompleted;
+
+  /// No description provided for @lectureStatusCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get lectureStatusCurrent;
+
+  /// No description provided for @lectureStatusUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get lectureStatusUpcoming;
+
+  /// No description provided for @lectureLearningCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning: {title}'**
+  String lectureLearningCaption(String title);
+
+  /// No description provided for @lectureStartCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with lesson 1'**
+  String get lectureStartCaption;
+
+  /// No description provided for @lectureAllDoneCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'You have finished every lecture'**
+  String get lectureAllDoneCaption;
+
+  /// No description provided for @lectureMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} lessons · {minutes} min'**
+  String lectureMeta(int count, int minutes);
+
+  /// No description provided for @lectureProgressCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{done}/{total} lessons done'**
+  String lectureProgressCount(int done, int total);
+
+  /// No description provided for @lectureContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue learning'**
+  String get lectureContinue;
+
+  /// No description provided for @lectureStartNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Start next lesson'**
+  String get lectureStartNext;
+
+  /// No description provided for @lectureMarkComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as complete'**
+  String get lectureMarkComplete;
+
+  /// No description provided for @lectureStartLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Start lesson'**
+  String get lectureStartLearning;
+
+  /// No description provided for @lectureLessonOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Lesson {index} / {total}'**
+  String lectureLessonOf(int index, int total);
+
+  /// No description provided for @lecturesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No lectures yet'**
+  String get lecturesEmptyTitle;
+
+  /// No description provided for @lecturesEmptyDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Course content is being prepared.'**
+  String get lecturesEmptyDesc;
+
+  /// No description provided for @lectureMarkedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Lecture marked as complete'**
+  String get lectureMarkedDone;
+
+  /// No description provided for @lecturePlayerSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'The lesson player is coming soon — you can still mark lessons as done.'**
+  String get lecturePlayerSoon;
+
   /// No description provided for @groupChatEmpty.
   ///
   /// In en, this message translates to:
@@ -2749,6 +2851,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Course-specific article'**
   String get postComposeCourse;
+
+  /// No description provided for @postCommentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get postCommentsTitle;
+
+  /// No description provided for @postCommentsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} comments'**
+  String postCommentsCount(int count);
+
+  /// No description provided for @postCommentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet — be the first!'**
+  String get postCommentsEmpty;
+
+  /// No description provided for @postCommentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment...'**
+  String get postCommentHint;
+
+  /// No description provided for @postCommentSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get postCommentSend;
+
+  /// No description provided for @postCommentLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to comment'**
+  String get postCommentLogin;
 
   /// No description provided for @postPublished.
   ///

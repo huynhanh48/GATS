@@ -13,6 +13,7 @@ import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
+import 'package:gats_academy/features/home/data/streak_controller.dart';
 import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
 import 'package:gats_academy/features/home/presentation/widgets/home_course_carousel_section.dart';
 import 'package:gats_academy/features/home/presentation/widgets/your_courses_section.dart';
@@ -45,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSession();
     CourseModule.repository.addListener(_onCoursesChanged);
     CartController.instance.addListener(_onCartChanged);
+    StreakController.instance.ensureLoaded();
   }
 
   void _onCartChanged() {
@@ -67,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadSession() async {
     final user = await AuthPrefs.currentUser();
     final name = await MockData.userName();
+    await StreakController.instance.refresh();
     if (!mounted) return;
     setState(() {
       _user = user;
@@ -202,27 +205,33 @@ class _HomeScreenState extends State<HomeScreen> {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.local_fire_department_rounded, size: 14, color: AppColors.accent),
-                const SizedBox(width: 2),
-                Text(
-                  '${MockData.streakDays}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.accent,
-                  ),
+          ListenableBuilder(
+            listenable: StreakController.instance,
+            builder: (context, _) {
+              final streak = StreakController.instance.streakDays;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.local_fire_department_rounded, size: 14, color: AppColors.accent),
+                    const SizedBox(width: 2),
+                    Text(
+                      '$streak',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.accent,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),

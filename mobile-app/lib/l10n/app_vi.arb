@@ -507,6 +507,46 @@
   "courseMentorBadge": "Bạn đang quản lý khóa học này",
   "courseChatLocked": "GroupChat chỉ dành cho học viên đã enroll hoặc mentor khóa",
   "courseQuizPublished": "Đã giao quiz cho học viên",
+  "lectureStatusCompleted": "Đã học",
+  "lectureStatusCurrent": "Đang học",
+  "lectureStatusUpcoming": "Chưa học",
+  "lectureLearningCaption": "Đang học: {title}",
+  "@lectureLearningCaption": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "lectureStartCaption": "Bắt đầu bài 1",
+  "lectureAllDoneCaption": "Bạn đã hoàn thành mọi bài giảng",
+  "lectureMeta": "{count} bài · {minutes} phút",
+  "@lectureMeta": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "minutes": { "type": "int" }
+    }
+  },
+  "lectureProgressCount": "Đã xong {done}/{total} bài",
+  "@lectureProgressCount": {
+    "placeholders": {
+      "done": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "lectureContinue": "Tiếp tục học",
+  "lectureStartNext": "Học bài tiếp theo",
+  "lectureMarkComplete": "Đánh dấu hoàn thành",
+  "lectureStartLearning": "Bắt đầu học",
+  "lectureLessonOf": "Bài {index} / {total}",
+  "@lectureLessonOf": {
+    "placeholders": {
+      "index": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "lecturesEmptyTitle": "Chưa có bài giảng",
+  "lecturesEmptyDesc": "Nội dung khóa học đang được cập nhật.",
+  "lectureMarkedDone": "Đã đánh dấu hoàn thành bài học",
+  "lecturePlayerSoon": "Trình phát bài giảng sắp có — bạn vẫn có thể đánh dấu đã học.",
   "groupChatEmpty": "Chưa có tin nhắn — hãy chào cả lớp!",
   "groupChatHint": "Nhắn tin nhóm khóa học...",
   "groupChatOnePerCourse": "1 khóa = 1 phòng chat",
@@ -536,6 +576,17 @@
   "postComposePublish": "Xuất bản",
   "postComposeGlobal": "Tin toàn hệ thống (GATS)",
   "postComposeCourse": "Bài trong khóa",
+  "postCommentsTitle": "Bình luận",
+  "postCommentsCount": "{count} bình luận",
+  "@postCommentsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "postCommentsEmpty": "Chưa có bình luận — hãy là người đầu tiên!",
+  "postCommentHint": "Viết bình luận...",
+  "postCommentSend": "Gửi",
+  "postCommentLogin": "Đăng nhập để bình luận",
   "postPublished": "Đã đăng bài viết",
   "postEmptyCourse": "Chưa có bài viết trong khóa này",
   "postMentorCompose": "Đăng bài cho lớp",

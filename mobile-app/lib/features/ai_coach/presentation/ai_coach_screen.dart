@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
@@ -91,10 +92,6 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Welcome Hero — shown when no conversation has started yet
-// ─────────────────────────────────────────────────────────────
-
 class _WelcomeHero extends StatelessWidget {
   const _WelcomeHero({required this.onPrompt});
 
@@ -111,67 +108,71 @@ class _WelcomeHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: AppSpacing.xl),
-
-                // ── Animated avatar ──
-                const _PulsingCoachAvatar(),
-
-                const SizedBox(height: AppSpacing.xl),
-
-                // ── Title ──
-                Text(
-                  AppStrings.coachWelcomeCardTitle,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                  textAlign: TextAlign.center,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: AppSpacing.md),
+          const _CoachAvatar(size: 96),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            AppStrings.coachWelcomeCardTitle,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                  color: gats.textPrimary,
                 ),
-
-                const SizedBox(height: AppSpacing.sm),
-
-                // ── Subtitle ──
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  child: Text(
-                    AppStrings.coachWelcomeCardBody,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: gats.textSecondary,
-                          height: 1.5,
-                        ),
-                    textAlign: TextAlign.center,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: Text(
+              AppStrings.coachWelcomeCardBody,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: gats.textSecondary,
+                    height: 1.45,
                   ),
-                ),
-
-                const SizedBox(height: AppSpacing.xxl),
-
-                // ── Suggestion cards ──
-                ...List.generate(_suggestions.length, (i) {
-                  final s = _suggestions[i];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _SuggestionCard(
-                      suggestion: s,
-                      onTap: () => onPrompt(s.label),
-                    ),
-                  );
-                }),
-
-                const SizedBox(height: AppSpacing.xl),
-              ],
+              textAlign: TextAlign.center,
             ),
           ),
-        );
-      },
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'Thử hỏi nhanh',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: gats.textSecondary,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _suggestions.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
+              childAspectRatio: 1.28,
+            ),
+            itemBuilder: (context, i) {
+              final s = _suggestions[i];
+              return _SuggestionTile(
+                suggestion: s,
+                onTap: () => onPrompt(s.label),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -183,18 +184,59 @@ class _Suggestion {
   final List<Color> gradientColors;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Pulsing coach avatar with glow effect
-// ─────────────────────────────────────────────────────────────
+class _CoachFace extends StatelessWidget {
+  const _CoachFace({this.size = 34});
 
-class _PulsingCoachAvatar extends StatefulWidget {
-  const _PulsingCoachAvatar();
+  final double size;
 
   @override
-  State<_PulsingCoachAvatar> createState() => _PulsingCoachAvatarState();
+  Widget build(BuildContext context) {
+    final ring = (size * 0.08).clamp(1.5, 3.0);
+
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(ring),
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
+        ),
+      ),
+      child: ClipOval(
+        child: ColoredBox(
+          color: Colors.black,
+          child: Image.asset(
+            AppAssets.coach,
+            fit: BoxFit.cover,
+            alignment: const Alignment(0, -0.15),
+            errorBuilder: (context, error, stackTrace) => ColoredBox(
+              color: const Color(0xFF1A2151),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: Colors.white,
+                size: size * 0.4,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _PulsingCoachAvatarState extends State<_PulsingCoachAvatar>
+class _CoachAvatar extends StatefulWidget {
+  const _CoachAvatar({this.size = 96});
+
+  final double size;
+
+  @override
+  State<_CoachAvatar> createState() => _CoachAvatarState();
+}
+
+class _CoachAvatarState extends State<_CoachAvatar>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
@@ -203,7 +245,7 @@ class _PulsingCoachAvatarState extends State<_PulsingCoachAvatar>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
   }
 
@@ -218,36 +260,24 @@ class _PulsingCoachAvatarState extends State<_PulsingCoachAvatar>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        final pulse = 0.85 + (_controller.value * 0.15);
-        final glowAlpha = 0.15 + (_controller.value * 0.2);
+        final pulse = 0.9 + (_controller.value * 0.1);
+        final glowAlpha = 0.12 + (_controller.value * 0.16);
 
-        return Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: glowAlpha),
-                blurRadius: 30 * pulse,
-                spreadRadius: 8 * pulse,
-              ),
-            ],
-          ),
+        return Center(
           child: Container(
-            decoration: const BoxDecoration(
+            width: widget.size,
+            height: widget.size,
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
-              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: glowAlpha),
+                  blurRadius: 28 * pulse,
+                  spreadRadius: 4 * pulse,
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.auto_awesome_rounded,
-              color: Colors.white,
-              size: 44,
-            ),
+            child: _CoachFace(size: widget.size),
           ),
         );
       },
@@ -255,12 +285,8 @@ class _PulsingCoachAvatarState extends State<_PulsingCoachAvatar>
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Suggestion card — gradient icon with frosted surface
-// ─────────────────────────────────────────────────────────────
-
-class _SuggestionCard extends StatelessWidget {
-  const _SuggestionCard({required this.suggestion, required this.onTap});
+class _SuggestionTile extends StatelessWidget {
+  const _SuggestionTile({required this.suggestion, required this.onTap});
 
   final _Suggestion suggestion;
   final VoidCallback onTap;
@@ -273,42 +299,44 @@ class _SuggestionCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Ink(
-          decoration: GatsSurfaceDecoration.card(
-            context,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+          decoration: BoxDecoration(
+            color: gats.surface.withValues(alpha: gats.isStarry ? 0.9 : 1),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: gats.divider.withValues(alpha: 0.65)),
+            boxShadow: gats.isStarry ? null : AppShadows.card,
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 14),
-            child: Row(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Gradient icon circle
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: suggestion.gradientColors,
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(11),
                   ),
-                  child: Icon(suggestion.icon, color: Colors.white, size: 20),
+                  child: Icon(suggestion.icon, color: Colors.white, size: 18),
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    suggestion.label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: gats.textPrimary,
-                    ),
+                const Spacer(),
+                Text(
+                  suggestion.label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    height: 1.25,
+                    color: gats.textPrimary,
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded, size: 14, color: gats.textSecondary),
               ],
             ),
           ),
@@ -484,35 +512,12 @@ class _CoachBubble extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Coach avatar with gradient ring
-          Container(
-            width: 34,
-            height: 34,
-            padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: gats.surface,
-              ),
-              child: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF3D8FEF)),
-            ),
-          ),
-
+          const _CoachFace(size: 34),
           const SizedBox(width: 10),
-
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Coach name
                 Padding(
                   padding: const EdgeInsets.only(left: 2, bottom: 4),
                   child: Text(
@@ -525,8 +530,6 @@ class _CoachBubble extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Message bubble
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
@@ -627,30 +630,8 @@ class _TypingIndicator extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Coach avatar
-          Container(
-            width: 34,
-            height: 34,
-            padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: gats.surface,
-              ),
-              child: const Icon(Icons.auto_awesome_rounded, size: 16, color: Color(0xFF3D8FEF)),
-            ),
-          ),
-
+          const _CoachFace(size: 34),
           const SizedBox(width: 10),
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
             decoration: BoxDecoration(
@@ -674,9 +655,9 @@ class _TypingIndicator extends StatelessWidget {
                       ),
                     ],
             ),
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 _BouncingDot(delay: 0),
                 SizedBox(width: 5),
                 _BouncingDot(delay: 150),
@@ -766,64 +747,56 @@ class _ChatInputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
 
-    return Container(
+    return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        AppSpacing.md,
+        AppSpacing.sm,
         AppSpacing.lg,
-        FloatingNavBar.chatInputBottomPadding(context, gap: 80),
-      ),
-      decoration: BoxDecoration(
-        color: GatsSurfaceDecoration.surfaceColor(context),
-        border: Border(
-          top: BorderSide(
-            color: gats.divider.withValues(alpha: 0.5),
-            width: 0.5,
-          ),
-        ),
+        FloatingNavBar.chatInputBottomPadding(context, gap: 72),
       ),
       child: Row(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: gats.background,
+                color: gats.surface.withValues(alpha: gats.isStarry ? 0.88 : 1),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 border: Border.all(
-                  color: gats.divider.withValues(alpha: 0.6),
-                  width: 0.5,
+                  color: gats.divider.withValues(alpha: 0.7),
                 ),
+                boxShadow: gats.isStarry
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 12,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      decoration: InputDecoration(
-                        hintText: AppStrings.aiCoachInputHint,
-                        hintStyle: TextStyle(
-                          color: gats.textSecondary.withValues(alpha: 0.6),
-                          fontSize: 14,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 12,
-                        ),
-                      ),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: gats.textPrimary,
-                      ),
-                      onSubmitted: onSend,
-                    ),
+              child: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  hintText: AppStrings.aiCoachInputHint,
+                  hintStyle: TextStyle(
+                    color: gats.textSecondary.withValues(alpha: 0.6),
+                    fontSize: 14,
                   ),
-                ],
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 13,
+                  ),
+                ),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: gats.textPrimary,
+                ),
+                onSubmitted: onSend,
               ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          // Send button with gradient
           Container(
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -834,9 +807,9 @@ class _ChatInputBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.pill),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                  color: AppColors.primary.withValues(alpha: 0.28),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
@@ -846,10 +819,9 @@ class _ChatInputBar extends StatelessWidget {
               child: InkWell(
                 onTap: isTyping ? null : () => onSend(controller.text),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  alignment: Alignment.center,
+                child: SizedBox(
+                  width: 46,
+                  height: 46,
                   child: Icon(
                     Icons.arrow_upward_rounded,
                     color: Colors.white.withValues(alpha: isTyping ? 0.5 : 1),

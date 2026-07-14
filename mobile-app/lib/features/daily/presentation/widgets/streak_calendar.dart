@@ -2,21 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
+import 'package:gats_academy/features/home/data/daily_check_in_store.dart';
 
 class StreakCalendar extends StatelessWidget {
   const StreakCalendar({
     super.key,
     required this.streakDays,
-    required this.todayCompleted,
+    required this.week,
   });
 
   final int streakDays;
-  final bool todayCompleted;
+  final List<DailyCheckInDay> week;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final weekday = now.weekday; // 1 = Monday
+    final days = week.length == 7
+        ? week
+        : List<DailyCheckInDay?>.filled(7, null);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -61,22 +63,24 @@ class StreakCalendar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: List.generate(7, (index) {
-              final dayIndex = index + 1; // 1-7 for Mon-Sun
-              final isToday = dayIndex == weekday;
-              final isPast = dayIndex < weekday;
-              final isStreakDay = isPast && (weekday - dayIndex) < streakDays;
-              final isCompleted = isStreakDay || (isToday && todayCompleted);
-
+              final day = days[index];
+              if (day == null) {
+                return _CalendarDay(
+                  label: _dayLabel(index + 1),
+                  isToday: false,
+                  isCompleted: false,
+                  isFuture: true,
+                );
+              }
               return _CalendarDay(
-                label: _dayLabel(dayIndex),
-                isToday: isToday,
-                isCompleted: isCompleted,
-                isFuture: dayIndex > weekday,
+                label: day.weekdayLabel,
+                isToday: day.isToday,
+                isCompleted: day.claimed,
+                isFuture: day.isFuture,
               );
             }),
           ),
           const SizedBox(height: AppSpacing.lg),
-          // Motivation text
           Center(
             child: Text(
               streakDays >= 5

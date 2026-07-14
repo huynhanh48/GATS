@@ -30,14 +30,14 @@ class FloatingNavBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     const barBody = 104.0;
     const centerButtonLift = 28.0;
-    return bottomInset + AppSpacing.md + barBody + centerButtonLift + AppSpacing.sm;
+    return bottomInset + AppSpacing.xs + barBody + centerButtonLift + AppSpacing.sm;
   }
 
   /// Đệm đáy cho ô nhập / widget cố định — chỉ né pill nav (không thêm khoảng FAB giữa).
   static double bodyBottomPadding(BuildContext context) {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     const navPillHeight = 68.0;
-    return bottomInset + AppSpacing.md + navPillHeight;
+    return bottomInset + AppSpacing.xs + navPillHeight;
   }
 
   /// Ô chat: mép dưới cách đỉnh nút quick action (⚡) đúng [gap] px.
@@ -45,7 +45,7 @@ class FloatingNavBar extends StatelessWidget {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     const navMaterialHeight = 85.0; // top 24 + item ~53 + bottom 8
     const quickActionTopOffset = 6.0;
-    return bottomInset + AppSpacing.md + navMaterialHeight + quickActionTopOffset - gap;
+    return bottomInset + AppSpacing.xs + navMaterialHeight + quickActionTopOffset - gap;
   }
 
   final int selectedIndex;
@@ -96,7 +96,7 @@ class FloatingNavBar extends StatelessWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, bottomInset + AppSpacing.md),
+      padding: EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, bottomInset + AppSpacing.xs),
       child: useCenter
           ? Stack(
               clipBehavior: Clip.none,

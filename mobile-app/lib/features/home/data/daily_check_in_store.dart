@@ -28,6 +28,7 @@ const _weeklyXp = [5, 5, 10, 5, 15, 5, 25];
 abstract final class DailyCheckInStore {
   static const _claimedDatesKey = 'daily_check_in_claimed_dates';
   static const _legacyLastClaimedKey = 'daily_reward_last_claimed';
+  static const _maxStoredDays = 90;
 
   static Future<Set<String>> _claimedDateKeys() async {
     final prefs = await SharedPreferences.getInstance();
@@ -47,6 +48,39 @@ abstract final class DailyCheckInStore {
   static Future<bool> hasClaimedToday() async {
     final keys = await _claimedDateKeys();
     return keys.contains(VnWeekday.dateKey(DateTime.now()));
+  }
+
+  /// Chuỗi ngày điểm danh liên tiếp.
+  /// - Đã nhận hôm nay → đếm ngược từ hôm nay.
+  /// - Chưa nhận hôm nay nhưng đã nhận hôm qua → vẫn giữ streak (đếm từ hôm qua).
+  /// - Bỏ lỡ hôm qua và chưa nhận hôm nay → 0.
+  static Future<int> currentStreak([DateTime? now]) async {
+    final claimed = await _claimedDateKeys();
+    return streakFromClaimedKeys(claimed, now ?? DateTime.now());
+  }
+
+  static int streakFromClaimedKeys(Set<String> claimed, DateTime now) {
+    if (claimed.isEmpty) return 0;
+
+    final today = DateTime(now.year, now.month, now.day);
+    final todayKey = VnWeekday.dateKey(today);
+    final yesterdayKey = VnWeekday.dateKey(today.subtract(const Duration(days: 1)));
+
+    DateTime cursor;
+    if (claimed.contains(todayKey)) {
+      cursor = today;
+    } else if (claimed.contains(yesterdayKey)) {
+      cursor = today.subtract(const Duration(days: 1));
+    } else {
+      return 0;
+    }
+
+    var streak = 0;
+    while (claimed.contains(VnWeekday.dateKey(cursor))) {
+      streak++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return streak;
   }
 
   /// Lịch tuần hiện tại theo giờ máy.
@@ -83,9 +117,10 @@ abstract final class DailyCheckInStore {
     final claimed = await _claimedDateKeys();
     claimed.add(todayKey);
 
-    // Giữ tối đa 14 ngày gần nhất.
     final sorted = claimed.toList()..sort();
-    final trimmed = sorted.length > 14 ? sorted.sublist(sorted.length - 14) : sorted;
+    final trimmed = sorted.length > _maxStoredDays
+        ? sorted.sublist(sorted.length - _maxStoredDays)
+        : sorted;
 
     await prefs.setStringList(_claimedDatesKey, trimmed);
     await prefs.setString(_legacyLastClaimedKey, todayKey);

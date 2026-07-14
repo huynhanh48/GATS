@@ -24,6 +24,8 @@ abstract class CourseRepository {
 
   void enroll(String courseId, String userId);
 
+  void setUserProgress(String courseId, String userId, double progress);
+
   bool canAccessGroupChat({
     required AppCourse course,
     required String? userId,

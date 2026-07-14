@@ -5,14 +5,13 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
 import 'package:gats_academy/core/widgets/xp_popup.dart';
-import 'package:gats_academy/core/services/auth_prefs.dart';
-import 'package:gats_academy/data/catalog/learning_activities_catalog.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 import 'package:gats_academy/core/services/review_prompt_helper.dart';
-import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/daily/data/daily_tasks_controller.dart';
 import 'package:gats_academy/features/daily/presentation/widgets/streak_calendar.dart';
 import 'package:gats_academy/features/flashcard/presentation/flashcard_deck_section.dart';
 import 'package:gats_academy/features/flashcard/presentation/flashcard_study_screen.dart';
+import 'package:gats_academy/features/home/data/streak_controller.dart';
 import 'package:gats_academy/features/routine/data/routine_workflow_store.dart';
 import 'package:gats_academy/features/routine/models/routine_workflow.dart';
 import 'package:gats_academy/features/routine/presentation/widgets/routine_workflow_section.dart';
@@ -25,7 +24,7 @@ class DailyScreen extends StatefulWidget {
 }
 
 class _DailyScreenState extends State<DailyScreen> {
-  late List<DailyTask> _tasks;
+  final _tasksController = DailyTasksController.instance;
   RoutineWorkflow? _workflow;
   int _xpToday = 0;
   bool _bonusTaskVisible = false;
@@ -34,20 +33,23 @@ class _DailyScreenState extends State<DailyScreen> {
   @override
   void initState() {
     super.initState();
-    _tasks = List.of(MockData.staticDailyTasks);
-    _loadTasks();
+    _tasksController.addListener(_onTasksChanged);
+    _tasksController.ensureLoaded();
     _loadWorkflow();
+    StreakController.instance.ensureLoaded();
   }
 
-  Future<void> _loadTasks() async {
-    final user = await AuthPrefs.currentUser();
-    final tasks = await LearningActivitiesCatalog.instance.dailyTasks(
-      userId: user?.id,
-      role: user?.role ?? UserRole.user,
-    );
-    if (!mounted) return;
-    setState(() => _tasks = List.of(tasks));
+  void _onTasksChanged() {
+    if (mounted) setState(() {});
   }
+
+  @override
+  void dispose() {
+    _tasksController.removeListener(_onTasksChanged);
+    super.dispose();
+  }
+
+  List<DailyTask> get _tasks => _tasksController.tasks;
 
   Future<void> _loadWorkflow() async {
     final workflow = await RoutineWorkflowStore.load();
@@ -63,20 +65,16 @@ class _DailyScreenState extends State<DailyScreen> {
   }
 
   Future<void> _completeFlashcardTask() async {
-    final index = _tasks.indexWhere((t) => t.id == 'flashcard');
-    if (index >= 0 && !_tasks[index].isDone) {
-      setState(() {
-        _tasks[index] = DailyTask(
-          id: _tasks[index].id,
-          title: _tasks[index].title,
-          isDone: true,
-          deckId: _tasks[index].deckId,
+    final task = _tasks.cast<DailyTask?>().firstWhere(
+          (t) => t?.id == 'flashcard',
+          orElse: () => null,
         );
-      });
-      _showXpPopup(10);
-      _checkAllDone();
-      await handleCoreTaskCompleted(context);
-    }
+    if (task == null || task.isDone) return;
+    await _tasksController.setDone('flashcard', true);
+    _showXpPopup(10);
+    _checkAllDone();
+    if (!mounted) return;
+    await handleCoreTaskCompleted(context);
   }
 
   void _checkAllDone() {
@@ -106,20 +104,24 @@ class _DailyScreenState extends State<DailyScreen> {
   @override
   Widget build(BuildContext context) {
     final progress = _tasks.isEmpty ? 0.0 : _doneCount / _tasks.length;
+    final streak = StreakController.instance;
 
     return RefreshIndicator(
       onRefresh: () async {
-        await _loadTasks();
+        await _tasksController.refresh();
         await _loadWorkflow();
+        await StreakController.instance.refresh();
       },
       color: AppColors.primary,
-      child: ListView(
+      child: ListenableBuilder(
+        listenable: streak,
+        builder: (context, _) {
+          return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        // Streak Calendar
         StreakCalendar(
-          streakDays: MockData.streakDays,
-          todayCompleted: _doneCount > 0,
+          streakDays: streak.streakDays,
+          week: streak.week,
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -189,7 +191,7 @@ class _DailyScreenState extends State<DailyScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${MockData.streakDays} ngày streak · ${(progress * 100).round()}% hôm nay',
+                      '${streak.streakDays} ngày streak · ${(progress * 100).round()}% hôm nay',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 12,
@@ -238,16 +240,10 @@ class _DailyScreenState extends State<DailyScreen> {
                     task: task,
                     icon: _taskIcon(task.id),
                     iconColor: _taskColor(task.id),
-                    onChanged: (value) {
-                      setState(() {
-                        _tasks[index] = DailyTask(
-                          id: task.id,
-                          title: task.title,
-                          isDone: value ?? false,
-                          deckId: task.deckId,
-                        );
-                      });
-                      if (value == true) {
+                    onChanged: (value) async {
+                      final done = value ?? false;
+                      await _tasksController.setDone(task.id, done);
+                      if (done) {
                         _showXpPopup(5);
                         _checkAllDone();
                       }
@@ -325,7 +321,9 @@ class _DailyScreenState extends State<DailyScreen> {
           ),
         ),
       ],
-    ),
+    );
+        },
+      ),
     );
   }
 }
