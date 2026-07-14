@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/onboarding/models/onboarding_answers.dart';
@@ -69,7 +70,7 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
               ),
               const Spacer(flex: 2),
               OnboardingOptionCard(
-                icon: Icons.translate_rounded,
+                leading: const _LanguageFlag(asset: AppAssets.flagVietnam),
                 title: l10n.languageVietnamese,
                 subtitle: l10n.languageVietnameseSubtitle,
                 isSelected: _selected == AppLanguage.vietnamese,
@@ -77,7 +78,7 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
               ),
               const SizedBox(height: AppSpacing.md),
               OnboardingOptionCard(
-                icon: Icons.language_rounded,
+                leading: const _LanguageFlag(asset: AppAssets.flagEnglish),
                 title: l10n.languageEnglish,
                 subtitle: l10n.languageEnglishSubtitle,
                 isSelected: _selected == AppLanguage.english,
@@ -99,6 +100,39 @@ class _LanguagePickerScreenState extends State<LanguagePickerScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageFlag extends StatelessWidget {
+  const _LanguageFlag({required this.asset});
+
+  final String asset;
+
+  static const _width = 44.0;
+  static const _height = 30.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final cacheWidth = (MediaQuery.devicePixelRatioOf(context) * _width).round();
+
+    return SizedBox(
+      width: 48,
+      height: 48,
+      child: Center(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Image.asset(
+            asset,
+            width: _width,
+            height: _height,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.high,
+            cacheWidth: cacheWidth,
+            gaplessPlayback: true,
           ),
         ),
       ),

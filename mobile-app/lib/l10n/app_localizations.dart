@@ -401,13 +401,13 @@ abstract class AppLocalizations {
   /// No description provided for @languageEnglishSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Use English for the app and onboarding'**
+  /// **'Displayed in English'**
   String get languageEnglishSubtitle;
 
   /// No description provided for @languageVietnameseSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Use Vietnamese for the app and onboarding'**
+  /// **'Displayed in Vietnamese'**
   String get languageVietnameseSubtitle;
 
   /// No description provided for @referralTiktok.
@@ -1613,13 +1613,13 @@ abstract class AppLocalizations {
   /// No description provided for @languagePickerVietnameseHint.
   ///
   /// In en, this message translates to:
-  /// **'Use Vietnamese for the app and onboarding'**
+  /// **'Displayed in Vietnamese'**
   String get languagePickerVietnameseHint;
 
   /// No description provided for @languagePickerEnglishHint.
   ///
   /// In en, this message translates to:
-  /// **'Use English for the app and onboarding'**
+  /// **'Displayed in English'**
   String get languagePickerEnglishHint;
 
   /// No description provided for @entrySkip.

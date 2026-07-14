@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
@@ -255,10 +256,9 @@ class _DailyScreenState extends State<DailyScreen> {
                         ? () async {
                             final deck = MockData.deckById(task.deckId!);
                             if (deck == null) return;
-                            final completed = await Navigator.of(context).push<bool>(
-                              MaterialPageRoute<bool>(
-                                builder: (_) => FlashcardStudyScreen(deck: deck),
-                              ),
+                            final completed = await GatsMainNavigator.push<bool>(
+                              context,
+                              FlashcardStudyScreen(deck: deck),
                             );
                             if (completed == true) await _completeFlashcardTask();
                           }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/features/course/course_module.dart';
@@ -39,9 +40,7 @@ class QuizTab extends StatelessWidget {
       title: AppStrings.quizEmptyTitle,
       description: AppStrings.quizEmptyDesc,
       action: OutlinedButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const MyCoursesScreen()),
-        ),
+        onPressed: () => GatsMainNavigator.push(context, const MyCoursesScreen()),
         child: Text(AppStrings.exploreLibrary),
       ),
     );

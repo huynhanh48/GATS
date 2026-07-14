@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
@@ -33,14 +35,13 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
   }
 
   Future<void> _compose() async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => PostComposeScreen(
-          authorId: MockAccounts.admin.id,
-          authorName: MockAccounts.admin.displayName,
-          authorRole: UserRole.admin,
-          allowGlobal: true,
-        ),
+    await GatsMainNavigator.push<bool>(
+      context,
+      PostComposeScreen(
+        authorId: MockAccounts.admin.id,
+        authorName: MockAccounts.admin.displayName,
+        authorRole: UserRole.admin,
+        allowGlobal: true,
       ),
     );
     if (mounted) setState(() {});
@@ -51,7 +52,8 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
     final posts = MockPostStore.instance.allPosts.toList()
       ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
 
-    return Scaffold(
+    return GatsThemedScaffold(
+      showStarryBackground: false,
       appBar: AppBar(title: Text(AppStrings.adminNavPosts)),
       body: posts.isEmpty
           ? Center(child: Text(AppStrings.adminPostsEmpty))
@@ -77,10 +79,9 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
                       value: post.isPublished,
                       onChanged: (_) => MockPostStore.instance.togglePublish(post.id),
                     ),
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => PostDetailScreen(postId: post.id),
-                      ),
+                    onTap: () => GatsMainNavigator.push(
+                      context,
+                      PostDetailScreen(postId: post.id),
                     ),
                   ),
                 );

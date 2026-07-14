@@ -13,6 +13,7 @@ class CommunityPost {
     required this.scope,
     required this.publishedAt,
     this.courseId,
+    this.coverImage,
     this.isPublished = true,
   });
 
@@ -24,6 +25,8 @@ class CommunityPost {
   final UserRole authorRole;
   final PostScope scope;
   final String? courseId;
+  /// Asset path ảnh bìa, ví dụ `assets/images/images.jpg`.
+  final String? coverImage;
   final DateTime publishedAt;
   final bool isPublished;
 
@@ -41,6 +44,7 @@ class CommunityPost {
   CommunityPost copyWith({
     String? title,
     String? body,
+    String? coverImage,
     bool? isPublished,
   }) {
     return CommunityPost(
@@ -52,6 +56,7 @@ class CommunityPost {
       authorRole: authorRole,
       scope: scope,
       courseId: courseId,
+      coverImage: coverImage ?? this.coverImage,
       publishedAt: publishedAt,
       isPublished: isPublished ?? this.isPublished,
     );

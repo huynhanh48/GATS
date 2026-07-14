@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
@@ -122,10 +123,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
                             // Details
                             Expanded(
                               child: InkWell(
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => CourseStoreDetailScreen(courseId: courseId),
-                                  ),
+                                onTap: () => GatsMainNavigator.push(
+                                  context,
+                                  CourseStoreDetailScreen(courseId: courseId),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

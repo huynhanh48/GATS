@@ -184,12 +184,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageVietnamese => 'Tiếng Việt';
 
   @override
-  String get languageEnglishSubtitle =>
-      'Use English for the app and onboarding';
+  String get languageEnglishSubtitle => 'Displayed in English';
 
   @override
-  String get languageVietnameseSubtitle =>
-      'Use Vietnamese for the app and onboarding';
+  String get languageVietnameseSubtitle => 'Displayed in Vietnamese';
 
   @override
   String get referralTiktok => 'TikTok';
@@ -854,12 +852,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languagePickerEnglish => 'English';
 
   @override
-  String get languagePickerVietnameseHint =>
-      'Use Vietnamese for the app and onboarding';
+  String get languagePickerVietnameseHint => 'Displayed in Vietnamese';
 
   @override
-  String get languagePickerEnglishHint =>
-      'Use English for the app and onboarding';
+  String get languagePickerEnglishHint => 'Displayed in English';
 
   @override
   String get entrySkip => 'Skip';

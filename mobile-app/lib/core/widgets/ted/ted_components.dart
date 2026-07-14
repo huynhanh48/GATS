@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/constants/course_cover_assets.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
@@ -274,10 +275,18 @@ class _TedCourseCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: AppGradients.courseCover(seed),
-      ),
+    return Image.asset(
+      CourseCoverAssets.pathForSeed(seed),
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      errorBuilder: (context, error, stackTrace) {
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: AppGradients.courseCover(seed),
+          ),
+        );
+      },
     );
   }
 }
@@ -321,55 +330,55 @@ class TedCourseCard extends StatelessWidget {
         : course.isFree
             ? context.l10n.storeFree
             : '${course.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
+    // Viền tint (không dùng divider xám) + nền = background trang → không khung trắng/xám quanh ảnh.
+    final cardBorder = gats.isStarry
+        ? gats.divider.withValues(alpha: 0.55)
+        : gats.lavenderAccent.withValues(alpha: 0.22);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        child: Container(
-          height: double.infinity,
-          decoration: GatsSurfaceDecoration.card(
-            context,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      _TedCourseCover(seed: course.id.hashCode),
-                      if (isPurchased)
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade600,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              context.l10n.storePurchased,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: double.infinity,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: gats.background,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: cardBorder),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _TedCourseCover(seed: course.id.hashCode),
+                  if (isPurchased)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade600,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          context.l10n.storePurchased,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                    ],
-                  ),
-                ),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              SizedBox(
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: SizedBox(
                 height: 78,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,8 +451,8 @@ class TedCourseCard extends StatelessWidget {
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

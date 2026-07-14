@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/routine/data/routine_node_catalog.dart';
 import 'package:gats_academy/features/routine/data/routine_workflow_store.dart';
 import 'package:gats_academy/features/routine/models/routine_workflow.dart';
@@ -114,9 +115,10 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
   }
 
   void _showPalette() {
+    final gats = context.gatsColors;
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: gats.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
@@ -188,7 +190,7 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
     final editorWidth = canvasSize.width < 900 ? 900.0 : canvasSize.width + 120;
     final editorHeight = canvasSize.height < 600 ? 600.0 : canvasSize.height + 120;
 
-    return Scaffold(
+    return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.routineEditorTitle),
         actions: [

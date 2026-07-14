@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
@@ -83,7 +84,7 @@ class _PostComposeScreenState extends State<PostComposeScreen> {
         ? MockCourseStore.instance.publishedCourses()
         : MockCourseStore.instance.coursesForUser(widget.authorId, role: UserRole.mentor);
 
-    return Scaffold(
+    return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.postComposeTitle),
         actions: [

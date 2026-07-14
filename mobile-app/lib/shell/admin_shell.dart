@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
@@ -41,8 +43,8 @@ class _AdminShellState extends State<AdminShell> {
   Widget build(BuildContext context) {
     final store = MockCourseStore.instance;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return GatsThemedScaffold(
+      extendBody: true,
       appBar: _index >= 3
           ? null
           : AppHeader(
@@ -106,10 +108,9 @@ class _AdminCoursesTab extends StatelessWidget {
               value: course.isPublished,
               onChanged: (_) => MockCourseStore.instance.togglePublish(course.id),
             ),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => CourseDetailScreen(courseId: course.id),
-              ),
+            onTap: () => GatsMainNavigator.push(
+              context,
+              CourseDetailScreen(courseId: course.id),
             ),
           ),
         );

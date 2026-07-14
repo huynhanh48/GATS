@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
@@ -27,9 +28,7 @@ class YourCoursesSection extends StatelessWidget {
       purchased: true,
       actionLabel: courses.isNotEmpty ? AppStrings.seeAll : null,
       onAction: courses.isNotEmpty
-          ? () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => const MyCoursesScreen()),
-              )
+          ? () => GatsMainNavigator.push(context, const MyCoursesScreen())
           : null,
       onCourseTap: onCourseTap,
       empty: SectionCard(
@@ -44,11 +43,7 @@ class YourCoursesSection extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const CourseStoreScreen(),
-                ),
-              ),
+              onPressed: () => GatsMainNavigator.push(context, const CourseStoreScreen()),
               child: Text(AppStrings.homeYourCoursesBrowse),
             ),
           ],

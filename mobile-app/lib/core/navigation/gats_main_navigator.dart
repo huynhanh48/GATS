@@ -10,6 +10,10 @@ abstract final class GatsMainNavigator {
     return Navigator.of(context).push<T>(_route<T>(page));
   }
 
+  static Future<T?> pushReplacement<T, TO>(BuildContext context, Widget page) {
+    return Navigator.of(context).pushReplacement<T, TO>(_route<T>(page));
+  }
+
   /// Đóng overlay (sheet/dialog) rồi push — gọi sau [Navigator.pop].
   static Future<T?> pushAfterPop<T>(BuildContext context, Widget page) {
     return push<T>(context, page);

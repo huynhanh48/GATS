@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
@@ -82,10 +83,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     final gats = context.gatsColors;
     final filtered = _filtered;
 
-    return Scaffold(
+    return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.homeYourCourses),
-        backgroundColor: gats.background,
       ),
       body: _courses.isEmpty
           ? EmptyState(

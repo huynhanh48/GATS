@@ -111,6 +111,14 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
+          if (post.coverImage != null && post.coverImage!.isNotEmpty) ...[
+            PostCoverImage(
+              assetPath: post.coverImage!,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              fallbackSeed: post.id.hashCode,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           if (courseTitle != null)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),

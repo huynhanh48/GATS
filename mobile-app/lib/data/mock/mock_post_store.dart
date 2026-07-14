@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:gats_academy/core/constants/course_cover_assets.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
 import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
@@ -93,6 +94,7 @@ class MockPostStore extends ChangeNotifier {
     required UserRole authorRole,
     required PostScope scope,
     String? courseId,
+    String? coverImage,
   }) {
     final id = 'post-${DateTime.now().millisecondsSinceEpoch}';
     _posts = [
@@ -105,6 +107,7 @@ class MockPostStore extends ChangeNotifier {
         authorRole: authorRole,
         scope: scope,
         courseId: courseId,
+        coverImage: coverImage ?? CourseCoverAssets.pathForSeed(id.hashCode),
         publishedAt: DateTime.now(),
       ),
       ..._posts,
@@ -132,6 +135,7 @@ class MockPostStore extends ChangeNotifier {
         authorName: MockAccounts.admin.displayName,
         authorRole: UserRole.admin,
         scope: PostScope.global,
+        coverImage: CourseCoverAssets.pathForIndex(0),
         publishedAt: now.subtract(const Duration(hours: 2)),
       ),
       CommunityPost(
@@ -148,6 +152,7 @@ class MockPostStore extends ChangeNotifier {
         authorRole: UserRole.mentor,
         scope: PostScope.course,
         courseId: 'course-1',
+        coverImage: CourseCoverAssets.pathForIndex(1),
         publishedAt: now.subtract(const Duration(hours: 5)),
       ),
       CommunityPost(
@@ -161,6 +166,7 @@ class MockPostStore extends ChangeNotifier {
         authorRole: UserRole.mentor,
         scope: PostScope.course,
         courseId: 'course-2',
+        coverImage: CourseCoverAssets.pathForIndex(2),
         publishedAt: now.subtract(const Duration(days: 1)),
       ),
     ];

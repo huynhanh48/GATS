@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/core/services/gats_notification_service.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
@@ -77,10 +78,9 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
     }
     CourseModule.repository.enroll(course.id, userId);
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => CourseDetailScreen(courseId: course.id),
-      ),
+    GatsMainNavigator.pushReplacement<void, void>(
+      context,
+      CourseDetailScreen(courseId: course.id),
     );
   }
 
@@ -90,7 +90,7 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
     final course = CourseModule.repository.getCourse(widget.courseId);
 
     if (course == null) {
-      return Scaffold(
+      return GatsThemedScaffold(
         appBar: AppBar(),
         body: Center(child: Text(AppStrings.storeCourseNotFound)),
       );
@@ -110,16 +110,9 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
               children: [
                 CourseHeroHeader(
                   course: course,
-                  progress: course.progressFor(_userId),
-                  showProgress: _owned,
                   onBack: () => Navigator.pop(context),
-                  trailing: IconButton(
-                    icon: Icon(
-                      isWishlist ? Icons.favorite : Icons.favorite_border,
-                      color: isWishlist ? Colors.red : (gats.isStarry ? Colors.white : Colors.black87),
-                    ),
-                    onPressed: () => CartController.instance.toggleWishlist(course.id),
-                  ),
+                  isWishlisted: isWishlist,
+                  onToggleWishlist: () => CartController.instance.toggleWishlist(course.id),
                 ),
 
                 Transform.translate(
@@ -345,10 +338,9 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
               course: course,
               isEnrolled: _owned,
               priceLabel: formatVndPrice(totalPriceVal),
-              onContinue: () => Navigator.of(context).pushReplacement(
-                MaterialPageRoute<void>(
-                  builder: (_) => CourseDetailScreen(courseId: course.id),
-                ),
+              onContinue: () => GatsMainNavigator.pushReplacement<void, void>(
+                context,
+                CourseDetailScreen(courseId: course.id),
               ),
               onEnrollFree: () => _enrollFree(course),
               onAddToCart: () {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
@@ -18,10 +19,9 @@ class RoutineWorkflowSection extends StatelessWidget {
   final ValueChanged<RoutineWorkflow> onWorkflowChanged;
 
   Future<void> _openEditor(BuildContext context) async {
-    final result = await Navigator.of(context).push<RoutineWorkflow>(
-      MaterialPageRoute<RoutineWorkflow>(
-        builder: (_) => RoutineEditorScreen(initialWorkflow: workflow),
-      ),
+    final result = await GatsMainNavigator.push<RoutineWorkflow>(
+      context,
+      RoutineEditorScreen(initialWorkflow: workflow),
     );
     if (result != null) onWorkflowChanged(result);
   }

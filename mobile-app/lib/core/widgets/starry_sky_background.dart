@@ -15,19 +15,16 @@ abstract final class StarrySkyBackgroundCache {
   }
 }
 
-/// Nền gradient đêm + sao + mây — raster PNG (cùng thuật toán CustomPaint cũ).
+/// Nền gradient đêm + sao + mây + trăng — một texture PNG duy nhất.
 ///
 /// PNG/WebP phù hợp hơn SVG ở đây: decode một lần, GPU vẽ một texture.
-/// SVG vẫn phải rasterize mỗi kích thước và thường không nhẹ hơn cho nền phức tạp.
 class StarrySkyBackground extends StatelessWidget {
   const StarrySkyBackground({
     super.key,
     required this.child,
-    this.showMoon = true,
   });
 
   final Widget child;
-  final bool showMoon;
 
   @override
   Widget build(BuildContext context) {
@@ -49,21 +46,6 @@ class StarrySkyBackground extends StatelessWidget {
             excludeFromSemantics: true,
           ),
         ),
-        if (showMoon)
-          Positioned(
-            top: MediaQuery.paddingOf(context).top + 8,
-            left: 24,
-            child: Opacity(
-              opacity: 0.9,
-              child: Image.asset(
-                AppAssets.starryMoonGlow,
-                width: 72,
-                height: 72,
-                fit: BoxFit.contain,
-                filterQuality: FilterQuality.medium,
-              ),
-            ),
-          ),
         child,
       ],
     );

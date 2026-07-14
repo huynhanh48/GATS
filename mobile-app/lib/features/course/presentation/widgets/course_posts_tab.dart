@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
@@ -27,14 +28,13 @@ class CoursePostsTab extends StatelessWidget {
 
   Future<void> _openCompose(BuildContext context) async {
     if (userId == null) return;
-    final published = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => PostComposeScreen(
-          authorId: userId!,
-          authorName: userName,
-          authorRole: role,
-          fixedCourseId: courseId,
-        ),
+    final published = await GatsMainNavigator.push<bool>(
+      context,
+      PostComposeScreen(
+        authorId: userId!,
+        authorName: userName,
+        authorRole: role,
+        fixedCourseId: courseId,
       ),
     );
     if (published == true && context.mounted) {
@@ -43,12 +43,11 @@ class CoursePostsTab extends StatelessWidget {
   }
 
   void _openPost(BuildContext context, String postId) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => PostDetailScreen(
-          postId: postId,
-          onEnroll: onEnroll,
-        ),
+    GatsMainNavigator.push(
+      context,
+      PostDetailScreen(
+        postId: postId,
+        onEnroll: onEnroll,
       ),
     );
   }

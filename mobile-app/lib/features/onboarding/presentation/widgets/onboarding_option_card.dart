@@ -26,6 +26,7 @@ class OnboardingOptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedScale(
       scale: isSelected ? 1.02 : 1.0,
+      alignment: Alignment.center,
       duration: const Duration(milliseconds: 200),
       curve: Curves.easeOutCubic,
       child: Material(
@@ -45,33 +46,18 @@ class OnboardingOptionCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
                 color: isSelected ? AppColors.primary : AppColors.divider,
-                width: isSelected ? 2 : 1,
+                width: 2,
               ),
               boxShadow: isSelected ? AppShadows.card : null,
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: leadingBackgroundColor ??
-                        (isSelected
-                            ? AppColors.primary.withValues(alpha: 0.15)
-                            : AppColors.background),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Center(
-                    child: leading ??
-                        Icon(
-                          icon!,
-                          color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                        ),
-                  ),
-                ),
+                _buildLeading(isSelected),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
@@ -87,6 +73,7 @@ class OnboardingOptionCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(width: AppSpacing.sm),
                 Icon(
                   isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
                   color: isSelected ? AppColors.primary : AppColors.divider,
@@ -94,6 +81,32 @@ class OnboardingOptionCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLeading(bool selected) {
+    if (leading != null) {
+      return SizedBox(
+        width: 48,
+        height: 48,
+        child: leading,
+      );
+    }
+
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: leadingBackgroundColor ??
+            (selected ? AppColors.primary.withValues(alpha: 0.15) : AppColors.background),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Center(
+        child: Icon(
+          icon!,
+          color: selected ? AppColors.primary : AppColors.textSecondary,
         ),
       ),
     );

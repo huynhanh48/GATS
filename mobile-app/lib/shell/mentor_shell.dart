@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
@@ -46,8 +48,9 @@ class _MentorShellState extends State<MentorShell> {
   }
 
   void _openCourse(AppCourse course) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => CourseDetailScreen(courseId: course.id)),
+    GatsMainNavigator.push(
+      context,
+      CourseDetailScreen(courseId: course.id),
     );
   }
 
@@ -58,8 +61,8 @@ class _MentorShellState extends State<MentorShell> {
       role: UserRole.mentor,
     );
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return GatsThemedScaffold(
+      extendBody: true,
       appBar: _index == 2
           ? null
           : AppHeader(
@@ -138,6 +141,7 @@ class _MentorChatsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: courses.length,
@@ -145,10 +149,10 @@ class _MentorChatsTab extends StatelessWidget {
       itemBuilder: (context, index) {
         final course = courses[index];
         return Material(
-          color: AppColors.surface,
+          color: gats.surface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
-            side: const BorderSide(color: AppColors.divider),
+            side: BorderSide(color: gats.divider),
           ),
           clipBehavior: Clip.antiAlias,
           child: ListTile(

@@ -149,9 +149,10 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gats = context.gatsColors;
     final alignment = isMine ? Alignment.centerRight : Alignment.centerLeft;
-    final color = isMine ? AppColors.primary : AppColors.surface;
-    final textColor = isMine ? Colors.white : AppColors.textPrimary;
+    final color = isMine ? AppColors.primary : gats.surface;
+    final textColor = isMine ? Colors.white : gats.textPrimary;
 
     return Align(
       alignment: alignment,

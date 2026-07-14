@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
@@ -68,14 +70,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Widget build(BuildContext context) {
     final course = _repo.getCourse(widget.courseId);
     if (course == null) {
-      return Scaffold(
+      return GatsThemedScaffold(
         appBar: AppBar(title: Text(AppStrings.courseNotFound)),
         body: Center(child: Text(AppStrings.courseNotFound)),
       );
     }
 
     if (!_userLoaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const GatsThemedScaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (!_hasFullAccess(course)) {
@@ -115,17 +117,16 @@ class _RedirectToStorePreviewState extends State<_RedirectToStorePreview> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => CourseStoreDetailScreen(courseId: widget.courseId),
-        ),
+      GatsMainNavigator.pushReplacement<void, void>(
+        context,
+        CourseStoreDetailScreen(courseId: widget.courseId),
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const GatsThemedScaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
 

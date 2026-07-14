@@ -339,9 +339,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                   IconButton(
                     icon: const Icon(Icons.favorite_border),
                     tooltip: AppStrings.storeWishlistTooltip,
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const WishlistScreen()),
-                    ),
+                    onPressed: () => GatsMainNavigator.push(context, const WishlistScreen()),
                   ),
                   if (wishlistCount > 0)
                     Positioned(
@@ -417,9 +415,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                       child: const Icon(Icons.favorite_border),
                     ),
                     tooltip: AppStrings.storeWishlistTooltip,
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(builder: (_) => const WishlistScreen()),
-                    ),
+                    onPressed: () => GatsMainNavigator.push(context, const WishlistScreen()),
                   );
                 },
               ),

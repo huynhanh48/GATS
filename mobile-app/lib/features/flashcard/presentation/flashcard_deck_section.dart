@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_spacing.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
@@ -83,10 +84,9 @@ class FlashcardDeckSection extends StatelessWidget {
   }
 
   Future<void> _openDeck(BuildContext context, FlashcardDeck deck) async {
-    final completed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => FlashcardStudyScreen(deck: deck),
-      ),
+    final completed = await GatsMainNavigator.push<bool>(
+      context,
+      FlashcardStudyScreen(deck: deck),
     );
     if (completed == true) onSessionComplete?.call();
   }

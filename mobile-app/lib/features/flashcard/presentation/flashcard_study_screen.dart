@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 import 'package:gats_academy/features/flashcard/presentation/widgets/swipeable_flashcard.dart';
 
@@ -95,7 +96,8 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
         ? 0.0
         : _knownCount / widget.deck.cards.length;
 
-    return Scaffold(
+    final gats = context.gatsColors;
+    return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(widget.deck.title),
         bottom: PreferredSize(
@@ -103,7 +105,7 @@ class _FlashcardStudyScreenState extends State<FlashcardStudyScreen> {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 4,
-            backgroundColor: AppColors.divider,
+            backgroundColor: gats.divider,
             color: AppColors.accent,
           ),
         ),

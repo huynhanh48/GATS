@@ -75,6 +75,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/brands/
+    - assets/images/flags/
     - assets/data/
     - assets/config/
     - .env
