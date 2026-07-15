@@ -1,5 +1,13 @@
-//zod
-export interface Entity {
-  id: number; // @PK
-  created: Date | string; // @audit
+import { z } from 'zod';
+
+export const authUserSchema = z.object({
+  id: z.number().int().positive(),
+  email: z.string().email(),
+  roles: z.array(z.string()),
+});
+
+export type AuthUser = z.infer<typeof authUserSchema>;
+
+export function parseAuthUser(data: unknown): AuthUser {
+  return authUserSchema.parse(data);
 }

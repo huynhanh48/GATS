@@ -1,6 +1,7 @@
 import { ParseError } from 'jet-validators/utils';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
+import { HttpException } from '@src/exceptions/root';
 
 /******************************************************************************
                                  Classes
@@ -9,12 +10,9 @@ import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 /**
  * Error with status code and message.
  */
-export class RouteError extends Error {
-  public status: HttpStatusCodes;
-
+export class RouteError extends HttpException {
   public constructor(status: HttpStatusCodes, message: string) {
-    super(message);
-    this.status = status;
+    super(status, message);
   }
 }
 

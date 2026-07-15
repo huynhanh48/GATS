@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@src/*": ["src/*"]
     },
@@ -22,8 +23,10 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "scripts",
+    "drizzle.config.ts",
     "eslint.config.ts",
-    "vitest.config.mts"
+    "vitest.config.mts",
+    "stuff/**/*.ts"
   ],
   "exclude": ["src/public/*"]
 }

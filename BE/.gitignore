@@ -2,3 +2,9 @@
 dist/
 **/**/*.log
 tsconfig.tsbuildinfo
+storage/
+
+# Secrets — use config/.env.example as a template
+config/.env
+config/.env.*
+!config/.env.example

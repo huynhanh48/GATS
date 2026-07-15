@@ -3,7 +3,6 @@ import TestAgent from 'supertest/lib/agent';
 import { beforeAll } from 'vitest';
 
 import MockOrm from '@src/repos/MockOrm';
-import app from '@src/server';
 
 /******************************************************************************
                                     Run
@@ -12,6 +11,7 @@ import app from '@src/server';
 let agent: TestAgent<Test>;
 
 beforeAll(async () => {
+  const { default: app } = await import('@src/server');
   agent = supertest.agent(app);
   await MockOrm.cleanDb();
 });
