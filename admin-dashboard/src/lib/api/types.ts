@@ -1,0 +1,614 @@
+export type AuthType = "facebook" | "apple" | "google" | "default";
+
+export type UserPublic = {
+  id: number;
+  userName: string;
+  verified: boolean;
+  email: string;
+  type: AuthType;
+  roles: string[];
+};
+
+export type MeResponse = {
+  user: UserPublic;
+};
+
+export type CourseStatus = "draft" | "published" | "archived";
+export type CourseLevel = "beginner" | "intermediate" | "advanced";
+export type LessonType = "video" | "text" | "quiz" | "assignment";
+
+export type CategoryPublic = {
+  id: string;
+  name: string;
+  slug: string;
+  type?: string;
+};
+
+export type CategoryType = "course" | "post";
+export type CategoryStatus = "active" | "inactive";
+
+export type CategoryWithCounts = {
+  id: string;
+  name: string;
+  slug: string;
+  type: CategoryType;
+  status: CategoryStatus;
+  description?: string | null;
+  thumbnail?: string | null;
+  icon?: string | null;
+  parentId?: string | null;
+  sortOrder?: number;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  courseCount: number;
+  postCount: number;
+};
+
+export type CategoryListResponse = {
+  data: CategoryWithCounts[];
+};
+
+export type CreateCategoryInput = {
+  name: string;
+  type: CategoryType;
+  slug?: string;
+  description?: string;
+  thumbnail?: string;
+  icon?: string;
+  parent_id?: string;
+  sort_order?: number;
+  seo_title?: string;
+  seo_description?: string;
+};
+
+export type UpdateCategoryInput = {
+  name?: string;
+  slug?: string;
+  status?: CategoryStatus;
+  description?: string | null;
+  thumbnail?: string | null;
+  icon?: string | null;
+  parent_id?: string | null;
+  sort_order?: number;
+  seo_title?: string | null;
+  seo_description?: string | null;
+};
+
+export type TagPublic = {
+  id: string;
+  name: string;
+  slug: string;
+  type?: string;
+};
+
+export type CoursePublic = {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  thumbnail: string | null;
+  introVideo: string | null;
+  price: number;
+  salePrice: number | null;
+  level: CourseLevel;
+  status: CourseStatus;
+  category: CategoryPublic | null;
+  tags: TagPublic[];
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+  /** Present when soft-deleted (trash list uses deleted=only) */
+  deletedAt?: string | null;
+};
+
+export type CoursePagination = {
+  skip: number;
+  take: number;
+  total: number;
+  hasMore: boolean;
+  page?: number;
+  totalPages?: number;
+};
+
+export type CourseListResponse = {
+  data: CoursePublic[];
+  pagination: CoursePagination;
+};
+
+export type CourseAuthor = {
+  id: number;
+  userName: string;
+};
+
+export type CourseStats = {
+  enrollmentCount: number;
+  ratingCount: number;
+  averageRating: number | null;
+  sectionCount: number;
+  lessonCount: number;
+  totalDurationSeconds: number;
+};
+
+export type LearningOutcome = {
+  id: string;
+  content: string;
+  order: number;
+};
+
+export type CourseInclude = {
+  id: string;
+  key: string;
+  label: string;
+  value: number | null;
+  unit: string | null;
+  order: number;
+};
+
+/** Downloadable file linked to a lesson (PDF, DOC, TXT, …) */
+export type LessonAttachment = {
+  id: string;
+  lessonId: string;
+  mediaId: string;
+  name: string;
+  url: string;
+  mimeType: string;
+  size: number;
+  order: number;
+  createdAt: string;
+};
+
+export type AttachLessonMediaInput = {
+  mediaId: string;
+  title?: string;
+};
+
+/** Lesson item inside curriculum/section list */
+export type CourseDetailLesson = {
+  id: string;
+  title: string;
+  description: string | null;
+  type: LessonType;
+  order: number;
+  isPreview: boolean;
+  duration: number | null;
+  locked: boolean;
+  /** HTML content – replaces the old textContent / text_content field */
+  content?: string | null;
+  videoUrl?: string | null;
+  /** Downloadable files attached to this lesson (PDF, DOC, TXT, …) */
+  attachments?: LessonAttachment[];
+};
+
+export type CourseDetailSection = {
+  id: string;
+  title: string;
+  order: number;
+  lessonCount: number;
+  totalDurationSeconds: number;
+  lessons: CourseDetailLesson[];
+};
+
+export type CourseDetail = CoursePublic & {
+  author: CourseAuthor | null;
+  stats: CourseStats;
+  learningOutcomes: LearningOutcome[];
+  includes: CourseInclude[];
+  sections: CourseDetailSection[];
+};
+
+export type LearningOutcomeInput = {
+  content: string;
+};
+
+export type CourseIncludeInput = {
+  key: string;
+  label: string;
+  value?: number | null;
+  unit?: string | null;
+};
+
+export type CreateCourseInput = {
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  intro_video?: string;
+  price?: number;
+  sale_price?: number;
+  level?: CourseLevel;
+  category?: string;
+  category_id?: string;
+  tags?: string[];
+  learning_outcomes?: LearningOutcomeInput[];
+  includes?: CourseIncludeInput[];
+};
+
+export type UpdateCourseInput = {
+  title?: string;
+  description?: string | null;
+  thumbnail?: string | null;
+  intro_video?: string | null;
+  price?: number;
+  sale_price?: number | null;
+  level?: CourseLevel;
+  status?: CourseStatus;
+  category?: string | null;
+  category_id?: string | null;
+  tags?: string[];
+  learning_outcomes?: LearningOutcomeInput[];
+  includes?: CourseIncludeInput[];
+};
+
+export type CreateSectionInput = {
+  title: string;
+  order?: number;
+};
+
+export type UpdateSectionInput = {
+  title?: string;
+  order?: number;
+};
+
+export type CreateLessonInput = {
+  title: string;
+  description?: string;
+  type?: LessonType;
+  order?: number;
+  /** HTML content – used by all lesson types */
+  content?: string;
+  is_preview?: boolean;
+  duration?: number;
+};
+
+export type UpdateLessonInput = {
+  title?: string;
+  description?: string | null;
+  type?: LessonType;
+  order?: number;
+  /** HTML content – used by all lesson types */
+  content?: string | null;
+  is_preview?: boolean;
+  duration?: number | null;
+};
+
+/** Shape of the data object returned by POST lesson endpoint */
+export type LessonCreateResponseData = {
+  id: string;
+  courseId: string;
+  sectionId: string;
+  title: string;
+  type: LessonType;
+  order: number;
+  content: string | null;
+  isPreview: boolean;
+  duration: number | null;
+};
+
+// ─── Quiz Types ──────────────────────────────────────────────────────────────
+
+export type QuizQuestionType =
+  | "single_choice"
+  | "multiple_choice"
+  | "fill_blank"
+  | "true_false";
+
+export type QuizOption = {
+  id?: string;
+  content: string;
+  is_correct: boolean;
+  order: number;
+};
+
+export type AcceptedAnswer = {
+  id?: string;
+  content: string;
+  is_exact: boolean;
+};
+
+export type CreateQuizInput = {
+  title?: string;
+  description?: string;
+  passing_score?: number;
+  time_limit?: number;
+  max_attempts?: number;
+  shuffle_questions?: boolean;
+  shuffle_options?: boolean;
+  show_result?: boolean;
+  show_correct_answer?: boolean;
+  show_explanation?: boolean;
+  available_from?: string;
+  available_until?: string;
+};
+
+export type UpdateQuizInput = Partial<CreateQuizInput>;
+
+export type CreateQuizQuestionInput = {
+  type: QuizQuestionType;
+  title: string;
+  description?: string;
+  explanation?: string;
+  points?: number;
+  order?: number;
+  is_required?: boolean;
+  case_sensitive?: boolean;
+  options?: QuizOption[];
+  accepted_answers?: AcceptedAnswer[];
+};
+
+export type UpdateQuizQuestionInput = Partial<CreateQuizQuestionInput>;
+
+export type QuizQuestionOption = {
+  id: string;
+  content: string;
+  is_correct: boolean;
+  order: number;
+};
+
+export type QuizQuestionAcceptedAnswer = {
+  id: string;
+  content: string;
+  is_exact: boolean;
+};
+
+export type QuizQuestion = {
+  id: string;
+  quizId: string;
+  type: QuizQuestionType;
+  title?: string;
+  question?: string;
+  description: string | null;
+  explanation: string | null;
+  points: number;
+  order: number;
+  is_required: boolean;
+  case_sensitive: boolean;
+  options?: QuizQuestionOption[];
+  acceptedAnswers?: QuizQuestionAcceptedAnswer[];
+  answers?: {
+    id: string;
+    answer: string;
+    isCorrect: boolean;
+    order: number;
+  }[];
+};
+
+export type Quiz = {
+  id: string;
+  lessonId: string;
+  title: string | null;
+  description: string | null;
+  passingScore: number;
+  timeLimit: number | null;
+  maxAttempts: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  showResult: boolean;
+  showCorrectAnswer: boolean;
+  showExplanation: boolean;
+  availableFrom: string | null;
+  availableUntil: string | null;
+  questions: QuizQuestion[];
+};
+
+// ─── Assignment Types ─────────────────────────────────────────────────────────
+
+export type AssignmentSubmissionType = "text" | "url" | "file";
+
+export type CreateAssignmentInput = {
+  title?: string;
+  due_at?: string;
+  max_score?: number;
+  max_file_size_mb?: number;
+  allowed_submission_types?: AssignmentSubmissionType[];
+  late_submission_allowed?: boolean;
+  max_submissions?: number;
+  passing_score?: number;
+};
+
+export type UpdateAssignmentInput = Partial<CreateAssignmentInput>;
+
+export type Assignment = {
+  id: string;
+  lessonId: string;
+  title: string | null;
+  dueAt: string | null;
+  maxScore: number;
+  maxFileSizeMb: number | null;
+  allowedSubmissionTypes: AssignmentSubmissionType[];
+  lateSubmissionAllowed: boolean;
+  maxSubmissions: number;
+  passingScore: number;
+};
+
+// ─── Video Types ──────────────────────────────────────────────────────────────
+
+export type VideoContentType = "video/mp4" | "video/quicktime" | "video/webm";
+
+export type VideoStatus =
+  | "pending_upload"
+  | "uploaded"
+  | "processing"
+  | "ready"
+  | "failed";
+
+export type VideoRecord = {
+  videoId: string;
+  courseId: string;
+  lessonId: string;
+  title?: string | null;
+  status: VideoStatus;
+  originalKey: string | null;
+  hlsKey: string | null;
+  mp4Url: string | null;
+  errorMessage: string | null;
+  duration: number | null;
+  size: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type VideoWithDetails = VideoRecord & {
+  courseTitle: string | null;
+  lessonTitle: string | null;
+};
+
+export type InitMultipartUploadInput = {
+  courseId: string;
+  lessonId: string;
+  title: string;
+  filename: string;
+  contentType: VideoContentType;
+  size: number;
+};
+
+export type InitMultipartUploadData = {
+  videoId: string;
+  originalKey: string;
+  uploadId: string;
+  partSize: number;
+  totalParts: number;
+  status: "pending_upload";
+};
+
+export type MultipartPartUrlData = {
+  url: string;
+  partNumber: number;
+  expiresIn: number;
+};
+
+export type MultipartPart = {
+  partNumber: number;
+  etag: string;
+};
+
+export type MultipartCompleteData = {
+  videoId: string;
+  originalKey: string;
+  size: number;
+  status: VideoStatus;
+};
+
+export type MultipartAbortData = {
+  videoId: string;
+  aborted: true;
+};
+
+export type LinkVideoInput = {
+  courseId: string;
+  lessonId: string;
+  title: string;
+  playbackUrl: string;
+  playbackType?: "hls" | "mp4";
+  duration?: number;
+};
+
+export type VideoPlaybackData = {
+  videoId: string;
+  courseId: string;
+  playbackUrl: string;
+  playbackType: "hls" | "mp4";
+  hlsKey: string | null;
+  mp4Url: string | null;
+};
+
+// ─── Posts ────────────────────────────────────────────────────────────────────
+
+export type PostStatus = "draft" | "published" | "archived";
+export type PostVisibility = "public" | "members_only" | "private";
+
+export type PostAuthor = {
+  id: number;
+  userName: string;
+};
+
+export type PostListItem = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  thumbnail: string | null;
+  status: PostStatus;
+  visibility: PostVisibility;
+  viewCount: number;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
+  author: PostAuthor;
+  category: CategoryPublic | null;
+  tags: TagPublic[];
+};
+
+export type PostDetail = PostListItem & {
+  content: string;
+};
+
+export type CreatePostInput = {
+  title: string;
+  content: string;
+  slug?: string;
+  excerpt?: string;
+  thumbnail?: string;
+  visibility?: PostVisibility;
+  category?: string;
+  category_id?: string;
+  tags?: string[];
+};
+
+export type UpdatePostInput = {
+  title?: string;
+  content?: string;
+  slug?: string;
+  excerpt?: string | null;
+  thumbnail?: string | null;
+  status?: PostStatus;
+  visibility?: PostVisibility;
+  category?: string | null;
+  category_id?: string | null;
+  tags?: string[];
+};
+
+export type PostPagination = {
+  skip: number;
+  take: number;
+  total: number;
+  hasMore: boolean;
+  page?: number;
+  totalPages?: number;
+};
+
+export type PostListResponse = {
+  data: PostListItem[];
+  pagination: PostPagination;
+};
+
+// ─── Media library ──────────────────────────────────────────────────────────
+
+export type MediaKind = "thumbnail" | "file";
+
+export type MediaRecord = {
+  id: string;
+  kind: MediaKind;
+  originalName: string;
+  storageKey: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  uploadedBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MediaListResponse = {
+  data: MediaRecord[];
+  total: number;
+};
+
+// ─── Common ───────────────────────────────────────────────────────────────────
+
+export type ActionResult = {
+  ok: boolean;
+  message: string;
+};

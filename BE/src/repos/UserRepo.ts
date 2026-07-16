@@ -1,131 +1,158 @@
-import { getRandomInt } from '@src/common/utils/number-utils';
-import { IUser } from '@src/models/User.model';
+import { randomUUID } from 'crypto';
 
-import orm from './MockOrm';
+import { eq, or } from 'drizzle-orm';
 
-/******************************************************************************
-                                Functions
-******************************************************************************/
+import db from '@src/db';
+import { rolesTable } from '@src/db/schema/role';
+import { userRolesTable } from '@src/db/schema/user-role';
+import { type NewUser, usersTable } from '@src/db/schema/user';
+import {
+  type UserPublic,
+  type UserRecord,
+  userPublicSchema,
+  userRecordSchema,
+} from '@src/models/User.model';
 
-/**
- * Get one user.
- */
-async function getOne(email: string): Promise<IUser | null> {
-  const db = await orm.openDb();
-  for (const user of db.users) {
-    if (user.email === email) {
-      return user;
-    }
-  }
-  return null;
+function parseUserRow(row: unknown): UserRecord {
+  return userRecordSchema.parse(row);
 }
 
-/**
- * See if a user with the given id exists.
- */
-async function persists(id: number): Promise<boolean> {
-  const db = await orm.openDb();
-  for (const user of db.users) {
-    if (user.id === id) {
-      return true;
-    }
-  }
-  return false;
+export async function findByEmail(
+  email: string,
+): Promise<UserRecord | undefined> {
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.email, email))
+    .limit(1);
+  return rows[0] ? parseUserRow(rows[0]) : undefined;
 }
 
-/**
- * Get all users.
- */
-async function getAll(): Promise<IUser[]> {
-  const db = await orm.openDb();
-  return db.users;
+export async function findByUserName(
+  userName: string,
+): Promise<UserRecord | undefined> {
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.userName, userName))
+    .limit(1);
+  return rows[0] ? parseUserRow(rows[0]) : undefined;
 }
 
-/**
- * Add one user.
- */
-async function add(user: IUser): Promise<void> {
-  const db = await orm.openDb();
-  user.id = getRandomInt();
-  db.users.push(user);
-  return orm.saveDb(db);
+export async function findById(id: number): Promise<UserRecord | undefined> {
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, id))
+    .limit(1);
+  return rows[0] ? parseUserRow(rows[0]) : undefined;
 }
 
-/**
- * Update a user.
- */
-async function update(user: IUser): Promise<void> {
-  const db = await orm.openDb();
-  for (let i = 0; i < db.users.length; i++) {
-    if (db.users[i].id === user.id) {
-      const dbUser = db.users[i];
-      db.users[i] = {
-        ...dbUser,
-        name: user.name,
-        email: user.email,
-      };
-      return orm.saveDb(db);
-    }
-  }
+export async function findAuthorById(
+  id: number,
+): Promise<{ id: number; userName: string } | undefined> {
+  const rows = await db
+    .select({
+      id: usersTable.id,
+      userName: usersTable.userName,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, id))
+    .limit(1);
+  return rows[0];
 }
 
-/**
- * Delete one user.
- */
-async function delete_(id: number): Promise<void> {
-  const db = await orm.openDb();
-  for (let i = 0; i < db.users.length; i++) {
-    if (db.users[i].id === id) {
-      db.users.splice(i, 1);
-      return orm.saveDb(db);
-    }
-  }
+export async function findByVerifyToken(
+  token: string,
+): Promise<UserRecord | undefined> {
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.verifyToken, token))
+    .limit(1);
+  return rows[0] ? parseUserRow(rows[0]) : undefined;
 }
 
-// **** Unit-Tests Only **** //
+export async function findByEmailOrUserName(
+  email?: string,
+  userName?: string,
+): Promise<UserRecord | undefined> {
+  if (!email && !userName) return undefined;
 
-/**
- * @testOnly
- *
- * Delete every user record.
- */
-async function deleteAllUsers(): Promise<void> {
-  const db = await orm.openDb();
-  db.users = [];
-  return orm.saveDb(db);
+  const conditions = [];
+  if (email) conditions.push(eq(usersTable.email, email));
+  if (userName) conditions.push(eq(usersTable.userName, userName));
+
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(or(...conditions))
+    .limit(1);
+  return rows[0] ? parseUserRow(rows[0]) : undefined;
 }
 
-/**
- * @testOnly
- *
- * Insert multiple users. Can't do multiple at once cause using a plain file
- * for now.
- */
-async function insertMultiple(
-  users: IUser[] | readonly IUser[],
-): Promise<IUser[]> {
-  const db = await orm.openDb(),
-    usersF = [...users];
-  for (const user of usersF) {
-    user.id = getRandomInt();
-    user.created = new Date();
-  }
-  db.users = [...db.users, ...users];
-  await orm.saveDb(db);
-  return usersF;
+export async function create(data: NewUser): Promise<UserRecord> {
+  const rows = await db.insert(usersTable).values(data).returning();
+  return parseUserRow(rows[0]);
 }
 
-/******************************************************************************
-                                Export default
-******************************************************************************/
+export async function saveSession(
+  userId: number,
+  accessToken: string,
+  tokenExpiresAt: Date,
+): Promise<void> {
+  await db
+    .update(usersTable)
+    .set({ accessToken, tokenExpiresAt, updatedAt: new Date() })
+    .where(eq(usersTable.id, userId));
+}
 
-export default {
-  getOne,
-  persists,
-  getAll,
-  add,
-  update,
-  delete: delete_,
-  deleteAllUsers,
-  insertMultiple,
-} as const;
+export async function clearSession(userId: number): Promise<void> {
+  await db
+    .update(usersTable)
+    .set({ accessToken: null, tokenExpiresAt: null, updatedAt: new Date() })
+    .where(eq(usersTable.id, userId));
+}
+
+export async function setVerified(userId: number): Promise<void> {
+  await db
+    .update(usersTable)
+    .set({ verified: true, verifyToken: null, updatedAt: new Date() })
+    .where(eq(usersTable.id, userId));
+}
+
+export async function update(
+  id: number,
+  data: Partial<Pick<NewUser, 'userName' | 'email'>>,
+): Promise<UserRecord | undefined> {
+  const rows = await db
+    .update(usersTable)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(usersTable.id, id))
+    .returning();
+  return rows[0] ? parseUserRow(rows[0]) : undefined;
+}
+
+export async function getRoleNames(userId: number): Promise<string[]> {
+  const rows = await db
+    .select({ name: rolesTable.name })
+    .from(userRolesTable)
+    .innerJoin(rolesTable, eq(userRolesTable.roleId, rolesTable.id))
+    .where(eq(userRolesTable.userId, userId));
+  return rows.map((row) => row.name);
+}
+
+export function toPublicUser(user: UserRecord, roles: string[]): UserPublic {
+  return userPublicSchema.parse({
+    id: user.id,
+    userName: user.userName,
+    verified: user.verified,
+    email: user.email,
+    type: user.type,
+    roles,
+  });
+}
+
+export function createVerifyToken(): string {
+  return randomUUID();
+}

@@ -6,6 +6,8 @@
     "strict": true,
     "baseUrl": "./",
     "outDir": "dist",
+    "rootDir": "./src",
+    "ignoreDeprecations": "6.0",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -20,6 +22,8 @@
   "exclude": [
     "tests",
     "src/public/",
+    "src/services/UserService.ts",
+    "src/repos/MockOrm.ts",
     "scripts",
     "eslint.config.ts",
     "vitest.config.js"

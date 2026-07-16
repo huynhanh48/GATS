@@ -37,6 +37,12 @@ export default defineConfig([
       'no-console': 'warn',
       'no-extra-boolean-cast': 'off',
       'no-process-env': 'warn',
+      // drizzle / path alias false positives in IDE
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
       // node correctness
       'n/no-extraneous-import': 'error'
     },

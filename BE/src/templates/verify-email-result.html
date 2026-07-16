@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{title}} – {{appName}}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
+
+  <style type="text/tailwindcss">
+    @theme {
+      --color-primary: #0070EB;
+      --color-secondary: #FF7622;
+      --color-background: #F9F9FE;
+      --color-card: #FFFFFF;
+      --color-text-dark: #1A1A2E;
+      --color-text-body: #374151;
+      --color-text-muted: #6B7280;
+      --color-border: #E5E7EB;
+      --color-success: #22C55E;
+      --color-error: #EF4444;
+      --color-warning: #F59E0B;
+      --font-sans: Inter, sans-serif;
+      --shadow-card: 0 2px 12px rgba(0, 112, 235, 0.08);
+      --shadow-modal: 0 8px 40px rgba(0, 0, 0, 0.15);
+    }
+  </style>
+</head>
+<body class="bg-background font-sans min-h-screen text-text-body antialiased">
+
+  <!-- Decorative background blobs -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+    <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+  </div>
+
+  <main class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md">
+
+      <!-- Logo bar -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center gap-2.5">
+          <div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-card">
+            <i class="fa-solid fa-graduation-cap text-white text-lg"></i>
+          </div>
+          <span class="text-xl font-extrabold text-text-dark tracking-tight">{{appName}}</span>
+        </div>
+      </div>
+
+      <!-- Card -->
+      <div class="bg-card rounded-2xl shadow-modal border border-border overflow-hidden">
+
+        <!-- Top gradient accent -->
+        <div class="h-1.5 bg-gradient-to-r from-primary to-secondary"></div>
+
+        <div class="px-8 py-10 text-center">
+
+          <!-- Status icon -->
+          <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-6 {{iconBgClass}}">
+            <i class="{{iconClass}} text-4xl"></i>
+          </div>
+
+          <!-- Title & message -->
+          <h1 class="text-2xl font-bold mb-3 {{titleClass}}">{{title}}</h1>
+          <p class="text-text-body text-sm leading-relaxed mb-8">{{message}}</p>
+
+          <!-- Status badge -->
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium {{badgeClass}}">
+            <i class="{{badgeIconClass}} text-xs"></i>
+            <span>{{badgeText}}</span>
+          </div>
+
+        </div>
+
+        <!-- Footer strip -->
+        <div class="px-8 py-4 bg-background border-t border-border text-center">
+          <p class="text-xs text-text-muted">
+            &copy; {{year}} {{appName}}. All Rights Reserved.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Back hint -->
+      <p class="text-center text-xs text-text-muted mt-6">
+        <i class="fa-solid fa-arrow-left mr-1"></i>
+        Bạn có thể đóng trang này và quay lại ứng dụng.
+      </p>
+
+    </div>
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,162 @@
+"use client";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { permanentlyDeletePost, restorePost } from "../actions";
+
+type PostTrashRowActionsProps = {
+  postId: string;
+  postTitle: string;
+};
+
+export function PostTrashRowActions({
+  postId,
+  postTitle,
+}: PostTrashRowActionsProps) {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<"restore" | "hard" | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(false);
+
+  async function handleRestore() {
+    setLoading(true);
+    const result = await restorePost(postId);
+    setLoading(false);
+    setIsOpen(false);
+    setConfirmMode(null);
+
+    if (result.ok) {
+      toast.success(result.message);
+      router.refresh();
+      return;
+    }
+
+    toast.error(result.message);
+  }
+
+  async function handleHardDelete() {
+    setLoading(true);
+    const result = await permanentlyDeletePost(postId);
+    setLoading(false);
+    setIsOpen(false);
+    setConfirmMode(null);
+
+    if (result.ok) {
+      toast.success(result.message);
+      router.refresh();
+      return;
+    }
+
+    toast.error(result.message);
+  }
+
+  return (
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+        <DropdownMenuTrigger
+          className={cn(
+            "inline-flex size-8 items-center justify-center rounded-lg text-dark-4 transition hover:bg-gray-2 hover:text-dark dark:text-dark-6 dark:hover:bg-dark-3 dark:hover:text-white",
+            loading && "pointer-events-none opacity-50",
+          )}
+        >
+          <span className="sr-only">Thao tác</span>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            aria-hidden
+          >
+            <circle cx="8" cy="3" r="1.5" />
+            <circle cx="8" cy="8" r="1.5" />
+            <circle cx="8" cy="13" r="1.5" />
+          </svg>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem
+            onClick={() => setConfirmMode("restore")}
+            className="text-primary focus:text-primary"
+          >
+            Khôi phục
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setConfirmMode("hard")}
+            className="text-red-600 focus:text-red-600"
+          >
+            Xóa vĩnh viễn
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog
+        open={confirmMode !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmMode(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmMode === "restore"
+                ? "Khôi phục bài viết"
+                : "Xóa vĩnh viễn"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmMode === "restore" ? (
+                <>
+                  Khôi phục bài viết <strong>{postTitle}</strong> khỏi thùng
+                  rác?
+                </>
+              ) : (
+                <>
+                  Xóa vĩnh viễn <strong>{postTitle}</strong>? Hành động này
+                  không thể hoàn tác.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmMode === "restore") {
+                  handleRestore();
+                } else {
+                  handleHardDelete();
+                }
+              }}
+              className={
+                confirmMode === "hard"
+                  ? "bg-red text-white hover:bg-red/90"
+                  : undefined
+              }
+            >
+              {confirmMode === "restore" ? "Khôi phục" : "Xóa vĩnh viễn"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
