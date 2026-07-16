@@ -68,7 +68,7 @@ export default function PostsPage() {
                   {article.excerpt}
                 </p>
                 <Link
-                  href={`/posts#${article.slug}`}
+                  href={`/posts/${article.slug}`}
                   className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950 dark:hover:bg-orange-500 dark:hover:text-white"
                 >
                   Đọc bài

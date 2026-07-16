@@ -342,6 +342,13 @@ export default async function CoursePage() {
                     <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
                       {article.excerpt}
                     </p>
+                    <Link
+                      href={`/posts/${article.slug}`}
+                      className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950 dark:hover:bg-orange-500 dark:hover:text-white"
+                    >
+                      Đọc bài
+                      <ArrowRight className="size-4" aria-hidden="true" />
+                    </Link>
                   </div>
                 </article>
               ))}
