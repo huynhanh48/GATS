@@ -1,16 +1,23 @@
 import { Header } from "@/components/Layouts/header";
 import { Sidebar } from "@/components/Layouts/sidebar";
+import { getAdminSession } from "@/lib/api/server";
+import { redirect } from "next/navigation";
 import { type PropsWithChildren } from "react";
 
-export default function WithLayout({ children }: PropsWithChildren) {
+export default async function WithLayout({ children }: PropsWithChildren) {
+  const session = await getAdminSession();
+  if (!session) {
+    redirect("/auth/sign-in?error=unauthorized");
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex min-h-screen">
       <Sidebar />
 
-      <div className="min-w-0 flex-1 flex flex-col overflow-hidden bg-gray-2 dark:bg-[#020d1a]">
+      <div className="flex min-w-0 flex-1 flex-col bg-gray-2 dark:bg-[#020d1a]">
         <Header />
 
-        <main className="isolate flex-1 overflow-y-auto overflow-x-hidden mx-auto w-full max-w-(--breakpoint-2xl) p-4 md:p-6 2xl:p-10">
+        <main className="isolate mx-auto w-full max-w-(--breakpoint-2xl) flex-1 overflow-x-hidden p-4 md:p-6 2xl:p-10">
           {children}
         </main>
       </div>

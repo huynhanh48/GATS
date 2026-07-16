@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
+import { ArrowUpDown, ChevronDown, Search } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -137,18 +137,22 @@ function DataTableToolbar<TData>({
   if (!hasToolbar) return null;
 
   return (
-    <div className="flex items-center gap-2 pb-4">
+    <div className="flex flex-col gap-3 pb-4 lg:flex-row lg:items-center lg:justify-between">
       {searchable && searchColumn && (
-        <Input
-          placeholder={searchPlaceholder ?? "Tìm kiếm..."}
-          value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""}
-          onChange={(e) =>
-            table.getColumn(searchColumn)?.setFilterValue(e.target.value)
-          }
-        />
+        <div className="relative w-full lg:max-w-sm">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder={searchPlaceholder ?? "Tìm kiếm..."}
+            value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""}
+            onChange={(e) =>
+              table.getColumn(searchColumn)?.setFilterValue(e.target.value)
+            }
+            className="h-10 rounded-md border-slate-200 bg-slate-50 pl-9 text-sm focus-visible:ring-blue-500/20 dark:border-slate-800 dark:bg-slate-900"
+          />
+        </div>
       )}
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
         {toolbar}
 
         {showVisibility && (
@@ -200,7 +204,7 @@ function DataTableFooter<TData>({
   const totalCount = table.getFilteredRowModel().rows.length;
 
   return (
-    <div className="flex items-center justify-between pt-4 text-sm text-dark-4 dark:text-dark-6">
+    <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:text-slate-400">
       {enableRowSelection ? (
         <span>
           {selectedCount} of {totalCount} row(s) selected.
@@ -356,6 +360,7 @@ export function DataTable<TData, TValue>({
         toolbar={toolbar}
       />
 
+      <div className="overflow-hidden rounded-md border border-slate-200 dark:border-slate-800">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((hg) => (
@@ -414,6 +419,7 @@ export function DataTable<TData, TValue>({
           )}
         </TableBody>
       </Table>
+      </div>
 
       <DataTableFooter
         table={table}

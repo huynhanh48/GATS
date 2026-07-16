@@ -15,28 +15,28 @@ import { BellIcon } from "./icons";
 const notificationList = [
   {
     image: "/images/user/user-15.png",
-    title: "Piter Joined the Team!",
-    subTitle: "Congratulate him",
+    title: "Khóa học mới được tạo",
+    subTitle: "Kiểm tra nội dung trước khi xuất bản",
   },
   {
     image: "/images/user/user-03.png",
-    title: "New message",
-    subTitle: "Devid sent a new message",
+    title: "Có bài học cần duyệt",
+    subTitle: "Video vừa xử lý xong",
   },
   {
     image: "/images/user/user-26.png",
-    title: "New Payment received",
-    subTitle: "Check your earnings",
+    title: "Đơn thanh toán mới",
+    subTitle: "Doanh thu đã được cập nhật",
   },
   {
     image: "/images/user/user-28.png",
-    title: "Jolly completed tasks",
-    subTitle: "Assign new task",
+    title: "Quiz có phản hồi mới",
+    subTitle: "Xem kết quả học viên",
   },
   {
     image: "/images/user/user-27.png",
-    title: "Roman Joined the Team!",
-    subTitle: "Congratulate him",
+    title: "Tài nguyên đã tải lên",
+    subTitle: "Sẵn sàng gắn vào bài học",
   },
 ];
 
@@ -55,7 +55,7 @@ export function Notification() {
       }}
     >
       <DropdownTrigger
-        className="grid size-12 cursor-pointer place-items-center rounded-full border bg-gray-2 text-dark outline-none hover:text-primary focus-visible:border-primary focus-visible:text-primary dark:border-dark-4 dark:bg-dark-2 dark:text-white dark:hover:bg-dark-3 dark:focus-visible:border-primary"
+        className="grid size-12 cursor-pointer place-items-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 outline-none transition hover:border-[#0070EB]/40 hover:text-[#0070EB] focus-visible:border-[#0070EB] focus-visible:text-[#0070EB] dark:border-slate-700 dark:bg-[#0f172a] dark:text-slate-200 dark:hover:bg-white/10"
         aria-label="View Notifications"
       >
         <span className="relative">
@@ -64,10 +64,10 @@ export function Notification() {
           {isDotVisible && (
             <span
               className={cn(
-                "absolute top-0 right-0 z-1 size-2 rounded-full bg-red-light ring-2 ring-gray-2 dark:ring-dark-3",
+                "absolute top-0 right-0 z-1 size-2 rounded-full bg-[#FF7622] ring-2 ring-white dark:ring-[#0f172a]",
               )}
             >
-              <span className="absolute inset-0 -z-1 animate-ping rounded-full bg-red-light opacity-75" />
+              <span className="absolute inset-0 -z-1 animate-ping rounded-full bg-[#FF7622] opacity-75" />
             </span>
           )}
         </span>
@@ -75,14 +75,14 @@ export function Notification() {
 
       <DropdownContent
         align={isMobile ? "end" : "center"}
-        className="border border-stroke bg-white px-3.5 py-3 shadow-md min-[350px]:min-w-[20rem] dark:border-dark-3 dark:bg-gray-dark"
+        className="border border-slate-200 bg-white px-3.5 py-3 shadow-md min-[350px]:min-w-[20rem] dark:border-slate-800 dark:bg-[#0b1220]"
       >
         <div className="mb-1 flex items-center justify-between px-2 py-1.5">
-          <span className="text-lg font-medium text-dark dark:text-white">
-            Notifications
+          <span className="text-lg font-bold text-slate-950 dark:text-white">
+            Thông báo
           </span>
-          <span className="rounded-md bg-primary px-2.25 py-0.5 text-xs font-medium text-white">
-            5 new
+          <span className="rounded-md bg-[#0070EB] px-2.25 py-0.5 text-xs font-bold text-white">
+            5 mới
           </span>
         </div>
 
@@ -92,7 +92,7 @@ export function Notification() {
               <Link
                 href="#"
                 onClick={() => setIsOpen(false)}
-                className="flex items-center gap-4 rounded-lg px-2 py-1.5 outline-none hover:bg-gray-2 focus-visible:bg-gray-2 dark:hover:bg-dark-3 dark:focus-visible:bg-dark-3"
+                className="flex items-center gap-4 rounded-lg px-2 py-1.5 outline-none hover:bg-slate-100 focus-visible:bg-slate-100 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
               >
                 <Image
                   src={item.image}
@@ -103,11 +103,11 @@ export function Notification() {
                 />
 
                 <div>
-                  <strong className="block text-sm font-medium text-dark dark:text-white">
+                  <strong className="block text-sm font-bold text-slate-950 dark:text-white">
                     {item.title}
                   </strong>
 
-                  <span className="truncate text-sm font-medium text-dark-5 dark:text-dark-6">
+                  <span className="truncate text-sm font-medium text-slate-500 dark:text-slate-400">
                     {item.subTitle}
                   </span>
                 </div>
@@ -119,9 +119,9 @@ export function Notification() {
         <Link
           href="#"
           onClick={() => setIsOpen(false)}
-          className="block rounded-lg border border-primary p-2 text-center text-sm font-medium tracking-wide text-primary transition-colors outline-none hover:bg-blue-light-5 focus:bg-blue-light-5 focus:text-primary focus-visible:border-primary dark:border-dark-3 dark:text-dark-6 dark:hover:border-dark-5 dark:hover:bg-dark-3 dark:hover:text-dark-7 dark:focus-visible:border-dark-5 dark:focus-visible:bg-dark-3 dark:focus-visible:text-dark-7"
+          className="block rounded-lg border border-[#0070EB]/30 p-2 text-center text-sm font-bold tracking-wide text-[#0070EB] transition-colors outline-none hover:bg-[#eaf2ff] focus:bg-[#eaf2ff] focus-visible:border-[#0070EB] dark:border-[#0f2742] dark:text-[#7ab8ff] dark:hover:bg-[#0f2742]"
         >
-          See all notifications
+          Xem tất cả
         </Link>
       </DropdownContent>
     </Dropdown>

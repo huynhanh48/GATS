@@ -23,7 +23,7 @@ export default async function CourseTrashPage({
     <div className="space-y-4">
       <CourseTrashTable courses={data} />
       <Suspense fallback={null}>
-        <CoursePagination pagination={pagination} basePath="/course/trash" />
+        <CoursePagination pagination={pagination} basePath="/admin/course/trash" />
       </Suspense>
     </div>
   );

@@ -612,3 +612,99 @@ export type ActionResult = {
   ok: boolean;
   message: string;
 };
+
+// ─── Cart / Orders / Enrollments (learner) ───────────────────────────────────
+
+export type CartCourse = {
+  id: string;
+  title: string;
+  slug: string;
+  thumbnail: string | null;
+  price: number;
+  salePrice: number | null;
+  status: string;
+};
+
+export type CartItem = {
+  id: string;
+  cartId: string;
+  courseId: string;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  course: CartCourse;
+  finalPrice: number;
+  lineTotal: number;
+};
+
+export type CartView = {
+  id: string;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+  items: CartItem[];
+  totalAmount: number;
+  itemCount: number;
+};
+
+export type CartResponse = { cart: CartView };
+
+export type PaymentMethod = "bank_transfer" | "wallet" | "vnpay" | "momo";
+
+export type BankTransferPayment = {
+  method: "bank_transfer";
+  status: "pending";
+  txnRef: string;
+  amount: number;
+  qrUrl: string;
+  transferContent: string;
+  bankAccountId?: string;
+  bankAccountSource?: string;
+  bankAccountNumber: string;
+  bankName: string;
+  bankAccountName: string;
+  bankLabel?: string;
+};
+
+export type CreateOrderResponse = {
+  order: {
+    id: string;
+    userId: number;
+    totalAmount: number;
+    status: string;
+    paymentMethod: PaymentMethod;
+  };
+  transaction: {
+    id: string;
+    orderId: string;
+    txnRef: string;
+    amount: number;
+    status: string;
+  };
+  payment: BankTransferPayment | { method: string; status: string };
+};
+
+export type SepayCheckResponse = {
+  success: boolean;
+  status: "PAID" | "PENDING" | string;
+  txnRef: string;
+  orderId?: string;
+  amount?: number;
+  message?: string;
+};
+
+export type EnrollmentRecord = {
+  id: string;
+  userId: number;
+  courseId: string;
+  source: string;
+  status: string;
+  enrolledAt: string;
+  expiredAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type EnrollmentListResponse = {
+  data: EnrollmentRecord[];
+};

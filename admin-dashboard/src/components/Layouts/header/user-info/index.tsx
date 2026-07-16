@@ -22,14 +22,14 @@ export function UserInfo() {
 
   async function handleLogout() {
     setIsOpen(false);
-    const loadingId = toast.loading("Logging out...");
+    const loadingId = toast.loading("Đang đăng xuất...");
 
     try {
       await logout();
       router.push("/auth/sign-in");
-      toast.success("Logged out successfully");
+      toast.success("Đã đăng xuất");
     } catch {
-      toast.error("Failed to log out");
+      toast.error("Đăng xuất thất bại");
     } finally {
       toast.dismiss(loadingId);
     }
@@ -126,24 +126,24 @@ export function UserInfo() {
 
         <div className="p-2 text-base text-[#4B5563] *:cursor-pointer dark:text-dark-6">
           <Link
-            href={"/profile"}
+            href={"/admin/profile"}
             onClick={() => setIsOpen(false)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.25 ring-primary outline-0 hover:bg-gray-2 hover:text-dark focus-visible:ring-1 dark:hover:bg-dark-3 dark:hover:text-white"
           >
             <UserIcon />
 
-            <span className="mr-auto text-base font-medium">View profile</span>
+            <span className="mr-auto text-base font-medium">Hồ sơ</span>
           </Link>
 
           <Link
-            href={"/pages/settings"}
+            href={"/admin/pages/settings"}
             onClick={() => setIsOpen(false)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.25 ring-primary outline-0 hover:bg-gray-2 hover:text-dark focus-visible:ring-1 dark:hover:bg-dark-3 dark:hover:text-white"
           >
             <SettingsIcon />
 
             <span className="mr-auto text-base font-medium">
-              Account Settings
+              Cài đặt tài khoản
             </span>
           </Link>
         </div>
@@ -157,7 +157,7 @@ export function UserInfo() {
           >
             <LogOutIcon />
 
-            <span className="text-base font-medium">Log out</span>
+            <span className="text-base font-medium">Đăng xuất</span>
           </button>
         </div>
       </DropdownContent>

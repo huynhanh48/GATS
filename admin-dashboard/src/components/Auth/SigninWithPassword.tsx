@@ -1,8 +1,8 @@
 "use client";
 
 import { EmailIcon, PasswordIcon } from "@/assets/icons";
-import { hasAdminAccess } from "@/lib/auth/access";
-import { getSession, login, logout } from "@/services/auth.client";
+import { defaultPostLoginPath, hasAdminAccess } from "@/lib/auth/access";
+import { getSession, login } from "@/services/auth.client";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -21,9 +21,7 @@ export default function SigninWithPassword() {
 
   useEffect(() => {
     if (searchParams.get("error") === "unauthorized") {
-      setError(
-        "Bạn không có quyền truy cập. Chỉ admin hoặc instructor mới được đăng nhập.",
-      );
+      setError("Bạn không có quyền truy cập khu vực quản trị.");
     }
   }, [searchParams]);
 
@@ -40,7 +38,7 @@ export default function SigninWithPassword() {
     setLoading(true);
 
     try {
-      const callbackURL = searchParams.get("callbackUrl") || "/";
+      const callbackURL = searchParams.get("callbackUrl");
 
       const result = await login({
         email: data.email,
@@ -52,14 +50,22 @@ export default function SigninWithPassword() {
       }
 
       const session = await getSession();
-      if (!session.data?.user || !hasAdminAccess(session.data.user.roles)) {
-        await logout();
-        throw new Error(
-          "Bạn không có quyền truy cập. Chỉ admin hoặc instructor mới được đăng nhập.",
-        );
+      if (!session.data?.user) {
+        throw new Error("Không lấy được thông tin phiên đăng nhập.");
       }
 
-      router.push(callbackURL);
+      const roles = session.data.user.roles;
+      let nextPath = defaultPostLoginPath(roles);
+
+      if (callbackURL?.startsWith("/") && !callbackURL.startsWith("//")) {
+        const wantsAdmin =
+          callbackURL === "/admin" || callbackURL.startsWith("/admin/");
+        if (!wantsAdmin || hasAdminAccess(roles)) {
+          nextPath = callbackURL;
+        }
+      }
+
+      router.push(nextPath);
       router.refresh();
       toast.success("Đăng nhập thành công");
     } catch (err: unknown) {

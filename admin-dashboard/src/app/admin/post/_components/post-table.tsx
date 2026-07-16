@@ -6,10 +6,10 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { PostListItem } from "@/lib/api/types";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import { AdminPanel, StatusPill } from "@/components/Layouts/admin-surface";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,18 +82,17 @@ const columns: ColumnDef<PostListItem>[] = [
     cell: ({ row }) => {
       const status = row.getValue<string>("status");
       return (
-        <div
-          className={cn(
-            "max-w-fit rounded-full px-3.5 py-1 text-sm font-medium",
-            {
-              "bg-[#219653]/8 text-[#219653]": status === "published",
-              "bg-[#FFA70B]/8 text-[#FFA70B]": status === "draft",
-              "bg-[#D34053]/8 text-[#D34053]": status === "archived",
-            },
-          )}
+        <StatusPill
+          tone={
+            status === "published"
+              ? "green"
+              : status === "draft"
+                ? "orange"
+                : "red"
+          }
         >
           {STATUS_LABELS[status] ?? status}
-        </div>
+        </StatusPill>
       );
     },
   },
@@ -143,7 +142,7 @@ export function PostTable({ posts }: PostTableProps) {
   }
 
   return (
-    <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 sm:p-7.5 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+    <AdminPanel bodyClassName="p-4 sm:p-5">
       <DataTable
         columns={columns}
         data={posts}
@@ -198,6 +197,6 @@ export function PostTable({ posts }: PostTableProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AdminPanel>
   );
 }

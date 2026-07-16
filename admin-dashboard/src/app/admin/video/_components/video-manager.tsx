@@ -48,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { AdminPanel } from "@/components/Layouts/admin-surface";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 
 type VideoLesson = CourseDetailLesson & { sectionTitle: string };
@@ -262,7 +263,10 @@ export function VideoManager() {
   return (
     <div className="space-y-6">
       {/* Course selector */}
-      <div className="rounded-[10px] border border-stroke bg-white p-6 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+      <AdminPanel
+        title="Chọn khóa học"
+        description="Lọc chương trình học trước khi cập nhật video cho từng bài."
+      >
         <label className="mb-2 block text-sm font-medium text-dark dark:text-white">
           Khóa học
         </label>
@@ -290,11 +294,11 @@ export function VideoManager() {
             </ComboboxContent>
           </Combobox>
         </div>
-      </div>
+      </AdminPanel>
 
       {/* Tabs: only show after course is selected */}
       {selectedCourse && (
-        <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+        <AdminPanel bodyClassName="p-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="border-b border-stroke px-6 py-5  dark:border-dark-3">
               <TabsList variant="line">
@@ -523,7 +527,7 @@ export function VideoManager() {
               </div>
             </TabsContent>
           </Tabs>
-        </div >
+        </AdminPanel>
       )}
 
       {!selectedCourse && (

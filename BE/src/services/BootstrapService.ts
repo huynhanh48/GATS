@@ -35,6 +35,12 @@ const DEFAULT_COURSE_CATEGORIES = [
   { name: 'AI Automation', slug: 'ai-automation' },
   { name: 'Marketing', slug: 'marketing' },
   { name: 'Data Analysis', slug: 'data-analysis' },
+  // Aligned with mobile-app/assets/data/course_categories.json
+  { name: 'AI cho công sở', slug: 'ai-office' },
+  { name: 'Automation', slug: 'automation' },
+  { name: 'Lập trình', slug: 'programming' },
+  { name: 'Ngoại ngữ', slug: 'language' },
+  { name: 'Kỹ năng mềm', slug: 'soft-skills' },
 ] as const;
 
 const DEFAULT_POST_CATEGORIES = [
@@ -84,6 +90,25 @@ async function ensureDevCategories(): Promise<void> {
     logger.info(
       `Dev bootstrap: seeded ${DEFAULT_COURSE_CATEGORIES.length} course categories`,
     );
+  } else {
+    // Backfill mobile-aligned categories if DB already had older seeds.
+    let added = 0;
+    for (const category of DEFAULT_COURSE_CATEGORIES) {
+      const existing = await CategoryRepo.findByTypeAndSlug(
+        'course',
+        category.slug,
+      );
+      if (existing) continue;
+      await CategoryRepo.create({
+        name: category.name,
+        slug: category.slug,
+        type: 'course',
+      });
+      added += 1;
+    }
+    if (added > 0) {
+      logger.info(`Dev bootstrap: added ${added} missing course categories`);
+    }
   }
 
   if (postCount === 0) {
@@ -372,9 +397,120 @@ type DevCourseFixture = {
   salePrice?: number;
   status: CourseStatus;
   imageSeed: string;
+  /** Absolute or path thumbnail (preferred for local admin assets) */
+  thumbnail?: string;
+  /** Optional tag slug(s) from mobile catalog */
+  tagSlugs?: string[];
+  lessonCount?: number;
+  durationMinutes?: number;
 };
 
+const LOCAL_COURSE_THUMBS = [
+  '/images/courses/thumb-a.jpg',
+  '/images/courses/thumb-b.jpg',
+  '/images/courses/thumb-c.jpg',
+] as const;
+
+/** Mirrors mobile-app/assets/data/courses.json */
+const MOBILE_COURSE_FIXTURES: DevCourseFixture[] = [
+  {
+    title: 'AI cho Dân văn phòng',
+    description: 'Từ zero đến thành thạo AI trong công việc hàng ngày',
+    categorySlug: 'ai-office',
+    level: 'beginner',
+    price: 299_000,
+    salePrice: 199_000,
+    status: 'published',
+    imageSeed: 'gats-mobile-ai-office',
+    thumbnail: LOCAL_COURSE_THUMBS[0],
+    tagSlugs: ['ai', 'prompt-engineering'],
+    lessonCount: 24,
+    durationMinutes: 480,
+  },
+  {
+    title: 'Prompt Engineering',
+    description: 'Viết prompt chuyên nghiệp cho mọi tình huống',
+    categorySlug: 'ai-office',
+    level: 'intermediate',
+    price: 0,
+    status: 'published',
+    imageSeed: 'gats-mobile-prompt',
+    thumbnail: LOCAL_COURSE_THUMBS[1],
+    tagSlugs: ['prompt-engineering', 'ai'],
+    lessonCount: 18,
+    durationMinutes: 360,
+  },
+  {
+    title: 'Tự động hóa với AI',
+    description: 'Workflow và agent cho team nhỏ',
+    categorySlug: 'automation',
+    level: 'intermediate',
+    price: 499_000,
+    salePrice: 399_000,
+    status: 'published',
+    imageSeed: 'gats-mobile-automation',
+    thumbnail: LOCAL_COURSE_THUMBS[2],
+    tagSlugs: ['automation', 'n8n', 'workflow'],
+    lessonCount: 12,
+    durationMinutes: 240,
+  },
+  {
+    title: 'Nhập môn Lập trình Flutter',
+    description: 'Tạo ứng dụng di động đa nền tảng nhanh chóng',
+    categorySlug: 'programming',
+    level: 'beginner',
+    price: 899_000,
+    status: 'published',
+    imageSeed: 'gats-mobile-flutter',
+    thumbnail: LOCAL_COURSE_THUMBS[0],
+    tagSlugs: ['ai'],
+    lessonCount: 40,
+    durationMinutes: 1200,
+  },
+  {
+    title: 'Digital Marketing Thực chiến',
+    description: 'Tối ưu quảng cáo và tăng tỷ lệ chuyển đổi',
+    categorySlug: 'marketing',
+    level: 'beginner',
+    price: 0,
+    status: 'published',
+    imageSeed: 'gats-mobile-marketing',
+    thumbnail: LOCAL_COURSE_THUMBS[1],
+    tagSlugs: ['ai'],
+    lessonCount: 20,
+    durationMinutes: 600,
+  },
+  {
+    title: 'Tiếng Anh Giao tiếp cơ bản',
+    description: 'Tự tin giao tiếp tiếng Anh trong 30 ngày',
+    categorySlug: 'language',
+    level: 'beginner',
+    price: 149_000,
+    salePrice: 99_000,
+    status: 'published',
+    imageSeed: 'gats-mobile-english',
+    thumbnail: LOCAL_COURSE_THUMBS[2],
+    tagSlugs: ['ai'],
+    lessonCount: 30,
+    durationMinutes: 900,
+  },
+  {
+    title: 'Kỹ năng thuyết trình trước đám đông',
+    description: 'Nói trước đám đông không còn là nỗi sợ',
+    categorySlug: 'soft-skills',
+    level: 'beginner',
+    price: 0,
+    status: 'published',
+    imageSeed: 'gats-mobile-presentation',
+    thumbnail: LOCAL_COURSE_THUMBS[0],
+    tagSlugs: ['ai'],
+    lessonCount: 15,
+    durationMinutes: 450,
+  },
+];
+
 const DEV_COURSE_FIXTURES: DevCourseFixture[] = [
+  ...MOBILE_COURSE_FIXTURES,
   {
     title: 'Python cho Data Science từ con số 0',
     description:
@@ -512,7 +648,7 @@ async function seedDevCourses(instructorId?: number): Promise<number> {
       title: fixture.title,
       slug,
       description: fixture.description,
-      thumbnail: thumbnailUrl(fixture.imageSeed),
+      thumbnail: fixture.thumbnail ?? thumbnailUrl(fixture.imageSeed),
       introVideo: null,
       price: fixture.price,
       salePrice: fixture.salePrice ?? null,
@@ -522,7 +658,35 @@ async function seedDevCourses(instructorId?: number): Promise<number> {
       categoryId: category.id,
       publishedAt: fixture.status === 'published' ? new Date() : null,
     });
-    await assignTagsToCourse(course.id, ['ai', 'prompt-engineering']);
+    await assignTagsToCourse(
+      course.id,
+      fixture.tagSlugs ?? ['ai', 'prompt-engineering'],
+    );
+
+    // Lightweight curriculum placeholder so admin catalog has lesson counts.
+    if (fixture.lessonCount && fixture.lessonCount > 0) {
+      const section = await CourseSectionRepo.create({
+        courseId: course.id,
+        title: 'Nội dung khóa học',
+        order: 0,
+      });
+      const lessonTotal = Math.min(fixture.lessonCount, 8);
+      const durationEach = fixture.durationMinutes
+        ? Math.round((fixture.durationMinutes * 60) / fixture.lessonCount)
+        : 600;
+      for (let i = 0; i < lessonTotal; i += 1) {
+        await LessonRepo.create({
+          courseId: course.id,
+          sectionId: section.id,
+          title: `Bài ${i + 1}`,
+          type: 'video',
+          order: i,
+          duration: durationEach,
+          isPreview: i === 0,
+        });
+      }
+    }
+
     created += 1;
   }
 
@@ -572,15 +736,45 @@ async function backfillPostCategories(): Promise<number> {
   return updated;
 }
 
-async function ensureDevCourses(instructorId?: number): Promise<void> {
-  const courseCount = await CourseRepo.countAll();
-  if (courseCount > 0) {
-    return;
-  }
+async function backfillMobileCourseMedia(): Promise<number> {
+  let updated = 0;
+  for (const fixture of MOBILE_COURSE_FIXTURES) {
+    if (!fixture.thumbnail && fixture.salePrice == null) continue;
+    const slug = slugify(fixture.title);
+    const course = await CourseRepo.findBySlug(slug);
+    if (!course) continue;
 
+    const needsThumb =
+      !!fixture.thumbnail &&
+      (!course.thumbnail ||
+        course.thumbnail.includes('picsum.photos') ||
+        course.thumbnail.includes('localhost:9000'));
+    const needsSale =
+      fixture.salePrice != null && course.salePrice !== fixture.salePrice;
+
+    if (!needsThumb && !needsSale) continue;
+
+    await CourseRepo.update(course.id, {
+      ...(needsThumb ? { thumbnail: fixture.thumbnail } : {}),
+      ...(needsSale ? { salePrice: fixture.salePrice ?? null } : {}),
+      ...(fixture.price !== course.price ? { price: fixture.price } : {}),
+    });
+    updated += 1;
+  }
+  return updated;
+}
+
+async function ensureDevCourses(instructorId?: number): Promise<void> {
+  // Always attempt seed — seedDevCourses skips titles that already exist by slug.
   const created = await seedDevCourses(instructorId);
   if (created > 0) {
     logger.info(`Dev bootstrap: seeded ${created} sample courses`);
+  }
+  const mediaUpdated = await backfillMobileCourseMedia();
+  if (mediaUpdated > 0) {
+    logger.info(
+      `Dev bootstrap: backfilled thumbnails/sale for ${mediaUpdated} mobile courses`,
+    );
   }
 }
 

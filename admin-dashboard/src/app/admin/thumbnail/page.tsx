@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminPageHeader } from "@/components/Layouts/admin-surface";
 import { MediaManager } from "@/components/media/media-manager";
 
 export const metadata: Metadata = {
@@ -8,16 +9,16 @@ export const metadata: Metadata = {
 export default function ThumbnailPage() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-y-4 rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div>
-          <h2 className="text-title-md2 font-bold text-dark dark:text-white">
-            Quản lý Thumbnail
-          </h2>
-          <p className="mt-1 text-sm text-body">
-            Tải lên và quản lý ảnh thumbnail (JPEG, PNG, WEBP, GIF)
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Media Library"
+        title="Quản lý Thumbnail"
+        description="Tải lên và quản lý ảnh đại diện cho khóa học, bài viết và nội dung public."
+        metrics={[
+          { label: "Loại", value: "Image", tone: "blue" },
+          { label: "Định dạng", value: "JPEG, PNG, WEBP", tone: "green" },
+          { label: "Tối đa", value: "10MB", tone: "orange" },
+        ]}
+      />
       <MediaManager kind="thumbnail" />
     </div>
   );

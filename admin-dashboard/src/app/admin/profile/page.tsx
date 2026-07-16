@@ -1,5 +1,5 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import { getBackendSession } from "@/lib/api/server";
+import { AdminPageHeader } from "@/components/Layouts/admin-surface";
+import { getAdminSession } from "@/lib/api/server";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { CameraIcon } from "./_components/icons";
@@ -7,10 +7,10 @@ import { ProfileImageUploader } from "./_components/profile-image";
 import { SocialAccounts } from "./_components/social-accounts";
 
 export default async function Page() {
-  const session = await getBackendSession();
+  const session = await getAdminSession();
 
   if (!session) {
-    redirect("/auth/sign-in");
+    redirect("/auth/sign-in?error=unauthorized");
   }
 
   const { user } = session;
@@ -25,9 +25,14 @@ export default async function Page() {
 
   return (
     <div className="mx-auto w-full max-w-242.5">
-      <Breadcrumb pageName="Profile" />
+      <AdminPageHeader
+        eyebrow="Account"
+        title="Profile"
+        description="Xem nhanh thông tin hồ sơ, vai trò và ảnh đại diện của tài khoản hiện tại."
+        className="mb-6"
+      />
 
-      <div className="overflow-hidden rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <div className="relative z-20 h-35 md:h-65">
           <Image
             src={profile.coverPhoto}

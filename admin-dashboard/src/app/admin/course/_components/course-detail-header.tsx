@@ -28,43 +28,44 @@ type CourseDetailHeaderProps = {
 
 export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
   return (
-    <div className="rounded-[10px] border border-stroke bg-white p-6 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-1 gap-4">
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-[#0b1220]">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 gap-4">
           {course.thumbnail && (
             <Image
               src={course.thumbnail}
               alt={course.title}
               width={160}
               height={90}
-              className="h-22.5 w-40 rounded-lg object-cover"
+              className="h-22.5 w-40 shrink-0 rounded-xl object-cover"
+              unoptimized
             />
           )}
-          <div>
-            <h2 className="text-xl font-bold text-dark dark:text-white">
+          <div className="min-w-0">
+            <h2 className="text-xl font-black text-slate-950 dark:text-white">
               {course.title}
             </h2>
-            <p className="mt-1 text-sm text-dark-4 dark:text-dark-6">
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {course.slug}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <span
                 className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium",
+                  "rounded-full px-3 py-1 text-xs font-bold",
                   course.status === "published"
-                    ? "bg-[#219653]/8 text-[#219653]"
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
                     : course.status === "draft"
-                      ? "bg-[#FFA70B]/8 text-[#FFA70B]"
-                      : "bg-[#D34053]/8 text-[#D34053]",
+                      ? "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+                      : "bg-rose-50 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
                 )}
               >
                 {STATUS_LABELS[course.status]}
               </span>
-              <span className="rounded-full bg-gray-2 px-3 py-1 text-xs font-medium text-dark dark:bg-dark-3 dark:text-white">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                 {LEVEL_LABELS[course.level]}
               </span>
               {course.category && (
-                <span className="rounded-full bg-gray-2 px-3 py-1 text-xs font-medium text-dark dark:bg-dark-3 dark:text-white">
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                   {course.category.name}
                 </span>
               )}
@@ -73,28 +74,28 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
         </div>
 
         <Link
-          href={`/course/${course.id}/edit`}
-          className="rounded-lg border border-stroke px-4 py-2 text-sm font-medium text-dark transition hover:bg-gray-2 dark:border-dark-3 dark:text-white dark:hover:bg-dark-3"
+          href={`/admin/course/${course.id}/edit`}
+          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
         >
           Sửa khóa học
         </Link>
       </div>
 
       {course.description && (
-        <p className="mb-4 text-sm text-dark-4 dark:text-dark-6">
+        <p className="mb-5 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">
           {course.description}
         </p>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-4 text-sm">
-        <span className="text-dark dark:text-white">
+      <div className="mb-5 flex flex-wrap gap-4 text-sm">
+        <span className="text-slate-700 dark:text-slate-200">
           Giá:{" "}
           <strong>
             {(course.salePrice ?? course.price).toLocaleString("vi-VN")}đ
           </strong>
         </span>
         {course.author && (
-          <span className="text-dark-4 dark:text-dark-6">
+          <span className="text-slate-500 dark:text-slate-400">
             Giảng viên: {course.author.userName}
           </span>
         )}
@@ -117,7 +118,7 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
           {course.tags.map((tag) => (
             <span
               key={tag.id}
-              className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary"
+              className="rounded-full bg-[#eaf2ff] px-2.5 py-1 text-xs font-bold text-[#0070EB] dark:bg-[#0f2742] dark:text-[#7ab8ff]"
             >
               {tag.name}
             </span>
@@ -130,9 +131,11 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg border border-stroke px-3 py-2 dark:border-dark-3">
-      <p className="text-xs text-dark-4 dark:text-dark-6">{label}</p>
-      <p className="mt-1 font-semibold text-dark dark:text-white">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-[#111827]">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1 font-black text-slate-950 dark:text-white">{value}</p>
     </div>
   );
 }

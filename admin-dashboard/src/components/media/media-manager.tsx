@@ -23,6 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { AdminPanel } from "@/components/Layouts/admin-surface";
 import {
   Copy,
   ExternalLink,
@@ -183,10 +184,10 @@ export function MediaManager({ kind }: MediaManagerProps) {
         onDragLeave={() => setDragActive(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
-        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[10px] border-2 border-dashed p-8 text-center transition-colors ${
+        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
           dragActive
             ? "border-primary bg-primary/5"
-            : "border-stroke bg-white dark:border-dark-3 dark:bg-gray-dark"
+            : "border-slate-300 bg-white hover:border-blue-300 hover:bg-blue-50/30 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-700 dark:hover:bg-blue-950/10"
         }`}
       >
         <input
@@ -212,7 +213,7 @@ export function MediaManager({ kind }: MediaManagerProps) {
       </div>
 
       {/* List */}
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 sm:p-6 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+      <AdminPanel title="Danh sách tài nguyên" bodyClassName="p-4 sm:p-5">
         {loading ? (
           <p className="py-6 text-center text-sm text-dark-4 dark:text-dark-6">
             Đang tải...
@@ -327,7 +328,7 @@ export function MediaManager({ kind }: MediaManagerProps) {
             </div>
           </>
         )}
-      </div>
+      </AdminPanel>
 
       {/* Delete Media Confirmation Dialog */}
       <AlertDialog open={!!mediaToDelete} onOpenChange={(open) => !open && setMediaToDelete(null)}>

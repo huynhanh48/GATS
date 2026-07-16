@@ -2,7 +2,7 @@ import * as Icons from "../icons";
 
 export const NAV_DATA = [
   {
-    label: "MAIN MENU",
+    label: "Quản trị",
     items: [
       {
         title: "Dashboard",
@@ -12,21 +12,27 @@ export const NAV_DATA = [
             title: "Tổng quan",
             url: "/admin",
           },
+        ],
+      },
+      {
+        title: "Khóa học",
+        icon: Icons.BookIcon,
+        items: [
           {
-            title: "Doanh thu & Đơn hàng",
-            url: "/admin/analytics/sales",
+            title: "Danh sách",
+            url: "/admin/course",
           },
           {
-            title: "Học viên & Lượt xem",
-            url: "/admin/analytics/engagement",
+            title: "Thêm khóa học",
+            url: "/admin/course/new",
           },
           {
-            title: "Kết quả học tập",
-            url: "/admin/analytics/assessments",
+            title: "Danh mục",
+            url: "/admin/course/category",
           },
           {
-            title: "Hiệu suất Khóa học",
-            url: "/admin/analytics/courses",
+            title: "Quản lý Quiz",
+            url: "/admin/course/quiz",
           },
         ],
       },
@@ -39,47 +45,17 @@ export const NAV_DATA = [
             url: "/admin/post",
           },
           {
+            title: "Thêm bài viết",
+            url: "/admin/post/new",
+          },
+          {
             title: "Danh mục",
             url: "/admin/post/category",
-          }
+          },
         ],
       },
       {
-        title: "Calendar",
-        url: "/admin/calendar",
-        icon: Icons.Calendar,
-        items: [],
-      },
-      {
-        title: "Profile",
-        url: "/admin/profile",
-        icon: Icons.User,
-        items: [],
-      },
-      {
-        title: "Khóa học",
-        icon: Icons.BookIcon,
-        items: [
-          {
-            title: "Danh sách",
-            url: "/admin/course",
-          },
-          {
-            title: "Danh mục",
-            url: "/admin/course/category",
-          },
-          {
-            title: "Thêm khóa học",
-            url: "/admin/course/new",
-          },
-          {
-            title: "Quản lý Quiz",
-            url: "/admin/course/quiz",
-          }
-        ],
-      },
-      {
-        title: "Tài Nguyên",
+        title: "Tài nguyên",
         icon: Icons.FolderIcon,
         items: [
           {
@@ -87,13 +63,13 @@ export const NAV_DATA = [
             url: "/admin/video",
           },
           {
-            title: "Thumnails",
+            title: "Thumbnail",
             url: "/admin/thumbnail",
           },
           {
             title: "Files",
             url: "/admin/file",
-          }
+          },
         ],
       },
       {
@@ -107,84 +83,33 @@ export const NAV_DATA = [
           {
             title: "Bài viết",
             url: "/admin/post/trash",
-          }
-        ],
-      },
-      {
-        title: "AI",
-        icon: Icons.SparklesIcon,
-        items: [
-          {
-            title: "Chatbox",
-            url: "/admin/ai/chatbox",
-          },
-          {
-            title: "RAG",
-            url: "/admin/ai/rag",
-          },
-        ],
-      },
-      {
-        title: "Forms",
-        icon: Icons.Alphabet,
-        items: [
-          {
-            title: "Form Elements",
-            url: "/admin/forms/form-elements",
-          },
-          {
-            title: "Form Layout",
-            url: "/admin/forms/form-layout",
-          },
-        ],
-      },
-      {
-        title: "Tables",
-        url: "/admin/tables",
-        icon: Icons.Table,
-        items: [
-          {
-            title: "Tables",
-            url: "/admin/tables",
-          },
-        ],
-      },
-      {
-        title: "Pages",
-        icon: Icons.Alphabet,
-        items: [
-          {
-            title: "Settings",
-            url: "/admin/pages/settings",
           },
         ],
       },
     ],
   },
   {
-    label: "OTHERS",
+    label: "Hệ thống",
     items: [
       {
-        title: "Charts",
-        icon: Icons.PieChart,
-        items: [
-          {
-            title: "Basic Chart",
-            url: "/admin/charts/basic-chart",
-          },
-        ],
+        title: "Calendar",
+        url: "/admin/calendar",
+        icon: Icons.Calendar,
+        items: [],
       },
       {
-        title: "UI Elements",
-        icon: Icons.FourCircle,
+        title: "Profile",
+        url: "/admin/profile",
+        icon: Icons.User,
+        items: [],
+      },
+      {
+        title: "Cài đặt",
+        icon: Icons.Alphabet,
         items: [
           {
-            title: "Alerts",
-            url: "/admin/ui-elements/alerts",
-          },
-          {
-            title: "Buttons",
-            url: "/admin/ui-elements/buttons",
+            title: "Tài khoản",
+            url: "/admin/pages/settings",
           },
         ],
       },

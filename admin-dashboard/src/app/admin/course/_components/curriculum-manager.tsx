@@ -336,7 +336,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                     <DropdownMenuItem
                       onClick={() =>
                         router.push(
-                          `/course/${course.id}/sections/${section.id}/lessons/new`,
+                          `/admin/course/${course.id}/sections/${section.id}/lessons/new`,
                         )
                       }
                     >
@@ -368,7 +368,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                         Chưa có bài học
                       </p>
                       <Link
-                        href={`/course/${course.id}/sections/${section.id}/lessons/new`}
+                        href={`/admin/course/${course.id}/sections/${section.id}/lessons/new`}
                         className="text-xs font-medium text-primary hover:underline"
                       >
                         + Thêm bài học
@@ -426,7 +426,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
 
                             <div className="flex shrink-0 gap-2">
                               <Link
-                                href={`/course/${course.id}/lessons/${lesson.id}/edit`}
+                                href={`/admin/course/${course.id}/lessons/${lesson.id}/edit`}
                                 className="text-xs text-dark-4 hover:text-dark dark:text-dark-6"
                               >
                                 Sửa
@@ -514,7 +514,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                       ))}
                       <li className="px-4 py-2.5">
                         <Link
-                          href={`/course/${course.id}/sections/${section.id}/lessons/new`}
+                          href={`/admin/course/${course.id}/sections/${section.id}/lessons/new`}
                           className="text-xs font-medium text-primary hover:underline"
                         >
                           + Thêm bài học

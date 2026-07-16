@@ -98,7 +98,7 @@ export function LessonFormPage({
   lesson,
 }: LessonFormPageProps) {
   const router = useRouter();
-  const backHref = `/course/${courseId}`;
+  const backHref = `/admin/course/${courseId}`;
   const [type, setType] = useState<LessonType>(lesson?.type ?? "video");
   const [content, setContent] = useState(lesson?.content ?? "");
   const [isPreview, setIsPreview] = useState(lesson?.isPreview ?? false);

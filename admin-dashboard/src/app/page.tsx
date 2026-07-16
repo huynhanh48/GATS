@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight, ChevronRight } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { LandingNav } from "@/components/Landing/LandingNav";
 
 export default function LandingPage() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -64,7 +65,7 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="bg-black text-white font-sans selection:bg-white selection:text-black">
+    <div className="bg-white text-slate-950 font-sans selection:bg-slate-950 selection:text-white dark:bg-black dark:text-white dark:selection:bg-white dark:selection:text-black">
       {/* Hero Section */}
       <section className="relative flex min-h-screen flex-col overflow-hidden">
         {/* Background Video */}
@@ -73,33 +74,20 @@ export default function LandingPage() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover object-[center_20%] pointer-events-none z-0 opacity-60"
+          className="absolute inset-0 w-full h-full object-cover object-[center_20%] pointer-events-none z-0 opacity-35 dark:opacity-60"
         >
           <source src="/videos/video-pingpong.mp4" type="video/mp4" />
         </video>
+        <div className="absolute inset-0 z-0 bg-white/45 dark:bg-black/15" />
 
         {/* Navigation */}
-        <nav className="relative z-10 flex items-center justify-center md:justify-between px-8 py-6 text-sm text-gray-400">
-          <div className="hidden md:flex gap-8">
-            <Link href="#" className="hover:text-white transition-colors">Home</Link>
-            <Link href="#" className="hover:text-white transition-colors">Product</Link>
-            <Link href="#" className="hover:text-white transition-colors">Solution</Link>
-          </div>
-          <div className="font-bold tracking-widest text-white uppercase">
-            GATS ACADEMY
-          </div>
-          <div className="hidden md:flex gap-8">
-            <Link href="#" className="hover:text-white transition-colors">Resource</Link>
-            <Link href="#" className="hover:text-white transition-colors">Pricing</Link>
-            <Link href="#" className="hover:text-white transition-colors">About</Link>
-          </div>
-        </nav>
+        <LandingNav active="home" tone="light" />
 
         {/* Next Project Video Transition Button */}
-        <button className="absolute top-24 right-8 md:right-12 z-20 flex items-center gap-4 text-white/80 hover:text-white transition-colors font-mono text-xs md:text-sm tracking-[0.2em] group cursor-pointer">
+        <button className="absolute top-24 right-8 md:right-12 z-20 flex items-center gap-4 text-slate-700 hover:text-slate-950 transition-colors font-mono text-xs md:text-sm tracking-[0.2em] group cursor-pointer dark:text-white/80 dark:hover:text-white">
           <span>1/01</span>
-          <div className="w-12 md:w-20 h-[1px] bg-white/30 relative overflow-hidden">
-            <div className="absolute left-0 top-0 h-full w-1/3 bg-white group-hover:w-full transition-all duration-500"></div>
+          <div className="w-12 md:w-20 h-[1px] bg-slate-400/60 relative overflow-hidden dark:bg-white/30">
+            <div className="absolute left-0 top-0 h-full w-1/3 bg-slate-900 group-hover:w-full transition-all duration-500 dark:bg-white"></div>
           </div>
           <span>NEXT PROJECT</span>
         </button>
@@ -119,20 +107,20 @@ export default function LandingPage() {
 
           {/* Bottom Left */}
           <div className="flex flex-col gap-10">
-            <p className="text-gray-400 max-w-sm text-base leading-relaxed">
+            <p className="text-slate-700 max-w-sm text-base leading-relaxed dark:text-gray-400">
               GATS Academy delivers next-generation learning solutions that detect skill gaps, automate operations, and empower students with intelligent education.
             </p>
 
             <div className="flex items-center gap-4">
               <Link
                 href="/auth/sign-in"
-                className="rounded-full border border-gray-600 px-6 py-2 hover:bg-white hover:text-black transition-all duration-300 font-medium uppercase text-sm tracking-wide"
+                className="rounded-full border border-slate-400/70 px-6 py-2 text-slate-900 hover:bg-slate-950 hover:text-white transition-all duration-300 font-medium uppercase text-sm tracking-wide dark:border-gray-600 dark:text-white dark:hover:bg-white dark:hover:text-black"
               >
                 Get Started
               </Link>
               <Link
                 href="/admin"
-                className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-600 hover:bg-white hover:text-black transition-all duration-300"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-400/70 text-slate-900 hover:bg-slate-950 hover:text-white transition-all duration-300 dark:border-gray-600 dark:text-white dark:hover:bg-white dark:hover:text-black"
               >
                 <ArrowUpRight className="h-4 w-4" />
               </Link>
@@ -143,11 +131,11 @@ export default function LandingPage() {
                 {[...Array(5)].map((_, i) => (
                   <div
                     key={i}
-                    className="h-10 w-10 rounded-full border-2 border-black bg-gray-300"
+                    className="h-10 w-10 rounded-full border-2 border-white bg-slate-300 shadow-sm dark:border-black dark:bg-gray-300"
                   />
                 ))}
               </div>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-slate-700 dark:text-gray-400">
                 Trusted by 10,000+<br />students worldwide
               </p>
             </div>
@@ -155,7 +143,7 @@ export default function LandingPage() {
 
           {/* Bottom Right */}
           <div className="hidden md:flex justify-end text-right">
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] tracking-tight">
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.1] tracking-tight text-slate-950 dark:text-white">
               Intelligence<br />
               That Powers<br />
               Your Future
@@ -165,7 +153,7 @@ export default function LandingPage() {
       </section>
 
       {/* Second Section */}
-      <section ref={sectionRef} className="relative w-full h-[400vh] bg-black">
+      <section ref={sectionRef} className="relative w-full h-[400vh] bg-white dark:bg-black">
         <div className="sticky top-0 w-full h-screen overflow-y-auto md:overflow-hidden flex flex-col md:flex-row items-center py-6 lg:py-12">
 
           {/* Left Robot Image Sequence */}
@@ -205,17 +193,17 @@ export default function LandingPage() {
               <div className="flex flex-col md:grid md:grid-cols-2 gap-4 md:gap-8 w-full mt-4">
 
                 {/* Left Card */}
-                <div className="flex flex-col border border-[#f97316]/50 rounded-[2rem] p-6 relative overflow-hidden bg-gradient-to-b from-black to-[#f97316]/10 h-[16rem] lg:h-[18rem] 2xl:h-[22rem]">
+                <div className="flex flex-col border border-[#f97316]/50 rounded-[2rem] p-6 relative overflow-hidden bg-gradient-to-b from-white to-[#f97316]/10 h-[16rem] lg:h-[18rem] 2xl:h-[22rem] dark:from-black">
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#f97316] text-[10px] font-bold tracking-widest opacity-80 [writing-mode:vertical-rl] rotate-180">
                     REVOLUTIONARY
                   </div>
                   <div className="flex-1"></div> {/* Placeholder for Helmet Image */}
                   <div className="mt-auto relative z-10">
-                    <p className="text-sm font-medium text-gray-200 mb-4 pr-6 leading-relaxed">
+                    <p className="text-sm font-medium text-slate-800 mb-4 pr-6 leading-relaxed dark:text-gray-200">
                       The Design of an AI-Powered<br />Revolutionary Helmet
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">July 16, 2024</span>
+                      <span className="text-xs text-slate-500 dark:text-gray-400">July 16, 2024</span>
                       <button className="bg-[#f97316] text-black text-xs font-bold px-5 py-2 rounded-full hover:bg-orange-600 transition-colors">
                         Read More
                       </button>
@@ -224,16 +212,16 @@ export default function LandingPage() {
                 </div>
 
                 {/* Right Card */}
-                <div className="flex flex-col items-center border border-[#f97316]/50 rounded-[2rem] p-6 relative overflow-hidden bg-gradient-to-b from-black to-[#f97316]/10 h-[16rem] lg:h-[18rem] 2xl:h-[22rem]">
-                  <div className="flex-1 w-full rounded-2xl bg-gray-900/30 mb-4"></div> {/* Placeholder for Robot Head Image */}
+                <div className="flex flex-col items-center border border-[#f97316]/50 rounded-[2rem] p-6 relative overflow-hidden bg-gradient-to-b from-white to-[#f97316]/10 h-[16rem] lg:h-[18rem] 2xl:h-[22rem] dark:from-black">
+                  <div className="flex-1 w-full rounded-2xl bg-slate-200/70 mb-4 dark:bg-gray-900/30"></div> {/* Placeholder for Robot Head Image */}
                   <div className="flex flex-col items-center gap-2 mt-auto">
                     <div className="flex gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#f97316]"></div>
                       <div className="w-1.5 h-1.5 rounded-full border border-gray-400"></div>
                       <div className="w-1.5 h-1.5 rounded-full border border-gray-400"></div>
                     </div>
-                    <span className="font-bold text-xl tracking-wide text-white">
-                      Titan<span className="text-[#f97316]">X</span><span className="text-xs text-gray-400 ml-0.5 align-top">680</span>
+                    <span className="font-bold text-xl tracking-wide text-slate-950 dark:text-white">
+                      Titan<span className="text-[#f97316]">X</span><span className="text-xs text-slate-500 ml-0.5 align-top dark:text-gray-400">680</span>
                     </span>
                   </div>
                 </div>
@@ -242,7 +230,7 @@ export default function LandingPage() {
 
               {/* Bottom Text & Explore Now */}
               <div className="flex flex-col gap-4 xl:gap-6 items-end text-right ml-auto max-w-[28rem] mt-2 xl:mt-4">
-                <p className="text-gray-300 text-sm leading-relaxed">
+                <p className="text-slate-600 text-sm leading-relaxed dark:text-gray-300">
                   Empowers businesses to integrate AI-driven robots, enhancing automation, precision, and efficiency across industries
                 </p>
                 <button className="flex items-center gap-3 bg-[#f97316] text-black text-sm font-bold pl-1.5 pr-6 py-1.5 rounded-full hover:bg-orange-600 transition-colors">
@@ -259,42 +247,42 @@ export default function LandingPage() {
       </section>
 
       {/* 3. About Us Section */}
-      <section className="relative w-full bg-black px-8 py-24 flex flex-col items-center">
+      <section className="relative w-full bg-white px-8 py-24 flex flex-col items-center dark:bg-black">
         <div className="max-w-6xl w-full flex flex-col gap-16">
           <div className="text-center flex flex-col gap-4">
-            <span className="text-gray-400 text-sm tracking-widest uppercase">About Us</span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-200">
+            <span className="text-slate-500 text-sm tracking-widest uppercase dark:text-gray-400">About Us</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-gray-200">
               Driven by Intelligence,<br />Designed for Impact
             </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-8">
             <div className="flex flex-col gap-4 pr-0 md:pr-12">
-              <h3 className="text-2xl font-bold text-white">Smart Solutions</h3>
-              <p className="text-gray-400 text-sm leading-relaxed text-justify">
+              <h3 className="text-2xl font-bold text-slate-950 dark:text-white">Smart Solutions</h3>
+              <p className="text-slate-600 text-sm leading-relaxed text-justify dark:text-gray-400">
                 At AI.Now, we believe in the power of artificial intelligence to unravel complex solutions, automate workflows, and drive meaningful growth. Our mission is to empower organizations of all sizes to harness the potential of AI, resulting in smarter, faster, and more efficient operations.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-12">
               <div className="flex flex-col gap-2 items-center text-center">
-                <h4 className="text-lg font-bold text-white">Future</h4>
-                <p className="text-gray-400 text-xs leading-relaxed">Built for the future to be tomorrow</p>
+                <h4 className="text-lg font-bold text-slate-950 dark:text-white">Future</h4>
+                <p className="text-slate-600 text-xs leading-relaxed dark:text-gray-400">Built for the future to be tomorrow</p>
               </div>
               <div className="flex flex-col gap-2 items-center text-center">
-                <h4 className="text-lg font-bold text-white">Strategy</h4>
-                <p className="text-gray-400 text-xs leading-relaxed">In-driven strategies that fuel innovation</p>
+                <h4 className="text-lg font-bold text-slate-950 dark:text-white">Strategy</h4>
+                <p className="text-slate-600 text-xs leading-relaxed dark:text-gray-400">In-driven strategies that fuel innovation</p>
               </div>
               <div className="flex flex-col gap-2 col-span-2 items-center text-center">
-                <h4 className="text-lg font-bold text-white">Workflow</h4>
-                <p className="text-gray-400 text-xs leading-relaxed">Absolutely able to boost<br />maximum output</p>
+                <h4 className="text-lg font-bold text-slate-950 dark:text-white">Workflow</h4>
+                <p className="text-slate-600 text-xs leading-relaxed dark:text-gray-400">Absolutely able to boost<br />maximum output</p>
               </div>
               <div className="flex flex-col gap-2 items-center text-center">
-                <h4 className="text-lg font-bold text-white">Intelligence</h4>
-                <p className="text-gray-400 text-xs leading-relaxed">Smarter operations<br />Sharper Moves</p>
+                <h4 className="text-lg font-bold text-slate-950 dark:text-white">Intelligence</h4>
+                <p className="text-slate-600 text-xs leading-relaxed dark:text-gray-400">Smarter operations<br />Sharper Moves</p>
               </div>
               <div className="flex flex-col gap-2 items-center text-center">
-                <h4 className="text-lg font-bold text-white">Human AI</h4>
-                <p className="text-gray-400 text-xs leading-relaxed">AI means more time<br />for better output</p>
+                <h4 className="text-lg font-bold text-slate-950 dark:text-white">Human AI</h4>
+                <p className="text-slate-600 text-xs leading-relaxed dark:text-gray-400">AI means more time<br />for better output</p>
               </div>
             </div>
           </div>
@@ -302,13 +290,13 @@ export default function LandingPage() {
       </section>
 
       {/* 4. Services Section */}
-      <section className="relative w-full bg-black px-8 py-24 flex flex-col items-center overflow-hidden">
+      <section className="relative w-full bg-white px-8 py-24 flex flex-col items-center overflow-hidden dark:bg-black">
         {/* Background Orange Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-orange-500/20 blur-[120px] pointer-events-none rounded-full"></div>
 
         <div className="relative max-w-6xl w-full flex flex-col gap-16 z-10">
           <div className="text-center flex flex-col items-center gap-6">
-            <span className="border border-orange-900/50 bg-[#3a1a08]/50 text-gray-300 text-sm px-6 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-sm">
+            <span className="border border-orange-200 bg-orange-50 text-orange-700 text-sm px-6 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-sm dark:border-orange-900/50 dark:bg-[#3a1a08]/50 dark:text-gray-300">
               Services
             </span>
             <h2 className="text-4xl md:text-5xl font-bold text-orange-500 max-w-2xl leading-tight">
@@ -399,11 +387,11 @@ export default function LandingPage() {
       </section>
 
       {/* 5. Client Testimonials Section */}
-      <section className="relative w-full bg-black px-8 py-24 flex flex-col items-center">
+      <section className="relative w-full bg-white px-8 py-24 flex flex-col items-center dark:bg-black">
         <div className="max-w-6xl w-full flex flex-col gap-16 items-center">
           <div className="text-center flex flex-col gap-4">
-            <span className="text-gray-400 text-sm tracking-widest uppercase">Client Testimonials</span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-200">
+            <span className="text-slate-500 text-sm tracking-widest uppercase dark:text-gray-400">Client Testimonials</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-gray-200">
               What our Clients Says
             </h2>
           </div>
@@ -415,18 +403,18 @@ export default function LandingPage() {
               { name: "Josh Henry", role: "Developer", text: "We've automated more than 50% of our manual code with active AI, and the results speak for themselves." }
             ].map((t, i) => (
               <div key={i} className="flex flex-col gap-4 relative text-center items-center">
-                <span className="text-6xl text-gray-800 font-serif absolute -top-8 left-4">"</span>
+                <span className="text-6xl text-slate-300 font-serif absolute -top-8 left-4 dark:text-gray-800">"</span>
                 <div className="flex flex-col z-10 items-center">
-                  <h4 className="font-bold text-white text-lg">{t.name}</h4>
-                  <span className="text-xs text-gray-500">{t.role}</span>
+                  <h4 className="font-bold text-slate-950 text-lg dark:text-white">{t.name}</h4>
+                  <span className="text-xs text-slate-500 dark:text-gray-500">{t.role}</span>
                 </div>
-                <p className="text-gray-400 text-sm z-10 mt-4 leading-relaxed max-w-[200px]">{t.text}</p>
-                <span className="text-6xl text-gray-800 font-serif absolute -bottom-10 right-4 rotate-180">"</span>
+                <p className="text-slate-600 text-sm z-10 mt-4 leading-relaxed max-w-[200px] dark:text-gray-400">{t.text}</p>
+                <span className="text-6xl text-slate-300 font-serif absolute -bottom-10 right-4 rotate-180 dark:text-gray-800">"</span>
               </div>
             ))}
           </div>
 
-          <button className="flex items-center gap-2 bg-[#222] text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-gray-700 transition-colors mt-8">
+          <button className="flex items-center gap-2 bg-slate-950 text-white text-sm font-medium px-6 py-2.5 rounded-full hover:bg-orange-600 transition-colors mt-8 dark:bg-[#222] dark:hover:bg-gray-700">
             View More
             <ArrowUpRight className="w-4 h-4" />
           </button>
@@ -434,22 +422,22 @@ export default function LandingPage() {
       </section>
 
       {/* 6. Contact Us Section */}
-      <section className="relative w-full bg-black px-8 py-24 flex flex-col items-center">
+      <section className="relative w-full bg-white px-8 py-24 flex flex-col items-center dark:bg-black">
         <div className="max-w-2xl w-full flex flex-col gap-12">
           <div className="text-center flex flex-col gap-4">
-            <span className="text-gray-400 text-sm tracking-widest uppercase">Contact Us</span>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-200">
+            <span className="text-slate-500 text-sm tracking-widest uppercase dark:text-gray-400">Contact Us</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-gray-200">
               Tell Us Your Goals
             </h2>
           </div>
 
           <form className="flex flex-col gap-5 w-full items-center mt-4">
-            <input type="text" placeholder="Name" className="w-full bg-transparent border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-gray-500 placeholder-gray-600" />
-            <input type="email" placeholder="Your email" className="w-full bg-transparent border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-gray-500 placeholder-gray-600" />
-            <input type="tel" placeholder="Mobile number" className="w-full bg-transparent border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-gray-500 placeholder-gray-600" />
-            <textarea placeholder="Additional Message" rows={5} className="w-full bg-transparent border border-gray-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-gray-500 resize-none placeholder-gray-600"></textarea>
+            <input type="text" placeholder="Name" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-950 focus:outline-none focus:border-orange-500 placeholder-slate-400 dark:bg-transparent dark:border-gray-800 dark:text-white dark:focus:border-gray-500 dark:placeholder-gray-600" />
+            <input type="email" placeholder="Your email" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-950 focus:outline-none focus:border-orange-500 placeholder-slate-400 dark:bg-transparent dark:border-gray-800 dark:text-white dark:focus:border-gray-500 dark:placeholder-gray-600" />
+            <input type="tel" placeholder="Mobile number" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-950 focus:outline-none focus:border-orange-500 placeholder-slate-400 dark:bg-transparent dark:border-gray-800 dark:text-white dark:focus:border-gray-500 dark:placeholder-gray-600" />
+            <textarea placeholder="Additional Message" rows={5} className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-950 focus:outline-none focus:border-orange-500 resize-none placeholder-slate-400 dark:bg-transparent dark:border-gray-800 dark:text-white dark:focus:border-gray-500 dark:placeholder-gray-600"></textarea>
 
-            <button type="button" className="flex items-center gap-2 bg-[#222] text-white text-sm font-medium px-8 py-2.5 rounded-full hover:bg-gray-700 transition-colors mt-4">
+            <button type="button" className="flex items-center gap-2 bg-slate-950 text-white text-sm font-medium px-8 py-2.5 rounded-full hover:bg-orange-600 transition-colors mt-4 dark:bg-[#222] dark:hover:bg-gray-700">
               Submit
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -458,56 +446,56 @@ export default function LandingPage() {
       </section>
 
       {/* 7. Newsletter & Footer */}
-      <footer className="relative w-full bg-black px-8 pt-24 pb-12 flex flex-col items-center">
+      <footer className="relative w-full bg-white px-8 pt-24 pb-12 flex flex-col items-center dark:bg-black">
         <div className="max-w-6xl w-full flex flex-col gap-24">
 
           <div className="flex flex-col items-center gap-6 text-center">
-            <h3 className="text-xl font-bold text-white tracking-widest uppercase">Newsletter</h3>
-            <p className="text-gray-400 text-sm">Subscribe to our newsletter for the latest updates and offers.</p>
+            <h3 className="text-xl font-bold text-slate-950 tracking-widest uppercase dark:text-white">Newsletter</h3>
+            <p className="text-slate-600 text-sm dark:text-gray-400">Subscribe to our newsletter for the latest updates and offers.</p>
             <div className="flex w-full max-w-sm mt-2">
-              <input type="email" placeholder="Your Email" className="flex-1 bg-[#222] border-none rounded-full px-6 py-3.5 text-sm text-white focus:outline-none placeholder-gray-500" />
+              <input type="email" placeholder="Your Email" className="flex-1 bg-slate-100 border-none rounded-full px-6 py-3.5 text-sm text-slate-950 focus:outline-none placeholder-slate-400 dark:bg-[#222] dark:text-white dark:placeholder-gray-500" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 w-full">
             <div className="flex flex-col gap-6">
-              <h2 className="text-3xl font-bold text-white tracking-tighter">AI.Now</h2>
+              <h2 className="text-3xl font-bold text-slate-950 tracking-tighter dark:text-white">AI.Now</h2>
               <div className="flex gap-4 mt-2">
                 {/* Social icons placeholders */}
-                <div className="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-xs text-white">f</div>
-                <div className="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-xs text-white">in</div>
-                <div className="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-xs text-white">x</div>
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-950 dark:bg-[#222] dark:text-white">f</div>
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-950 dark:bg-[#222] dark:text-white">in</div>
+                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs text-slate-950 dark:bg-[#222] dark:text-white">x</div>
               </div>
             </div>
 
             <div className="flex flex-col gap-4">
-              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-2">Quick Link</h4>
-              <Link href="#" className="text-gray-500 text-sm hover:text-white transition-colors">Home</Link>
-              <Link href="#" className="text-gray-500 text-sm hover:text-white transition-colors">Portfolio</Link>
-              <Link href="#" className="text-gray-500 text-sm hover:text-white transition-colors">Service</Link>
-              <Link href="#" className="text-gray-500 text-sm hover:text-white transition-colors">Blogs</Link>
-              <Link href="#" className="text-gray-500 text-sm hover:text-white transition-colors">Contact Us</Link>
+              <h4 className="text-slate-950 font-bold text-xs uppercase tracking-widest mb-2 dark:text-white">Quick Link</h4>
+              <Link href="#" className="text-slate-500 text-sm hover:text-slate-950 transition-colors dark:text-gray-500 dark:hover:text-white">Home</Link>
+              <Link href="#" className="text-slate-500 text-sm hover:text-slate-950 transition-colors dark:text-gray-500 dark:hover:text-white">Portfolio</Link>
+              <Link href="#" className="text-slate-500 text-sm hover:text-slate-950 transition-colors dark:text-gray-500 dark:hover:text-white">Service</Link>
+              <Link href="#" className="text-slate-500 text-sm hover:text-slate-950 transition-colors dark:text-gray-500 dark:hover:text-white">Blogs</Link>
+              <Link href="#" className="text-slate-500 text-sm hover:text-slate-950 transition-colors dark:text-gray-500 dark:hover:text-white">Contact Us</Link>
             </div>
 
             <div className="flex flex-col gap-4">
-              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-2">Contact Us</h4>
-              <p className="text-gray-500 text-sm">100 000 089 00</p>
-              <p className="text-gray-500 text-sm">ainow@gmail.com</p>
+              <h4 className="text-slate-950 font-bold text-xs uppercase tracking-widest mb-2 dark:text-white">Contact Us</h4>
+              <p className="text-slate-500 text-sm dark:text-gray-500">100 000 089 00</p>
+              <p className="text-slate-500 text-sm dark:text-gray-500">ainow@gmail.com</p>
             </div>
 
             <div className="flex flex-col gap-4">
-              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-2">Location</h4>
-              <p className="text-gray-500 text-sm leading-relaxed">
+              <h4 className="text-slate-950 font-bold text-xs uppercase tracking-widest mb-2 dark:text-white">Location</h4>
+              <p className="text-slate-500 text-sm leading-relaxed dark:text-gray-500">
                 41 neq Old, 22 Abroation Ave. San,<br />Francisco, CA
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-gray-900 text-xs text-gray-500">
+          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-slate-200 text-xs text-slate-500 dark:border-gray-900 dark:text-gray-500">
             <p>© 2024 AI.Now All rights reserved</p>
             <div className="flex gap-8 mt-4 md:mt-0">
-              <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
-              <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="#" className="hover:text-slate-950 transition-colors dark:hover:text-white">Terms of Service</Link>
+              <Link href="#" className="hover:text-slate-950 transition-colors dark:hover:text-white">Privacy Policy</Link>
             </div>
           </div>
 

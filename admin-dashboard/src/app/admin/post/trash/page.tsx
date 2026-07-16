@@ -23,7 +23,7 @@ export default async function PostTrashPage({
     <div className="space-y-4">
       <PostTrashTable posts={data} />
       <Suspense fallback={null}>
-        <PostPagination pagination={pagination} basePath="/post/trash" />
+        <PostPagination pagination={pagination} basePath="/admin/post/trash" />
       </Suspense>
     </div>
   );

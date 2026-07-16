@@ -7,13 +7,13 @@ import { useSearchParams } from "next/navigation";
 
 type PostPaginationProps = {
   pagination: PaginationType;
-  /** Default: /post */
+  /** Default: /admin/post */
   basePath?: string;
 };
 
 export function PostPagination({
   pagination,
-  basePath = "/post",
+  basePath = "/admin/post",
 }: PostPaginationProps) {
   const searchParams = useSearchParams();
   const currentPage = pagination.page ?? 1;

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminPageHeader } from "@/components/Layouts/admin-surface";
 import { MediaManager } from "@/components/media/media-manager";
 
 export const metadata: Metadata = {
@@ -8,16 +9,16 @@ export const metadata: Metadata = {
 export default function FilePage() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-y-4 rounded-[10px] bg-white p-6 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div>
-          <h2 className="text-title-md2 font-bold text-dark dark:text-white">
-            Quản lý Files
-          </h2>
-          <p className="mt-1 text-sm text-body">
-            Tải lên và quản lý tài liệu (PDF, DOC, DOCX, MD, TXT)
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        eyebrow="Media Library"
+        title="Quản lý Files"
+        description="Tải lên và quản lý tài liệu dùng trong khóa học, bài viết và tài nguyên học tập."
+        metrics={[
+          { label: "Loại", value: "File", tone: "blue" },
+          { label: "Định dạng", value: "PDF, DOC, TXT", tone: "green" },
+          { label: "Tối đa", value: "50MB", tone: "orange" },
+        ]}
+      />
       <MediaManager kind="file" />
     </div>
   );

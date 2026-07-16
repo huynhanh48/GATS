@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useSidebarContext } from "./sidebar-context";
 
 const menuItemBaseStyles = cva(
-  "rounded-lg px-3.5 font-medium text-dark-4 transition-all duration-200 dark:text-dark-6",
+  "rounded-xl px-3.5 font-medium text-slate-600 transition-all duration-200 dark:text-slate-300",
   {
     variants: {
       isActive: {
-        true: "bg-[rgba(87,80,241,0.07)] text-primary hover:bg-[rgba(87,80,241,0.07)] dark:bg-[#FFFFFF1A] dark:text-white",
+        true: "bg-[#eaf2ff] text-[#0070EB] shadow-sm hover:bg-[#eaf2ff] dark:bg-[#0f2742] dark:text-[#7ab8ff]",
         false:
-          "hover:bg-gray-100 hover:text-dark hover:dark:bg-[#FFFFFF1A] hover:dark:text-white",
+          "hover:bg-slate-100 hover:text-slate-950 dark:hover:bg-white/8 dark:hover:text-white",
       },
     },
     defaultVariants: {
@@ -24,6 +24,7 @@ export function MenuItem(
     className?: string;
     children: React.ReactNode;
     isActive: boolean;
+    isExpanded?: boolean;
   } & ({ as?: "button"; onClick: () => void } | { as: "link"; href: string }),
 ) {
   const { toggleSidebar, isMobile } = useSidebarContext();
@@ -37,7 +38,7 @@ export function MenuItem(
         className={cn(
           menuItemBaseStyles({
             isActive: props.isActive,
-            className: "relative block py-2",
+            className: "relative block py-2.5",
           }),
           props.className,
         )}
@@ -50,7 +51,7 @@ export function MenuItem(
   return (
     <button
       onClick={props.onClick}
-      aria-expanded={props.isActive}
+      aria-expanded={props.isExpanded ?? props.isActive}
       className={menuItemBaseStyles({
         isActive: props.isActive,
         className: "flex w-full items-center gap-3 py-3",

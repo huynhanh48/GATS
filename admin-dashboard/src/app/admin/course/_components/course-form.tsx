@@ -164,16 +164,54 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
             disabled={isPending}
           />
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <InputGroup
-              type="url"
-              name="thumbnail"
-              label="Thumbnail URL"
-              placeholder="https://..."
-              defaultValue={course?.thumbnail ?? ""}
-              handleChange={() => {}}
-              disabled={isPending}
-            />
+          <div className="space-y-3 rounded-xl border border-stroke p-4 dark:border-dark-3">
+            <div>
+              <p className="mb-1 text-sm font-semibold text-dark dark:text-white">
+                Thumbnail tạm (local)
+              </p>
+              <p className="mb-3 text-xs text-dark-4 dark:text-dark-6">
+                Chọn nhanh 1 trong 3 ảnh mẫu — hoặc dán URL bên dưới.
+              </p>
+              <div className="mb-3 grid grid-cols-3 gap-2">
+                {[
+                  "/images/courses/thumb-a.jpg",
+                  "/images/courses/thumb-b.jpg",
+                  "/images/courses/thumb-c.jpg",
+                ].map((src) => (
+                  <button
+                    key={src}
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => {
+                      const input = document.querySelector<HTMLInputElement>(
+                        'input[name="thumbnail"]',
+                      );
+                      if (input) {
+                        input.value = src;
+                        input.dispatchEvent(new Event("input", { bubbles: true }));
+                      }
+                    }}
+                    className="relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-stroke transition hover:border-primary dark:border-dark-3"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+              <InputGroup
+                type="text"
+                name="thumbnail"
+                label="Thumbnail URL / path"
+                placeholder="/images/courses/thumb-a.jpg"
+                defaultValue={course?.thumbnail ?? ""}
+                handleChange={() => {}}
+                disabled={isPending}
+              />
+            </div>
 
             <InputGroup
               type="url"
@@ -186,26 +224,37 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <InputGroup
-              type="number"
-              name="price"
-              label="Giá (VNĐ)"
-              placeholder="0"
-              defaultValue={course?.price?.toString() ?? ""}
-              handleChange={() => {}}
-              disabled={isPending}
-            />
+          <div className="space-y-3 rounded-xl border border-stroke p-4 dark:border-dark-3">
+            <div>
+              <p className="text-sm font-semibold text-dark dark:text-white">
+                Giá & khuyến mãi
+              </p>
+              <p className="mt-1 text-xs text-dark-4 dark:text-dark-6">
+                Để giá = 0 là miễn phí. Điền giá sale thấp hơn giá gốc để hiện
+                badge Sale trên /course.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <InputGroup
+                type="number"
+                name="price"
+                label="Giá gốc (VNĐ)"
+                placeholder="299000"
+                defaultValue={course?.price?.toString() ?? ""}
+                handleChange={() => {}}
+                disabled={isPending}
+              />
 
-            <InputGroup
-              type="number"
-              name="sale_price"
-              label="Giá khuyến mãi (VNĐ)"
-              placeholder="0"
-              defaultValue={course?.salePrice?.toString() ?? ""}
-              handleChange={() => {}}
-              disabled={isPending}
-            />
+              <InputGroup
+                type="number"
+                name="sale_price"
+                label="Giá sale (VNĐ)"
+                placeholder="Để trống nếu không sale"
+                defaultValue={course?.salePrice?.toString() ?? ""}
+                handleChange={() => {}}
+                disabled={isPending}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

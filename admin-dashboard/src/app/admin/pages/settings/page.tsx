@@ -1,5 +1,5 @@
-import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import { getBackendSession } from "@/lib/api/server";
+import { AdminPageHeader } from "@/components/Layouts/admin-surface";
+import { getAdminSession } from "@/lib/api/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PersonalInfoForm } from "./_components/personal-info";
@@ -10,19 +10,24 @@ export const metadata: Metadata = {
 };
 
 export default async function SettingsPage() {
-  const session = await getBackendSession();
+  const session = await getAdminSession();
 
   if (!session) {
-    redirect("/auth/sign-in");
+    redirect("/auth/sign-in?error=unauthorized");
   }
 
   const { user } = session;
 
   return (
     <div className="mx-auto w-full max-w-270">
-      <Breadcrumb pageName="Settings" />
+      <AdminPageHeader
+        eyebrow="Account"
+        title="Settings"
+        description="Quản lý thông tin tài khoản, ảnh đại diện và dữ liệu hồ sơ của admin."
+        className="mb-6"
+      />
 
-      <div className="grid grid-cols-5 gap-8">
+      <div className="grid grid-cols-5 gap-5 xl:gap-6">
         <div className="col-span-5 xl:col-span-3">
           <PersonalInfoForm
             name={user.name}

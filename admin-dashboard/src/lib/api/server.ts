@@ -91,6 +91,7 @@ export async function beFetch<T = unknown>(
   }
 }
 
+/** Any authenticated user (learner or admin). */
 export async function getBackendSession(): Promise<BackendSession | null> {
   const token = await getAccessToken();
   if (!token) return null;
@@ -98,8 +99,12 @@ export async function getBackendSession(): Promise<BackendSession | null> {
   const result = await beFetch<MeResponse>("/user/me");
   if (!result.ok || !result.data?.user) return null;
 
-  const user = mapUser(result.data.user);
-  if (!hasAdminAccess(user.roles)) return null;
+  return { user: mapUser(result.data.user) };
+}
 
-  return { user };
+/** Admin / instructor only — use for `/admin/**` pages. */
+export async function getAdminSession(): Promise<BackendSession | null> {
+  const session = await getBackendSession();
+  if (!session || !hasAdminAccess(session.user.roles)) return null;
+  return session;
 }

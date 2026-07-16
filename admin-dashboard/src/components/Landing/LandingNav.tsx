@@ -1,0 +1,149 @@
+"use client";
+
+import { hasAdminAccess } from "@/lib/auth/access";
+import { cn } from "@/lib/utils";
+import { logout, useSession } from "@/services/auth.client";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ThemeToggleSwitch } from "@/components/Layouts/header/theme-toggle";
+
+type LandingNavProps = {
+  active?:
+    | "home"
+    | "course"
+    | "posts"
+    | "cart"
+    | "my-courses"
+    | "product"
+    | "solution"
+    | "resource"
+    | "pricing"
+    | "about";
+  tone?: "dark" | "light";
+};
+
+export function LandingNav({ active = "home", tone = "dark" }: LandingNavProps) {
+  const session = useSession();
+  const router = useRouter();
+  const user = session.data?.user;
+  const isAdmin = user ? hasAdminAccess(user.roles) : false;
+  const isLight = tone === "light";
+  const linkClass = cn(
+    "cursor-pointer transition-colors",
+    isLight
+      ? "text-slate-600 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+      : "text-gray-400 hover:text-white",
+  );
+  const activeClass = cn(
+    "px-3 py-1",
+    isLight
+      ? "border border-slate-950 text-slate-950 dark:border-white dark:text-white"
+      : "border border-white text-white",
+  );
+
+  async function handleLogout() {
+    await logout();
+    router.push("/");
+    router.refresh();
+  }
+
+  return (
+    <nav
+      className={cn(
+        "relative z-10 flex items-center justify-center px-8 py-6 text-sm md:justify-between",
+        isLight ? "text-slate-600 dark:text-slate-300" : "text-gray-400",
+      )}
+    >
+      <div className="hidden md:flex gap-6 items-center">
+        <Link
+          href="/"
+          className={cn(linkClass, active === "home" && activeClass)}
+        >
+          Home
+        </Link>
+        <Link
+          href="/course"
+          className={cn(linkClass, active === "course" && activeClass)}
+        >
+          Course
+        </Link>
+        <Link
+          href="/posts"
+          className={cn(linkClass, active === "posts" && activeClass)}
+        >
+          Posts
+        </Link>
+      </div>
+
+      <Link
+        href="/"
+        className={cn(
+          "font-bold tracking-widest uppercase",
+          isLight ? "text-slate-950 dark:text-white" : "text-white",
+        )}
+      >
+        GATS ACADEMY
+      </Link>
+
+      <div className="absolute right-6 md:hidden">
+        <ThemeToggleSwitch />
+      </div>
+
+      <div className="hidden md:flex gap-6 items-center">
+        {user ? (
+          <>
+            <Link
+              href="/my-courses"
+              className={cn(linkClass, active === "my-courses" && activeClass)}
+            >
+              My courses
+            </Link>
+            <Link
+              href="/cart"
+              className={cn(linkClass, active === "cart" && activeClass)}
+            >
+              Cart
+            </Link>
+            {isAdmin ? (
+              <Link href="/admin" className={linkClass}>
+                Admin
+              </Link>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              className={cn(
+                "cursor-pointer transition-colors",
+                isLight
+                  ? "text-slate-600 hover:text-slate-950"
+                  + " dark:text-slate-300 dark:hover:text-white"
+                  : "text-gray-400 hover:text-white",
+              )}
+            >
+              Đăng xuất
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href="/auth/sign-in" className={linkClass}>
+              Đăng nhập
+            </Link>
+            <Link
+              href="/auth/sign-up"
+              className={cn(
+                "rounded-full border px-3 py-1 transition",
+                isLight
+                  ? "border-slate-300 text-slate-950 hover:bg-slate-950 hover:text-white"
+                  + " dark:border-slate-700 dark:text-white dark:hover:bg-white dark:hover:text-slate-950"
+                  : "border-gray-600 text-white hover:bg-white hover:text-black",
+              )}
+            >
+              Đăng ký
+            </Link>
+          </>
+        )}
+        <ThemeToggleSwitch />
+      </div>
+    </nav>
+  );
+}

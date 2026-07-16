@@ -7,13 +7,13 @@ import { useSearchParams } from "next/navigation";
 
 type CoursePaginationProps = {
   pagination: PaginationType;
-  /** Default: /course */
+  /** Default: /admin/course */
   basePath?: string;
 };
 
 export function CoursePagination({
   pagination,
-  basePath = "/course",
+  basePath = "/admin/course",
 }: CoursePaginationProps) {
   const searchParams = useSearchParams();
   const currentPage = pagination.page ?? 1;
