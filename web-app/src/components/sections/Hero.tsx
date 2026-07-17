@@ -84,6 +84,14 @@ export function Hero() {
           </motion.div>
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, x: 48, scale: 0.94 }}
+          animate={{ opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: 1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full h-[500px] lg:h-[620px] relative flex items-center justify-center"
+        >
+          <Robot3D themeColor={activeTheme.color} />
+        </motion.div>
       </div>
 
       <motion.div
@@ -115,10 +123,6 @@ export function Hero() {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={themeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>
                   <span className="font-bold text-sm tracking-wide text-slate-900 dark:text-white">GATS Academy</span>
                 </div>
-
-        <div className="w-full h-[500px] lg:h-[700px] relative flex items-center justify-center">
-          <Robot3D themeColor={activeTheme.color} />
-        </div>
               </div>
 
               {/* Search */}

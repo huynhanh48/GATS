@@ -13,7 +13,6 @@ import apiClient from "@/lib/apiClient";
 import { PathApi } from "@/constants/PathApi";
 import { PostListItem } from "../../../types/blog";
 import { fallbackCourses } from "../../../fallback/course";
-import { showToast } from "@/lib/toast";
 
 const gradients = [
   "from-blue-500 to-purple-600",
@@ -36,8 +35,8 @@ export function CourseCards() {
           setPosts(response.data);
         }
       } catch (error) {
-        console.error("Failed to fetch posts from backend:", error);
-        showToast.apiError(error);
+        // Backend unavailable: fall back to static courses without alarming the user
+        console.warn("Failed to fetch posts from backend, using fallback content:", error);
       } finally {
         setLoading(false);
       }
