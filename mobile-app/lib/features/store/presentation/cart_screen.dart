@@ -93,7 +93,7 @@ class _CartScreenState extends State<CartScreen> {
 
                       if (course == null) return const SizedBox.shrink();
 
-                      final singlePrice = course.price;
+                      final singlePrice = course.effectivePrice;
                       final totalItemPrice = singlePrice * quantity;
 
                       return Container(

@@ -9,12 +9,16 @@ class CourseItem {
     required this.tag,
     required this.lessonCount,
     required this.durationMinutes,
+    this.slug = '',
     this.isEnrolled = false,
     this.isFree = false,
     this.price = 0.0,
+    this.salePrice,
+    this.thumbnailUrl,
   });
 
   final String id;
+  final String slug;
   final String title;
   final String description;
   final double progress;
@@ -24,6 +28,23 @@ class CourseItem {
   final bool isEnrolled;
   final bool isFree;
   final double price;
+  /// Giá khuyến mãi (VND), khớp BE `salePrice`.
+  final double? salePrice;
+  final String? thumbnailUrl;
+
+  bool get hasActiveSale =>
+      !isFree &&
+      price > 0 &&
+      salePrice != null &&
+      salePrice! > 0 &&
+      salePrice! < price;
+
+  /// Giá thanh toán thực tế (giống CartService.finalPrice trên BE).
+  double get effectivePrice {
+    if (isFree || price <= 0) return 0;
+    if (hasActiveSale) return salePrice!;
+    return price;
+  }
 }
 
 class CourseLecture {
@@ -69,11 +90,16 @@ class AppCourse {
     required this.enrolledUserIds,
     required this.lectures,
     required this.quizzes,
+    this.slug = '',
     this.price = 0.0,
+    this.salePrice,
+    this.thumbnailUrl,
     this.progressByUser = const {},
   });
 
   final String id;
+  /// Khớp BE `slug` (slugify title). Dùng khi gọi `/api/courses/slug/:slug`.
+  final String slug;
   final String title;
   final String description;
   final String tag;
@@ -84,10 +110,26 @@ class AppCourse {
   final bool isPublished;
   final bool isFree;
   final double price;
+  final double? salePrice;
+  /// URL từ BE `thumbnail`; null → dùng asset cover local.
+  final String? thumbnailUrl;
   final Set<String> enrolledUserIds;
   final List<CourseLecture> lectures;
   final List<CourseQuiz> quizzes;
   final Map<String, double> progressByUser;
+
+  bool get hasActiveSale =>
+      !isFree &&
+      price > 0 &&
+      salePrice != null &&
+      salePrice! > 0 &&
+      salePrice! < price;
+
+  double get effectivePrice {
+    if (isFree || price <= 0) return 0;
+    if (hasActiveSale) return salePrice!;
+    return price;
+  }
 
   bool isEnrolledBy(String? userId) => isOwnedBy(userId);
 
@@ -106,6 +148,7 @@ class AppCourse {
     final enrolled = isEnrolledBy(userId);
     return CourseItem(
       id: id,
+      slug: slug,
       title: title,
       description: description,
       progress: enrolled ? progressFor(userId) : 0,
@@ -115,11 +158,14 @@ class AppCourse {
       isEnrolled: enrolled,
       isFree: isFree,
       price: price,
+      salePrice: salePrice,
+      thumbnailUrl: thumbnailUrl,
     );
   }
 
   AppCourse copyWith({
     String? id,
+    String? slug,
     String? title,
     String? description,
     String? tag,
@@ -130,6 +176,8 @@ class AppCourse {
     bool? isPublished,
     bool? isFree,
     double? price,
+    double? salePrice,
+    String? thumbnailUrl,
     Set<String>? enrolledUserIds,
     List<CourseLecture>? lectures,
     List<CourseQuiz>? quizzes,
@@ -137,6 +185,7 @@ class AppCourse {
   }) {
     return AppCourse(
       id: id ?? this.id,
+      slug: slug ?? this.slug,
       title: title ?? this.title,
       description: description ?? this.description,
       tag: tag ?? this.tag,
@@ -147,6 +196,8 @@ class AppCourse {
       isPublished: isPublished ?? this.isPublished,
       isFree: isFree ?? this.isFree,
       price: price ?? this.price,
+      salePrice: salePrice ?? this.salePrice,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       enrolledUserIds: enrolledUserIds ?? this.enrolledUserIds,
       lectures: lectures ?? this.lectures,
       quizzes: quizzes ?? this.quizzes,

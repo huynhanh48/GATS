@@ -5,7 +5,14 @@ import 'package:gats_academy/core/network/api_exception.dart';
 import 'package:http/http.dart' as http;
 
 abstract final class ApiClient {
-  static Uri _uri(String path) => Uri.parse('${ApiConfig.baseUrl}$path');
+  static Uri _uri(String path, [Map<String, String>? query]) {
+    final base = Uri.parse('${ApiConfig.baseUrl}$path');
+    if (query == null || query.isEmpty) return base;
+    return base.replace(queryParameters: {
+      ...base.queryParameters,
+      ...query,
+    });
+  }
 
   static Map<String, String> _headers({String? token, Map<String, String>? extra}) {
     final headers = <String, String>{
@@ -22,10 +29,11 @@ abstract final class ApiClient {
   static Future<Map<String, dynamic>> get(
     String path, {
     String? token,
+    Map<String, String>? query,
     Map<String, String>? headers,
   }) async {
     final response = await http
-        .get(_uri(path), headers: _headers(token: token, extra: headers))
+        .get(_uri(path, query), headers: _headers(token: token, extra: headers))
         .timeout(ApiConfig.timeout);
     return _decodeObject(response);
   }
@@ -42,6 +50,33 @@ abstract final class ApiClient {
           headers: _headers(token: token, extra: headers),
           body: body == null ? null : jsonEncode(body),
         )
+        .timeout(ApiConfig.timeout);
+    return _decodeObject(response);
+  }
+
+  static Future<Map<String, dynamic>> put(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+    Map<String, String>? headers,
+  }) async {
+    final response = await http
+        .put(
+          _uri(path),
+          headers: _headers(token: token, extra: headers),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(ApiConfig.timeout);
+    return _decodeObject(response);
+  }
+
+  static Future<Map<String, dynamic>> delete(
+    String path, {
+    String? token,
+    Map<String, String>? headers,
+  }) async {
+    final response = await http
+        .delete(_uri(path), headers: _headers(token: token, extra: headers))
         .timeout(ApiConfig.timeout);
     return _decodeObject(response);
   }

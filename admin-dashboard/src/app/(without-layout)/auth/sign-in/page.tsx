@@ -17,7 +17,7 @@ export default function SignIn() {
       </div>
 
       <div className="hidden w-full p-6 xl:block xl:w-1/2">
-        <div className="custom-gradient-1 overflow-hidden rounded-2xl px-15 pt-12.5 dark:bg-dark-2! dark:bg-none">
+        <div className="bg-gradient-to-br from-[#eef] to-[#fff8fc] dark:from-[#1a222c] dark:to-[#1a222c] overflow-hidden rounded-2xl px-15 pt-12.5 border border-transparent dark:border-slate-800">
           <Link className="mb-10 inline-block" href="/admin">
             <Image
               className="hidden dark:block"
@@ -34,15 +34,15 @@ export default function SignIn() {
               height={32}
             />
           </Link>
-          <p className="mb-3 text-xl font-medium text-dark dark:text-white">
+          <p className="mb-3 text-xl font-medium text-slate-800 dark:text-white">
             Sign in to your account
           </p>
 
-          <h1 className="mb-4 text-2xl font-bold text-dark dark:text-white sm:text-heading-3">
+          <h1 className="mb-4 text-2xl font-bold text-slate-950 dark:text-white sm:text-heading-3">
             Welcome Back!
           </h1>
 
-          <p className="w-full max-w-[375px] font-medium text-dark-4 dark:text-dark-6">
+          <p className="w-full max-w-[375px] font-medium text-slate-600 dark:text-slate-400">
             Please sign in to your account by completing the necessary fields
             below
           </p>

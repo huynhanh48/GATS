@@ -3,7 +3,10 @@
 import { hasAdminAccess } from "@/lib/auth/access";
 import { cn } from "@/lib/utils";
 import { logout, useSession } from "@/services/auth.client";
+import { cartClient } from "@/services/cart.client";
+import { ShoppingCart, Heart } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ThemeToggleSwitch } from "@/components/Layouts/header/theme-toggle";
 
@@ -28,6 +31,18 @@ export function LandingNav({ active = "home", tone = "dark" }: LandingNavProps) 
   const user = session.data?.user;
   const isAdmin = user ? hasAdminAccess(user.roles) : false;
   const isLight = tone === "light";
+  const [cartCount, setCartCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (user) {
+      cartClient.get().then((res) => {
+        if (res.data?.cart) {
+          setCartCount(res.data.cart.items.length);
+        }
+      });
+    }
+  }, [user]);
+
   const linkClass = cn(
     "cursor-pointer transition-colors",
     isLight
@@ -99,10 +114,23 @@ export function LandingNav({ active = "home", tone = "dark" }: LandingNavProps) 
               My courses
             </Link>
             <Link
-              href="/cart"
-              className={cn(linkClass, active === "cart" && activeClass)}
+              href="/wishlist"
+              className={cn(linkClass, active === "cart" ? "" : "")}
+              title="Yêu thích"
             >
-              Cart
+              <Heart className="size-5" />
+            </Link>
+            <Link
+              href="/cart"
+              className={cn(linkClass, "relative")}
+              title="Giỏ hàng"
+            >
+              <ShoppingCart className="size-5" />
+              {cartCount > 0 ? (
+                <span className="absolute -right-2 -top-2 flex size-4 items-center justify-center rounded-full bg-[#f97316] text-[10px] font-bold text-white">
+                  {cartCount}
+                </span>
+              ) : null}
             </Link>
             {isAdmin ? (
               <Link href="/admin" className={linkClass}>

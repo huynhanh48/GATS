@@ -60,6 +60,13 @@ class CourseCatalogLoader {
     return null;
   }
 
+  AppCourse? courseBySlug(String slug) {
+    for (final c in _courses) {
+      if (c.slug == slug) return c;
+    }
+    return null;
+  }
+
   String? categoryIdFor(String courseId) => _categoryByCourseId[courseId];
 
   Map<String, Set<String>> onboardingMetaFor(String courseId) {
@@ -126,8 +133,15 @@ class CourseCatalogLoader {
     final id = json['id'] as String;
     _categoryByCourseId[id] = json['categoryId'] as String? ?? '';
 
+    final price = (json['price'] as num?)?.toDouble() ?? 0;
+    final saleRaw = json['salePrice'];
+    final salePrice = saleRaw == null ? null : (saleRaw as num).toDouble();
+    final isFree = json['isFree'] as bool? ?? price <= 0;
+    final thumb = json['thumbnail'] as String?;
+
     return AppCourse(
       id: id,
+      slug: json['slug'] as String? ?? '',
       title: json['title'] as String,
       description: json['description'] as String,
       tag: json['tag'] as String,
@@ -136,8 +150,10 @@ class CourseCatalogLoader {
       mentorId: _mentorId,
       groupChatId: json['groupChatId'] as String,
       isPublished: json['isPublished'] as bool? ?? true,
-      isFree: json['isFree'] as bool? ?? false,
-      price: (json['price'] as num?)?.toDouble() ?? 0,
+      isFree: isFree,
+      price: price,
+      salePrice: salePrice,
+      thumbnailUrl: (thumb != null && thumb.isNotEmpty) ? thumb : null,
       enrolledUserIds: enrolledUserIds,
       progressByUser: progressByUser,
       lectures: lectures

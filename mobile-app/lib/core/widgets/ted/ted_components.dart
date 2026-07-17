@@ -329,7 +329,7 @@ class TedCourseCard extends StatelessWidget {
         ? context.l10n.storePurchased
         : course.isFree
             ? context.l10n.storeFree
-            : '${course.price.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
+            : '${course.effectivePrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
     // Viền tint (không dùng divider xám) + nền = background trang → không khung trắng/xám quanh ảnh.
     final cardBorder = gats.isStarry
         ? gats.divider.withValues(alpha: 0.55)

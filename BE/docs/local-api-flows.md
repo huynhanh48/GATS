@@ -93,20 +93,24 @@ Dừng infra: `npm run docker:down`.
 | Cơ chế | Chi tiết |
 |--------|----------|
 | Cookie | `access_token` (httpOnly) — set khi `POST /api/user/login` |
-| Header | `Authorization: Bearer <jwt>` cũng được chấp nhận |
-| CORS | `credentials: true`; origin trong `FRONTEND_URL` |
+| Body | Login cũng trả `token` (JWT) — mobile dùng `Authorization: Bearer` |
+| Header | `Authorization: Bearer <jwt>` được chấp nhận |
+| CORS | `credentials: true`; origin trong `FRONTEND_URL` (gồm `http://localhost:9000` nếu admin) |
 | CSRF (`originGuard`) | Prod: mutating method cần Origin allowlist. Dev: tool không Origin vẫn OK. Webhook Sepay được exempt. |
 
-**Gợi ý curl local:** dùng `-c cookies.txt -b cookies.txt` sau login, hoặc copy JWT nếu test Bearer.
+**Gợi ý curl local:** cookie (web) hoặc Bearer (mobile).
 
 ```bash
-# Login → lưu cookie
+# Login → lưu cookie + xem token trong body
 curl -s -c cookies.txt -X POST http://localhost:3000/api/user/login \
   -H "Content-Type: application/json" \
   -d '{"email":"admin@gmail.com","password":"<ADMIN_DEFAULT_PASSWORD>"}'
 
-# Gọi API có auth
+# Gọi API có auth (cookie)
 curl -s -b cookies.txt http://localhost:3000/api/user/me
+
+# Hoặc Bearer (mobile)
+# curl -s http://localhost:3000/api/user/me -H "Authorization: Bearer <token>"
 ```
 
 Admin mặc định lấy từ `ADMIN_DEFAULT_EMAIL` / `ADMIN_DEFAULT_PASSWORD` (bootstrap khi API start nếu được cấu hình).
@@ -125,7 +129,7 @@ sequenceDiagram
   API-->>C: user created (+ email verify nếu mail OK)
   C->>API: GET/POST /user/verify-email?token=...
   C->>API: POST /user/login
-  API-->>C: Set-Cookie access_token
+  API-->>C: Set-Cookie access_token + JSON token
   C->>API: GET /user/me
 ```
 
@@ -134,7 +138,7 @@ sequenceDiagram
 | 1 | POST | `/api/user/register` | no | `{ "user_name", "email", "password", "type": "default" }` |
 | 2 | GET | `/api/user/verify-email?token=` | no | HTML result page |
 | 2b | POST | `/api/user/verify-email` | no | `{ "token" }` JSON |
-| 3 | POST | `/api/user/login` | no | `{ "email" }` hoặc `{ "identifier" }` + `password` |
+| 3 | POST | `/api/user/login` | no | `{ "email" }` hoặc `{ "identifier" }` + `password` → `{ message, token, expiresAt }` + cookie |
 | 4 | GET | `/api/user/me` | yes | Current user + roles |
 | 5 | POST | `/api/user/logout` | yes | Clear cookie |
 

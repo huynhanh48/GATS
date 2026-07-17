@@ -151,7 +151,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      formatVndPrice(course.price),
+                                      formatVndPrice(course.effectivePrice),
                                       style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w800,

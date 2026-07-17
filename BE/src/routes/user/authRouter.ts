@@ -45,9 +45,10 @@ async function login(req: Request, res: Response) {
   const input = parseLoginInput(req.body);
   const result = await AuthService.login(input);
   res.cookie(ACCESS_TOKEN_COOKIE, result.token, AuthService.getCookieOptions());
-  // Token lives only in httpOnly cookie — do not expose to JS.
+  // Cookie for web (admin/web-app); `token` in body for mobile Bearer clients.
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in.',
+    token: result.token,
     expiresAt: result.expiresAt,
   });
 }

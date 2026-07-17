@@ -80,6 +80,13 @@ class MockCourseStore extends ChangeNotifier {
     return null;
   }
 
+  AppCourse? courseBySlug(String slug) {
+    for (final course in _courses) {
+      if (course.slug == slug) return course;
+    }
+    return null;
+  }
+
   AppCourse? courseByGroupChatId(String groupChatId) {
     for (final course in _courses) {
       if (course.groupChatId == groupChatId) return course;
@@ -176,6 +183,7 @@ class MockCourseStore extends ChangeNotifier {
     return [
       AppCourse(
         id: 'course-1',
+        slug: 'ai-cho-dan-van-phong',
         title: 'AI cho Dân văn phòng',
         description: 'Từ zero đến thành thạo AI trong công việc hàng ngày',
         tag: 'AI cho công sở',
@@ -186,6 +194,7 @@ class MockCourseStore extends ChangeNotifier {
         isPublished: true,
         isFree: false,
         price: 299000.0,
+        salePrice: 199000.0,
         enrolledUserIds: {userId},
         progressByUser: {userId: 0.35},
         lectures: const [
@@ -200,6 +209,7 @@ class MockCourseStore extends ChangeNotifier {
       ),
       AppCourse(
         id: 'course-2',
+        slug: 'prompt-engineering',
         title: 'Prompt Engineering',
         description: 'Viết prompt chuyên nghiệp cho mọi tình huống',
         tag: 'AI cho công sở',
@@ -221,6 +231,7 @@ class MockCourseStore extends ChangeNotifier {
       ),
       AppCourse(
         id: 'course-3',
+        slug: 'tu-dong-hoa-voi-ai',
         title: 'Tự động hóa với AI',
         description: 'Workflow và agent cho team nhỏ',
         tag: 'Automation',
@@ -228,9 +239,10 @@ class MockCourseStore extends ChangeNotifier {
         durationMinutes: 240,
         mentorId: mentorId,
         groupChatId: 'gc-course-3',
-        isPublished: false,
+        isPublished: true,
         isFree: false,
         price: 499000.0,
+        salePrice: 399000.0,
         enrolledUserIds: {},
         lectures: const [
           CourseLecture(id: 'l1', title: 'Workflow cơ bản', durationMinutes: 20),
@@ -239,6 +251,7 @@ class MockCourseStore extends ChangeNotifier {
       ),
       AppCourse(
         id: 'course-4',
+        slug: 'nhap-mon-lap-trinh-flutter',
         title: 'Nhập môn Lập trình Flutter',
         description: 'Tạo ứng dụng di động đa nền tảng nhanh chóng',
         tag: 'Lập trình',
@@ -259,6 +272,7 @@ class MockCourseStore extends ChangeNotifier {
       ),
       AppCourse(
         id: 'course-5',
+        slug: 'digital-marketing-thuc-chien',
         title: 'Digital Marketing Thực chiến',
         description: 'Tối ưu quảng cáo và tăng tỷ lệ chuyển đổi',
         tag: 'Marketing',
@@ -278,8 +292,9 @@ class MockCourseStore extends ChangeNotifier {
       ),
       AppCourse(
         id: 'course-6',
+        slug: 'tieng-anh-giao-tiep-co-ban',
         title: 'Tiếng Anh Giao tiếp cơ bản',
-        description: 'Tự tự giao tiếp tiếng Anh trong 30 ngày',
+        description: 'Tự tin giao tiếp tiếng Anh trong 30 ngày',
         tag: 'Ngoại ngữ',
         lessonCount: 30,
         durationMinutes: 900,
@@ -288,6 +303,7 @@ class MockCourseStore extends ChangeNotifier {
         isPublished: true,
         isFree: false,
         price: 149000.0,
+        salePrice: 99000.0,
         enrolledUserIds: {userId},
         progressByUser: {userId: 0.8},
         lectures: const [
@@ -297,6 +313,7 @@ class MockCourseStore extends ChangeNotifier {
       ),
       AppCourse(
         id: 'course-7',
+        slug: 'ky-nang-thuyet-trinh-truoc-dam-dong',
         title: 'Kỹ năng thuyết trình trước đám đông',
         description: 'Nói trước đám đông không còn là nỗi sợ',
         tag: 'Kỹ năng mềm',

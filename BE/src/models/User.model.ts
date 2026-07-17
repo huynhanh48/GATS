@@ -119,6 +119,8 @@ export const registerResponseSchema = z.object({
 
 export const loginResponseSchema = z.object({
   message: z.string(),
+  /** JWT for mobile / Bearer clients; web still uses httpOnly cookie. */
+  token: z.string(),
   expiresAt: z.coerce.date(),
 });
 

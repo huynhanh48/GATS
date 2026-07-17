@@ -21,7 +21,7 @@ class CartController extends ChangeNotifier {
     _items.forEach((courseId, qty) {
       final course = MockCourseStore.instance.courseById(courseId);
       if (course != null) {
-        total += course.price * qty;
+        total += course.effectivePrice * qty;
       }
     });
     return total;

@@ -97,7 +97,7 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
     }
 
     final isWishlist = CartController.instance.isInWishlist(course.id);
-    final singlePrice = course.price;
+    final singlePrice = course.effectivePrice;
     final totalPriceVal = singlePrice * _seats;
 
     return GatsThemedScaffold(
