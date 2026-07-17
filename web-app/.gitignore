@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/.pnpm-store/
 /.pnp
 .pnp.*
 .yarn/*
@@ -19,6 +20,9 @@
 
 # production
 /build
+
+# Large local 3D assets are not shipped with the web app
+/public/3d/
 
 # misc
 .DS_Store
