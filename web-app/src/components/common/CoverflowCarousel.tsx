@@ -4,11 +4,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 
 const experts = [
-  { id: 1, src: "/professional/person-1.jpg", name: "Chuyên gia GATS 1", role: "AI Research Lead" },
-  { id: 2, src: "/professional/person-2.jpg", name: "Chuyên gia GATS 2", role: "Machine Learning Engineer" },
-  { id: 3, src: "/professional/person-3.jpg", name: "Chuyên gia GATS 3", role: "Data Scientist" },
-  { id: 4, src: "/professional/person-4.jpg", name: "Chuyên gia GATS 4", role: "AI Solutions Architect" },
-  { id: 5, src: "/professional/person-5.jpg", name: "Chuyên gia GATS 5", role: "NLP Specialist" },
+  { id: 1, src: "/professional/person-1.jpg", name: "Liam Johnson", role: "AI Research Lead" },
+  { id: 2, src: "/professional/person-2.jpg", name: "Oliver Smith", role: "Machine Learning Engineer" },
+  { id: 3, src: "/professional/person-3.jpg", name: "Nguyễn Minh Quân", role: "Data Scientist" },
+  { id: 4, src: "/professional/person-4.jpg", name: "Nguyễn Tuệ Mẫn", role: "AI Solutions Architect" },
+  { id: 5, src: "/professional/person-5.jpg", name: "Lê Thùy Dương", role: "NLP Specialist" },
 ];
 
 const CARD_WIDTH = 300;
