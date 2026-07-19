@@ -11,6 +11,7 @@ import {
 import {
   fetchMe,
   loginRequest,
+  googleLoginRequest,
   logoutRequest,
   registerRequest,
   verifyEmailRequest,
@@ -96,6 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [markAuthenticated]
   );
 
+  const loginWithGoogle = useCallback(
+    async (idToken: string) => {
+      await googleLoginRequest(idToken);
+      const me = await fetchMe();
+      markAuthenticated(me);
+    },
+    [markAuthenticated]
+  );
+
   const register = useCallback(
     async (input: RegisterInput) => {
       const result = await registerRequest(input);
@@ -127,11 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: status === "authenticated" && user !== null,
       login,
+      loginWithGoogle,
       register,
       logout,
       refreshSession,
     }),
-    [status, user, login, register, logout, refreshSession]
+    [status, user, login, loginWithGoogle, register, logout, refreshSession]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -8,6 +8,7 @@ export type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   register: (
     input: RegisterInput
   ) => Promise<{ needsVerification: boolean }>;

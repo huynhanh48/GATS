@@ -5,6 +5,7 @@ const AuthPaths = {
   User:{
     _:"/user",
     Login: '/login',
+    GoogleLogin: '/auth/google',
     Register: '/register',
     Logout: '/logout',
     Me: '/me',

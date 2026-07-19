@@ -84,10 +84,12 @@ export function VideoUploadHud() {
             </div>
             {(job.status === "uploading" ||
               job.status === "queued" ||
-              job.status === "completing") && (
+              job.status === "completing" ||
+              job.status === "processing" ||
+              job.status === "error") && (
               <button
                 type="button"
-                title="Hủy upload"
+                title="Đóng / Hủy"
                 onClick={() => void abortUpload(job.id)}
                 className="rounded p-1 text-dark-4 hover:bg-gray-2 hover:text-red dark:hover:bg-dark-3"
               >

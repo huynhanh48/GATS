@@ -1,0 +1,403 @@
+﻿{
+    "course":  {
+                   "id":  "f6f8ba7e-5265-4a93-ae72-402aa4149501",
+                   "title":  "CHƯƠNG TRÌNH ĐÀO TẠO AI THỰC CHIẾN",
+                   "slug":  "chuong-trinh-djao-tao-ai-thuc-chien",
+                   "description":  "Dành cho doanh nghiệp \u0026 nhân viên văn phòng. Thời lượng: 6 buổi (3 giờ/buổi). Ứng dụng Generative AI, ChatGPT, Gemini, Claude, Automation và AI Agent vào công việc thực tế.",
+                   "thumbnail":  "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format\u0026fit=crop\u0026q=80\u0026w=800",
+                   "introVideo":  null,
+                   "price":  1999000,
+                   "salePrice":  999000,
+                   "level":  "beginner",
+                   "status":  "published",
+                   "createdAt":  "2026-07-18T00:05:38.046Z",
+                   "updatedAt":  "2026-07-18T00:05:38.046Z",
+                   "publishedAt":  null,
+                   "deletedAt":  null,
+                   "category":  {
+                                    "id":  "e9bbf34d-68b8-4b8b-84f5-104de92262bd",
+                                    "name":  "Khóa học",
+                                    "slug":  "course",
+                                    "type":  "course"
+                                },
+                   "tags":  [
+                                {
+                                    "id":  "212c53f8-b7f2-498b-9f67-bacb972027d7",
+                                    "name":  "AI",
+                                    "slug":  "ai",
+                                    "type":  "global"
+                                },
+                                {
+                                    "id":  "11b89941-febc-4dbf-bfa7-adbdcd215e29",
+                                    "name":  "Prompt Engineering",
+                                    "slug":  "prompt-engineering",
+                                    "type":  "course"
+                                }
+                            ],
+                   "author":  null,
+                   "stats":  {
+                                 "enrollmentCount":  0,
+                                 "ratingCount":  0,
+                                 "averageRating":  null,
+                                 "sectionCount":  6,
+                                 "lessonCount":  29,
+                                 "totalDurationSeconds":  26100
+                             },
+                   "learningOutcomes":  [
+
+                                        ],
+                   "includes":  [
+
+                                ],
+                   "sections":  [
+                                    {
+                                        "id":  "e9a11811-14ac-444d-8506-0664d1b63a94",
+                                        "title":  "Buổi 1. Tư duy AI \u0026 Làm quen với AI",
+                                        "order":  1,
+                                        "lessonCount":  6,
+                                        "totalDurationSeconds":  5400,
+                                        "lessons":  [
+                                                        {
+                                                            "id":  "afbe0413-ac95-4b57-ab6b-411ff56f826b",
+                                                            "title":  "1. Tổng quan AI",
+                                                            "description":  null,
+                                                            "type":  "video",
+                                                            "order":  1,
+                                                            "isPreview":  true,
+                                                            "duration":  900,
+                                                            "content":  "\u003ch3\u003e1. Tổng quan AI\u003c/h3\u003e\u003cp\u003eNội dung chi tiết cho phần: 1. Tổng quan AI sẽ được cập nhật trong khóa học.\u003c/p\u003e",
+                                                            "attachments":  [
+
+                                                                            ],
+                                                            "locked":  false
+                                                        },
+                                                        {
+                                                            "id":  "3befdae9-4985-4512-a52b-b37f84fa8315",
+                                                            "title":  "2. Khả năng của AI",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  2,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "8a2241c0-cfe3-4e46-a4db-74f3bf2270ce",
+                                                            "title":  "3. Những hạn chế của AI",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  3,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "7a9ab4bf-b024-4b71-b9f7-e954aee4826d",
+                                                            "title":  "4. AI trong doanh nghiệp",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  4,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "cbadc260-9e57-45a8-9d6c-b9f1e07f84a6",
+                                                            "title":  "5. Hệ sinh thái AI phổ biến",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  5,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "c501f8b3-d6c6-42cf-aa12-12738d70dd3f",
+                                                            "title":  "Thực hành (Buổi 1)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  6,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "2485d20e-a20e-4f72-9ec2-6aca4ea3fd0b",
+                                        "title":  "Buổi 2. Prompt Engineering",
+                                        "order":  2,
+                                        "lessonCount":  4,
+                                        "totalDurationSeconds":  3600,
+                                        "lessons":  [
+                                                        {
+                                                            "id":  "d5d943cc-8ff6-4154-8e63-279b8ef1b958",
+                                                            "title":  "1. AI hiểu Prompt như thế nào",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  1,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "ea30b62b-14af-4fe1-bace-52ef173c3bb9",
+                                                            "title":  "2. Công thức Prompt chuẩn",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  2,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "02db87c0-ce45-48b3-ac92-f116e89b15e6",
+                                                            "title":  "3. Prompt cho từng công việc",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  3,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "2ac09345-c60b-40d7-a513-7ab85b2a78d4",
+                                                            "title":  "Thực hành (Buổi 2)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  4,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "5569e257-a70b-464e-a1e5-18c19109053b",
+                                        "title":  "Buổi 3. Làm việc với Gemini \u0026 Google Workspace",
+                                        "order":  3,
+                                        "lessonCount":  7,
+                                        "totalDurationSeconds":  6300,
+                                        "lessons":  [
+                                                        {
+                                                            "id":  "f28aecba-b0a6-4921-b7da-7e77a3034e06",
+                                                            "title":  "Gemini",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  1,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "d4306e34-eccd-4c0a-ab92-837c1e277450",
+                                                            "title":  "Google Docs",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  2,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "f5f8fb76-4d07-4523-a4bd-97ae0c51caa0",
+                                                            "title":  "Google Sheets",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  3,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "7604a0ad-9ce1-4545-9dfb-193f5775f626",
+                                                            "title":  "Google Slides",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  4,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "4b21c1cc-9a6d-4d2a-b425-17d907138045",
+                                                            "title":  "Google Meet",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  5,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "d17d6b03-f7b4-4446-8bd4-81750b0e44c6",
+                                                            "title":  "Google Drive",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  6,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "d8244595-a3ab-40c7-9183-e2c32bbfefa0",
+                                                            "title":  "Thực hành (Buổi 3)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  7,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "aabfc824-b27d-4128-997f-6513ad85e057",
+                                        "title":  "Buổi 4. AI Research \u0026 Quản lý tri thức (Nâng cao)",
+                                        "order":  4,
+                                        "lessonCount":  4,
+                                        "totalDurationSeconds":  3600,
+                                        "lessons":  [
+                                                        {
+                                                            "id":  "8eb1bbc7-bc77-42fa-add2-fe48ca888260",
+                                                            "title":  "NotebookLM",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  1,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "2d55761e-413c-4e55-9214-43a3727df962",
+                                                            "title":  "Perplexity",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  2,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "cff28864-f4ec-431f-9e23-137569d3ce8b",
+                                                            "title":  "Deep Research",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  3,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "fce917d6-5f10-4561-9ab3-487196b22920",
+                                                            "title":  "Thực hành (Buổi 4)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  4,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "959e1f96-c511-4642-a108-95c5d7f0dd91",
+                                        "title":  "Buổi 5. AI Multimedia (Nâng cao)",
+                                        "order":  5,
+                                        "lessonCount":  5,
+                                        "totalDurationSeconds":  4500,
+                                        "lessons":  [
+                                                        {
+                                                            "id":  "d44fad4f-4cbd-4ed4-a998-72ed57f22032",
+                                                            "title":  "Hình ảnh (Imagen, Midjourney, Flux)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  1,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "39fd05d0-cfad-4b36-a763-9e411ba56004",
+                                                            "title":  "Video (Veo, Kling, Runway, CapCut AI)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  2,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "e913169b-c70a-4b8e-b946-c28669682024",
+                                                            "title":  "Voice (ElevenLabs) \u0026 Music (Suno)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  3,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "06728312-e289-41cc-98cf-5eedb53dc096",
+                                                            "title":  "Avatar (HeyGen)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  4,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "3b0b21ac-1e70-4b9e-95a5-d591d29de9ff",
+                                                            "title":  "Thực hành (Buổi 5)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  5,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        }
+                                                    ]
+                                    },
+                                    {
+                                        "id":  "d6dc714d-94f4-468a-bdef-205742b9a30b",
+                                        "title":  "Buổi 6. AI Automation \u0026 AI Agent (Nâng cao)",
+                                        "order":  6,
+                                        "lessonCount":  3,
+                                        "totalDurationSeconds":  2700,
+                                        "lessons":  [
+                                                        {
+                                                            "id":  "48c37b64-e089-4e58-8dfe-e965c4412f24",
+                                                            "title":  "Automation (n8n, Make)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  1,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "b042fcae-84f1-474b-9502-796b9d5c67b0",
+                                                            "title":  "AI Agent (MCP, RAG, Vector Database)",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  2,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        },
+                                                        {
+                                                            "id":  "4a65f769-4be4-4df6-b49b-63298dce1405",
+                                                            "title":  "Demo Chatbot \u0026 RAG doanh nghiệp",
+                                                            "description":  null,
+                                                            "type":  "text",
+                                                            "order":  3,
+                                                            "isPreview":  false,
+                                                            "duration":  900,
+                                                            "locked":  true
+                                                        }
+                                                    ]
+                                    }
+                                ]
+               }
+}

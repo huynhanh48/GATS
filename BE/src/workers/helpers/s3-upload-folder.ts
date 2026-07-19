@@ -179,6 +179,11 @@ export function createHlsProgressiveUploader(options: {
         .then(() => {
           uploaded.add(filePath);
         })
+        .catch((err) => {
+          // Swallow error here to prevent unhandled rejection crash.
+          // stopAndFinalize will retry any failed/missing uploads and throw properly.
+          // console.error(`[ProgressiveUpload] failed for ${filePath}:`, err);
+        })
         .finally(() => {
           activeWorkers -= 1;
           inFlight.delete(job);

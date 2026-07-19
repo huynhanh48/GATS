@@ -97,7 +97,14 @@ async function listByCourse(courseId: string, actorUserId: number) {
 
 async function listMine(userId: number) {
   const data = await EnrollmentRepo.listByUser(userId);
-  return { data };
+  const result = [];
+  for (const enr of data) {
+    const course = await CourseRepo.findById(enr.courseId);
+    if (course) {
+      result.push({ ...enr, course });
+    }
+  }
+  return { data: result };
 }
 
 async function revoke(courseId: string, targetUserId: number, actorUserId: number) {

@@ -8,9 +8,14 @@ export interface Post {
   content?: string | null;
   thumbnail?: string | null;
   status: string;
+  visibility?: 'public' | 'private' | 'members_only';
   createdAt: string;
   updatedAt: string;
   publishedAt?: string | null;
+  viewCount?: number;
+  likeCount?: number;
+  commentCount?: number;
+  isLiked?: boolean;
   category?: CourseCategory | null;
   tags?: CourseTag[];
   author?: CourseAuthor | null;

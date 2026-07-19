@@ -187,21 +187,10 @@ export function CourseCatalog({
               Khóa học GATS
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-              {showAll
-                ? "Đang hiển thị toàn bộ khóa học từ backend."
-                : `Đang hiển thị ${mockCount ?? courses.length} khóa đồng bộ với trang public /course.`}
+              Đang hiển thị {courses.length} khóa học từ hệ thống.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                router.push(showAll ? "/admin/course" : "/admin/course?all=1")
-              }
-            >
-              {showAll ? "Chỉ /course" : "Tất cả BE"}
-            </Button>
             <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
               <button
                 type="button"

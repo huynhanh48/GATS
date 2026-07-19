@@ -112,14 +112,31 @@ export async function completeMultipartUpload(
       ETag: normalizeEtag(part.etag),
     }));
 
-  await getS3Client().send(
-    new CompleteMultipartUploadCommand({
-      Bucket: getS3Bucket(),
-      Key: normalizeKey(key),
-      UploadId: uploadId,
-      MultipartUpload: { Parts: completedParts },
-    }),
-  );
+  const command = new CompleteMultipartUploadCommand({
+    Bucket: getS3Bucket(),
+    Key: normalizeKey(key),
+    UploadId: uploadId,
+    MultipartUpload: { Parts: completedParts },
+  });
+
+  let lastError: any;
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    try {
+      await getS3Client().send(command);
+      return;
+    } catch (error: any) {
+      lastError = error;
+      const is502 = error?.$metadata?.httpStatusCode === 502;
+      const isXmlError = error?.message?.includes('XML parse error');
+      if (is502 || isXmlError) {
+        console.warn(`[completeMultipartUpload] S3 returned 502/XML error (attempt ${attempt}/4). Retrying in ${attempt}s...`);
+        await new Promise((res) => setTimeout(res, attempt * 1000));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
 
 export async function abortMultipartUpload(

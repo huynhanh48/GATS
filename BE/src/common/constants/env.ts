@@ -95,6 +95,7 @@ const EnvVars = jetEnv({
   /** VNPay */
   VnpTmnCode: optionalStr,
   VnpHashSecret: optionalStr,
+  GoogleClientId: optionalStr,
 });
 
 /******************************************************************************

@@ -363,10 +363,22 @@ export function VideoManager() {
                                   />
                                   <DropdownMenuContent align="end">
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        if (rec?.mp4Url) window.open(rec.mp4Url, '_blank');
+                                      onClick={async () => {
+                                        if (!rec || !selectedCourse) return;
+                                        try {
+                                          const toastId = toast.loading("Đang lấy link video...");
+                                          const res = await videoClient.getPlayback(selectedCourse.id, rec.videoId);
+                                          toast.dismiss(toastId);
+                                          if (res.error || !res.data?.data) {
+                                            toast.error(res.error?.message || "Không lấy được link phát video");
+                                            return;
+                                          }
+                                          window.open(res.data.data.playbackUrl, '_blank', 'noopener,noreferrer');
+                                        } catch {
+                                          toast.error("Lỗi khi lấy link video");
+                                        }
                                       }}
-                                      disabled={!rec || rec.status !== "ready" || !rec.mp4Url}
+                                      disabled={!rec || rec.status !== "ready"}
                                     >
                                       Xem video
                                     </DropdownMenuItem>
@@ -380,7 +392,7 @@ export function VideoManager() {
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => setVideoToDelete({ videoId: rec!.videoId, lessonId: les.id })}
-                                      disabled={!rec || rec.status !== "ready"}
+                                      disabled={!rec || (rec.status !== "ready" && rec.status !== "failed")}
                                       className="text-red-600 focus:text-red-600"
                                     >
                                       Xóa

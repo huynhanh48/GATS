@@ -9,6 +9,7 @@ import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/data/api/course_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
@@ -68,7 +69,7 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
     });
   }
 
-  void _enrollFree(AppCourse course) {
+  Future<void> _enrollFree(AppCourse course) async {
     final userId = _userId;
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -76,7 +77,24 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
       );
       return;
     }
+
+    // 1. Cập nhật local cache ngay để UI phản hồi nhanh
     CourseModule.repository.enroll(course.id, userId);
+
+    // 2. Gọi API BE
+    try {
+      final token = await AuthPrefs.accessToken();
+      if (token != null) {
+        await CourseApiService.enrollFree(
+          courseId: course.id,
+          token: token,
+        );
+      }
+    } catch (e) {
+      // Đã enroll rồi hoặc lỗi khác — giữ local update vừa thực hiện
+      debugPrint('enrollFree API error (ignored): $e');
+    }
+
     if (!mounted) return;
     GatsMainNavigator.pushReplacement<void, void>(
       context,

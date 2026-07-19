@@ -5,6 +5,7 @@ import { mailService } from '@src/common/utils/mail';
 import { comparePassword, hashPassword } from '@src/common/utils/password';
 import { RouteError } from '@src/common/utils/route-errors';
 import logger from 'jet-logger';
+import { OAuth2Client } from 'google-auth-library';
 import {
   type LoginInput,
   type RegisterInput,
@@ -21,6 +22,7 @@ import {
   createVerifyToken,
   findByEmail,
   findByEmailOrUserName,
+  findByUserName,
   findById,
   findByUserName,
   findByVerifyToken,
@@ -29,6 +31,7 @@ import {
   clearSession,
   setVerified,
   toPublicUser,
+  update,
 } from '@src/repos/UserRepo';
 
 const Errors = {
@@ -146,7 +149,83 @@ async function login(input: LoginInput) {
   return { token, expiresAt };
 }
 
+async function googleLogin(idToken: string) {
+  if (!EnvVars.GoogleClientId) {
+    throw new RouteError(
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      'Google Login is not configured',
+    );
+  }
+
+  const client = new OAuth2Client(EnvVars.GoogleClientId);
+  const ticket = await client.verifyIdToken({
+    idToken,
+    audience: EnvVars.GoogleClientId,
+  });
+
+  const payload = ticket.getPayload();
+  if (!payload || !payload.email) {
+    throw new RouteError(
+      HttpStatusCodes.UNAUTHORIZED,
+      'Invalid Google Token',
+    );
+  }
+
+  let user = await findByEmail(payload.email);
+
+  if (!user) {
+    let baseUserName = payload.name || payload.email.split('@')[0];
+    if (baseUserName.length > 40) {
+      baseUserName = baseUserName.substring(0, 40);
+    }
+    
+    let uniqueUserName = baseUserName;
+    let suffix = 1;
+    while (await findByUserName(uniqueUserName)) {
+       uniqueUserName = `${baseUserName}_${suffix}`;
+       suffix++;
+    }
+
+    // Register new user automatically
+    user = await create({
+      userName: uniqueUserName,
+      email: payload.email,
+      passwordHash: null,
+      type: 'google',
+      providerId: payload.sub,
+      verifyToken: createVerifyToken(),
+      verified: true, // Google email is already verified
+    });
+
+    const defaultRole = await findByName('user');
+    if (defaultRole) {
+      await assignRoleToUser(user.id, defaultRole.id);
+    }
+  }
+
+  const token = signToken({ userId: user.id, email: user.email });
+  const expiresAt = getTokenExpiresAt(token);
+  await saveSession(user.id, token, expiresAt);
+
+  return { token, expiresAt };
+}
+
 async function me(userId: number): Promise<UserPublic> {
+  return getUserPublic(userId);
+}
+
+async function updateMe(userId: number, data: { userName?: string }): Promise<UserPublic> {
+  // Validate if userName is provided and not empty
+  if (data.userName) {
+    if (data.userName.length < 3 || data.userName.length > 50) {
+      throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Username must be between 3 and 50 characters');
+    }
+    const existing = await findByUserName(data.userName);
+    if (existing && existing.id !== userId) {
+      throw new RouteError(HttpStatusCodes.CONFLICT, Errors.USERNAME_EXISTS);
+    }
+    await update(userId, { userName: data.userName });
+  }
   return getUserPublic(userId);
 }
 
@@ -220,7 +299,9 @@ export default {
   Errors,
   register,
   login,
+  googleLogin,
   me,
+  updateMe,
   verifyEmail,
   authenticate,
   logout,

@@ -306,19 +306,12 @@ export function VideoUploader({
     window.open(res.data.data.playbackUrl, "_blank", "noopener,noreferrer");
   }
 
-  const showExistingCard =
-    Boolean(video) &&
-    !uploading &&
-    (video!.status === "ready" ||
-      video!.status === "uploaded" ||
-      video!.status === "processing");
+  const showExistingCard = Boolean(video) && !uploading;
 
   const showUploadForm =
     uploading ||
     bgJob?.status === "error" ||
-    !video ||
-    video.status === "failed" ||
-    video.status === "pending_upload";
+    !video;
 
   return (
     <div className="space-y-4">

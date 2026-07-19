@@ -9,6 +9,7 @@ const authRouter = Router();
 
 authRouter.post(AuthPaths.User.Register, authHandlers.register);
 authRouter.post(AuthPaths.User.Login, authHandlers.login);
+authRouter.post(AuthPaths.User.GoogleLogin, authHandlers.googleLogin);
 authRouter.post(AuthPaths.User.VerifyEmail, authHandlers.verifyEmail);
 authRouter.get(AuthPaths.User.VerifyEmail, authHandlers.verifyEmailByLink);
 authRouter.post(
@@ -17,6 +18,7 @@ authRouter.post(
   authHandlers.logout,
 );
 authRouter.get(AuthPaths.User.Me, errorHandle(authMiddleware), authHandlers.me);
+authRouter.put(AuthPaths.User.Me, errorHandle(authMiddleware), authHandlers.updateMe);
 
 apiRouter.use(AuthPaths.User._, authRouter);
 export default apiRouter;

@@ -274,23 +274,21 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
               </select>
             </div>
 
-            {mode === "edit" && (
-              <div>
-                <label className="mb-2.5 block font-medium text-dark dark:text-white">
-                  Trạng thái
-                </label>
-                <select
-                  name="status"
-                  defaultValue={course?.status ?? "draft"}
-                  disabled={isPending}
-                  className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-dark transition outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
-                >
-                  <option value="draft">Nháp</option>
-                  <option value="published">Đã xuất bản</option>
-                  <option value="archived">Lưu trữ</option>
-                </select>
-              </div>
-            )}
+            <div>
+              <label className="mb-2.5 block font-medium text-dark dark:text-white">
+                Trạng thái
+              </label>
+              <select
+                name="status"
+                defaultValue={course?.status ?? "draft"}
+                disabled={isPending}
+                className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-dark transition outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
+              >
+                <option value="draft">Nháp</option>
+                <option value="published">Đã xuất bản</option>
+                <option value="archived">Lưu trữ</option>
+              </select>
+            </div>
           </div>
 
           <CategorySelect

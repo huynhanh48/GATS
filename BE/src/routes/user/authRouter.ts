@@ -53,6 +53,21 @@ async function login(req: Request, res: Response) {
   });
 }
 
+async function googleLogin(req: Request, res: Response) {
+  const { idToken } = req.body;
+  if (!idToken || typeof idToken !== 'string') {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'idToken is required');
+  }
+
+  const result = await AuthService.googleLogin(idToken);
+  res.cookie(ACCESS_TOKEN_COOKIE, result.token, AuthService.getCookieOptions());
+  return res.status(HttpStatusCodes.OK).json({
+    message: 'Logged in with Google.',
+    token: result.token,
+    expiresAt: result.expiresAt,
+  });
+}
+
 async function logout(req: Request, res: Response) {
   if (!req.authUser) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
@@ -67,6 +82,14 @@ async function me(req: Request, res: Response) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
   }
   const user = await AuthService.me(req.authUser.id);
+  return res.status(HttpStatusCodes.OK).json({ user });
+}
+
+async function updateMe(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const user = await AuthService.updateMe(req.authUser.id, req.body);
   return res.status(HttpStatusCodes.OK).json({ user });
 }
 
@@ -116,8 +139,10 @@ async function verifyEmailByLink(req: Request, res: Response) {
 export default {
   register: errorHandle(register),
   login: errorHandle(login),
+  googleLogin: errorHandle(googleLogin),
   logout: errorHandle(logout),
   me: errorHandle(me),
+  updateMe: errorHandle(updateMe),
   verifyEmail: errorHandle(verifyEmail),
   verifyEmailByLink: errorHandle(verifyEmailByLink),
 } as const;

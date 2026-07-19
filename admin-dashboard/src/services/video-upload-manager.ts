@@ -145,6 +145,58 @@ function videoProgressLabel(payload: VideoProgressPayload): string {
 
 function bindVideoRealtime(job: InternalJob, videoId: string): void {
   if (job.realtimeUnsubscribe) return;
+
+  let pollInterval: ReturnType<typeof setInterval> | null = null;
+  let isPolling = false;
+
+  const startPolling = () => {
+    if (pollInterval) return;
+    pollInterval = setInterval(async () => {
+      if (isPolling) return;
+      isPolling = true;
+      try {
+        const res = await videoClient.getVideoStatus(videoId);
+        if (res.data?.data) {
+          const status = res.data.data.status;
+          if (status === "failed") {
+            updateSnapshot(job, {
+              status: "error",
+              errorMessage: "Xử lý video thất bại tại backend.",
+              stageLabel: "Xử lý video thất bại",
+            });
+            stopPolling();
+          } else if (status === "ready") {
+            updateSnapshot(job, {
+              status: "done",
+              progressPct: 100,
+              stageLabel: "Video đã sẵn sàng",
+            });
+            toast.success(`Video đã xử lý xong: ${job.snapshot.title}`);
+            stopPolling();
+            setTimeout(() => {
+              jobs.delete(job.snapshot.id);
+              emit();
+            }, 4500);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to poll video status", e);
+      } finally {
+        isPolling = false;
+      }
+    }, 3000);
+  };
+
+  const stopPolling = () => {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  };
+
+  // Start polling immediately as fallback for socket
+  startPolling();
+
   job.realtimeUnsubscribe = subscribeToVideoProgress(videoId, (payload) => {
     if (payload.status === "failed" || payload.phase === "failed") {
       updateSnapshot(job, {
@@ -155,6 +207,7 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
         stageLoadedBytes: payload.loadedBytes ?? null,
         stageTotalBytes: payload.totalBytes ?? null,
       });
+      stopPolling();
       return;
     }
 
@@ -169,6 +222,7 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
       toast.success(`Video đã xử lý xong: ${job.snapshot.title}`);
       job.realtimeUnsubscribe?.();
       job.realtimeUnsubscribe = null;
+      stopPolling();
       setTimeout(() => {
         jobs.delete(job.snapshot.id);
         emit();
@@ -202,6 +256,12 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
       stageTotalBytes: payload.totalBytes ?? null,
     });
   });
+
+  const originalUnsubscribe = job.realtimeUnsubscribe;
+  job.realtimeUnsubscribe = () => {
+    stopPolling();
+    originalUnsubscribe();
+  };
 }
 
 function toPersisted(job: InternalJob): PersistedUploadJob | null {

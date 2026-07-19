@@ -6,30 +6,30 @@ import Image from "next/image";
 const testimonials = [
   {
     quote: "Chương trình đào tạo AI của GATS Academy thực sự đã thay đổi cách chúng tôi làm việc. Năng suất của team tăng lên gấp đôi nhờ áp dụng các trợ lý ảo vào quy trình.",
-    author: "Nguyễn Văn A",
+    author: "Nguyễn Minh Quân",
     role: "Giám đốc Kỹ thuật",
-    avatar: "/avatar/user-1.jpg",
+    avatar: "/professional/person-3.jpg",
     company: "TechCorp"
   },
   {
     quote: "Các khóa học vô cùng thực chiến. Không chỉ học lý thuyết, chúng tôi được tự tay thiết kế và triển khai AI để tối ưu hóa chiến dịch quảng cáo cho doanh nghiệp mình.",
-    author: "Trần Thị B",
+    author: "Lê Thùy Dương",
     role: "Trưởng phòng Marketing",
-    avatar: "/avatar/user-2.jpg",
+    avatar: "/professional/person-5.jpg",
     company: "CreativeAgency"
   },
   {
     quote: "Việc ứng dụng AI vào phân tích dữ liệu giúp chúng tôi tiết kiệm hàng tuần làm việc mỗi tháng. Khóa học này là khoản đầu tư xứng đáng nhất của chúng tôi trong năm nay!",
-    author: "Lê Văn C",
+    author: "Liam Johnson",
     role: "Giám đốc Vận hành",
-    avatar: "/avatar/user-3.jpg",
+    avatar: "/professional/person-1.jpg",
     company: "GlobalLogistics"
   },
   {
     quote: "Nhờ có khóa học Prompt Engineering, đội ngũ content của tôi đã tăng gấp 3 tốc độ sản xuất nội dung, vượt mọi KPI đề ra mà vẫn duy trì chất lượng vượt trội.",
-    author: "Phạm Thị D",
+    author: "Nguyễn Tuệ Mẫn",
     role: "Content Manager",
-    avatar: "/avatar/user-4.jpg",
+    avatar: "/professional/person-4.jpg",
     company: "MediaPlus"
   }
 ];
@@ -76,13 +76,11 @@ export function Testimonials() {
               className="absolute inset-0"
             >
               <div className="flex gap-6 items-start md:items-center">
-                <div className="flex-shrink-0 relative w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden mt-2 md:mt-0 shadow-2xl border border-white/10">
-                  <Image 
+                <div className="flex-shrink-0 relative w-16 h-20 md:w-24 md:h-28 rounded-xl overflow-hidden mt-2 md:mt-0 shadow-2xl border border-white/10">
+                  <img 
                     src={testimonials[currentIndex].avatar} 
                     alt={testimonials[currentIndex].author}
-                    fill
-                    sizes="(max-width: 768px) 64px, 80px"
-                    className="object-cover"
+                    className="w-full h-full object-cover object-top"
                   />
                 </div>
                 <h3 className="text-2xl md:text-4xl font-medium tracking-tight leading-snug md:leading-normal text-balance">

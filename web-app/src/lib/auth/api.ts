@@ -18,6 +18,14 @@ export async function loginRequest(
   }) as Promise<LoginResponse>;
 }
 
+export async function googleLoginRequest(
+  idToken: string
+): Promise<LoginResponse> {
+  return apiClient.post(PathApi.auth.googleLogin, {
+    idToken,
+  }) as Promise<LoginResponse>;
+}
+
 export async function registerRequest(
   input: RegisterInput
 ): Promise<RegisterResponse> {

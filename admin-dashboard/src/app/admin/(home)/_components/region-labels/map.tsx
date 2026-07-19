@@ -7,7 +7,12 @@ import "@/js/us-aea-en";
 
 export default function Map() {
   useEffect(() => {
-    new jsVectorMap({
+    const mapElement = document.getElementById("mapOne");
+    if (mapElement) {
+      mapElement.innerHTML = "";
+    }
+
+    const map = new jsVectorMap({
       selector: "#mapOne",
       map: "us_aea_en",
       zoomButtons: true,
@@ -37,6 +42,15 @@ export default function Map() {
         },
       },
     });
+
+    return () => {
+      if (map && typeof map.destroy === "function") {
+        map.destroy();
+      }
+      if (mapElement) {
+        mapElement.innerHTML = "";
+      }
+    };
   }, []);
 
   return (

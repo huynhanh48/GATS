@@ -25,7 +25,7 @@ export function FeatureSection() {
             <span className="w-2 h-2 rounded-sm border border-blue-400/50 flex items-center justify-center opacity-70">
               <span className="w-1 h-1 bg-blue-400 rounded-sm"></span>
             </span>
-            SƠ ĐỒ THỰC CHIẾN
+            VƯỢT TRỘI SO VỚI PHẦN CÒN LẠI
           </motion.div>
 
           {/* Title */}
@@ -36,9 +36,9 @@ export function FeatureSection() {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl font-bold tracking-tight mb-6 text-foreground"
           >
-            Trung Tâm{" "}
+            Lý do bạn nên chọn{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#0070eb] via-[#c026d3] to-[#059669] dark:from-[#60a5fa] dark:via-[#e879f9] dark:to-[#34d399]">
-              Vận Hành AI
+              GATS Academy
             </span>
           </motion.h2>
 
@@ -50,7 +50,7 @@ export function FeatureSection() {
             transition={{ delay: 0.2 }}
             className="text-muted-foreground text-sm md:text-base max-w-2xl mx-auto font-normal"
           >
-            Hệ thống lõi siêu việt được thiết kế để huấn luyện, tối ưu và vận hành các tác nhân AI ở cấp độ doanh nghiệp.
+            Hệ sinh thái đào tạo và ứng dụng AI thực chiến toàn diện nhất. Học thật, làm thật, ra kết quả thật với sự đồng hành của chuyên gia hàng đầu.
           </motion.p>
         </div>
 

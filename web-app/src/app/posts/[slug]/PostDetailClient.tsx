@@ -2,13 +2,11 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Post } from '@/types/post';
-import { MOCK_POSTS } from '@/constants/mockPosts';
 import apiClient from '@/lib/apiClient';
 import { PathApi } from '@/constants/PathApi';
 import { Calendar, MessageCircle, Link as LinkIcon, PlayCircle } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { MarkdownRenderer } from '@/components/common/MarkdownRenderer';
 import { PostComments } from '@/components/posts/PostComments';
@@ -167,32 +165,19 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
     const fetchPost = async () => {
       setLoading(true);
       try {
-        // Try fetching from API first if endpoint exists
-        try {
-          const response: any = await apiClient.get(PathApi.posts.detail(slug));
-          const postData = response?.post || response?.data || response;
-          if (postData && postData.slug) {
-            setPost(postData);
-            return;
-          }
-        } catch (apiError: any) {
-          console.log(apiError)
-          toast.error(apiError?.message || 'Lỗi khi tải dữ liệu từ API');
-          // Fallback to mock data below
-        }
-
-        // Fallback to mock data for now
-        const mockPost = MOCK_POSTS.find(p => p.slug === slug);
-        if (mockPost) {
-          setPost(mockPost);
+        const response: any = await apiClient.get(PathApi.posts.detail(slug));
+        const postData = response?.post ?? null;
+        if (postData && postData.slug) {
+          setPost(postData);
         } else {
           setPost(null);
         }
-      } catch (error: any) {
-        toast.error(error?.message || 'Lỗi khi tải bài viết');
-        console.log(error)
-        const mockPost = MOCK_POSTS.find(p => p.slug === slug);
-        setPost(mockPost || null);
+      } catch (apiError: any) {
+        const status = apiError?.status ?? apiError?.statusCode;
+        if (status !== 404) {
+          console.error('Error fetching post:', apiError);
+        }
+        setPost(null);
       } finally {
         setLoading(false);
       }

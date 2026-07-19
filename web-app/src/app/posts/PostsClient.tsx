@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { MOCK_CATEGORIES, MOCK_POSTS } from '@/constants/mockPosts';
+import { MOCK_CATEGORIES } from '@/constants/mockPosts';
 
 // MOCK DATA FALLBACK
 export const PostsClient = () => {
@@ -51,7 +51,7 @@ export const PostsClient = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await apiClient.get(PathApi.categories.list, { params: { type: 'post' } });
+        const response = await apiClient.get(PathApi.categories.list, { params: { type: 'post', status: 'active' } });
         const data = response as any;
         if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
           setCategories(data.data);
@@ -71,7 +71,7 @@ export const PostsClient = () => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const params: any = { page, limit };
+        const params: any = { page, limit, status: 'published' };
         if (activeCategory) {
           params.category = activeCategory;
         }
@@ -80,32 +80,21 @@ export const PostsClient = () => {
         }
         const response = await apiClient.get(PathApi.posts.list, { params });
         const data = response as any;
-        if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+        if (data?.data && Array.isArray(data.data)) {
           setPosts(data.data);
           if (data.pagination) {
-            setTotalPages(data.pagination.totalPages || Math.ceil(data.pagination.total / limit));
+            setTotalPages(data.pagination.totalPages || Math.ceil(data.pagination.total / limit) || 1);
+          } else {
+            setTotalPages(1);
           }
         } else {
-          // Fallback to mock data with manual pagination and search
-          const filtered = MOCK_POSTS.filter(p => {
-            const matchesCategory = activeCategory ? (p.category?.slug === activeCategory || p.category?.id === activeCategory) : true;
-            const matchesSearch = debouncedSearch ? p.title.toLowerCase().includes(debouncedSearch.toLowerCase()) : true;
-            return matchesCategory && matchesSearch;
-          });
-          
-          setTotalPages(Math.ceil(filtered.length / limit) || 1);
-          setPosts(filtered.slice((page - 1) * limit, page * limit));
+          setPosts([]);
+          setTotalPages(1);
         }
       } catch (error) {
         console.error('Error fetching posts:', error);
-        const filtered = MOCK_POSTS.filter(p => {
-          const matchesCategory = activeCategory ? (p.category?.slug === activeCategory || p.category?.id === activeCategory) : true;
-          const matchesSearch = debouncedSearch ? p.title.toLowerCase().includes(debouncedSearch.toLowerCase()) : true;
-          return matchesCategory && matchesSearch;
-        });
-        
-        setTotalPages(Math.ceil(filtered.length / limit) || 1);
-        setPosts(filtered.slice((page - 1) * limit, page * limit));
+        setPosts([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
         setIsInitialLoad(false);

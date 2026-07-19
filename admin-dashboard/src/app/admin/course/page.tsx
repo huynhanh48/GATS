@@ -19,18 +19,14 @@ export default async function CoursePage({ searchParams }: CoursePageProps) {
   const showAll = params.all === "1";
   const { data, pagination } = await fetchCourses(page, showAll ? 24 : 50);
 
-  const courses = showAll
-    ? data
-    : filterAndSortLandingMockCourses(data);
+  const courses = data;
 
   return (
     <div className="space-y-4">
       <CourseCatalog courses={courses} showAll={showAll} mockCount={courses.length} />
-      {showAll ? (
-        <Suspense fallback={null}>
-          <CoursePagination pagination={pagination} />
-        </Suspense>
-      ) : null}
+      <Suspense fallback={null}>
+        <CoursePagination pagination={pagination} />
+      </Suspense>
     </div>
   );
 }

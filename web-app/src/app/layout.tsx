@@ -7,6 +7,8 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AuthModalProvider } from "@/components/providers/AuthModalProvider";
 import { CustomCursor } from "@/components/common/CustomCursor";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { CartProvider } from "@/components/providers/CartProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -58,13 +60,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <AuthModalProvider>
-              <CustomCursor />
-              {children}
-              <Toaster />
-            </AuthModalProvider>
-          </AuthProvider>
+          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+            <AuthProvider>
+              <AuthModalProvider>
+                <CartProvider>
+                  <CustomCursor />
+                  {children}
+                  <Toaster />
+                </CartProvider>
+              </AuthModalProvider>
+            </AuthProvider>
+          </GoogleOAuthProvider>
         </ThemeProvider>
       </body>
     </html>

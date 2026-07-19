@@ -17,6 +17,8 @@ export const PathApi = {
     /** POST – auth: public */
     login: `${API_PREFIX}/user/login`,
     /** POST – auth: public */
+    googleLogin: `${API_PREFIX}/user/auth/google`,
+    /** POST – auth: public */
     verifyEmail: `${API_PREFIX}/user/verify-email`,
     /** GET – auth: public (HTML page) – query: token */
     verifyEmailLink: `${API_PREFIX}/user/verify-email`,
@@ -24,6 +26,8 @@ export const PathApi = {
     logout: `${API_PREFIX}/user/logout`,
     /** GET – auth: member */
     me: `${API_PREFIX}/user/me`,
+    /** PUT – auth: member */
+    updateMe: `${API_PREFIX}/user/me`,
   },
 
   courses: {
@@ -111,5 +115,32 @@ export const PathApi = {
     /** GET – auth: optional */
     playback: (courseId: string, videoId: string) =>
       `${API_PREFIX}/courses/${courseId}/videos/${videoId}/playback`,
+    /** GET - auth: member */
+    lessonVideo: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/video`,
+  },
+
+  cart: {
+    /** GET - auth: member */
+    list: `${API_PREFIX}/cart`,
+    /** POST - auth: member */
+    add: `${API_PREFIX}/cart`,
+    /** PUT - auth: member */
+    update: (itemId: string) => `${API_PREFIX}/cart/items/${itemId}`,
+    /** DELETE - auth: member */
+    remove: (itemId: string) => `${API_PREFIX}/cart/items/${itemId}`,
+    /** DELETE - auth: member */
+    clear: `${API_PREFIX}/cart`,
+  },
+
+  order: {
+    /** POST - auth: member */
+    create: `${API_PREFIX}/orders`,
+    /** GET - auth: member */
+    list: `${API_PREFIX}/orders`,
+    /** GET - auth: member */
+    get: (orderId: string) => `${API_PREFIX}/orders/${orderId}`,
+    /** POST - auth: member */
+    cancel: (orderId: string) => `${API_PREFIX}/orders/${orderId}/cancel`,
   },
 } as const;

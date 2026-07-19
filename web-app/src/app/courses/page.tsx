@@ -64,8 +64,8 @@ export default function CoursesPage() {
       })
       .catch(console.error);
 
-    // Fetch top 2 newest courses for Hero
-    apiClient.get(`${PathApi.courses.list}?limit=2`)
+    // Fetch top 2 newest courses for Hero (published only)
+    apiClient.get(`${PathApi.courses.list}?limit=2&status=published`)
       .then((res: any) => {
         if (res.data) setLatestCourses(res.data);
       })
@@ -77,23 +77,26 @@ export default function CoursesPage() {
     const params = new URLSearchParams({
       page: String(currentPage),
       limit: String(itemsPerPage),
+      status: 'published',
     });
 
     if (levelFilter !== "all") params.append("level", levelFilter);
     if (productTypeFilter !== "all") params.append("category", productTypeFilter);
+    if (priceFilter === "free") params.append("maxPrice", "0");
+    if (priceFilter === "paid") params.append("minPrice", "1");
+    if (sortBy === "priceAsc") params.append("sort", "price_asc");
+    if (sortBy === "priceDesc") params.append("sort", "price_desc");
 
     apiClient.get(`${PathApi.courses.list}?${params.toString()}`)
       .then((res: any) => {
         if (res.data) {
-          // Apply local sorting and price filtering if needed, but since API paginates, 
-          // we should ideally let backend handle it. For now we just render.
           setCourses(res.data);
         }
         if (res.pagination) setPagination(res.pagination);
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, [levelFilter, productTypeFilter, currentPage]);
+  }, [levelFilter, productTypeFilter, priceFilter, sortBy, currentPage]);
 
   const formatPrice = (value: number) => {
     return value.toLocaleString("vi-VN") + "đ";

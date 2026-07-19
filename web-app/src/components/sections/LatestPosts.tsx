@@ -21,7 +21,7 @@ const gradients = [
   "from-orange-400 to-rose-500"
 ];
 
-export function CourseCards() {
+export function LatestPosts() {
   const [posts, setPosts] = useState<PostListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +29,7 @@ export function CourseCards() {
     const fetchPosts = async () => {
       try {
         const response = await apiClient.get<any>(PathApi.posts.list, {
-          params: { take: "10", skip: "0" }
+          params: { take: "10", skip: "0", status: 'published' }
         });
         if (response && response.data) {
           setPosts(response.data);
@@ -140,7 +140,7 @@ export function CourseCards() {
                   className="group flex flex-col h-full cursor-pointer"
                   onClick={() => {
                     if (post.slug && post.slug !== "#") {
-                      window.location.href = `/posts/slug/${post.slug}`;
+                      window.location.href = `/posts/${post.slug}`;
                     }
                   }}
                 >

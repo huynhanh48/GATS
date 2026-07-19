@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+</head>
+<body>
+  <video id="video" controls autoplay width="640" height="360"></video>
+  <script>
+    var video = document.getElementById('video');
+    var videoSrc = 'https://s3-hn1-r1.longvan.net/s3-video-gats/videos/hls/f6f8ba7e-5265-4a93-ae72-402aa4149501/38d0a808-d70a-4e62-abb5-cdbf203518d3/index.m3u8';
+    if (Hls.isSupported()) {
+      var hls = new Hls({ debug: true });
+      hls.loadSource(videoSrc);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.ERROR, function (event, data) {
+        console.error("HLS Error:", data);
+        document.body.innerHTML += '<div style="color:red">Error: ' + JSON.stringify(data) + '</div>';
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = videoSrc;
+    }
+  </script>
+</body>
+</html>

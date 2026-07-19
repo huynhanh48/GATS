@@ -1,10 +1,8 @@
 import { Hero } from "@/components/sections/Hero";
 import { LogoTicker } from "@/components/sections/LogoTicker";
 import { FeatureSection } from "@/components/sections/FeatureSection";
-import { CapabilitiesSection } from "@/components/sections/CapabilitiesSection";
-import { EnterpriseFeatures } from "@/components/sections/EnterpriseFeatures";
-import { TransformBusiness } from "@/components/sections/TransformBusiness";
-import { CourseCards } from "@/components/sections/CourseCards";
+import { FeaturedCourses } from "@/components/sections/FeaturedCourses";
+import { LatestPosts } from "@/components/sections/LatestPosts";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { CTASection } from "@/components/sections/CTASection";
 import { Footer } from "@/components/layout/Footer";
@@ -17,12 +15,11 @@ export default function Home() {
       <ParticlesBackground id="global-particles" />
       <Header />
       <Hero />
+      <LogoTicker />
+      <FeaturedCourses />
       <FeatureSection />
-      <CapabilitiesSection />
-      <EnterpriseFeatures />
-      {/* <TransformBusiness /> */}
-      <CourseCards />
       <Testimonials />
+      <LatestPosts />
       <CTASection />
       <Footer />
     </main>

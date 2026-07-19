@@ -142,6 +142,16 @@ export const videoClient = {
     });
   },
 
+  /** GET /admin/videos/:videoId/status */
+  getVideoStatus(
+    videoId: string,
+  ): Promise<ApiResult<{ data: { status: VideoRecord["status"] } }>> {
+    return apiRequest<{ data: { status: VideoRecord["status"] } }>({
+      url: `/admin/videos/${videoId}/status`,
+      method: "GET",
+    });
+  },
+
   /**
    * Uploads a single part's bytes directly to the S3 presigned URL.
    * This bypasses the `/api/be` proxy entirely (S3 URL is already signed).

@@ -5,6 +5,11 @@ import { useEffect } from "react";
 import { Course } from "@/types/course";
 import { PathApi } from "@/constants/PathApi";
 import apiClient from "@/lib/apiClient";
+import { useAuth } from "@/hooks/useAuth";
+import { useAuthModal } from "@/hooks/useAuth";
+import { useCart } from "@/components/providers/CartProvider";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ParticlesBackground } from "@/components/common/ParticlesBackground";
@@ -39,12 +44,23 @@ import {
   Users
 } from "lucide-react";
 import Link from "next/link";
+import { VideoPlayerModal } from "@/components/common/VideoPlayerModal";
 
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const unwrappedParams = React.use(params);
+  const { user, isAuthenticated } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const [courseData, setCourseData] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const { addToCart } = useCart();
+  const router = useRouter();
+
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string>("");
+  const [selectedVideoTitle, setSelectedVideoTitle] = useState<string>("");
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     apiClient.get(PathApi.courses.detailBySlug(unwrappedParams.slug))
@@ -54,6 +70,63 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, [unwrappedParams.slug]);
+
+  const handleEnroll = async () => {
+    if (!isAuthenticated) {
+      openAuthModal('login');
+      return;
+    }
+    if (!courseData) return;
+    setEnrolling(true);
+    try {
+      await apiClient.post(PathApi.enrollment.enroll(courseData.id));
+      setIsEnrolled(true);
+      toast.success('Đăng ký khóa học thành công!');
+    } catch (err: any) {
+      const msg = err?.message || 'Không thể đăng ký, vui lòng thử lại!';
+      // Already enrolled is treated as success
+      if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('enrolled')) {
+        setIsEnrolled(true);
+        toast.info('Bạn đã đăng ký khóa học này rồi.');
+      } else {
+        toast.error(msg);
+      }
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handlePlayLesson = async (lesson: any) => {
+    if (!lesson.id) {
+      toast.info("Bài giảng này chưa có video.");
+      return;
+    }
+    if (!isEnrolled && !lesson.preview) {
+      toast.error("Bạn cần đăng ký khóa học để xem bài giảng này.");
+      return;
+    }
+    
+    try {
+      // Fetch lesson video info
+      const res: any = await apiClient.get(PathApi.video.lessonVideo(courseData?.id || "", lesson.id));
+      if (!res?.data?.videoId) {
+        toast.info("Video chưa khả dụng hoặc chưa được tải lên.");
+        return;
+      }
+      
+      // Fetch actual playback URL
+      const playbackRes: any = await apiClient.get(PathApi.video.playback(courseData?.id || "", res.data.videoId));
+      if (playbackRes?.data?.playbackUrl) {
+        setSelectedVideoUrl(playbackRes.data.playbackUrl);
+        setSelectedVideoTitle(lesson.title);
+        setIsVideoModalOpen(true);
+      } else {
+        toast.info("Video chưa sẵn sàng để phát.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Không thể tải video bài giảng.");
+    }
+  };
 
   // Fallback mock data matching the new template for fields not yet in API
   const mockCourse = {
@@ -188,8 +261,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
           lectures: lessonCount,
           duration: `${totalMin} phút`,
           lessons: sec.lessons?.map((les: any) => ({
+            id: les.id,
             title: les.title,
-            preview: les.preview,
+            preview: les.isPreview || les.is_preview || les.preview,
             duration: typeof les.duration === 'number'
               ? `${Math.floor(les.duration / 60)}:${String(les.duration % 60).padStart(2, '0')}`
               : les.duration || "0:00"
@@ -410,9 +484,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                       >
                         <div className="p-4 space-y-4">
                           {chapter.lessons.map((lesson: any, lIdx: number) => (
-                            <div key={lIdx} className="flex items-start justify-between text-sm group cursor-pointer">
+                            <div key={lIdx} onClick={() => handlePlayLesson(lesson)} className="flex items-start justify-between text-sm group cursor-pointer hover:bg-muted/50 p-2 -mx-2 rounded-lg transition-colors">
                               <div className="flex items-start gap-4">
-                                <PlayCircle className="w-4 h-4 mt-0.5 text-foreground/50 shrink-0" />
+                                <PlayCircle className="w-4 h-4 mt-0.5 text-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
                                 <span className={`${lesson.preview ? 'text-primary underline' : 'text-foreground'}`}>
                                   {lesson.title}
                                 </span>
@@ -469,19 +543,61 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                   </div>
                 </div>
 
-                <button className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg shadow-primary/25 cursor-pointer text-center text-base">
-                  Đăng ký khóa học
-                </button>
+                {course.price === 0 || (course.salePrice !== undefined && course.salePrice === 0) ? (
+                  <button
+                    onClick={handleEnroll}
+                    disabled={enrolling || isEnrolled}
+                    className={`w-full font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg cursor-pointer text-center text-base disabled:opacity-70 disabled:cursor-not-allowed ${
+                      isEnrolled
+                        ? 'bg-emerald-500 hover:bg-emerald-500/90 text-white shadow-emerald-500/25'
+                        : 'bg-primary hover:bg-primary/90 text-white shadow-primary/25'
+                    }`}
+                  >
+                    {enrolling ? 'Đang xử lý...' : isEnrolled ? '✓ Đã đăng ký' : 'Đăng ký miễn phí'}
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await addToCart(courseData?.id || "");
+                        } catch (err) {}
+                      }}
+                      className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all border-2 border-primary text-primary bg-transparent hover:bg-primary/5 cursor-pointer text-center text-base"
+                    >
+                      Thêm vào giỏ hàng
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!isAuthenticated) {
+                          openAuthModal('login');
+                          return;
+                        }
+                        try {
+                          await addToCart(courseData?.id || "");
+                          router.push("/checkout");
+                        } catch (err: any) {
+                          if (err?.message?.includes("already enrolled") || err?.message?.includes("already in cart")) {
+                             router.push("/checkout");
+                          }
+                        }
+                      }}
+                      className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg bg-primary hover:bg-primary/90 text-white shadow-primary/25 cursor-pointer text-center text-base"
+                    >
+                      Mua ngay
+                    </button>
+                  </div>
+                )}
 
-                <div className="text-center text-xs text-muted-foreground space-y-2 pt-2 border-t border-border/40">
-                  <p className="flex items-center justify-center gap-1.5 text-slate-300">
-                    <span className="text-emerald-500">✓</span> Quyền truy cập đầy đủ trọn đời
+                <div className="text-center text-xs text-muted-foreground space-y-2 pt-4 border-t border-border/40">
+                  <p className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <span className="text-emerald-500 font-bold">✓</span> Quyền truy cập đầy đủ trọn đời
                   </p>
-                  <p className="flex items-center justify-center gap-1.5 text-slate-300">
-                    <span className="text-emerald-500">✓</span> Học trực tuyến trên mọi thiết bị di động & máy tính
+                  <p className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <span className="text-emerald-500 font-bold">✓</span> Học trực tuyến trên mọi thiết bị di động & máy tính
                   </p>
-                  <p className="flex items-center justify-center gap-1.5 text-slate-300">
-                    <span className="text-emerald-500">✓</span> Cam kết chất lượng đào tạo từ GATS Academy
+                  <p className="flex items-center justify-center gap-1.5 text-muted-foreground">
+                    <span className="text-emerald-500 font-bold">✓</span> Cam kết chất lượng đào tạo từ GATS Academy
                   </p>
                 </div>
               </div>
@@ -491,6 +607,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
       </div>
       <Footer />
+
+      <VideoPlayerModal 
+        isOpen={isVideoModalOpen} 
+        onClose={() => setIsVideoModalOpen(false)} 
+        url={selectedVideoUrl} 
+        title={selectedVideoTitle} 
+      />
     </main>
   );
 }
