@@ -24,7 +24,6 @@ import {
   findByEmailOrUserName,
   findByUserName,
   findById,
-  findByUserName,
   findByVerifyToken,
   getRoleNames,
   saveSession,

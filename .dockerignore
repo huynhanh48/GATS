@@ -1,0 +1,14 @@
+﻿node_modules
+.next
+dist
+.git
+.env*
+coverage
+*.log
+web-app/node_modules
+web-app/.next
+admin-dashboard/node_modules
+admin-dashboard/.next
+gats-academy/node_modules
+gats-academy/dist
+mobile-app
