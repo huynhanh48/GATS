@@ -9,6 +9,6 @@ web-app/node_modules
 web-app/.next
 admin-dashboard/node_modules
 admin-dashboard/.next
-gats-academy/node_modules
-gats-academy/dist
+BE/node_modules
+BE/dist
 mobile-app

@@ -12,12 +12,12 @@ ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
-# Stage 2: Build Backend (gats-academy)
+# Stage 2: Build Backend (folder BE)
 FROM node:20-alpine AS be-builder
-WORKDIR /app/gats-academy
-COPY gats-academy/package*.json ./
+WORKDIR /app/BE
+COPY BE/package*.json ./
 RUN npm ci
-COPY gats-academy/ .
+COPY BE/ .
 RUN npm run build
 
 # Stage 3: Build Admin Dashboard
@@ -42,14 +42,15 @@ COPY --from=web-builder /app/web-app/node_modules ./web-app/node_modules
 COPY --from=web-builder /app/web-app/.next ./web-app/.next
 COPY --from=web-builder /app/web-app/public ./web-app/public
 
-# Copy built backend (dist + deps) plus what drizzle-kit migrate needs at runtime
-COPY --from=be-builder /app/gats-academy/package*.json ./gats-academy/
-COPY --from=be-builder /app/gats-academy/node_modules ./gats-academy/node_modules
-COPY --from=be-builder /app/gats-academy/dist ./gats-academy/dist
-COPY --from=be-builder /app/gats-academy/drizzle ./gats-academy/drizzle
-COPY --from=be-builder /app/gats-academy/drizzle.config.ts ./gats-academy/drizzle.config.ts
-COPY --from=be-builder /app/gats-academy/tsconfig.json ./gats-academy/tsconfig.json
-COPY --from=be-builder /app/gats-academy/src ./gats-academy/src
+# Copy built backend (dist + deps) plus what drizzle-kit needs at runtime.
+# In-image path stays /app/gats-academy (chỉ là đường dẫn trong container).
+COPY --from=be-builder /app/BE/package*.json ./gats-academy/
+COPY --from=be-builder /app/BE/node_modules ./gats-academy/node_modules
+COPY --from=be-builder /app/BE/dist ./gats-academy/dist
+COPY --from=be-builder /app/BE/drizzle ./gats-academy/drizzle
+COPY --from=be-builder /app/BE/drizzle.config.ts ./gats-academy/drizzle.config.ts
+COPY --from=be-builder /app/BE/tsconfig.json ./gats-academy/tsconfig.json
+COPY --from=be-builder /app/BE/src ./gats-academy/src
 
 # Copy built admin dashboard
 COPY --from=admin-builder /app/admin-dashboard/package*.json ./admin-dashboard/
