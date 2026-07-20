@@ -7,9 +7,6 @@ import * as THREE from "three";
 
 const MODELS = {
   robot: "/3d/robot-ai/ai_kitchen__just_a_bit_fun.glb",
-  tv: "/3d/tv/base_basic_pbr.glb",
-  platinum: "/3d/platium/base_basic_pbr.glb",
-  ufo: "/3d/ufo/base_basic_pbr.glb",
 };
 
 // Reusable model loader that applies theme color
@@ -141,33 +138,6 @@ export function Robot3D({ themeColor }: { themeColor: string }) {
           <Suspense fallback={null}>
             <Float speed={2.5} rotationIntensity={0.2} floatIntensity={1.5}>
               <ColoredModel url={MODELS.robot} color={themeColor} position={[0, -2.0, 0]} scale={2.2} />
-            </Float>
-          </Suspense>
-        )}
-
-        {/* Floating TV above left */}
-        {available.has(MODELS.tv) && (
-          <Suspense fallback={null}>
-            <Float speed={3} rotationIntensity={1.5} floatIntensity={2} position={[-1.8, 2, -1]}>
-              <ColoredModel url={MODELS.tv} color={themeColor} scale={0.6} rotation={[0.2, 0.5, -0.2]} />
-            </Float>
-          </Suspense>
-        )}
-
-        {/* Floating Platinum Diamond above right */}
-        {available.has(MODELS.platinum) && (
-          <Suspense fallback={null}>
-            <Float speed={2} rotationIntensity={2} floatIntensity={1.5} position={[1.8, 1.5, -1.5]}>
-              <ColoredModel url={MODELS.platinum} color={themeColor} scale={0.6} rotation={[-0.2, -0.5, 0.2]} />
-            </Float>
-          </Suspense>
-        )}
-
-        {/* Floating UFO hovering high in center */}
-        {available.has(MODELS.ufo) && (
-          <Suspense fallback={null}>
-            <Float speed={4} rotationIntensity={1} floatIntensity={1} position={[0, 3, -2]}>
-              <ColoredModel url={MODELS.ufo} color={themeColor} scale={0.8} rotation={[0.1, 0, 0]} />
             </Float>
           </Suspense>
         )}

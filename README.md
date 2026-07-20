@@ -102,6 +102,8 @@ docker compose -p gats-academy up --build -d
 
 Kiểm tra nhanh: mở DevTools trên https://gats.vn → Network → request API phải tới `https://api.gats.vn`, không phải IP `:3000`.
 
+File mẫu VPS: copy `.env.vps.example` → `.env` trên server trước khi rebuild.
+
 ---
 
 ## Lỗi cổng đang bị chiếm (Windows)
