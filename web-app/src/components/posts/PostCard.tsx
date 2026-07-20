@@ -29,6 +29,7 @@ export const PostCard = ({ post }: PostCardProps) => {
             src={post.thumbnail}
             alt={post.title}
             fill
+            unoptimized
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
