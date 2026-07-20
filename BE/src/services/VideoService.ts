@@ -595,7 +595,11 @@ async function getStatus(videoId: string) {
   };
 }
 
-async function getByLesson(courseId: string, lessonId: string) {
+async function getByLesson(
+  courseId: string,
+  lessonId: string,
+  userId: number | null,
+) {
   const course = await CourseRepo.findById(courseId);
   if (!course) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
@@ -604,6 +608,18 @@ async function getByLesson(courseId: string, lessonId: string) {
   const lesson = await LessonRepo.findByIdAndCourseId(lessonId, courseId);
   if (!lesson) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.LESSON_NOT_FOUND);
+  }
+
+  const canView = await CourseAccessService.canViewCourseContent(
+    userId,
+    courseId,
+    lesson,
+  );
+  if (!canView) {
+    throw new RouteError(
+      HttpStatusCodes.FORBIDDEN,
+      CourseAccessService.Errors.FORBIDDEN,
+    );
   }
 
   const video = await VideoRepo.findByLessonId(lessonId);

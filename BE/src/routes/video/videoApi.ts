@@ -117,10 +117,7 @@ apiRouter.get(
 );
 apiRouter.get(
   VideoPaths.LessonVideo.Get,
-  errorHandle(authMiddleware),
-  errorHandle(
-    requirePermission('read', RESOURCE_TYPES.COURSE, (req) => req.params.courseId as string),
-  ),
+  errorHandle(optionalAuthMiddleware),
   videoHandlers.getByLesson,
 );
 

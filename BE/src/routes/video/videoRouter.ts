@@ -96,7 +96,11 @@ async function getStatus(req: Request, res: Response) {
 async function getByLesson(req: Request, res: Response) {
   const courseId = getRouteParam(req.params.courseId);
   const lessonId = getRouteParam(req.params.lessonId);
-  const result = await VideoService.getByLesson(courseId, lessonId);
+  const result = await VideoService.getByLesson(
+    courseId,
+    lessonId,
+    req.authUser?.id ?? null,
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
