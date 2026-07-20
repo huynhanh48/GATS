@@ -1,9 +1,9 @@
 ﻿# Stage 1: Build Web App
 FROM node:20-alpine AS web-builder
 WORKDIR /app/web-app
-# Force full install — Docker Desktop / Bake may set NODE_ENV=production
-# which would skip build tools (and break `next` / `shx` in PATH).
-ENV NODE_ENV=development
+# Install with --include=dev so build tools (next, etc.) are present even if
+# the host Bake sets NODE_ENV=production. Do NOT leave NODE_ENV=development
+# for `next build` — Next.js 16 then fails prerender with useContext null.
 COPY web-app/package*.json ./
 RUN npm ci --include=dev
 COPY web-app/ .
@@ -12,25 +12,26 @@ COPY web-app/ .
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
-    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NODE_ENV=production
 RUN npm run build
 
 # Stage 2: Build Backend (folder BE)
 FROM node:20-alpine AS be-builder
 WORKDIR /app/BE
-ENV NODE_ENV=development
 COPY BE/package*.json ./
 RUN npm ci --include=dev
 COPY BE/ .
+ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 3: Build Admin Dashboard
 FROM node:20-alpine AS admin-builder
 WORKDIR /app/admin-dashboard
-ENV NODE_ENV=development
 COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
 COPY admin-dashboard/ .
+ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 4: Production Image

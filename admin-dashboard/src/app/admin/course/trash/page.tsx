@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "Thùng rác khóa học",
 };
 
+/** Trash list hits the API at request time — never prerender at build. */
+export const dynamic = "force-dynamic";
+
 type CourseTrashPageProps = {
   searchParams: Promise<{ page?: string }>;
 };
