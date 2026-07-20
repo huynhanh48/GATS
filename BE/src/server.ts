@@ -24,7 +24,6 @@ import VideoApi from '@src/routes/video/videoApi';
 import MediaApi from '@src/routes/media/mediaApi';
 import EnvVars, { NodeEnvs } from './common/constants/env';
 import cors from 'cors';
-import { getAllowedOrigins } from './common/utils/cors';
 import originGuard from './middleware/originGuard';
 import { errorHandle } from './middleware/errorHandle';
 /******************************************************************************
@@ -41,16 +40,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin(origin, callback) {
-      // Non-browser clients (no Origin) — allow; originGuard handles CSRF.
-      if (!origin) {
-        return callback(null, true);
-      }
-      if (getAllowedOrigins().includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(null, false);
-    },
+    // Reflect any Origin (required when credentials: true — cannot use "*").
+    origin: true,
     credentials: true,
   }),
 );
