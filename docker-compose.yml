@@ -30,8 +30,8 @@ x-backend-env: &backend-env
   JWT_EXPIRES_IN: 7d
   EMAIL_USER: noreply@gats.dev
   EMAIL_PASSWORD: changeme
-  APP_URL: http://localhost:3000
-  FRONTEND_URL: http://localhost:3005,http://127.0.0.1:3005,http://localhost:9100,http://127.0.0.1:9100
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100,https://gats.vn,https://www.gats.vn,https://admin.gats.vn}
   GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
   VIDEO_STORAGE_PROVIDER: s3
   AWS_REGION: us-east-1

@@ -241,16 +241,13 @@ export function resolveCourseThumbnail(
   thumbnail: string | null | undefined,
   index: number,
 ) {
-  if (
-    thumbnail &&
-    thumbnail.trim().length > 0 &&
-    !thumbnail.includes("picsum.photos")
-  ) {
+  if (thumbnail && thumbnail.trim().length > 0) {
     // Prefer relative path so /course and admin share same origin assets
     if (thumbnail.includes("/images/courses/")) {
       const path = thumbnail.slice(thumbnail.indexOf("/images/courses/"));
       return path;
     }
+    // Keep absolute URLs as-is (picsum seed, MinIO, CDN) so list + detail match
     return thumbnail;
   }
   return courseThumbAt(index);

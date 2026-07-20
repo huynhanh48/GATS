@@ -84,6 +84,26 @@ docker compose -p gats-academy up --build -d
 
 ---
 
+## Deploy VPS (`gats.vn` / `api.gats.vn` / `admin.gats.vn`)
+
+Trong file `.env` **trên VPS** (không dùng `localhost` cho API public):
+
+```env
+NEXT_PUBLIC_API_URL=https://api.gats.vn
+APP_URL=https://api.gats.vn
+FRONTEND_URL=https://gats.vn,https://www.gats.vn,https://admin.gats.vn,http://localhost:3005,http://localhost:9100
+```
+
+Rồi rebuild (bắt buộc — `NEXT_PUBLIC_*` chỉ có hiệu lực lúc build):
+
+```bash
+docker compose -p gats-academy up --build -d
+```
+
+Kiểm tra nhanh: mở DevTools trên https://gats.vn → Network → request API phải tới `https://api.gats.vn`, không phải IP `:3000`.
+
+---
+
 ## Lỗi cổng đang bị chiếm (Windows)
 
 ```powershell

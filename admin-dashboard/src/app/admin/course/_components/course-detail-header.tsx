@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { CourseDetail } from "@/lib/api/types";
+import { resolveCourseThumbnail } from "@/lib/landing/courses";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -31,16 +32,14 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-[#0b1220]">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 flex-1 gap-4">
-          {course.thumbnail && (
-            <Image
-              src={course.thumbnail}
-              alt={course.title}
-              width={160}
-              height={90}
-              className="h-22.5 w-40 shrink-0 rounded-xl object-cover"
-              unoptimized
-            />
-          )}
+          <Image
+            src={resolveCourseThumbnail(course.thumbnail, 0)}
+            alt={course.title}
+            width={160}
+            height={90}
+            className="h-22.5 w-40 shrink-0 rounded-xl object-cover"
+            unoptimized
+          />
           <div className="min-w-0">
             <h2 className="text-xl font-black text-slate-950 dark:text-white">
               {course.title}
