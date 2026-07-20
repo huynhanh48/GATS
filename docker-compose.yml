@@ -1,6 +1,10 @@
 # Full GATS Academy stack: backend API + video worker + web-app + admin-dashboard
 # (single image, run by pm2) plus Postgres, Redis and MinIO infrastructure.
 #
+# Local dev (BE on host, infra + worker in Docker):
+#   docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
+#
+# Full production stack:
 #   docker compose -p gats-academy up --build -d
 #
 # Exposed on the host (left = host port; changed to avoid conflicts on the VPS):
@@ -10,6 +14,44 @@
 #   - MinIO console     http://localhost:9011  (minioadmin / minioadmin)
 #   - MinIO S3 API      http://localhost:9010
 
+x-backend-env: &backend-env
+  NODE_ENV: development
+  PORT: "3000"
+  HOST: 0.0.0.0
+  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: postgres
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  REDIS_URL: redis://redis:6379
+  REDIS_PORT: "6379"
+  JWT_SECRET: dev-secret-change-me-please-min-32-characters
+  JWT_EXPIRES_IN: 7d
+  EMAIL_USER: noreply@gats.dev
+  EMAIL_PASSWORD: changeme
+  APP_URL: http://localhost:3000
+  FRONTEND_URL: http://localhost:3005,http://127.0.0.1:3005,http://localhost:9100,http://127.0.0.1:9100
+  GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+  VIDEO_STORAGE_PROVIDER: s3
+  AWS_REGION: us-east-1
+  S3_ENDPOINT: http://minio:9000
+  S3_BUCKET: s3-video-gats
+  S3_ACCESS_KEY_ID: minioadmin
+  S3_SECRET_ACCESS_KEY: minioadmin
+  S3_FORCE_PATH_STYLE: "true"
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_SECRET_KEY: minioadmin
+  MINIO_BUCKET_NAME: files-gats
+  MINIO_REGION: us-east-1
+  MINIO_FORCE_PATH_STYLE: "true"
+  ADMIN_DEFAULT_EMAIL: admin@gmail.com
+  ADMIN_DEFAULT_PASSWORD: admin12345
+  VIDEO_WORKER_CONCURRENCY: "1"
+  HLS_UPLOAD_CONCURRENCY: "16"
+  FFMPEG_X264_PRESET: veryfast
+
 services:
   db:
     image: postgres:16-alpine
@@ -18,6 +60,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
+    ports:
+      - "5432:5432" # for local `npm run dev` on host
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,6 +74,8 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     command: redis-server --appendonly yes
+    ports:
+      - "6379:6379" # for local `npm run dev` on host
     volumes:
       - redis_data:/data
     healthcheck:
@@ -67,6 +113,27 @@ services:
         mc mb -p local/files-gats || true;
         echo 'buckets ready';
 
+  # Video transcode worker (BullMQ + ffmpeg). Use for local dev when API runs on host.
+  # Start with: docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
+  # Do NOT start this when the `app` service is running — app already runs worker via pm2.
+  worker:
+    profiles: ["dev"]
+    build:
+      context: ./BE
+      dockerfile: Dockerfile.worker
+    image: gats-academy-worker
+    container_name: gats-academy-worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      <<: *backend-env
+
   app:
     build:
       context: .
@@ -93,54 +160,8 @@ services:
       - "3005:3005" # web-app
       - "9100:9000" # admin-dashboard (host 9100; 9000 busy on VPS)
     environment:
-      # ── Runtime / server ──────────────────────────────────────────────
-      NODE_ENV: development
-      PORT: "3000"
-      HOST: 0.0.0.0
-      APP_URL: http://localhost:3000
-      FRONTEND_URL: http://localhost:3005,http://127.0.0.1:3005,http://localhost:9100,http://127.0.0.1:9100
-      # Google OAuth — backend verifies ID tokens with this client id.
-      GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
-      # Admin/web server-side calls target the API inside this same container.
+      <<: *backend-env
       BE_API_URL: http://localhost:3000
-      # ── Postgres ──────────────────────────────────────────────────────
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
-      # ── Redis ─────────────────────────────────────────────────────────
-      REDIS_URL: redis://redis:6379
-      REDIS_PORT: "6379"
-      # ── JWT ───────────────────────────────────────────────────────────
-      JWT_SECRET: dev-secret-change-me-please-min-32-characters
-      JWT_EXPIRES_IN: 7d
-      # ── Email (dummy; sending will no-op/fail but boot is fine) ────────
-      EMAIL_USER: noreply@gats.dev
-      EMAIL_PASSWORD: changeme
-      # ── Video storage (S3-compatible → local MinIO) ───────────────────
-      VIDEO_STORAGE_PROVIDER: s3
-      AWS_REGION: us-east-1
-      S3_ENDPOINT: http://minio:9000
-      S3_BUCKET: s3-video-gats
-      S3_ACCESS_KEY_ID: minioadmin
-      S3_SECRET_ACCESS_KEY: minioadmin
-      S3_FORCE_PATH_STYLE: "true"
-      # ── MinIO (thumbnails + documents) ────────────────────────────────
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET_NAME: files-gats
-      MINIO_REGION: us-east-1
-      MINIO_FORCE_PATH_STYLE: "true"
-      # ── Default admin (seeded by dev bootstrap) ───────────────────────
-      ADMIN_DEFAULT_EMAIL: admin@gmail.com
-      ADMIN_DEFAULT_PASSWORD: admin12345
-      # ── Video worker tuning ───────────────────────────────────────────
-      VIDEO_WORKER_CONCURRENCY: "1"
-      HLS_UPLOAD_CONCURRENCY: "16"
-      FFMPEG_X264_PRESET: veryfast
 
 volumes:
   postgres_data:

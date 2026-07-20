@@ -1,0 +1,16 @@
+# Video transcode worker — BullMQ + ffmpeg (used by gats-academy compose stack)
+FROM node:20-alpine
+
+RUN apk add --no-cache ffmpeg
+
+WORKDIR /app
+
+ENV NODE_ENV=development
+
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev
+
+COPY . .
+RUN npm run build
+
+CMD ["node", "-r", "module-alias/register", "./dist/workers/worker.main.js"]

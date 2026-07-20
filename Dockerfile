@@ -1,8 +1,11 @@
 ﻿# Stage 1: Build Web App
 FROM node:20-alpine AS web-builder
 WORKDIR /app/web-app
+# Force full install — Docker Desktop / Bake may set NODE_ENV=production
+# which would skip build tools (and break `next` / `shx` in PATH).
+ENV NODE_ENV=development
 COPY web-app/package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 COPY web-app/ .
 # NEXT_PUBLIC_* vars are inlined into the client bundle AT BUILD TIME,
 # so they must be passed as build args (see docker-compose.yml build.args).
@@ -15,16 +18,18 @@ RUN npm run build
 # Stage 2: Build Backend (folder BE)
 FROM node:20-alpine AS be-builder
 WORKDIR /app/BE
+ENV NODE_ENV=development
 COPY BE/package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 COPY BE/ .
 RUN npm run build
 
 # Stage 3: Build Admin Dashboard
 FROM node:20-alpine AS admin-builder
 WORKDIR /app/admin-dashboard
+ENV NODE_ENV=development
 COPY admin-dashboard/package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 COPY admin-dashboard/ .
 RUN npm run build
 
