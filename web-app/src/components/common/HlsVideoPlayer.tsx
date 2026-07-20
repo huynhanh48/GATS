@@ -19,11 +19,13 @@ export function HlsVideoPlayer({ url, autoPlay = true, onReady }: HlsVideoPlayer
     const video = videoRef.current;
     if (!video || !url) return;
 
-    let hls: Hls;
+    let hls: Hls | undefined;
+    setError(null);
+    setIsReady(false);
 
     const handleReady = () => {
       setIsReady(true);
-      if (onReady) onReady();
+      onReady?.();
     };
 
     if (Hls.isSupported()) {
@@ -38,74 +40,78 @@ export function HlsVideoPlayer({ url, autoPlay = true, onReady }: HlsVideoPlayer
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         handleReady();
         if (autoPlay) {
-          video.play().catch(e => console.log("Autoplay blocked", e));
+          video.play().catch(() => {
+            // Autoplay blocked by browser policy — user can press play.
+          });
         }
       });
 
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        console.error("HLS Error:", data);
-        if (data.fatal) {
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              setError("Lỗi kết nối mạng khi tải video.");
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              setError("Lỗi định dạng video.");
-              hls.recoverMediaError();
-              break;
-            default:
-              setError("Video không thể phát.");
-              hls.destroy();
-              break;
-          }
-          setIsReady(true);
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        // Non-fatal (buffer stall, fragment retry, etc.) — hls.js recovers itself.
+        // Do NOT console.error: Next.js dev overlay treats that as a hard error.
+        if (!data.fatal) return;
+
+        switch (data.type) {
+          case Hls.ErrorTypes.NETWORK_ERROR:
+            hls?.startLoad();
+            break;
+          case Hls.ErrorTypes.MEDIA_ERROR:
+            hls?.recoverMediaError();
+            break;
+          default:
+            setError("Video không thể phát.");
+            setIsReady(true);
+            hls?.destroy();
+            break;
         }
       });
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // For Safari
       video.src = url;
-      video.addEventListener("loadedmetadata", () => {
+      const onLoaded = () => {
         handleReady();
         if (autoPlay) {
-          video.play().catch(e => console.log("Autoplay blocked", e));
+          video.play().catch(() => {});
         }
-      });
-      video.addEventListener("error", () => {
+      };
+      const onVideoError = () => {
         setError("Lỗi khi tải video.");
         setIsReady(true);
-      });
+      };
+      video.addEventListener("loadedmetadata", onLoaded);
+      video.addEventListener("error", onVideoError);
+      return () => {
+        video.removeEventListener("loadedmetadata", onLoaded);
+        video.removeEventListener("error", onVideoError);
+      };
     } else {
       setError("Trình duyệt không hỗ trợ xem video này.");
       setIsReady(true);
     }
 
     return () => {
-      if (hls) {
-        hls.destroy();
-      }
+      hls?.destroy();
     };
   }, [url, autoPlay, onReady]);
 
   return (
-    <div className="relative w-full h-full bg-black flex items-center justify-center">
-      {!isReady && !error && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/50">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+    <div className="relative flex h-full w-full items-center justify-center bg-black">
+      {!isReady && !error ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      )}
-      
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 bg-black text-red-500 p-4 text-center">
+      ) : null}
+
+      {error ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black p-4 text-center text-red-500">
           <p>{error}</p>
         </div>
-      )}
+      ) : null}
 
       <video
         ref={videoRef}
         controls
         controlsList="nodownload"
-        className="w-full h-full object-contain absolute top-0 left-0"
+        className="absolute top-0 left-0 h-full w-full object-contain"
       />
     </div>
   );

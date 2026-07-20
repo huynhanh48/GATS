@@ -12,5 +12,5 @@ export function isSignedIn(roles: string[] | null | undefined): boolean {
 }
 
 export function defaultPostLoginPath(roles: string[]): string {
-  return hasAdminAccess(roles) ? "/admin" : "/course";
+  return hasAdminAccess(roles) ? "/" : "/auth/sign-in?error=unauthorized";
 }

@@ -54,7 +54,7 @@ export function normalizeCourseKey(title: string) {
 
 /**
  * Canonical mock catalog — titles must match BE Bootstrap MOBILE_COURSE_FIXTURES
- * and mobile-app/assets/data/courses.json (synced set for /course + /admin/course).
+ * and mobile-app/assets/data/courses.json (synced set for admin /course).
  */
 export const LANDING_COURSES: LandingCourse[] = [
   {

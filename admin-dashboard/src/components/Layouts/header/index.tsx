@@ -11,14 +11,14 @@ import { ThemeToggleSwitch } from "./theme-toggle";
 import { UserInfo } from "./user-info";
 
 const PAGE_TITLES: Array<[string, string]> = [
-  ["/admin/course", "Khóa học"],
-  ["/admin/post", "Bài viết"],
-  ["/admin/video", "Video"],
-  ["/admin/thumbnail", "Thumbnail"],
-  ["/admin/file", "Files"],
-  ["/admin/calendar", "Calendar"],
-  ["/admin/profile", "Profile"],
-  ["/admin/pages/settings", "Cài đặt"],
+  ["/course", "Khóa học"],
+  ["/post", "Bài viết"],
+  ["/video", "Video"],
+  ["/thumbnail", "Thumbnail"],
+  ["/file", "Files"],
+  ["/calendar", "Calendar"],
+  ["/profile", "Profile"],
+  ["/pages/settings", "Cài đặt"],
 ];
 
 export function Header() {
@@ -39,7 +39,7 @@ export function Header() {
       </button>
 
       {isMobile && (
-        <Link href="/admin" className="2xsm:ml-4 ml-2 max-[430px]:hidden">
+        <Link href="/" className="2xsm:ml-4 ml-2 max-[430px]:hidden">
           <Image
             src="/images/logo/logo-icon.svg"
             width={32}

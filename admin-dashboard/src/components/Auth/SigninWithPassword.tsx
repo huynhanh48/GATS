@@ -57,14 +57,23 @@ export default function SigninWithPassword() {
       }
 
       const roles = session.data.user.roles;
+      if (!hasAdminAccess(roles)) {
+        setError("Bạn không có quyền truy cập khu vực quản trị.");
+        return;
+      }
+
       let nextPath = defaultPostLoginPath(roles);
 
-      if (callbackURL?.startsWith("/") && !callbackURL.startsWith("//")) {
-        const wantsAdmin =
-          callbackURL === "/admin" || callbackURL.startsWith("/admin/");
-        if (!wantsAdmin || hasAdminAccess(roles)) {
-          nextPath = callbackURL;
-        }
+      if (
+        callbackURL?.startsWith("/") &&
+        !callbackURL.startsWith("//") &&
+        !callbackURL.startsWith("/auth")
+      ) {
+        // Legacy bookmarks: /admin/course → /course
+        nextPath =
+          callbackURL === "/admin" || callbackURL.startsWith("/admin/")
+            ? callbackURL.replace(/^\/admin/, "") || "/"
+            : callbackURL;
       }
 
       router.push(nextPath);

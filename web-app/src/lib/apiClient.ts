@@ -11,10 +11,13 @@ export function setUnauthorizedSessionHandler(
   onUnauthorizedSession = handler;
 }
 
+/** Production API — browser must use HTTPS public host, never container localhost. */
+export const PUBLIC_API_URL = "https://api.gats.vn";
+
 /**
  * Resolve API base URL for the browser.
- * On production domains, always use https://api.gats.vn even if an old
- * Docker image baked NEXT_PUBLIC_API_URL as http://IP:3000 (mixed content).
+ * On gats.vn domains always use the public API (avoids mixed-content from
+ * old Docker builds that baked http://IP:3000 or localhost).
  */
 function resolveApiBaseUrl(): string {
   if (typeof window !== "undefined") {
@@ -24,7 +27,7 @@ function resolveApiBaseUrl(): string {
       host === "www.gats.vn" ||
       host === "admin.gats.vn"
     ) {
-      return "https://api.gats.vn";
+      return PUBLIC_API_URL;
     }
   }
   return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";

@@ -11,7 +11,7 @@ import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 
 function isPathActive(pathname: string, url: string) {
-  if (url === "/admin") return pathname === url;
+  if (url === "/") return pathname === url;
   return pathname === url || pathname.startsWith(`${url}/`);
 }
 
@@ -77,7 +77,7 @@ export function Sidebar() {
         <div className="flex h-full flex-col py-8 pl-5 pr-3">
           <div className="relative pr-4.5">
             <Link
-              href="/admin"
+              href="/"
               onClick={() => isMobile && toggleSidebar()}
               className="px-0 py-2.5 min-[850px]:py-0"
             >

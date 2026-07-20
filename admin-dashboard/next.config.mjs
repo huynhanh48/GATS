@@ -8,6 +8,21 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  async redirects() {
+    return [
+      {
+        source: "/admin",
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/admin/:path*",
+        destination: "/:path*",
+        permanent: false,
+      },
+    ];
+  },
+
   images: {
     qualities: [75, 100],
     remotePatterns: [

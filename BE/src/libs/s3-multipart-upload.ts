@@ -8,7 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-import { getS3Bucket, getS3Client } from '@src/libs/s3.client';
+import { getS3BrowserClient, getS3Bucket, getS3Client } from '@src/libs/s3.client';
 
 export const DEFAULT_PART_SIZE_BYTES = 64 * 1024 * 1024;
 export const MIN_PART_SIZE_BYTES = 5 * 1024 * 1024;
@@ -84,7 +84,11 @@ export async function createUploadPartUrl(
     PartNumber: partNumber,
   });
 
-  return getSignedUrl(getS3Client(), command, { expiresIn: expiresInSeconds });
+  // Sign against the browser-reachable endpoint (HTTPS on prod). Using the
+  // in-cluster http://minio:9000 client here causes mixed-content blocks.
+  return getSignedUrl(getS3BrowserClient(), command, {
+    expiresIn: expiresInSeconds,
+  });
 }
 
 export type MultipartPartInput = {

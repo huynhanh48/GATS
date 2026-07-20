@@ -6,7 +6,7 @@ import { ThemeProvider } from "next-themes";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider defaultTheme="dark" attribute="class" enableSystem={false} storageKey="admin-theme">
+    <ThemeProvider defaultTheme="light" attribute="class" enableSystem={false} storageKey="admin-theme">
       <SidebarProvider>
         {children}
         <VideoUploadHud />

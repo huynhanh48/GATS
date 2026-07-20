@@ -18,7 +18,7 @@ export default function SignIn() {
 
       <div className="hidden w-full p-6 xl:block xl:w-1/2">
         <div className="bg-gradient-to-br from-[#eef] to-[#fff8fc] dark:from-[#1a222c] dark:to-[#1a222c] overflow-hidden rounded-2xl px-15 pt-12.5 border border-transparent dark:border-slate-800">
-          <Link className="mb-10 inline-block" href="/admin">
+          <Link className="mb-10 inline-block" href="/">
             <Image
               className="hidden dark:block"
               src={"/images/logo/logo.svg"}

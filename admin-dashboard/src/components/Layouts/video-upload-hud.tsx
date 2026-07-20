@@ -119,7 +119,7 @@ export function VideoUploadHud() {
           )}
 
           <Link
-            href="/admin/video"
+            href="/video"
             className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
           >
             Mở trang Video

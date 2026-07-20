@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { RouteError } from '@src/common/utils/route-errors';
-import { getS3Bucket, getS3Client } from '@src/libs/s3.client';
+import { getS3Bucket, getS3BrowserClient } from '@src/libs/s3.client';
 import type {
   CompleteAssignmentUploadInput,
   CreateAssignmentInput,
@@ -415,7 +415,7 @@ async function initUpload(
 
   const storageKey = `assignments/${assignmentId}/${userId}/${randomUUID()}-${input.file_name}`;
   const uploadUrl = await getSignedUrl(
-    getS3Client(),
+    getS3BrowserClient(),
     new PutObjectCommand({
       Bucket: getS3Bucket(),
       Key: storageKey,

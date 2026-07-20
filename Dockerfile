@@ -10,7 +10,7 @@ COPY web-app/ .
 # NEXT_PUBLIC_* vars are inlined into the client bundle AT BUILD TIME,
 # so they must be passed as build args (see docker-compose.yml build.args).
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production
@@ -31,7 +31,11 @@ WORKDIR /app/admin-dashboard
 COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
 COPY admin-dashboard/ .
-ENV NODE_ENV=production
+ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_BE_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_BE_SOCKET_URL=$NEXT_PUBLIC_API_URL \
+    NODE_ENV=production
 RUN npm run build
 
 # Stage 4: Production Image

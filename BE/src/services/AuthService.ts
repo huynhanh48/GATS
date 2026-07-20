@@ -254,13 +254,9 @@ export async function authenticate(token: string): Promise<AuthUser> {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
   }
 
-  if (!user.accessToken || user.accessToken !== token) {
-    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, Errors.SESSION_EXPIRED);
-  }
-
-  if (!user.tokenExpiresAt || user.tokenExpiresAt.getTime() < Date.now()) {
-    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, Errors.SESSION_EXPIRED);
-  }
+  // Allow concurrent sessions (same account on multiple devices/browsers).
+  // JWT signature + exp are enough; do not require users.access_token match
+  // (that field only stores the latest login and would kick other sessions).
 
   const roles = await getRoleNames(user.id);
 
@@ -271,8 +267,18 @@ export async function authenticate(token: string): Promise<AuthUser> {
   });
 }
 
-async function logout(userId: number) {
-  await clearSession(userId);
+async function logout(userId: number, token?: string) {
+  // Only clear the stored "latest" token if it matches this logout,
+  // so logging out one browser does not wipe another device's cookie validity
+  // (authenticate no longer depends on the stored token anyway).
+  if (token) {
+    const user = await findById(userId);
+    if (user?.accessToken === token) {
+      await clearSession(userId);
+    }
+  } else {
+    await clearSession(userId);
+  }
   return { message: 'Logged out.' };
 }
 

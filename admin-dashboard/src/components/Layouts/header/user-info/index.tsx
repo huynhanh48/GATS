@@ -126,7 +126,7 @@ export function UserInfo() {
 
         <div className="p-2 text-base text-[#4B5563] *:cursor-pointer dark:text-dark-6">
           <Link
-            href={"/admin/profile"}
+            href={"/profile"}
             onClick={() => setIsOpen(false)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.25 ring-primary outline-0 hover:bg-gray-2 hover:text-dark focus-visible:ring-1 dark:hover:bg-dark-3 dark:hover:text-white"
           >
@@ -136,7 +136,7 @@ export function UserInfo() {
           </Link>
 
           <Link
-            href={"/admin/pages/settings"}
+            href={"/pages/settings"}
             onClick={() => setIsOpen(false)}
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.25 ring-primary outline-0 hover:bg-gray-2 hover:text-dark focus-visible:ring-1 dark:hover:bg-dark-3 dark:hover:text-white"
           >

@@ -67,6 +67,11 @@ const EnvVars = jetEnv({
   S3AccessKeyId: str,
   S3SecretAccessKey: str,
   S3ForcePathStyle: defaultBool(true),
+  /**
+   * Browser-facing S3 endpoint for presigned PUT/GET (must be HTTPS on prod).
+   * Keep `S3_ENDPOINT` as the in-cluster URL (e.g. http://minio:9000) for the API/worker.
+   */
+  S3PublicEndpoint: optionalStr,
   S3PublicBaseUrl: optionalStr,
   MinioEndpoint: str,
   MinioAccessKey: str,

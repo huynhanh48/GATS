@@ -30,22 +30,29 @@ x-backend-env: &backend-env
   JWT_EXPIRES_IN: 7d
   EMAIL_USER: noreply@gats.dev
   EMAIL_PASSWORD: changeme
-  APP_URL: ${APP_URL:-http://localhost:3000}
-  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100,https://gats.vn,https://admin.gats.vn}
+  APP_URL: ${APP_URL:-https://api.gats.vn}
+  FRONTEND_URL: ${FRONTEND_URL:-https://gats.vn,https://www.gats.vn,https://admin.gats.vn,http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100}
   GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
   VIDEO_STORAGE_PROVIDER: s3
   AWS_REGION: us-east-1
-  S3_ENDPOINT: http://minio:9000
-  S3_BUCKET: s3-video-gats
-  S3_ACCESS_KEY_ID: minioadmin
-  S3_SECRET_ACCESS_KEY: minioadmin
+  # In-cluster MinIO for API/worker. Override on VPS with LongVan HTTPS (or any
+  # public S3) via .env — browser uploads need HTTPS (see S3_PUBLIC_* below).
+  S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+  S3_BUCKET: ${S3_BUCKET:-s3-video-gats}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
   S3_FORCE_PATH_STYLE: "true"
-  MINIO_ENDPOINT: http://minio:9000
-  MINIO_ACCESS_KEY: minioadmin
-  MINIO_SECRET_KEY: minioadmin
-  MINIO_BUCKET_NAME: files-gats
+  # Browser-facing endpoint/base for presigned uploads + HLS playback (HTTPS).
+  # Example LongVan: https://s3-hn1-r1.longvan.net  and  .../s3-video-gats
+  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-}
+  S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-}
+  MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+  MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-files-gats}
   MINIO_REGION: us-east-1
   MINIO_FORCE_PATH_STYLE: "true"
+  MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-}
   ADMIN_DEFAULT_EMAIL: admin@gmail.com
   ADMIN_DEFAULT_PASSWORD: admin12345
   VIDEO_WORKER_CONCURRENCY: "1"
@@ -142,9 +149,8 @@ services:
         # Baked into the web-app client bundle at build time (NEXT_PUBLIC_*).
         # Override via .env next to this file or `--build-arg`.
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
-        # Where the BROWSER reaches the API. On a VPS set this to the public
-        # URL, e.g. http://YOUR_VPS_IP:3000 or https://api.your-domain.com
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+        # Where the BROWSER reaches the API (baked at build time).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
     image: gats-academy
     container_name: gats-academy
     restart: unless-stopped
@@ -161,7 +167,11 @@ services:
       - "9100:9000" # admin-dashboard (host 9100; 9000 busy on VPS)
     environment:
       <<: *backend-env
+      # Admin SSR/proxy → API inside the same container (NOT the public URL).
       BE_API_URL: http://localhost:3000
+      # Browser sockets / any NEXT_PUBLIC client calls from admin.
+      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
+      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
 
 volumes:
   postgres_data:

@@ -72,7 +72,8 @@ async function logout(req: Request, res: Response) {
   if (!req.authUser) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
   }
-  const result = await AuthService.logout(req.authUser.id);
+  const token = req.cookies?.[ACCESS_TOKEN_COOKIE] as string | undefined;
+  const result = await AuthService.logout(req.authUser.id, token);
   res.clearCookie(ACCESS_TOKEN_COOKIE, AuthService.getClearCookieOptions());
   return res.status(HttpStatusCodes.OK).json(result);
 }

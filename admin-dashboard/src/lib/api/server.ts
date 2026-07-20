@@ -102,7 +102,7 @@ export async function getBackendSession(): Promise<BackendSession | null> {
   return { user: mapUser(result.data.user) };
 }
 
-/** Admin / instructor only — use for `/admin/**` pages. */
+/** Admin / instructor only — use for `/**` pages. */
 export async function getAdminSession(): Promise<BackendSession | null> {
   const session = await getBackendSession();
   if (!session || !hasAdminAccess(session.user.roles)) return null;

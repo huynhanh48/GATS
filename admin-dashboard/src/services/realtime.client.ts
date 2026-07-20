@@ -1,7 +1,7 @@
 "use client";
 
 import { io, type Socket } from "socket.io-client";
-import { BE_API_URL } from "@/lib/api/config";
+import { resolvePublicApiUrl } from "@/lib/api/public-api";
 
 export type VideoProgressPhase =
   | "upload"
@@ -57,28 +57,45 @@ type ClientToServerEvents = {
 type RealtimeSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 let socket: RealtimeSocket | null = null;
+/** After reconnect budget is exhausted, do not open more connections. */
+let giveUp = false;
 
 function getSocketUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_BE_SOCKET_URL ??
-    process.env.NEXT_PUBLIC_BE_API_URL ??
-    BE_API_URL
-  ).replace(/\/$/, "");
+  return resolvePublicApiUrl();
 }
 
 export function getRealtimeSocket(): RealtimeSocket {
   if (socket) return socket;
+
   socket = io(getSocketUrl(), {
     autoConnect: false,
     withCredentials: true,
-    transports: ["websocket", "polling"],
+    // Websocket only — avoids long-polling spam when BE has no socket.io
+    transports: ["websocket"],
+    reconnection: true,
+    reconnectionAttempts: 2,
+    reconnectionDelay: 2000,
+    timeout: 4000,
   });
+
+  socket.io.on("reconnect_failed", () => {
+    giveUp = true;
+    socket?.disconnect();
+  });
+
+  socket.on("connect_error", () => {
+    // First failures still count toward reconnectionAttempts; no extra work.
+  });
+
   return socket;
 }
 
 export function ensureRealtimeConnected(): RealtimeSocket {
   const realtime = getRealtimeSocket();
-  if (!realtime.connected) realtime.connect();
+  if (giveUp) return realtime;
+  if (!realtime.connected) {
+    realtime.connect();
+  }
   return realtime;
 }
 
@@ -91,12 +108,20 @@ export function subscribeToVideoProgress(
     if (payload.videoId === videoId) handler(payload);
   };
 
-  realtime.emit("video:subscribe", { videoId });
+  if (realtime.connected) {
+    realtime.emit("video:subscribe", { videoId });
+  } else {
+    realtime.once("connect", () => {
+      realtime.emit("video:subscribe", { videoId });
+    });
+  }
   realtime.on("video:progress", wrapped);
 
   return () => {
     realtime.off("video:progress", wrapped);
-    realtime.emit("video:unsubscribe", { videoId });
+    if (realtime.connected) {
+      realtime.emit("video:unsubscribe", { videoId });
+    }
   };
 }
 
@@ -110,5 +135,6 @@ export function publishVideoUploadProgress(payload: {
   message?: string;
 }): void {
   const realtime = ensureRealtimeConnected();
+  if (!realtime.connected) return;
   realtime.emit("video:upload:progress", payload);
 }

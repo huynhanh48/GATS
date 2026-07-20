@@ -161,7 +161,19 @@ export const videoClient = {
     blob: Blob,
     signal?: AbortSignal,
   ): Promise<string> {
-    const res = await fetch(url, { method: "PUT", body: blob, signal });
+    let res: Response;
+    try {
+      res = await fetch(url, { method: "PUT", body: blob, signal });
+    } catch (err) {
+      const isHttp =
+        typeof url === "string" && url.startsWith("http://");
+      if (isHttp && typeof window !== "undefined" && window.isSecureContext) {
+        throw new Error(
+          "Upload bị chặn mixed-content: URL S3 đang là HTTP trong khi admin chạy HTTPS. Đặt S3_PUBLIC_ENDPOINT (HTTPS) trên API rồi rebuild/restart.",
+        );
+      }
+      throw err instanceof Error ? err : new Error("Failed to fetch");
+    }
     if (!res.ok) {
       throw new Error(`Upload part failed (status ${res.status})`);
     }

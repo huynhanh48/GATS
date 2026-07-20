@@ -10,7 +10,7 @@ export const NAV_DATA = [
         items: [
           {
             title: "Tổng quan",
-            url: "/admin",
+            url: "/",
           },
         ],
       },
@@ -20,19 +20,19 @@ export const NAV_DATA = [
         items: [
           {
             title: "Danh sách",
-            url: "/admin/course",
+            url: "/course",
           },
           {
             title: "Thêm khóa học",
-            url: "/admin/course/new",
+            url: "/course/new",
           },
           {
             title: "Danh mục",
-            url: "/admin/course/category",
+            url: "/course/category",
           },
           {
             title: "Quản lý Quiz",
-            url: "/admin/course/quiz",
+            url: "/course/quiz",
           },
         ],
       },
@@ -42,15 +42,15 @@ export const NAV_DATA = [
         items: [
           {
             title: "Danh sách",
-            url: "/admin/post",
+            url: "/post",
           },
           {
             title: "Thêm bài viết",
-            url: "/admin/post/new",
+            url: "/post/new",
           },
           {
             title: "Danh mục",
-            url: "/admin/post/category",
+            url: "/post/category",
           },
         ],
       },
@@ -60,15 +60,15 @@ export const NAV_DATA = [
         items: [
           {
             title: "Video",
-            url: "/admin/video",
+            url: "/video",
           },
           {
             title: "Thumbnail",
-            url: "/admin/thumbnail",
+            url: "/thumbnail",
           },
           {
             title: "Files",
-            url: "/admin/file",
+            url: "/file",
           },
         ],
       },
@@ -78,11 +78,11 @@ export const NAV_DATA = [
         items: [
           {
             title: "Khóa học",
-            url: "/admin/course/trash",
+            url: "/course/trash",
           },
           {
             title: "Bài viết",
-            url: "/admin/post/trash",
+            url: "/post/trash",
           },
         ],
       },
@@ -93,13 +93,13 @@ export const NAV_DATA = [
     items: [
       {
         title: "Calendar",
-        url: "/admin/calendar",
+        url: "/calendar",
         icon: Icons.Calendar,
         items: [],
       },
       {
         title: "Profile",
-        url: "/admin/profile",
+        url: "/profile",
         icon: Icons.User,
         items: [],
       },
@@ -109,7 +109,7 @@ export const NAV_DATA = [
         items: [
           {
             title: "Tài khoản",
-            url: "/admin/pages/settings",
+            url: "/pages/settings",
           },
         ],
       },
