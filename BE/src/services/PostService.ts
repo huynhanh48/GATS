@@ -324,9 +324,9 @@ async function create(input: CreatePostInput, authorId: number) {
   const categoryMap = await CategoryRepo.findByPostIds([post.id]);
 
   void NotificationService.notify({
-    type: input.status === 'published' ? 'post_published' : 'post_created',
+    type: post.status === 'published' ? 'post_published' : 'post_created',
     title:
-      input.status === 'published'
+      post.status === 'published'
         ? `Bài viết đã xuất bản: ${post.title}`
         : `Bài viết mới: ${post.title}`,
     body: post.slug,

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import logger from 'jet-logger';
 import morgan from 'morgan';
 import path from 'path';
+import { ZodError } from 'zod';
 
 import Paths from '@src/common/paths/auth';
 import { isHttpException } from '@src/exceptions/root';
@@ -107,8 +108,8 @@ app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
   }
 
   // Zod parse outside errorHandle → still return 422, not 500
-  if (err?.name === 'ZodError' && Array.isArray((err as { issues?: unknown }).issues)) {
-    const issues = (err as { issues: { path?: (string | number)[]; message?: string }[] }).issues;
+  if (err instanceof ZodError) {
+    const issues = err.issues;
     const first = issues[0];
     const message = first
       ? `Validation Error (${(first.path ?? []).join('.')}): ${first.message ?? 'Invalid'}`
