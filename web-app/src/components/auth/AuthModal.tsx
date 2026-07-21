@@ -306,18 +306,6 @@ export function AuthModal({
                       )}
                     </AnimatePresence>
 
-                    {isLogin && (
-                      <div className="flex justify-end pt-1">
-                        <button
-                          type="button"
-                          onClick={handleComingSoon}
-                          className="text-sm text-primary hover:underline font-medium"
-                        >
-                          Quên mật khẩu?
-                        </button>
-                      </div>
-                    )}
-
                     <div className="pt-4">
                       <button
                         type="submit"
