@@ -12,7 +12,7 @@ export default async function WithLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      <Sidebar roles={session.user.roles} />
 
       <div className="flex min-w-0 flex-1 flex-col bg-gray-2 dark:bg-[#020d1a]">
         <Header />

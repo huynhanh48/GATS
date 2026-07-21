@@ -15,6 +15,7 @@ import {
   type CommentStatus,
   type NewComment,
 } from '@src/db/schema/comment';
+import { postsTable } from '@src/db/schema/post';
 import { usersTable } from '@src/db/schema/user';
 import {
   type CommentListItem,
@@ -200,6 +201,87 @@ export async function update(
 
 export async function softDelete(id: string): Promise<CommentRecord | undefined> {
   return update(id, { status: 'deleted' });
+}
+
+export type ModerationQueueRow = {
+  id: string;
+  postId: string;
+  postTitle: string | null;
+  parentId: string | null;
+  content: string;
+  status: CommentStatus;
+  createdAt: Date;
+  updatedAt: Date;
+  authorId: number;
+  authorUserName: string | null;
+  likeCount: number;
+};
+
+export async function listForModeration(options: {
+  skip?: number;
+  take?: number;
+  status?: CommentStatus;
+}): Promise<{ data: ModerationQueueRow[]; total: number }> {
+  const skip = Math.max(0, options.skip ?? 0);
+  const take = Math.min(100, Math.max(1, options.take ?? 20));
+
+  const where = options.status
+    ? eq(commentsTable.status, options.status)
+    : sql`${commentsTable.status} in ('hidden', 'deleted')`;
+
+  const [rows, totalRows] = await Promise.all([
+    db
+      .select({
+        id: commentsTable.id,
+        postId: commentsTable.postId,
+        postTitle: postsTable.title,
+        parentId: commentsTable.parentId,
+        content: commentsTable.content,
+        status: commentsTable.status,
+        createdAt: commentsTable.createdAt,
+        updatedAt: commentsTable.updatedAt,
+        authorId: commentsTable.userId,
+        authorUserName: usersTable.userName,
+        likeCount: likeCountSubquery,
+      })
+      .from(commentsTable)
+      .leftJoin(postsTable, eq(commentsTable.postId, postsTable.id))
+      .leftJoin(usersTable, eq(commentsTable.userId, usersTable.id))
+      .where(where)
+      .orderBy(desc(commentsTable.updatedAt))
+      .limit(take)
+      .offset(skip),
+    db.select({ total: count() }).from(commentsTable).where(where),
+  ]);
+
+  return {
+    data: rows,
+    total: Number(totalRows[0]?.total ?? 0),
+  };
+}
+
+export async function countByStatus(): Promise<
+  Record<CommentStatus, number> & { all: number }
+> {
+  const rows = await db
+    .select({ status: commentsTable.status, value: count() })
+    .from(commentsTable)
+    .groupBy(commentsTable.status);
+
+  const result: Record<CommentStatus, number> & { all: number } = {
+    visible: 0,
+    hidden: 0,
+    deleted: 0,
+    all: 0,
+  };
+
+  for (const row of rows) {
+    const n = Number(row.value ?? 0);
+    result[row.status] = n;
+    result.all += n;
+  }
+
+  return result;
 }
 
 export async function belongsToPost(

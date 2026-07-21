@@ -34,7 +34,34 @@ abstract final class CourseApiService {
     final json = await ApiClient.get(CourseApiPaths.byId(id), token: token);
     final course = json['course'];
     if (course is! Map) return null;
-    return CourseBeMapper.fromPublicJson(Map<String, dynamic>.from(course));
+    final map = Map<String, dynamic>.from(course);
+    // Detail/byId có `sections` → flatten lessons; list-only payload thì lectures rỗng.
+    if (map['sections'] is List) {
+      return CourseBeMapper.fromDetailJson(map);
+    }
+    return CourseBeMapper.fromPublicJson(map);
+  }
+
+  /// `GET /api/courses/:id/curriculum` — sections + lessons (isPreview/locked).
+  static Future<List<CourseLecture>> listCurriculumLectures(
+    String courseId, {
+    String? token,
+  }) async {
+    final json = await ApiClient.get(
+      CourseApiPaths.curriculum(courseId),
+      token: token,
+    );
+    final sections = json['data'];
+    if (sections is! List) return [];
+    final mapped = CourseBeMapper.fromDetailJson({
+      'id': courseId,
+      'title': '',
+      'description': '',
+      'price': 0,
+      'status': 'published',
+      'sections': sections,
+    });
+    return mapped.lectures;
   }
 
   /// `GET /api/me/enrollments` — chỉ enrollment rows; join course bằng [getById].

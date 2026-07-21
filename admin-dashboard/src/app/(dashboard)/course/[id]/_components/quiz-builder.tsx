@@ -30,10 +30,17 @@ const inputClass =
   "w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 dark:border-dark-3 dark:bg-dark-2 dark:text-white";
 const labelClass = "mb-1.5 block text-sm font-medium text-dark dark:text-white";
 
-const QUESTION_TYPE_LABELS: Record<QuizQuestionType, string> = {
+const QUESTION_TYPE_LABELS: Record<
+  Exclude<QuizQuestionType, "true_false">,
+  string
+> = {
   single_choice: "Một đáp án",
   multiple_choice: "Nhiều đáp án",
   fill_blank: "Điền vào chỗ trống",
+};
+
+const QUESTION_TYPE_DISPLAY: Record<string, string> = {
+  ...QUESTION_TYPE_LABELS,
   true_false: "Đúng / Sai",
 };
 
@@ -170,12 +177,7 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
   const [options, setOptions] = useState<QuizOption[]>(
     initial?.options?.map((o) => ({ ...o })) ??
     initial?.answers?.map((a) => ({ content: a.answer, is_correct: a.isCorrect, order: a.order })) ??
-      (type === "true_false"
-        ? [
-            { content: "Đúng", is_correct: true, order: 0 },
-            { content: "Sai", is_correct: false, order: 1 },
-          ]
-        : [emptyOption(0), emptyOption(1)])
+      [emptyOption(0), emptyOption(1)]
   );
   const [acceptedAnswers, setAcceptedAnswers] = useState<AcceptedAnswer[]>(
     initial?.acceptedAnswers?.map((a) => ({ ...a })) ??
@@ -210,16 +212,27 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
   function validate(): string | null {
     if (!title.trim()) return "Tiêu đề câu hỏi là bắt buộc";
     const correct = options.filter((o) => o.is_correct);
+    if (type === "single_choice" || type === "multiple_choice") {
+      const filled = options.map((o) => o.content.trim()).filter(Boolean);
+      if (filled.length < 2) return "Cần ít nhất 2 lựa chọn";
+      const unique = new Set(filled.map((c) => c.toLowerCase()));
+      if (unique.size !== filled.length) {
+        return "Các lựa chọn không được trùng nội dung";
+      }
+    }
     if (type === "single_choice") {
-      if (options.length < 2) return "Cần ít nhất 2 lựa chọn";
       if (correct.length !== 1) return "Phải chọn đúng 1 đáp án đúng";
     }
     if (type === "multiple_choice") {
-      if (options.length < 2) return "Cần ít nhất 2 lựa chọn";
       if (correct.length < 2) return "Phải có ít nhất 2 đáp án đúng";
     }
     if (type === "fill_blank") {
-      if (!acceptedAnswers[0]?.content.trim()) return "Cần ít nhất 1 đáp án được chấp nhận";
+      const filled = acceptedAnswers.map((a) => a.content.trim()).filter(Boolean);
+      if (!filled.length) return "Cần ít nhất 1 đáp án được chấp nhận";
+      const unique = new Set(filled.map((c) => c.toLowerCase()));
+      if (unique.size !== filled.length) {
+        return "Các đáp án chấp nhận không được trùng nội dung";
+      }
     }
     return null;
   }
@@ -282,14 +295,21 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
         <div>
           <label className={labelClass}>Loại câu hỏi</label>
           <select
-            value={type}
+            value={
+              type === "true_false" && !initial
+                ? "single_choice"
+                : type
+            }
             onChange={(e) => setType(e.target.value as QuizQuestionType)}
             disabled={saving || !!initial}
             className={inputClass}
           >
-            {(Object.keys(QUESTION_TYPE_LABELS) as QuizQuestionType[]).map((t) => (
+            {(Object.keys(QUESTION_TYPE_LABELS) as Array<keyof typeof QUESTION_TYPE_LABELS>).map((t) => (
               <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>
             ))}
+            {initial?.type === "true_false" ? (
+              <option value="true_false">Đúng / Sai (legacy — chỉ xem)</option>
+            ) : null}
           </select>
         </div>
       </div>
@@ -439,9 +459,17 @@ type QuizBuilderProps = {
   lessonId: string;
   existingQuiz?: Quiz | null;
   onCreated?: (quiz: Quiz) => void;
+  /** When true, open the add-question form once quiz exists */
+  autoOpenAddQuestion?: boolean;
 };
 
-export function QuizBuilder({ courseId, lessonId, existingQuiz, onCreated }: QuizBuilderProps) {
+export function QuizBuilder({
+  courseId,
+  lessonId,
+  existingQuiz,
+  onCreated,
+  autoOpenAddQuestion = false,
+}: QuizBuilderProps) {
   const [quiz, setQuiz] = useState<Quiz | null>(existingQuiz ?? null);
   const [questions, setQuestions] = useState<QuizQuestion[]>(existingQuiz?.questions ?? []);
   const [creating, setCreating] = useState(!existingQuiz); // show settings form if no quiz yet
@@ -458,6 +486,12 @@ export function QuizBuilder({ courseId, lessonId, existingQuiz, onCreated }: Qui
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [reordering, setReordering] = useState(false);
   const [initSaving, setInitSaving] = useState(false);
+
+  useEffect(() => {
+    if (autoOpenAddQuestion && quiz && !creating) {
+      setAddingQuestion(true);
+    }
+  }, [autoOpenAddQuestion, quiz, creating]);
 
   // Init form state
   const [initForm, setInitForm] = useState<CreateQuizInput>({
@@ -493,6 +527,7 @@ export function QuizBuilder({ courseId, lessonId, existingQuiz, onCreated }: Qui
       };
       setQuiz(fullQuiz);
       setCreating(false);
+      setAddingQuestion(true);
       toast.success("Đã tạo quiz");
       if (onCreated) onCreated(fullQuiz);
     }
@@ -615,7 +650,7 @@ export function QuizBuilder({ courseId, lessonId, existingQuiz, onCreated }: Qui
                   {idx + 1}. {q.title ?? q.question}
                 </p>
                 <span className="text-xs text-dark-4 dark:text-dark-6">
-                  {QUESTION_TYPE_LABELS[q.type]} · {q.points} điểm
+                  {QUESTION_TYPE_DISPLAY[q.type] ?? q.type} · {q.points} điểm
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-1">

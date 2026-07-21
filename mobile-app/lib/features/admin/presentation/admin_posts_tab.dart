@@ -22,6 +22,7 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
   void initState() {
     super.initState();
     MockPostStore.instance.addListener(_onChanged);
+    MockPostStore.instance.syncFromApi();
   }
 
   void _onChanged() {

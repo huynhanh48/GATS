@@ -91,6 +91,8 @@ const EnvVars = jetEnv({
   FfmpegX264Preset: defaultStr('veryfast'),
   AdminDefaultEmail: optionalStr,
   AdminDefaultPassword: optionalStr,
+  /** Inbox for consultation lead notifications (falls back to EmailUser). */
+  LeadNotifyEmail: optionalStr,
   /** Bank transfer / Sepay (same keys as Web_HuynhAnh Ecommerce) */
   BankAccountNumber: defaultStr(''),
   /** Sepay QR `bank=` query — e.g. VietinBank (name) or BIN */

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 
-import { eq, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import db from '@src/db';
 import { rolesTable } from '@src/db/schema/role';
@@ -46,6 +46,15 @@ export async function findById(id: number): Promise<UserRecord | undefined> {
     .where(eq(usersTable.id, id))
     .limit(1);
   return rows[0] ? parseUserRow(rows[0]) : undefined;
+}
+
+export async function findByIds(ids: number[]): Promise<UserRecord[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select()
+    .from(usersTable)
+    .where(inArray(usersTable.id, ids));
+  return rows.map(parseUserRow);
 }
 
 export async function findAuthorById(
@@ -123,7 +132,16 @@ export async function setVerified(userId: number): Promise<void> {
 
 export async function update(
   id: number,
-  data: Partial<Pick<NewUser, 'userName' | 'email'>>,
+  data: Partial<
+    Pick<
+      NewUser,
+      | 'userName'
+      | 'email'
+      | 'passwordHash'
+      | 'verifyToken'
+      | 'isLocked'
+    >
+  >,
 ): Promise<UserRecord | undefined> {
   const rows = await db
     .update(usersTable)
@@ -150,9 +168,53 @@ export function toPublicUser(user: UserRecord, roles: string[]): UserPublic {
     email: user.email,
     type: user.type,
     roles,
+    isLocked: user.isLocked,
   });
 }
 
 export function createVerifyToken(): string {
   return randomUUID();
+}
+
+export async function listAdmin(options: {
+  skip?: number;
+  take?: number;
+  q?: string;
+  verified?: boolean;
+  locked?: boolean;
+}): Promise<{ data: UserRecord[]; total: number }> {
+  const skip = Math.max(0, options.skip ?? 0);
+  const take = Math.min(100, Math.max(1, options.take ?? 20));
+  const q = options.q?.trim();
+
+  const conditions = [];
+  if (options.verified !== undefined) {
+    conditions.push(eq(usersTable.verified, options.verified));
+  }
+  if (options.locked !== undefined) {
+    conditions.push(eq(usersTable.isLocked, options.locked));
+  }
+  if (q) {
+    const term = `%${q}%`;
+    conditions.push(
+      or(ilike(usersTable.userName, term), ilike(usersTable.email, term)),
+    );
+  }
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [data, totalRow] = await Promise.all([
+    db
+      .select()
+      .from(usersTable)
+      .where(where)
+      .orderBy(desc(usersTable.createdAt))
+      .limit(take)
+      .offset(skip),
+    db.select({ value: count() }).from(usersTable).where(where),
+  ]);
+
+  return {
+    data: data.map(parseUserRow),
+    total: Number(totalRow[0]?.value ?? 0),
+  };
 }

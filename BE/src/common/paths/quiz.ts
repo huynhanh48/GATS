@@ -13,6 +13,8 @@ const QuizPaths = {
     },
     Attempts: {
       Create: '/quizzes/:quizId/attempts',
+      List: '/quizzes/:quizId/attempts',
+      Reset: '/quizzes/:quizId/attempts/:userId/reset',
     },
   },
   Question: {

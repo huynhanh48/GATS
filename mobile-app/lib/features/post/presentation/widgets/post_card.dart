@@ -4,6 +4,7 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 
 /// Ảnh bìa bài viết — crop vừa khung [aspectRatio].
+/// Hỗ trợ asset local và URL mạng (thumbnail từ BE).
 class PostCoverImage extends StatelessWidget {
   const PostCoverImage({
     super.key,
@@ -18,26 +19,35 @@ class PostCoverImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   final int fallbackSeed;
 
+  bool get _isNetwork =>
+      assetPath.startsWith('http://') || assetPath.startsWith('https://');
+
   @override
   Widget build(BuildContext context) {
     final radius = borderRadius ?? BorderRadius.zero;
+    final fallback = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: AppGradients.courseCover(fallbackSeed),
+      ),
+    );
 
     return ClipRRect(
       borderRadius: radius,
       child: AspectRatio(
         aspectRatio: aspectRatio,
-        child: Image.asset(
-          assetPath,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: AppGradients.courseCover(fallbackSeed),
+        child: _isNetwork
+            ? Image.network(
+                assetPath,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) => fallback,
+              )
+            : Image.asset(
+                assetPath,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) => fallback,
               ),
-            );
-          },
-        ),
       ),
     );
   }

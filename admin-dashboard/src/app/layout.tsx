@@ -9,24 +9,20 @@ import NextTopLoader from "nextjs-toploader";
 import type { PropsWithChildren } from "react";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
-import { Inter } from "next/font/google";
-import { cn } from "@/lib/utils";
-
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | NextAdmin - Next.js Dashboard Kit",
-    default: "NextAdmin - Next.js Dashboard Kit",
+    template: "%s | GATS Academy Admin",
+    default: "GATS Academy Admin",
   },
   description:
-    "Next.js admin dashboard toolkit with 200+ templates, UI components, and integrations for fast dashboard development.",
+    "GATS Academy admin dashboard — courses, orders, users, and operations.",
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn("font-sans", inter.variable)}>
-      <body suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning className="font-sans">
+      <body suppressHydrationWarning className="font-sans">
         <Providers>
           <NextTopLoader color="#5750F1" showSpinner={false} />
 

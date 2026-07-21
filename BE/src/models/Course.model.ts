@@ -200,6 +200,17 @@ export const courseDetailLessonSchema = z.object({
   content: z.string().nullable().optional(),
   attachments: z.array(lessonAttachmentSchema).optional(),
   locked: z.boolean(),
+  linkedPostId: z.string().uuid().nullable().optional(),
+  linkedPost: z
+    .object({
+      id: z.string().uuid(),
+      title: z.string(),
+      slug: z.string(),
+      excerpt: z.string().nullable(),
+      thumbnail: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const courseDetailSectionSchema = z.object({

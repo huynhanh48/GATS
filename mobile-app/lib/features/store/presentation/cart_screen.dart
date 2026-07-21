@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
@@ -7,7 +6,7 @@ import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/utils/price_formatter.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/store/presentation/payment_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -89,7 +88,8 @@ class _CartScreenState extends State<CartScreen> {
                     itemBuilder: (context, index) {
                       final courseId = cartItems.keys.elementAt(index);
                       final quantity = cartItems[courseId]!;
-                      final course = MockCourseStore.instance.courseById(courseId);
+                      final course =
+                          CourseModule.repository.getCourse(courseId);
 
                       if (course == null) return const SizedBox.shrink();
 
@@ -147,52 +147,13 @@ class _CartScreenState extends State<CartScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 8),
-
-                                  // Slot controller (- 1 +)
-                                  Row(
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          CartController.instance.updateQuantity(courseId, quantity - 1);
-                                          HapticFeedback.selectionClick();
-                                        },
-                                        child: Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: gats.divider),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(Icons.remove, size: 16),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                                        child: Text(
-                                          '$quantity',
-                                          style: AppTypography.style(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w800,
-                                            color: gats.textPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          CartController.instance.updateQuantity(courseId, quantity + 1);
-                                          HapticFeedback.selectionClick();
-                                        },
-                                        child: Container(
-                                          width: 36,
-                                          height: 36,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: gats.divider),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(Icons.add, size: 16),
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    formatVndPrice(course.effectivePrice),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: gats.textSecondary,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -205,7 +166,9 @@ class _CartScreenState extends State<CartScreen> {
                               children: [
                                 IconButton(
                                   icon: Icon(Icons.close, color: gats.textSecondary, size: 18),
-                                  onPressed: () => CartController.instance.removeFromCart(courseId),
+                                  onPressed: () {
+                                    CartController.instance.removeFromCart(courseId);
+                                  },
                                 ),
                                 const SizedBox(height: 4),
                                 Text(

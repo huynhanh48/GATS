@@ -14,6 +14,7 @@ export const lessonRecordSchema = z.object({
   content: z.string().nullable(),
   isPreview: z.boolean(),
   duration: z.number().int().nullable(),
+  linkedPostId: z.string().uuid().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -28,6 +29,7 @@ export const createLessonSchema = z.object({
   content: z.string().optional(),
   is_preview: z.boolean().default(false),
   duration: z.number().int().min(0).optional(),
+  linked_post_id: z.string().uuid().nullable().optional(),
 });
 
 export const updateLessonSchema = z
@@ -39,6 +41,7 @@ export const updateLessonSchema = z
     content: z.string().nullable().optional(),
     is_preview: z.boolean().optional(),
     duration: z.number().int().min(0).nullable().optional(),
+    linked_post_id: z.string().uuid().nullable().optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field is required',

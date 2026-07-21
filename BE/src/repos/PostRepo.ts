@@ -172,6 +172,64 @@ export async function findById(
   return rows[0] ? parseRow(rows[0]) : undefined;
 }
 
+export async function findPublishedSummariesByIds(
+  ids: string[],
+): Promise<
+  Map<
+    string,
+    {
+      id: string;
+      title: string;
+      slug: string;
+      excerpt: string | null;
+      thumbnail: string | null;
+    }
+  >
+> {
+  const map = new Map<
+    string,
+    {
+      id: string;
+      title: string;
+      slug: string;
+      excerpt: string | null;
+      thumbnail: string | null;
+    }
+  >();
+  if (ids.length === 0) return map;
+
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return map;
+
+  const rows = await db
+    .select({
+      id: postsTable.id,
+      title: postsTable.title,
+      slug: postsTable.slug,
+      excerpt: postsTable.excerpt,
+      thumbnail: postsTable.thumbnail,
+    })
+    .from(postsTable)
+    .where(
+      and(
+        inArray(postsTable.id, unique),
+        eq(postsTable.status, 'published'),
+        sql`${postsTable.deletedAt} is null`,
+      ),
+    );
+
+  for (const row of rows) {
+    map.set(row.id, {
+      id: row.id,
+      title: row.title,
+      slug: row.slug,
+      excerpt: row.excerpt,
+      thumbnail: row.thumbnail,
+    });
+  }
+  return map;
+}
+
 export async function findBySlug(
   slug: string,
   options: { deleted?: SoftDeleteVisibility } = {},

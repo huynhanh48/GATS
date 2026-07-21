@@ -133,6 +133,89 @@ final class ApiCourseRepository extends ChangeNotifier
   }
 
   @override
+  void unenroll(String courseId, String userId) {
+    _enrolledByUser[courseId]?.remove(userId);
+    notifyListeners();
+  }
+
+  @override
+  Future<void> ensureDetailLoaded(String courseId) async {
+    final existing = getCourse(courseId);
+    final token = await AuthPrefs.accessToken();
+    try {
+      AppCourse? detailed;
+      final slug = existing?.slug;
+      if (slug != null && slug.isNotEmpty) {
+        detailed = await CourseApiService.getBySlug(slug, token: token);
+      }
+
+      if (detailed == null || detailed.lectures.isEmpty) {
+        final lectures = await CourseApiService.listCurriculumLectures(
+          courseId,
+          token: token,
+        );
+        if (existing != null) {
+          detailed = existing.copyWith(
+            lectures: lectures,
+            lessonCount: lectures.isNotEmpty
+                ? lectures.length
+                : existing.lessonCount,
+            durationMinutes: lectures.isNotEmpty
+                ? lectures.fold<int>(0, (s, l) => s + l.durationMinutes)
+                : existing.durationMinutes,
+          );
+        }
+      }
+
+      if (detailed == null) return;
+
+      final idx = _courses.indexWhere((c) => c.id == courseId);
+      if (idx >= 0) {
+        final prev = _courses[idx];
+        _courses[idx] = detailed.copyWith(
+          enrolledUserIds: prev.enrolledUserIds,
+          progressByUser: prev.progressByUser,
+          mentorId: detailed.mentorId.isNotEmpty
+              ? detailed.mentorId
+              : prev.mentorId,
+          groupChatId: detailed.groupChatId.isNotEmpty
+              ? detailed.groupChatId
+              : prev.groupChatId,
+        );
+      } else {
+        _courses = [..._courses, detailed];
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('ApiCourseRepository: ensureDetailLoaded failed — $e');
+    }
+  }
+
+  @override
+  Future<bool> enrollFree(String courseId, String userId) async {
+    enroll(courseId, userId);
+    try {
+      final token = await AuthPrefs.accessToken();
+      if (token == null) {
+        unenroll(courseId, userId);
+        return false;
+      }
+      await CourseApiService.enrollFree(courseId: courseId, token: token);
+      // Refresh curriculum locks sau khi enroll.
+      final idx = _courses.indexWhere((c) => c.id == courseId);
+      if (idx >= 0) {
+        _courses[idx] = _courses[idx].copyWith(lectures: const []);
+      }
+      await ensureDetailLoaded(courseId);
+      return true;
+    } catch (e) {
+      debugPrint('ApiCourseRepository: enrollFree failed — $e');
+      unenroll(courseId, userId);
+      return false;
+    }
+  }
+
+  @override
   void setUserProgress(String courseId, String userId, double progress) {
     _progressMap.putIfAbsent(userId, () => {})[courseId] =
         progress.clamp(0.0, 1.0);

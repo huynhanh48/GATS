@@ -4,7 +4,10 @@ import { PostDetailClient } from './PostDetailClient';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { ParticlesBackground } from '@/components/common/ParticlesBackground';
-import { MOCK_POSTS } from '@/constants/mockPosts';
+
+// Post slugs are managed in the admin and can be created after deployment.
+// Keep this route dynamic so new linked posts resolve without a rebuild.
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{
@@ -14,10 +17,9 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
-  const post = MOCK_POSTS.find(p => p.slug === resolvedParams.slug);
   return {
-    title: post ? `${post.title} | GATS Academy` : 'Bài viết | GATS Academy',
-    description: post?.excerpt || 'Đọc bài viết mới nhất trên GATS Academy.',
+    title: `${resolvedParams.slug} | GATS Academy`,
+    description: 'Đọc bài viết trên GATS Academy.',
   };
 }
 

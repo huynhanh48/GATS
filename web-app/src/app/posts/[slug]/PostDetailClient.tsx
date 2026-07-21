@@ -39,14 +39,7 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
   useEffect(() => {
     if (!post) return;
     
-    let contentHtml = post.content || `
-      <h2 id="h1">1. Tạo TVC Cho Thương Hiệu Nước Hoa Verde</h2>
-      <p>Để bắt đầu dự án này, chúng ta cần một đề bài cụ thể...</p>
-      <h2 id="h2">2. Thực Hành</h2>
-      <h3 id="h3">2.1. Bước 1: Tạo Kịch Bản, Mô Tả Phân Cảnh Với Gemini</h3>
-      <h3 id="h4">2.2. Bước 2: Tạo Video Bằng Google Flow</h3>
-      <h3 id="h5">2.3. Bước 3: Tạo Nhạc Bằng Google Flow Music</h3>
-    `;
+    let contentHtml = post.content || '';
 
     // Inject IDs to H2/H3 tags if they don't have them (for raw HTML blocks)
     let h2Count = 0;

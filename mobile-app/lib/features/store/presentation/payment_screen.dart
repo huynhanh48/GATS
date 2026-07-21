@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/network/api_exception.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
+import 'package:gats_academy/data/api/order_api_service.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/store/domain/payment_method.dart';
 import 'package:gats_academy/features/store/presentation/widgets/checkout_success_dialog.dart';
 
@@ -17,16 +22,41 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  PaymentMethodId _selected = PaymentMethodId.momo;
+  /// BE thật hiện ổn định với `bank_transfer` (Sepay QR).
+  PaymentMethodId _selected = PaymentMethodId.qrCode;
   bool _processing = false;
+  BeBankTransferPayment? _pendingQr;
+  List<String> _pendingCourseIds = const [];
+  Timer? _pollTimer;
+  bool _polling = false;
+  String? _statusHint;
 
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _cardNumberController = TextEditingController();
   final _cardNameController = TextEditingController();
   final _cardExpiryController = TextEditingController();
   final _cardCvvController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(_prefillCustomer());
+  }
+
+  Future<void> _prefillCustomer() async {
+    final user = await AuthPrefs.currentUser();
+    if (!mounted || user == null) return;
+    if (_nameController.text.isEmpty) {
+      _nameController.text = user.displayName;
+    }
+  }
+
+  @override
   void dispose() {
+    _pollTimer?.cancel();
+    _nameController.dispose();
+    _phoneController.dispose();
     _cardNumberController.dispose();
     _cardNameController.dispose();
     _cardExpiryController.dispose();
@@ -35,9 +65,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   bool get _needsCardForm =>
-      _selected == PaymentMethodId.visa || _selected == PaymentMethodId.creditCard;
+      _selected == PaymentMethodId.visa ||
+      _selected == PaymentMethodId.creditCard;
 
   bool get _canPay {
+    if (_pendingQr != null) return false;
+    if (_nameController.text.trim().isEmpty) return false;
+    if (_phoneController.text.trim().replaceAll(RegExp(r'\s+'), '').length <
+        10) {
+      return false;
+    }
     if (!_needsCardForm) return true;
     return _cardNumberController.text.replaceAll(' ', '').length >= 16 &&
         _cardNameController.text.trim().isNotEmpty &&
@@ -45,33 +82,173 @@ class _PaymentScreenState extends State<PaymentScreen> {
         _cardCvvController.text.length >= 3;
   }
 
+  String? _backendPaymentMethod(PaymentMethodId id) {
+    return switch (id) {
+      PaymentMethodId.qrCode => 'bank_transfer',
+      PaymentMethodId.momo => 'momo',
+      PaymentMethodId.vnpay ||
+      PaymentMethodId.visa ||
+      PaymentMethodId.creditCard =>
+        'vnpay',
+      PaymentMethodId.applePay => null, // BE chưa hỗ trợ
+    };
+  }
+
   Future<void> _pay() async {
     if (_processing || !_canPay) return;
-    setState(() => _processing = true);
 
-    // Mock xử lý cổng thanh toán — thay bằng API VNPay/MoMo sau.
-    await Future<void>.delayed(const Duration(milliseconds: 1400));
+    final backendMethod = _backendPaymentMethod(_selected);
+    if (backendMethod == null) {
+      _snack('Phương thức này chưa hỗ trợ. Vui lòng chọn QR ngân hàng.');
+      return;
+    }
 
-    if (!mounted) return;
-    setState(() => _processing = false);
-
+    final token = await AuthPrefs.accessToken();
     final user = await AuthPrefs.currentUser();
-    final userId = user?.id ?? 'mock_user';
-    final courseIds = CartController.instance.items.keys.toList();
+    if (token == null || user == null) {
+      _snack(AppStrings.courseLoginToEnroll);
+      return;
+    }
+    if (CartController.instance.items.isEmpty) {
+      _snack(AppStrings.cartEmptyTitle);
+      return;
+    }
 
+    setState(() {
+      _processing = true;
+      _statusHint = null;
+    });
+
+    try {
+      final courseIds = CartController.instance.items.keys.toList();
+      final result = await OrderApiService.createFromCart(
+        token: token,
+        paymentMethod: backendMethod,
+        customerName: _nameController.text,
+        customerEmail: user.email,
+        customerPhone: _phoneController.text,
+      );
+
+      // BE đã xóa item khỏi cart server khi tạo order.
+      CartController.instance.clearLocal();
+
+      if (!mounted) return;
+
+      if (result.isBankTransferPending) {
+        setState(() {
+          _processing = false;
+          _pendingQr = result.bankTransfer;
+          _pendingCourseIds =
+              result.courseIds.isNotEmpty ? result.courseIds : courseIds;
+          _statusHint = 'Quét QR và chờ xác nhận thanh toán…';
+        });
+        _startPolling(token, result.bankTransfer!.txnRef);
+        return;
+      }
+
+      if (result.isPaidImmediately) {
+        await CourseModule.init();
+        if (!mounted) return;
+        setState(() => _processing = false);
+        await _showSuccess(
+          userId: user.id,
+          courseIds:
+              result.courseIds.isNotEmpty ? result.courseIds : courseIds,
+        );
+        return;
+      }
+
+      setState(() {
+        _processing = false;
+        _statusHint = result.paymentMessage ??
+            'Đơn đã tạo nhưng cổng ${result.paymentMethod} chưa sẵn sàng. Dùng QR ngân hàng.';
+      });
+      _snack(_statusHint!);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _processing = false);
+      _snack(_messageOf(e));
+      // Có thể order chưa tạo — sync lại cart.
+      unawaited(CartController.instance.syncFromApi());
+    }
+  }
+
+  void _startPolling(String token, String txnRef) {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      unawaited(_pollOnce(token, txnRef));
+    });
+    unawaited(_pollOnce(token, txnRef));
+  }
+
+  Future<void> _pollOnce(String token, String txnRef) async {
+    if (_polling || !mounted) return;
+    _polling = true;
+    try {
+      final check = await OrderApiService.checkSepay(
+        token: token,
+        txnRef: txnRef,
+      );
+      if (!mounted) return;
+      if (check.isPaid) {
+        _pollTimer?.cancel();
+        final user = await AuthPrefs.currentUser();
+        await CourseModule.init();
+        if (!mounted || user == null) return;
+        setState(() {
+          _pendingQr = null;
+          _statusHint = null;
+        });
+        await _showSuccess(
+          userId: user.id,
+          courseIds: _pendingCourseIds,
+        );
+      } else if (mounted) {
+        setState(() {
+          _statusHint = check.message ?? 'Đang chờ thanh toán…';
+        });
+      }
+    } catch (e) {
+      debugPrint('Sepay poll: $e');
+    } finally {
+      _polling = false;
+    }
+  }
+
+  Future<void> _showSuccess({
+    required String userId,
+    required List<String> courseIds,
+  }) async {
     if (!mounted) return;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => CheckoutSuccessDialog(userId: userId, courseIds: courseIds),
+      builder: (context) => CheckoutSuccessDialog(
+        userId: userId,
+        courseIds: courseIds,
+      ),
     );
+  }
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  static String _messageOf(Object e) {
+    if (e is ApiException) return e.message;
+    return e.toString();
   }
 
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final total = CartController.instance.totalPrice;
-    final itemCount = CartController.instance.totalQuantity;
+    final total = _pendingQr != null
+        ? _pendingQr!.amount.toDouble()
+        : CartController.instance.totalPrice;
+    final itemCount = _pendingQr != null
+        ? _pendingCourseIds.length
+        : CartController.instance.totalQuantity;
 
     return GatsThemedScaffold(
       appBar: AppBar(
@@ -79,7 +256,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
         elevation: 0,
         title: Text(
           AppStrings.paymentTitle,
-          style: AppTypography.style(fontSize: 18, fontWeight: FontWeight.w800, color: gats.textPrimary),
+          style: AppTypography.style(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: gats.textPrimary,
+          ),
         ),
       ),
       body: Stack(
@@ -92,37 +273,84 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 itemCount: itemCount,
               ),
               const SizedBox(height: 20),
-              Text(
-                AppStrings.paymentChooseMethod,
-                style: AppTypography.style(fontSize: 16, fontWeight: FontWeight.w800, color: gats.textPrimary),
-              ),
-              const SizedBox(height: 12),
-              ...PaymentMethodOption.vietnamDefaults.map(
-                (method) => _PaymentMethodTile(
-                  method: method,
-                  groupValue: _selected,
-                  onTap: () => setState(() => _selected = method.id),
+              if (_pendingQr == null) ...[
+                Text(
+                  'Thông tin liên hệ',
+                  style: AppTypography.style(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: gats.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _buildMethodDetail(gats, total),
-              ),
+                const SizedBox(height: 12),
+                _ContactFields(
+                  nameController: _nameController,
+                  phoneController: _phoneController,
+                  onChanged: () => setState(() {}),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  AppStrings.paymentChooseMethod,
+                  style: AppTypography.style(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: gats.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...PaymentMethodOption.checkoutDefaults.map(
+                  (method) => _PaymentMethodTile(
+                    method: method,
+                    groupValue: _selected,
+                    onTap: () => setState(() => _selected = method.id),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _buildMethodDetail(gats, total),
+                ),
+              ] else ...[
+                _LiveQrPanel(payment: _pendingQr!),
+                if (_statusHint != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _statusHint!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: gats.textSecondary, fontSize: 13),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                const Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ],
+              if (_statusHint != null && _pendingQr == null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _statusHint!,
+                  style: TextStyle(color: gats.textSecondary, fontSize: 13),
+                ),
+              ],
             ],
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _PayBar(
-              amount: formatVndPrice(total),
-              enabled: _canPay && !_processing,
-              processing: _processing,
-              method: _selected,
-              onPay: _pay,
+          if (_pendingQr == null)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _PayBar(
+                amount: formatVndPrice(total),
+                enabled: _canPay && !_processing,
+                processing: _processing,
+                method: _selected,
+                onPay: _pay,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -131,39 +359,174 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget _buildMethodDetail(GatsThemeExtension gats, double total) {
     return switch (_selected) {
       PaymentMethodId.applePay => _InfoPanel(
-        key: const ValueKey('apple'),
-        icon: Icons.apple,
-        color: const Color(0xFF111827),
-        title: AppStrings.paymentApplePayHint,
-        subtitle: AppStrings.paymentSecureNote,
-      ),
+          key: const ValueKey('apple'),
+          icon: Icons.apple,
+          color: const Color(0xFF111827),
+          title: AppStrings.paymentApplePayHint,
+          subtitle: 'Chưa hỗ trợ trên server — chọn QR ngân hàng.',
+        ),
       PaymentMethodId.visa || PaymentMethodId.creditCard => _CardFormPanel(
-        key: ValueKey(_selected),
-        cardNumberController: _cardNumberController,
-        cardNameController: _cardNameController,
-        cardExpiryController: _cardExpiryController,
-        cardCvvController: _cardCvvController,
-        onChanged: () => setState(() {}),
-      ),
+          key: ValueKey(_selected),
+          cardNumberController: _cardNumberController,
+          cardNameController: _cardNameController,
+          cardExpiryController: _cardExpiryController,
+          cardCvvController: _cardCvvController,
+          onChanged: () => setState(() {}),
+        ),
       PaymentMethodId.momo => _InfoPanel(
-        key: const ValueKey('momo'),
-        icon: Icons.account_balance_wallet_outlined,
-        color: const Color(0xFFA50064),
-        title: AppStrings.paymentMomoHint,
-        subtitle: AppStrings.paymentRedirectNote,
-      ),
+          key: const ValueKey('momo'),
+          icon: Icons.account_balance_wallet_outlined,
+          color: const Color(0xFFA50064),
+          title: AppStrings.paymentMomoHint,
+          subtitle: 'Cổng MoMo trên BE đang chờ tích hợp đầy đủ.',
+        ),
       PaymentMethodId.vnpay => _InfoPanel(
-        key: const ValueKey('vnpay'),
-        icon: Icons.storefront_outlined,
-        color: const Color(0xFF0052A5),
-        title: AppStrings.paymentVnpayHint,
-        subtitle: AppStrings.paymentRedirectNote,
-      ),
-      PaymentMethodId.qrCode => _QrPanel(
-        key: const ValueKey('qr'),
-        amount: formatVndPrice(total),
-      ),
+          key: const ValueKey('vnpay'),
+          icon: Icons.storefront_outlined,
+          color: const Color(0xFF0052A5),
+          title: AppStrings.paymentVnpayHint,
+          subtitle: 'Cổng VNPay trên BE đang chờ tích hợp đầy đủ.',
+        ),
+      PaymentMethodId.qrCode => _InfoPanel(
+          key: const ValueKey('qr-hint'),
+          icon: Icons.qr_code_2_rounded,
+          color: const Color(0xFF059669),
+          title: AppStrings.paymentQrHint,
+          subtitle: AppStrings.paymentQrScanNote,
+        ),
     };
+  }
+}
+
+class _ContactFields extends StatelessWidget {
+  const _ContactFields({
+    required this.nameController,
+    required this.phoneController,
+    required this.onChanged,
+  });
+
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+    InputDecoration deco(String hint) => InputDecoration(
+          hintText: hint,
+          filled: true,
+          fillColor: gats.surface,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        );
+
+    return Column(
+      children: [
+        TextField(
+          controller: nameController,
+          onChanged: (_) => onChanged(),
+          decoration: deco('Họ và tên'),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: phoneController,
+          keyboardType: TextInputType.phone,
+          onChanged: (_) => onChanged(),
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: deco('Số điện thoại'),
+        ),
+      ],
+    );
+  }
+}
+
+class _LiveQrPanel extends StatelessWidget {
+  const _LiveQrPanel({required this.payment});
+
+  final BeBankTransferPayment payment;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: gats.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: gats.divider.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            AppStrings.paymentQrHint,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: gats.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: 220,
+            height: 220,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: gats.divider),
+            ),
+            child: Image.network(
+              payment.qrUrl,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Center(
+                child: Icon(Icons.qr_code_2, size: 64),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            formatVndPrice(payment.amount.toDouble()),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: gats.lavenderAccent,
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (payment.bankAccountName != null)
+            Text(
+              payment.bankAccountName!,
+              style: TextStyle(fontSize: 13, color: gats.textPrimary),
+            ),
+          if (payment.bankName != null || payment.bankAccountNumber != null)
+            Text(
+              [
+                if (payment.bankName != null) payment.bankName,
+                if (payment.bankAccountNumber != null)
+                  payment.bankAccountNumber,
+              ].join(' · '),
+              style: TextStyle(fontSize: 12, color: gats.textSecondary),
+            ),
+          const SizedBox(height: 6),
+          SelectableText(
+            'Nội dung: ${payment.transferContent ?? payment.txnRef}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: gats.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            AppStrings.paymentQrScanNote,
+            style: TextStyle(fontSize: 11, color: gats.textSecondary),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -194,17 +557,24 @@ class _OrderSummaryCard extends StatelessWidget {
         children: [
           Text(
             AppStrings.paymentOrderSummary,
-            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+              color: Colors.white70,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             totalLabel,
-            style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             AppStrings.paymentItemCount.replaceFirst('%d', '$itemCount'),
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
           ),
         ],
       ),
@@ -226,36 +596,38 @@ class _PaymentMethodTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final selected = groupValue == method.id;
-
+    final selected = method.id == groupValue;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
-        color: Colors.transparent,
+        color: selected
+            ? method.accentColor.withValues(alpha: 0.08)
+            : gats.surface,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          child: Ink(
+          child: Container(
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: gats.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: selected ? gats.lavenderAccent : gats.divider.withValues(alpha: 0.6),
-                width: selected ? 2 : 1,
+                color: selected
+                    ? method.accentColor
+                    : gats.divider.withValues(alpha: 0.5),
+                width: selected ? 1.5 : 1,
               ),
-              boxShadow: selected ? null : (gats.isStarry ? null : AppShadows.card),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: method.accentColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(method.icon, color: method.accentColor, size: 22),
+                  child: Icon(method.icon, color: method.accentColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -268,14 +640,16 @@ class _PaymentMethodTile extends StatelessWidget {
                             method.title,
                             style: TextStyle(
                               fontWeight: FontWeight.w800,
-                              fontSize: 14,
                               color: gats.textPrimary,
                             ),
                           ),
                           if (method.badge != null) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: method.accentColor.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
@@ -283,8 +657,8 @@ class _PaymentMethodTile extends StatelessWidget {
                               child: Text(
                                 method.badge!,
                                 style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w800,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
                                   color: method.accentColor,
                                 ),
                               ),
@@ -292,20 +666,21 @@ class _PaymentMethodTile extends StatelessWidget {
                           ],
                         ],
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         method.subtitle,
-                        style: TextStyle(fontSize: 11, color: gats.textSecondary, height: 1.3),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: gats.textSecondary,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Radio<PaymentMethodId>(
-                  value: method.id,
-                  groupValue: groupValue,
-                  onChanged: (_) => onTap(),
-                  activeColor: gats.lavenderAccent,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  color: selected ? method.accentColor : gats.textSecondary,
                 ),
               ],
             ),
@@ -334,7 +709,7 @@ class _InfoPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
     return Container(
-      width: double.infinity,
+      key: key,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: gats.surface,
@@ -342,17 +717,25 @@ class _InfoPanel extends StatelessWidget {
         border: Border.all(color: gats.divider.withValues(alpha: 0.5)),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 28),
+          Icon(icon, color: color),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(fontWeight: FontWeight.w700, color: gats.textPrimary, height: 1.4)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: gats.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: gats.textSecondary, height: 1.4)),
+                Text(
+                  subtitle,
+                  style: TextStyle(fontSize: 12, color: gats.textSecondary),
+                ),
               ],
             ),
           ),
@@ -381,16 +764,18 @@ class _CardFormPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-
     InputDecoration deco(String hint) => InputDecoration(
           hintText: hint,
           filled: true,
           fillColor: gats.background,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
         );
 
     return Container(
+      key: key,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: gats.surface,
@@ -398,23 +783,27 @@ class _CardFormPanel extends StatelessWidget {
         border: Border.all(color: gats.divider.withValues(alpha: 0.5)),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(AppStrings.paymentCardDetails, style: TextStyle(fontWeight: FontWeight.w800, color: gats.textPrimary)),
+          Text(
+            AppStrings.paymentCardDetails,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: gats.textPrimary,
+            ),
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: cardNumberController,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19)],
-            decoration: deco(AppStrings.paymentCardNumber),
             onChanged: (_) => onChanged(),
+            keyboardType: TextInputType.number,
+            decoration: deco(AppStrings.paymentCardNumber),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: cardNameController,
-            textCapitalization: TextCapitalization.characters,
-            decoration: deco(AppStrings.paymentCardName),
             onChanged: (_) => onChanged(),
+            decoration: deco(AppStrings.paymentCardName),
           ),
           const SizedBox(height: 10),
           Row(
@@ -422,101 +811,29 @@ class _CardFormPanel extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: cardExpiryController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
-                  decoration: deco(AppStrings.paymentCardExpiry),
                   onChanged: (_) => onChanged(),
+                  decoration: deco(AppStrings.paymentCardExpiry),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
                   controller: cardCvvController,
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
-                  decoration: deco(AppStrings.paymentCardCvv),
                   onChanged: (_) => onChanged(),
+                  decoration: deco(AppStrings.paymentCardCvv),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.lock_outline, size: 14, color: gats.textSecondary),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  AppStrings.paymentSecureNote,
-                  style: TextStyle(fontSize: 11, color: gats.textSecondary),
-                ),
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            'Thẻ sẽ map sang VNPay — cổng chưa sẵn sàng trên BE.',
+            style: TextStyle(fontSize: 11, color: gats.textSecondary),
           ),
         ],
       ),
     );
   }
-}
-
-class _QrPanel extends StatelessWidget {
-  const _QrPanel({super.key, required this.amount});
-
-  final String amount;
-
-  @override
-  Widget build(BuildContext context) {
-    final gats = context.gatsColors;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: gats.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: gats.divider.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        children: [
-          Text(AppStrings.paymentQrHint, style: TextStyle(fontWeight: FontWeight.w700, color: gats.textPrimary)),
-          const SizedBox(height: 16),
-          Container(
-            width: 180,
-            height: 180,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: gats.divider),
-            ),
-            child: CustomPaint(painter: _MockQrPainter()),
-          ),
-          const SizedBox(height: 12),
-          Text(amount, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: gats.lavenderAccent)),
-          const SizedBox(height: 6),
-          Text(AppStrings.paymentQrScanNote, style: TextStyle(fontSize: 11, color: gats.textSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
-class _MockQrPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = const Color(0xFF111827);
-    const cell = 8.0;
-    for (double y = 0; y < size.height; y += cell) {
-      for (double x = 0; x < size.width; x += cell) {
-        if ((x + y).toInt() % (cell * 2) < cell) {
-          canvas.drawRect(Rect.fromLTWH(x, y, cell - 1, cell - 1), paint);
-        }
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _PayBar extends StatelessWidget {
@@ -540,54 +857,58 @@ class _PayBar extends StatelessWidget {
     final isApplePay = method == PaymentMethodId.applePay;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 14, 20, 14 + MediaQuery.paddingOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        14 + MediaQuery.paddingOf(context).bottom,
+      ),
       decoration: BoxDecoration(
         color: gats.surface,
-        border: Border(top: BorderSide(color: gats.divider.withValues(alpha: 0.6))),
+        border: Border(
+          top: BorderSide(color: gats.divider.withValues(alpha: 0.6)),
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, -4)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(AppStrings.cartTotal, style: TextStyle(color: gats.textSecondary, fontWeight: FontWeight.w600)),
-              Text(amount, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: gats.lavenderAccent)),
-            ],
-          ),
-          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 52,
             child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: isApplePay ? Colors.black : gats.lavenderAccent,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: gats.divider,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-              ),
               onPressed: enabled ? onPay : null,
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    isApplePay ? const Color(0xFF111827) : gats.lavenderAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
               child: processing
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isApplePay) ...[
-                          const Icon(Icons.apple, size: 22),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(
-                          isApplePay ? AppStrings.paymentPayWithApple : AppStrings.paymentPayNow,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                        ),
-                      ],
+                  : Text(
+                      isApplePay
+                          ? AppStrings.paymentPayWithApple
+                          : '${AppStrings.paymentPayNow} · $amount',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
+                      ),
                     ),
             ),
           ),

@@ -30,7 +30,10 @@ function revalidatePostPaths(id?: string) {
 export async function fetchPosts(
   page = 1,
   limit = 10,
-  options: { deleted?: "without" | "with" | "only" } = {},
+  options: {
+    deleted?: "without" | "with" | "only";
+    status?: string;
+  } = {},
 ): Promise<PostListResponse> {
   const params = new URLSearchParams({
     page: String(page),
@@ -38,6 +41,9 @@ export async function fetchPosts(
   });
   if (options.deleted) {
     params.set("deleted", options.deleted);
+  }
+  if (options.status) {
+    params.set("status", options.status);
   }
 
   const result = await beFetch<PostListResponse>(`/posts?${params.toString()}`);

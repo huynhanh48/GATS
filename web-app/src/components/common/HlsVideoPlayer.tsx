@@ -1,118 +1,125 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import Hls from "hls.js";
-import { Loader2 } from "lucide-react";
+import React, { useEffect, useRef } from "react";
+import {
+  MediaPlayer,
+  MediaProvider,
+  type MediaPlayerInstance,
+  type MediaTimeUpdateEventDetail,
+} from "@vidstack/react";
+import {
+  defaultLayoutIcons,
+  DefaultVideoLayout,
+} from "@vidstack/react/player/layouts/default";
+
+import "@vidstack/react/player/styles/default/theme.css";
+import "@vidstack/react/player/styles/default/layouts/video.css";
 
 interface HlsVideoPlayerProps {
   url: string;
   autoPlay?: boolean;
   onReady?: () => void;
+  /** Resume playback from this second (once metadata is ready). */
+  initialTime?: number;
+  /** Called while playing / on pause / ended. */
+  onTimeUpdate?: (watchedSeconds: number, durationSeconds: number) => void;
+  /** Explicit pause/ended hook for forced progress save. */
+  onPlaybackPause?: (watchedSeconds: number, durationSeconds: number) => void;
 }
 
-export function HlsVideoPlayer({ url, autoPlay = true, onReady }: HlsVideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+/**
+ * Course video player — Vidstack Default Layout (HLS + quality menu + PiP).
+ * Keeps the same prop API as the previous hls.js + native &lt;video&gt; wrapper.
+ */
+export function HlsVideoPlayer({
+  url,
+  autoPlay = true,
+  onReady,
+  initialTime,
+  onTimeUpdate,
+  onPlaybackPause,
+}: HlsVideoPlayerProps) {
+  const playerRef = useRef<MediaPlayerInstance>(null);
+  const seekAppliedRef = useRef(false);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
+  onTimeUpdateRef.current = onTimeUpdate;
+  const onPlaybackPauseRef = useRef(onPlaybackPause);
+  onPlaybackPauseRef.current = onPlaybackPause;
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
+  const initialTimeRef = useRef(initialTime);
+  initialTimeRef.current = initialTime;
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || !url) return;
+    seekAppliedRef.current = false;
+  }, [url]);
 
-    let hls: Hls | undefined;
-    setError(null);
-    setIsReady(false);
+  const reportTime = (
+    cb: ((watched: number, duration: number) => void) | undefined,
+    currentTime?: number,
+  ) => {
+    const player = playerRef.current;
+    if (!player || !cb) return;
+    const watched = Math.floor(currentTime ?? player.currentTime ?? 0);
+    const duration = Math.floor(player.duration || 0);
+    if (duration > 0) cb(watched, duration);
+  };
 
-    const handleReady = () => {
-      setIsReady(true);
-      onReady?.();
-    };
-
-    if (Hls.isSupported()) {
-      hls = new Hls({
-        maxBufferLength: 30,
-        maxMaxBufferLength: 600,
-      });
-
-      hls.loadSource(url);
-      hls.attachMedia(video);
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        handleReady();
-        if (autoPlay) {
-          video.play().catch(() => {
-            // Autoplay blocked by browser policy — user can press play.
-          });
-        }
-      });
-
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        // Non-fatal (buffer stall, fragment retry, etc.) — hls.js recovers itself.
-        // Do NOT console.error: Next.js dev overlay treats that as a hard error.
-        if (!data.fatal) return;
-
-        switch (data.type) {
-          case Hls.ErrorTypes.NETWORK_ERROR:
-            hls?.startLoad();
-            break;
-          case Hls.ErrorTypes.MEDIA_ERROR:
-            hls?.recoverMediaError();
-            break;
-          default:
-            setError("Video không thể phát.");
-            setIsReady(true);
-            hls?.destroy();
-            break;
-        }
-      });
-    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      video.src = url;
-      const onLoaded = () => {
-        handleReady();
-        if (autoPlay) {
-          video.play().catch(() => {});
-        }
-      };
-      const onVideoError = () => {
-        setError("Lỗi khi tải video.");
-        setIsReady(true);
-      };
-      video.addEventListener("loadedmetadata", onLoaded);
-      video.addEventListener("error", onVideoError);
-      return () => {
-        video.removeEventListener("loadedmetadata", onLoaded);
-        video.removeEventListener("error", onVideoError);
-      };
-    } else {
-      setError("Trình duyệt không hỗ trợ xem video này.");
-      setIsReady(true);
+  const applySeekIfNeeded = () => {
+    const player = playerRef.current;
+    const t = initialTimeRef.current;
+    if (!player || seekAppliedRef.current) return;
+    if (typeof t !== "number" || t <= 0 || !Number.isFinite(t)) return;
+    try {
+      player.currentTime = t;
+      seekAppliedRef.current = true;
+    } catch {
+      // ignore seek failures
     }
+  };
 
-    return () => {
-      hls?.destroy();
-    };
-  }, [url, autoPlay, onReady]);
+  // If resume time arrives after can-play, seek without remounting.
+  useEffect(() => {
+    if (!url) return;
+    applySeekIfNeeded();
+  }, [initialTime, url]);
+
+  if (!url) return null;
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center bg-black">
-      {!isReady && !error ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : null}
-
-      {error ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black p-4 text-center text-red-500">
-          <p>{error}</p>
-        </div>
-      ) : null}
-
-      <video
-        ref={videoRef}
-        controls
-        controlsList="nodownload"
-        className="absolute top-0 left-0 h-full w-full object-contain"
+    <MediaPlayer
+      key={url}
+      ref={playerRef}
+      className="hls-vidstack-player h-full w-full rounded-xl overflow-hidden bg-black font-sans text-white ring-1 ring-white/10"
+      src={url}
+      viewType="video"
+      streamType="on-demand"
+      logLevel="warn"
+      crossOrigin
+      playsInline
+      autoPlay={autoPlay}
+      onCanPlay={() => {
+        applySeekIfNeeded();
+        onReadyRef.current?.();
+      }}
+      onTimeUpdate={(detail: MediaTimeUpdateEventDetail) => {
+        reportTime(onTimeUpdateRef.current, detail.currentTime);
+      }}
+      onPause={() => {
+        reportTime(onPlaybackPauseRef.current);
+      }}
+      onEnded={() => {
+        reportTime(onPlaybackPauseRef.current);
+      }}
+    >
+      <MediaProvider />
+      <DefaultVideoLayout
+        icons={defaultLayoutIcons}
+        // Hide download — course content should not expose direct file save.
+        slots={{
+          downloadButton: null,
+        }}
       />
-    </div>
+    </MediaPlayer>
   );
 }

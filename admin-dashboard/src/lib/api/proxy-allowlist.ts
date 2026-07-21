@@ -15,9 +15,17 @@ const ALLOWED_PREFIXES = [
   "assignments",
   "assignment-submissions",
   "admin/videos",
+  "admin/users",
   "media",
   "posts",
   "categories",
+  "leads",
+  "notifications",
+  "moderation",
+  "admin/metrics",
+  "coupons",
+  "certificates",
+  "analytics",
 ] as const;
 
 export function isPathAllowed(pathSegments: string[]): boolean {

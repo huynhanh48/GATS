@@ -9,6 +9,7 @@ import requirePermission from '@src/middleware/requirePermission';
 import assignmentHandlers from './assignmentRouter';
 
 const apiRouter = Router();
+const assignmentRouter = Router();
 
 const requireCourseUpdate = (courseIdParam = 'courseId') =>
   requirePermission('update', RESOURCE_TYPES.COURSE, (req) => {
@@ -29,50 +30,52 @@ apiRouter.get(
   assignmentHandlers.getMemberAssignment,
 );
 
-apiRouter.patch(
+assignmentRouter.patch(
   AssignmentPaths.Assignment.Update,
   errorHandle(authMiddleware),
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
   assignmentHandlers.updateAssignment,
 );
 
-apiRouter.delete(
+assignmentRouter.delete(
   AssignmentPaths.Assignment.Delete,
   errorHandle(authMiddleware),
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
   assignmentHandlers.removeAssignment,
 );
 
-apiRouter.get(
+assignmentRouter.get(
   AssignmentPaths.Assignment.Submissions.List,
   errorHandle(authMiddleware),
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
   assignmentHandlers.listSubmissions,
 );
 
-apiRouter.patch(
-  AssignmentPaths.Submission.Grade,
-  errorHandle(authMiddleware),
-  errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
-  assignmentHandlers.gradeSubmission,
-);
-
-apiRouter.post(
+assignmentRouter.post(
   AssignmentPaths.Assignment.Submissions.Submit,
   errorHandle(authMiddleware),
   assignmentHandlers.submitAssignment,
 );
 
-apiRouter.get(
+assignmentRouter.get(
   AssignmentPaths.Assignment.Submissions.Mine,
   errorHandle(authMiddleware),
   assignmentHandlers.getMySubmission,
 );
 
-apiRouter.post(
+assignmentRouter.post(
   AssignmentPaths.Assignment.Submissions.InitUpload,
   errorHandle(authMiddleware),
   assignmentHandlers.initUpload,
+);
+
+apiRouter.use(AssignmentPaths.Assignment._, assignmentRouter);
+
+apiRouter.patch(
+  AssignmentPaths.Submission.Grade,
+  errorHandle(authMiddleware),
+  errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
+  assignmentHandlers.gradeSubmission,
 );
 
 apiRouter.post(

@@ -13,6 +13,15 @@ abstract final class CourseApiPaths {
   static const myEnrollments = '/api/me/enrollments';
 }
 
+/// Paths khớp BE `src/common/paths/video.ts`.
+abstract final class VideoApiPaths {
+  static String lessonVideo(String courseId, String lessonId) =>
+      '/api/courses/$courseId/lessons/$lessonId/video';
+
+  static String playback(String courseId, String videoId) =>
+      '/api/courses/$courseId/videos/$videoId/playback';
+}
+
 /// Paths khớp BE `src/common/paths/cart.ts`.
 abstract final class CartApiPaths {
   static const cart = '/api/cart';
@@ -31,4 +40,10 @@ abstract final class PostApiPaths {
   static const list = '/api/posts';
   static String byId(String id) => '/api/posts/$id';
   static String bySlug(String slug) => '/api/posts/slug/$slug';
+  static String comments(String postId) => '/api/posts/$postId/comments';
+  static String commentReplies(String postId, String commentId) =>
+      '/api/posts/$postId/comments/$commentId/replies';
+  static String commentLike(String postId, String commentId) =>
+      '/api/posts/$postId/comments/$commentId/like';
+  static String like(String postId) => '/api/posts/$postId/like';
 }

@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cartApi } from "@/lib/cart/api";
 import { toast } from "sonner";
 import { useAuthModal } from "@/hooks/useAuth";
+import { resolveMediaUrl } from "@/lib/media/url";
 
 export type CartItem = {
   cartItemId: string;
@@ -46,7 +47,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           courseId: bItem.courseId,
           courseName: bItem.course.title,
           price: bItem.finalPrice,
-          thumbnail: bItem.course.thumbnail,
+          thumbnail: resolveMediaUrl(bItem.course?.thumbnail, ""),
+
         }));
         setItems(mappedItems);
       } else {

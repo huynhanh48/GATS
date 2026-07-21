@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, Save } from "lucide-react";
 import DatePickerDemo from "@/components/shadcn-studio/date-picker/date-picker-08";
@@ -21,6 +21,8 @@ import type {
 import { cn } from "@/lib/utils";
 import { createLesson, updateLesson } from "../actions";
 import { LessonAttachments } from "./lesson-attachments";
+import { fetchPosts } from "@/app/(dashboard)/post/actions";
+import type { PostListItem } from "@/lib/api/types";
 
 const LESSON_TYPE_OPTIONS: { value: LessonType; label: string; hint: string }[] =
   [
@@ -102,7 +104,39 @@ export function LessonFormPage({
   const [type, setType] = useState<LessonType>(lesson?.type ?? "video");
   const [content, setContent] = useState(lesson?.content ?? "");
   const [isPreview, setIsPreview] = useState(lesson?.isPreview ?? false);
+  const [linkedPostId, setLinkedPostId] = useState<string>(
+    lesson?.linkedPostId ?? lesson?.linkedPost?.id ?? "",
+  );
+  const [postOptions, setPostOptions] = useState<PostListItem[]>([]);
+  const [postQuery, setPostQuery] = useState("");
+  const [postsLoading, setPostsLoading] = useState(true);
+  const [postsError, setPostsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      setPostsLoading(true);
+      setPostsError(null);
+      try {
+        const res = await fetchPosts(1, 100, { status: "published" });
+        setPostOptions(res.data ?? []);
+      } catch {
+        setPostsError("Không tải được danh sách bài viết");
+        setPostOptions([]);
+      } finally {
+        setPostsLoading(false);
+      }
+    })();
+  }, []);
+
+  const filteredPosts = postOptions.filter((post) => {
+    const q = postQuery.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      post.title.toLowerCase().includes(q) ||
+      (post.slug?.toLowerCase().includes(q) ?? false)
+    );
+  });
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -130,6 +164,7 @@ export function LessonFormPage({
       title,
       type,
       is_preview: isPreviewVal,
+      linked_post_id: linkedPostId ? linkedPostId : null,
       ...(description ? { description } : {}),
       ...(orderRaw ? { order: Number(orderRaw) } : {}),
       ...(durationSec !== undefined && !Number.isNaN(durationSec)
@@ -362,6 +397,55 @@ export function LessonFormPage({
                 Học viên chưa ghi danh vẫn xem được.
               </span>
             </Label>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <Label htmlFor="linked_post_id">Bài viết gắn với bài học</Label>
+            <Input
+              value={postQuery}
+              onChange={(e) => setPostQuery(e.target.value)}
+              placeholder="Tìm theo tiêu đề hoặc slug…"
+              disabled={postsLoading}
+            />
+            <select
+              id="linked_post_id"
+              value={linkedPostId}
+              onChange={(e) => setLinkedPostId(e.target.value)}
+              disabled={postsLoading}
+              className="flex h-10 w-full rounded-md border border-stroke bg-transparent px-3 py-2 text-sm dark:border-dark-3"
+            >
+              <option value="">— Không gắn —</option>
+              {lesson?.linkedPost &&
+              !filteredPosts.some((p) => p.id === lesson.linkedPost?.id) ? (
+                <option value={lesson.linkedPost.id}>
+                  {lesson.linkedPost.title} (đang chọn)
+                </option>
+              ) : null}
+              {filteredPosts.map((post) => (
+                <option key={post.id} value={post.id}>
+                  {post.title}
+                </option>
+              ))}
+            </select>
+            {postsLoading ? (
+              <p className="text-xs text-dark-4 dark:text-dark-6">
+                Đang tải bài viết đã publish…
+              </p>
+            ) : null}
+            {postsError ? (
+              <p className="text-xs text-red">{postsError}</p>
+            ) : null}
+            {!postsLoading && !postsError && filteredPosts.length === 0 ? (
+              <p className="text-xs text-dark-4 dark:text-dark-6">
+                {postQuery.trim()
+                  ? "Không có bài viết khớp tìm kiếm."
+                  : "Chưa có bài viết đã publish."}
+              </p>
+            ) : null}
+            <p className="text-xs text-dark-4 dark:text-dark-6">
+              Khi học viên xem bài học này trên web, sẽ hiện card bài viết liên
+              quan (chỉ post đã publish). Chọn “Không gắn” để bỏ liên kết.
+            </p>
           </div>
         </section>
       </div>

@@ -37,6 +37,10 @@ export const ordersTable = pgTable('orders', {
   customerEmail: varchar('customer_email', { length: 255 }),
   customerPhone: varchar('customer_phone', { length: 20 }),
   notes: text('notes'),
+  /** Soft reference to coupons.id — no FK to avoid a schema cycle; integrity enforced via coupon_redemptions */
+  couponId: uuid('coupon_id'),
+  couponCode: varchar('coupon_code', { length: 50 }),
+  discountAmount: integer('discount_amount').notNull().default(0),
   paidAt: timestamp('paid_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

@@ -3,11 +3,11 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/post/presentation/widgets/post_card.dart';
 
 class PostDetailScreen extends StatefulWidget {
@@ -34,7 +34,8 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     super.initState();
     _loadUser();
     MockPostStore.instance.addListener(_onStoreChanged);
-    MockCourseStore.instance.addListener(_onStoreChanged);
+    CourseModule.repository.addListener(_onStoreChanged);
+    MockPostStore.instance.syncFromApi(focusPostId: widget.postId);
   }
 
   Future<void> _loadUser() async {
@@ -52,11 +53,11 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     _commentController.dispose();
     _commentFocus.dispose();
     MockPostStore.instance.removeListener(_onStoreChanged);
-    MockCourseStore.instance.removeListener(_onStoreChanged);
+    CourseModule.repository.removeListener(_onStoreChanged);
     super.dispose();
   }
 
-  void _handleEnroll(String courseId) {
+  Future<void> _handleEnroll(String courseId) async {
     final userId = _user?.id;
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,15 +65,23 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
       );
       return;
     }
-    MockCourseStore.instance.enrollUser(courseId, userId);
+    final ok = await CourseModule.repository.enrollFree(courseId, userId);
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng ký thất bại. Vui lòng thử lại.')),
+      );
+      return;
+    }
     if (widget.onEnroll != null) {
       widget.onEnroll!();
     } else {
-      final course = MockCourseStore.instance.courseById(courseId);
+      final course = CourseModule.repository.getCourse(courseId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            AppStrings.courseEnrolled.replaceFirst('%s', course?.title ?? 'khóa học'),
+            AppStrings.courseEnrolled
+                .replaceFirst('%s', course?.title ?? 'khóa học'),
           ),
         ),
       );
@@ -124,7 +133,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     );
     final courseTitle = MockPostStore.instance.courseTitleFor(post);
     final course = post.courseId != null
-        ? MockCourseStore.instance.courseById(post.courseId!)
+        ? CourseModule.repository.getCourse(post.courseId!)
         : null;
     final comments = MockPostStore.instance.commentsFor(post.id);
     final canComment = canReadFull && _user != null;

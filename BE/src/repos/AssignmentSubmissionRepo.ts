@@ -46,6 +46,16 @@ export async function findLatestByUser(
   return rows[0];
 }
 
+export async function countByStatus(
+  status: AssignmentSubmission['status'],
+): Promise<number> {
+  const [result] = await db
+    .select({ total: count() })
+    .from(assignmentSubmissionsTable)
+    .where(eq(assignmentSubmissionsTable.status, status));
+  return Number(result?.total ?? 0);
+}
+
 export async function countByUser(
   assignmentId: string,
   userId: number,

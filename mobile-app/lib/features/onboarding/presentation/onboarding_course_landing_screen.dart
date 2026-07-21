@@ -67,8 +67,15 @@ class _OnboardingCourseLandingScreenState extends State<OnboardingCourseLandingS
       );
       return;
     }
-    CourseModule.repository.enroll(widget.course.id, userId);
+    final ok =
+        await CourseModule.repository.enrollFree(widget.course.id, userId);
     if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng ký thất bại. Vui lòng thử lại.')),
+      );
+      return;
+    }
     await CourseNavigator.open(
       context,
       courseId: widget.course.id,

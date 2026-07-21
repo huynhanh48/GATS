@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/data/catalog/catalog_paths.dart';
 import 'package:gats_academy/data/catalog/course_catalog_loader.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/onboarding/models/onboarding_answers.dart';
 
 /// Gợi ý khóa học từ `onboarding_rules.json` + metadata trong catalog.
@@ -51,7 +51,7 @@ class OnboardingScorer {
   }
 
   List<CourseItem> recommend(OnboardingAnswers answers) {
-    final courses = MockCourseStore.instance.publishedCourses();
+    final courses = CourseModule.repository.listPublishedCourses();
     if (courses.isEmpty) return [];
 
     final scores = <String, int>{for (final c in courses) c.id: 0};
@@ -85,7 +85,7 @@ class OnboardingScorer {
 
     final fallback = <CourseItem>[];
     for (final id in _fallbackIds) {
-      final course = MockCourseStore.instance.courseById(id);
+      final course = CourseModule.repository.getCourse(id);
       if (course != null && course.isPublished) {
         fallback.add(course.toListItem());
       }

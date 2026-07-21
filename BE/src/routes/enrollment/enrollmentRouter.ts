@@ -27,6 +27,15 @@ async function listByCourse(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function listLearners(req: Request, res: Response) {
+  const courseId = getRouteParam(req.params.courseId);
+  const result = await EnrollmentService.listLearners(
+    courseId,
+    req.authUser!.id,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function listMine(req: Request, res: Response) {
   const result = await EnrollmentService.listMine(req.authUser!.id);
   return res.status(HttpStatusCodes.OK).json(result);
@@ -59,6 +68,7 @@ async function update(req: Request, res: Response) {
 export default {
   enroll: errorHandle(enroll),
   listByCourse: errorHandle(listByCourse),
+  listLearners: errorHandle(listLearners),
   listMine: errorHandle(listMine),
   revoke: errorHandle(revoke),
   update: errorHandle(update),

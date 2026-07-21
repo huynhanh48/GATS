@@ -35,9 +35,9 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-5xl md:text-6xl  lg:text-5xl font-bold tracking-tight text-foreground mb-6 leading-[1.1]"
+            className="text-5xl md:text-6xl lg:text-[46px] font-bold tracking-tight text-foreground mb-6 leading-[1.1]"
           >
-            Xây dựng Tác Nhân AI <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 via-blue-600 to-green-500">GATS Academy</span>
+            Xây dựng Tác Nhân AI <span className="inline-block whitespace-nowrap bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 via-blue-600 to-green-500">GATS Academy</span>
           </motion.h1>
 
           <motion.p

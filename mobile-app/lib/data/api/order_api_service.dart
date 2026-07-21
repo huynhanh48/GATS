@@ -1,0 +1,170 @@
+import 'package:gats_academy/core/network/api_client.dart';
+import 'package:gats_academy/data/api/course_api_paths.dart';
+import 'package:gats_academy/data/api/payment_api_paths.dart';
+
+class BeBankTransferPayment {
+  const BeBankTransferPayment({
+    required this.txnRef,
+    required this.amount,
+    required this.qrUrl,
+    this.transferContent,
+    this.bankName,
+    this.bankAccountNumber,
+    this.bankAccountName,
+  });
+
+  final String txnRef;
+  final int amount;
+  final String qrUrl;
+  final String? transferContent;
+  final String? bankName;
+  final String? bankAccountNumber;
+  final String? bankAccountName;
+
+  factory BeBankTransferPayment.fromJson(Map<String, dynamic> json) {
+    return BeBankTransferPayment(
+      txnRef: json['txnRef']?.toString() ?? '',
+      amount: (json['amount'] as num?)?.toInt() ?? 0,
+      qrUrl: json['qrUrl']?.toString() ?? '',
+      transferContent: json['transferContent']?.toString(),
+      bankName: json['bankName']?.toString(),
+      bankAccountNumber: json['bankAccountNumber']?.toString(),
+      bankAccountName: json['bankAccountName']?.toString(),
+    );
+  }
+}
+
+class BeCreateOrderResult {
+  const BeCreateOrderResult({
+    required this.orderId,
+    required this.courseIds,
+    required this.paymentMethod,
+    required this.paymentStatus,
+    this.bankTransfer,
+    this.paymentMessage,
+  });
+
+  final String orderId;
+  final List<String> courseIds;
+  final String paymentMethod;
+  final String paymentStatus;
+  final BeBankTransferPayment? bankTransfer;
+  final String? paymentMessage;
+
+  bool get isBankTransferPending =>
+      paymentMethod == 'bank_transfer' &&
+      paymentStatus == 'pending' &&
+      bankTransfer != null &&
+      bankTransfer!.qrUrl.isNotEmpty;
+
+  bool get isPaidImmediately => paymentStatus == 'success';
+}
+
+class BeSepayCheckResult {
+  const BeSepayCheckResult({
+    required this.success,
+    required this.status,
+    required this.txnRef,
+    this.orderId,
+    this.amount,
+    this.message,
+  });
+
+  final bool success;
+  final String status;
+  final String txnRef;
+  final String? orderId;
+  final int? amount;
+  final String? message;
+
+  bool get isPaid => success && status.toUpperCase() == 'PAID';
+
+  factory BeSepayCheckResult.fromJson(Map<String, dynamic> json) {
+    return BeSepayCheckResult(
+      success: json['success'] == true,
+      status: json['status']?.toString() ?? 'PENDING',
+      txnRef: json['txnRef']?.toString() ?? '',
+      orderId: json['orderId']?.toString(),
+      amount: (json['amount'] as num?)?.toInt(),
+      message: json['message']?.toString(),
+    );
+  }
+}
+
+/// Gọi BE `/api/orders` + `/api/payment/sepay/check`.
+abstract final class OrderApiService {
+  static Future<BeCreateOrderResult> createFromCart({
+    required String token,
+    required String paymentMethod,
+    String? customerName,
+    String? customerEmail,
+    String? customerPhone,
+  }) async {
+    final json = await ApiClient.post(
+      OrderApiPaths.orders,
+      body: {
+        'fromCart': true,
+        'paymentMethod': paymentMethod,
+        if (customerName != null && customerName.trim().isNotEmpty)
+          'customerName': customerName.trim(),
+        if (customerEmail != null && customerEmail.trim().isNotEmpty)
+          'customerEmail': customerEmail.trim(),
+        if (customerPhone != null && customerPhone.trim().isNotEmpty)
+          'customerPhone': customerPhone.trim(),
+      },
+      token: token,
+    );
+    return _parseCreateResult(json);
+  }
+
+  static Future<BeSepayCheckResult> checkSepay({
+    required String token,
+    required String txnRef,
+  }) async {
+    final json = await ApiClient.get(
+      PaymentApiPaths.sepayCheck,
+      token: token,
+      query: {'txnRef': txnRef},
+    );
+    return BeSepayCheckResult.fromJson(json);
+  }
+
+  static BeCreateOrderResult _parseCreateResult(Map<String, dynamic> json) {
+    final order = json['order'];
+    final orderMap =
+        order is Map ? Map<String, dynamic>.from(order) : <String, dynamic>{};
+    final items = orderMap['items'];
+    final courseIds = items is List
+        ? items
+            .whereType<Map>()
+            .map((e) => e['courseId']?.toString())
+            .whereType<String>()
+            .where((id) => id.isNotEmpty)
+            .toList()
+        : <String>[];
+
+    final payment = json['payment'];
+    final paymentMap = payment is Map
+        ? Map<String, dynamic>.from(payment)
+        : <String, dynamic>{};
+    final method = paymentMap['method']?.toString() ??
+        orderMap['paymentMethod']?.toString() ??
+        '';
+    final status = paymentMap['status']?.toString() ?? 'pending';
+
+    BeBankTransferPayment? bank;
+    if (method == 'bank_transfer') {
+      bank = BeBankTransferPayment.fromJson(paymentMap);
+      if (bank.qrUrl.isEmpty || bank.txnRef.isEmpty) bank = null;
+    }
+
+    return BeCreateOrderResult(
+      orderId: orderMap['id']?.toString() ?? '',
+      courseIds: courseIds,
+      paymentMethod: method,
+      paymentStatus: status,
+      bankTransfer: bank,
+      paymentMessage: paymentMap['message']?.toString(),
+    );
+  }
+}

@@ -41,6 +41,34 @@ export async function fetchMe(): Promise<AuthUser> {
   return data.user;
 }
 
+export async function changePasswordRequest(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiClient.post(PathApi.auth.changePassword, {
+    currentPassword,
+    newPassword,
+  }) as Promise<{ message: string }>;
+}
+
+export async function forgotPasswordRequest(
+  email: string,
+): Promise<{ message: string }> {
+  return apiClient.post(PathApi.auth.forgotPassword, {
+    email,
+  }) as Promise<{ message: string }>;
+}
+
+export async function resetPasswordRequest(
+  token: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiClient.post(PathApi.auth.resetPassword, {
+    token,
+    newPassword,
+  }) as Promise<{ message: string }>;
+}
+
 export async function logoutRequest(): Promise<void> {
   await apiClient.post(PathApi.auth.logout);
 }

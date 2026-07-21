@@ -19,7 +19,10 @@ const Errors = {
 } as const;
 
 function finalPrice(price: number, salePrice: number | null): number {
-  if (salePrice !== null && salePrice >= 0) return salePrice;
+  // Only apply sale when it is a real discount (strictly below list price).
+  if (salePrice !== null && salePrice > 0 && salePrice < price) {
+    return salePrice;
+  }
   return price;
 }
 

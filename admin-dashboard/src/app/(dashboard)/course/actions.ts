@@ -2,14 +2,19 @@
 
 import { beFetch } from "@/lib/api/server";
 import type {
+  AssignmentSubmissionsResponse,
   CourseDetail,
   CourseIncludeInput,
+  CourseLearnersResponse,
   CourseListResponse,
   CoursePublic,
   CreateLessonInput,
   CreateSectionInput,
+  GradeAssignmentSubmissionInput,
   LearningOutcomeInput,
   LessonCreateResponseData,
+  PublishReadiness,
+  QuizAttemptsResponse,
   UpdateLessonInput,
   UpdateSectionInput,
 } from "@/lib/api/types";
@@ -430,6 +435,97 @@ export async function publishCourse(
   revalidatePath("/course");
   revalidatePath(`/course/${id}`);
   return { ok: true, message: "Xuất bản khóa học thành công" };
+}
+
+export async function fetchCourseLearners(
+  courseId: string,
+): Promise<CourseLearnersResponse> {
+  const result = await beFetch<CourseLearnersResponse>(
+    `/courses/${courseId}/enrollments/learners`,
+  );
+
+  if (!result.ok || !result.data) {
+    return { data: [], totalLessons: 0 };
+  }
+
+  return result.data;
+}
+
+export async function fetchPublishReadiness(
+  courseId: string,
+): Promise<PublishReadiness | null> {
+  const result = await beFetch<{ data: PublishReadiness }>(
+    `/courses/${courseId}/publish-readiness`,
+  );
+
+  if (!result.ok || !result.data) return null;
+  return result.data.data;
+}
+
+export async function fetchQuizAttempts(
+  quizId: string,
+): Promise<QuizAttemptsResponse> {
+  const result = await beFetch<QuizAttemptsResponse>(
+    `/quizzes/${quizId}/attempts`,
+  );
+
+  if (!result.ok || !result.data) return { data: [] };
+  return result.data;
+}
+
+export async function resetQuizAttempts(
+  quizId: string,
+  userId: number,
+): Promise<{ ok: boolean; message: string }> {
+  const result = await beFetch<{ message: string; deletedCount: number }>(
+    `/quizzes/${quizId}/attempts/${userId}/reset`,
+    { method: "POST" },
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: mapActionError(result, "Reset lượt làm bài thất bại"),
+    };
+  }
+
+  revalidatePath(`/course/quiz/attempts/${quizId}`);
+  return {
+    ok: true,
+    message: result.data?.message ?? "Đã reset lượt làm bài của học viên",
+  };
+}
+
+export async function fetchAssignmentSubmissions(
+  assignmentId: string,
+): Promise<AssignmentSubmissionsResponse> {
+  const result = await beFetch<AssignmentSubmissionsResponse>(
+    `/assignments/${assignmentId}/submissions`,
+  );
+
+  if (!result.ok || !result.data) return { data: [], maxScore: 100 };
+  return result.data;
+}
+
+export async function gradeAssignmentSubmission(
+  assignmentId: string,
+  submissionId: string,
+  input: GradeAssignmentSubmissionInput,
+): Promise<{ ok: boolean; message: string }> {
+  const result = await beFetch(`/assignment-submissions/${submissionId}/grade`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: mapActionError(result, "Chấm điểm bài tập thất bại"),
+    };
+  }
+
+  revalidatePath(`/course/assignment/${assignmentId}/submissions`);
+  return { ok: true, message: "Đã chấm điểm bài tập" };
 }
 
 export async function createSection(

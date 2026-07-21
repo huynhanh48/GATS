@@ -7,8 +7,11 @@ import { RouteError } from '@src/common/utils/route-errors';
 import logger from 'jet-logger';
 import { OAuth2Client } from 'google-auth-library';
 import {
+  type ChangePasswordInput,
+  type ForgotPasswordInput,
   type LoginInput,
   type RegisterInput,
+  type ResetPasswordInput,
   type UserPublic,
   type VerifyEmailInput,
 } from '@src/models/User.model';
@@ -42,6 +45,10 @@ const Errors = {
   ALREADY_VERIFIED: 'Email is already verified',
   DEFAULT_ROLE_NOT_FOUND: 'Default role not found',
   SESSION_EXPIRED: 'Session expired or invalid',
+  INVALID_CURRENT_PASSWORD: 'Current password is incorrect',
+  NO_PASSWORD: 'Account does not use password login',
+  INVALID_RESET_TOKEN: 'Invalid or expired reset token',
+  ACCOUNT_LOCKED: 'Account is locked',
 } as const;
 
 async function getUserPublic(userId: number): Promise<UserPublic> {
@@ -133,6 +140,10 @@ async function login(input: LoginInput) {
     );
   }
 
+  if (user.isLocked) {
+    throw new RouteError(HttpStatusCodes.FORBIDDEN, Errors.ACCOUNT_LOCKED);
+  }
+
   const isValid = await comparePassword(input.password, user.passwordHash);
   if (!isValid) {
     throw new RouteError(
@@ -171,6 +182,10 @@ async function googleLogin(idToken: string) {
   }
 
   let user = await findByEmail(payload.email);
+
+  if (user?.isLocked) {
+    throw new RouteError(HttpStatusCodes.FORBIDDEN, Errors.ACCOUNT_LOCKED);
+  }
 
   if (!user) {
     let baseUserName = payload.name || payload.email.split('@')[0];
@@ -246,6 +261,85 @@ async function verifyEmail(input: VerifyEmailInput) {
   return { message: 'Email verified successfully.' };
 }
 
+function frontendOrigin(): string {
+  return EnvVars.FrontendUrl.split(',')[0]?.trim().replace(/\/$/, '') || '';
+}
+
+async function changePassword(userId: number, input: ChangePasswordInput) {
+  const user = await findById(userId);
+  if (!user) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.USER_NOT_FOUND);
+  }
+  if (!user.passwordHash) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NO_PASSWORD);
+  }
+
+  const ok = await comparePassword(input.currentPassword, user.passwordHash);
+  if (!ok) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      Errors.INVALID_CURRENT_PASSWORD,
+    );
+  }
+
+  const passwordHash = await hashPassword(input.newPassword);
+  await update(userId, { passwordHash });
+  return { message: 'Password updated successfully.' };
+}
+
+/**
+ * Always returns the same message to avoid email enumeration.
+ * Reuses verifyToken for verified password accounts.
+ */
+async function forgotPassword(input: ForgotPasswordInput) {
+  const generic = {
+    message:
+      'If an account exists for that email, a reset link has been sent.',
+  };
+
+  const user = await findByEmail(input.email);
+  if (!user || !user.verified || !user.passwordHash) {
+    return generic;
+  }
+
+  const token = createVerifyToken();
+  await update(user.id, { verifyToken: token });
+
+  const resetUrl = `${frontendOrigin()}/reset-password?token=${token}`;
+  try {
+    await mailService.sendPasswordResetEmail({
+      to: user.email,
+      userName: user.userName,
+      resetUrl,
+    });
+  } catch (error) {
+    logger.err('Failed to send password reset email');
+    logger.err(error);
+  }
+
+  if (EnvVars.NodeEnv === NodeEnvs.DEV) {
+    return { ...generic, resetToken: token };
+  }
+
+  return generic;
+}
+
+async function resetPassword(input: ResetPasswordInput) {
+  const user = await findByVerifyToken(input.token);
+  if (!user || !user.verified) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      Errors.INVALID_RESET_TOKEN,
+    );
+  }
+
+  const passwordHash = await hashPassword(input.newPassword);
+  await update(user.id, { passwordHash, verifyToken: null });
+  await clearSession(user.id);
+
+  return { message: 'Password has been reset. Please sign in again.' };
+}
+
 export async function authenticate(token: string): Promise<AuthUser> {
   const payload = verifyToken(token);
   const user = await findById(payload.userId);
@@ -308,6 +402,9 @@ export default {
   me,
   updateMe,
   verifyEmail,
+  changePassword,
+  forgotPassword,
+  resetPassword,
   authenticate,
   logout,
   getCookieOptions,

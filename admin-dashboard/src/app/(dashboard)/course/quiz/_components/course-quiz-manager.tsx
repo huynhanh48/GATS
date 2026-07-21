@@ -38,7 +38,6 @@ import type {
   CoursePublic,
   Quiz,
   QuizQuestion,
-  QuizQuestionType,
 } from "@/lib/api/types";
 import {
   coursesClient,
@@ -50,7 +49,7 @@ import { QuizBuilder } from "../../[id]/_components/quiz-builder";
 type QuizLesson = CourseDetailLesson & { sectionTitle: string };
 type QuizView = "overview" | "builder" | "preview";
 
-const QUESTION_TYPE_LABELS: Record<QuizQuestionType, string> = {
+const QUESTION_TYPE_LABELS: Record<string, string> = {
   single_choice: "Một đáp án",
   multiple_choice: "Nhiều đáp án",
   fill_blank: "Điền khuyết",
@@ -164,6 +163,7 @@ export function CourseQuizManager() {
   const [loadingQuiz, setLoadingQuiz] = useState(false);
   const [quizNoData, setQuizNoData] = useState(false);
   const [view, setView] = useState<QuizView>("overview");
+  const [openAddQuestion, setOpenAddQuestion] = useState(false);
 
   useEffect(() => {
     async function fetchCourses() {
@@ -290,14 +290,21 @@ export function CourseQuizManager() {
   function handleQuizCreated(newQuiz: Quiz) {
     setQuiz(newQuiz);
     setQuizNoData(false);
+    setOpenAddQuestion(true);
     setView("builder");
     toast.success("Quiz đã sẵn sàng");
+  }
+
+  function goAddQuestion() {
+    setOpenAddQuestion(true);
+    setView("builder");
   }
 
   function selectLesson(lesson: QuizLesson) {
     setSelectedLesson(lesson);
     setQuiz(null);
     setQuizNoData(false);
+    setOpenAddQuestion(false);
     setView("overview");
   }
 
@@ -512,7 +519,13 @@ export function CourseQuizManager() {
               />
             </div>
           ) : (
-            <Tabs value={view} onValueChange={(value) => setView(value as QuizView)}>
+            <Tabs value={view} onValueChange={(value) => {
+              const next = value as QuizView;
+              setView(next);
+              if (next !== "builder") {
+                setOpenAddQuestion(false);
+              }
+            }}>
               <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
                 <TabsList variant="line" className="w-full justify-start overflow-x-auto">
                   <TabsTrigger value="overview">
@@ -584,6 +597,23 @@ export function CourseQuizManager() {
                           <Button type="button" onClick={() => setView("builder")}>
                             <PlusCircle className="size-4" />
                             Tạo quiz
+                          </Button>
+                        </div>
+                      </div>
+                    ) : totalQuestions === 0 ? (
+                      <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50 p-5 dark:border-blue-900/60 dark:bg-blue-950/20">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <h3 className="text-base font-semibold text-slate-950 dark:text-white">
+                              Quiz chưa có câu hỏi
+                            </h3>
+                            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                              Thêm câu hỏi đầu tiên để học viên có thể làm bài kiểm tra.
+                            </p>
+                          </div>
+                          <Button type="button" onClick={goAddQuestion}>
+                            <PlusCircle className="size-4" />
+                            Thêm câu hỏi
                           </Button>
                         </div>
                       </div>
@@ -662,6 +692,7 @@ export function CourseQuizManager() {
                     lessonId={selectedLesson.id}
                     existingQuiz={quizNoData ? undefined : quiz}
                     onCreated={handleQuizCreated}
+                    autoOpenAddQuestion={openAddQuestion}
                   />
                 )}
               </TabsContent>

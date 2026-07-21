@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 
 class PostComposeScreen extends StatefulWidget {
   const PostComposeScreen({
@@ -32,6 +32,7 @@ class _PostComposeScreenState extends State<PostComposeScreen> {
   final _bodyController = TextEditingController();
   PostScope _scope = PostScope.course;
   String? _courseId;
+  bool _publishing = false;
 
   @override
   void initState() {
@@ -49,29 +50,44 @@ class _PostComposeScreenState extends State<PostComposeScreen> {
     super.dispose();
   }
 
-  void _publish() {
+  Future<void> _publish() async {
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
-    if (title.isEmpty || body.isEmpty) return;
+    if (title.isEmpty || body.isEmpty || _publishing) return;
 
     final scope = widget.fixedCourseId != null ? PostScope.course : _scope;
     final courseId = scope == PostScope.course
         ? (widget.fixedCourseId ?? _courseId)
         : null;
 
-    if (scope == PostScope.course && courseId == null) return;
+    // BE chưa gắn post ↔ courseId — compose course-scoped vẫn publish global.
+    if (scope == PostScope.course &&
+        courseId == null &&
+        widget.fixedCourseId == null &&
+        !widget.allowGlobal) {
+      return;
+    }
 
-    MockPostStore.instance.addPost(
+    setState(() => _publishing = true);
+    final ok = await MockPostStore.instance.addPost(
       title: title,
       body: body,
       authorId: widget.authorId,
       authorName: widget.authorName,
       authorRole: widget.authorRole,
-      scope: scope,
+      scope: PostScope.global,
       courseId: courseId,
     );
-
     if (!mounted) return;
+    setState(() => _publishing = false);
+
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng bài thất bại. Kiểm tra quyền / đăng nhập.')),
+      );
+      return;
+    }
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(AppStrings.postPublished)),
     );
@@ -80,15 +96,25 @@ class _PostComposeScreenState extends State<PostComposeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final all = CourseModule.repository.listPublishedCourses();
     final courses = widget.authorRole == UserRole.admin
-        ? MockCourseStore.instance.publishedCourses()
-        : MockCourseStore.instance.coursesForUser(widget.authorId, role: UserRole.mentor);
+        ? all
+        : all.where((c) => c.mentorId == widget.authorId).toList();
 
     return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.postComposeTitle),
         actions: [
-          TextButton(onPressed: _publish, child: Text(AppStrings.postComposePublish)),
+          TextButton(
+            onPressed: _publishing ? null : _publish,
+            child: _publishing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Text(AppStrings.postComposePublish),
+          ),
         ],
       ),
       body: ListView(

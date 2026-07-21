@@ -9,14 +9,15 @@ import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
-import 'package:gats_academy/data/api/course_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/features/course/data/lecture_progress_store.dart';
 import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_action_bar.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_hero_header.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_meta_row.dart';
+import 'package:gats_academy/features/course/presentation/widgets/lecture_preview_sheet.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 
 class CourseStoreDetailScreen extends StatefulWidget {
@@ -43,6 +44,7 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
     _loadUser();
     CartController.instance.addListener(_onCartChanged);
     CourseModule.repository.addListener(_onCartChanged);
+    CourseModule.repository.ensureDetailLoaded(widget.courseId);
   }
 
   Future<void> _loadUser() async {
@@ -78,27 +80,41 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
       return;
     }
 
-    // 1. Cập nhật local cache ngay để UI phản hồi nhanh
-    CourseModule.repository.enroll(course.id, userId);
+    final ok = await CourseModule.repository.enrollFree(course.id, userId);
+    if (!mounted) return;
 
-    // 2. Gọi API BE
-    try {
-      final token = await AuthPrefs.accessToken();
-      if (token != null) {
-        await CourseApiService.enrollFree(
-          courseId: course.id,
-          token: token,
-        );
-      }
-    } catch (e) {
-      // Đã enroll rồi hoặc lỗi khác — giữ local update vừa thực hiện
-      debugPrint('enrollFree API error (ignored): $e');
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng ký thất bại. Vui lòng thử lại.')),
+      );
+      return;
     }
 
-    if (!mounted) return;
     GatsMainNavigator.pushReplacement<void, void>(
       context,
       CourseDetailScreen(courseId: course.id),
+    );
+  }
+
+  Future<void> _openPreviewLecture(AppCourse course, CourseLecture lecture) async {
+    final canPlay = _owned || lecture.isPreview;
+    if (!canPlay || lecture.locked && !_owned) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppStrings.courseLoginToEnroll)),
+      );
+      return;
+    }
+
+    final lectures = course.lectures;
+    final index = lectures.indexWhere((l) => l.id == lecture.id);
+    await LecturePreviewSheet.show(
+      context,
+      courseId: course.id,
+      lecture: lecture,
+      index: index < 0 ? 0 : index,
+      total: lectures.length,
+      state: LectureLearnState.upcoming,
+      onMarkComplete: () async {},
     );
   }
 
@@ -267,59 +283,73 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
                                     ),
                                   ),
                                 ),
-                              ...course.lectures.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final l = entry.value;
-                                final isPreview = !_owned && index == 0;
-                                final isLocked = !_owned && index > 0;
+                              ...course.lectures.map((l) {
+                                final isPreview = l.isPreview && !_owned;
+                                final isLocked =
+                                    !_owned && (l.locked || !l.isPreview);
+                                final canPlay = _owned || l.isPreview;
                                 return Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        isLocked
-                                            ? Icons.lock_outline
-                                            : Icons.play_circle_outline,
-                                        color: isLocked
-                                            ? gats.textSecondary
-                                            : gats.lavenderAccent,
-                                        size: 18,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Text(
-                                          l.title,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: isLocked ? gats.textSecondary : gats.textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                  child: InkWell(
+                                    onTap: canPlay
+                                        ? () => _openPreviewLecture(course, l)
+                                        : null,
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          isLocked
+                                              ? Icons.lock_outline
+                                              : Icons.play_circle_outline,
+                                          color: isLocked
+                                              ? gats.textSecondary
+                                              : gats.lavenderAccent,
+                                          size: 18,
                                         ),
-                                      ),
-                                      if (isPreview)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: gats.lavenderAccent.withValues(alpha: 0.12),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
                                           child: Text(
-                                            AppStrings.storeLecturePreview,
+                                            l.title,
                                             style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w700,
-                                              color: gats.lavenderAccent,
+                                              fontSize: 13,
+                                              color: isLocked
+                                                  ? gats.textSecondary
+                                                  : gats.textPrimary,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ),
-                                      if (!isPreview) ...[
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${l.durationMinutes}m',
-                                          style: TextStyle(fontSize: 12, color: gats.textSecondary),
-                                        ),
+                                        if (isPreview)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: gats.lavenderAccent
+                                                  .withValues(alpha: 0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              AppStrings.storeLecturePreview,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color: gats.lavenderAccent,
+                                              ),
+                                            ),
+                                          ),
+                                        if (!isPreview) ...[
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '${l.durationMinutes}m',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: gats.textSecondary,
+                                            ),
+                                          ),
+                                        ],
                                       ],
-                                    ],
+                                    ),
                                   ),
                                 );
                               }),
@@ -361,18 +391,25 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
                 CourseDetailScreen(courseId: course.id),
               ),
               onEnrollFree: () => _enrollFree(course),
-              onAddToCart: () {
-                CartController.instance.addToCart(course.id, quantity: _seats);
-                GatsNotificationService.showInApp(
-                  message: AppStrings.storeAddedSeatsToCart
-                      .replaceFirst('%d', '$_seats')
-                      .replaceFirst('%s', course.title),
-                  actionLabel: AppStrings.storeViewCart,
-                  onAction: () {
-                    final ctx = rootNavigatorKey.currentContext;
-                    if (ctx != null) openCart(ctx);
-                  },
-                );
+              onAddToCart: () async {
+                try {
+                  await CartController.instance.addToCart(course.id);
+                  GatsNotificationService.showInApp(
+                    message: AppStrings.storeAddedToCart
+                        .replaceFirst('%s', course.title),
+                    actionLabel: AppStrings.storeViewCart,
+                    onAction: () {
+                      final ctx = rootNavigatorKey.currentContext;
+                      if (ctx != null) openCart(ctx);
+                    },
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  final msg =
+                      CartController.instance.lastError ?? e.toString();
+                  ScaffoldMessenger.of(context)
+                      .showSnackBar(SnackBar(content: Text(msg)));
+                }
               },
             ),
           ),

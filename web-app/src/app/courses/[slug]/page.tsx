@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
-import { useEffect } from "react";
+import React, { useState, useEffect, useMemo, useEffectEvent } from "react";
 import { Course } from "@/types/course";
 import { PathApi } from "@/constants/PathApi";
 import apiClient from "@/lib/apiClient";
@@ -45,31 +44,76 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { VideoPlayerModal } from "@/components/common/VideoPlayerModal";
+import { resolveMediaUrl } from "@/lib/media/url";
 
+function effectiveCoursePrice(price: number, salePrice?: number | null) {
+  if (salePrice != null && salePrice > 0 && salePrice < price) return salePrice;
+  return price;
+}
 
 export default function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const unwrappedParams = React.use(params);
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { openAuthModal } = useAuthModal();
   const [courseData, setCourseData] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
-  const { addToCart } = useCart();
+  const { addToCart, clearCart } = useCart();
   const router = useRouter();
 
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string>("");
   const [selectedVideoTitle, setSelectedVideoTitle] = useState<string>("");
+  const [selectedLessonContent, setSelectedLessonContent] = useState<string | null>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [selectedLinkedPost, setSelectedLinkedPost] = useState<{
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    thumbnail: string | null;
+  } | null>(null);
+
+  const loadCourse = useEffectEvent(async (slug: string) => {
+    setIsLoading(true);
+    try {
+      const res: any = await apiClient.get(PathApi.courses.detailBySlug(slug));
+      if (res.course) setCourseData(res.course);
+    } catch (err) {
+      console.error(err);
+      setCourseData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  });
+
+  const syncEnrollment = useEffectEvent(async (courseId: string) => {
+    try {
+      const enrollRes: any = await apiClient.get(PathApi.enrollment.listMine);
+      const rows: any[] = enrollRes?.data ?? [];
+      const enrolled = rows.some(
+        (row) =>
+          (row.courseId === courseId || row.course?.id === courseId) &&
+          (row.status === "active" || !row.status),
+      );
+      setIsEnrolled(enrolled);
+    } catch {
+      setIsEnrolled(false);
+    }
+  });
 
   useEffect(() => {
-    apiClient.get(PathApi.courses.detailBySlug(unwrappedParams.slug))
-      .then((res: any) => {
-        if (res.course) setCourseData(res.course);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [unwrappedParams.slug]);
+    void loadCourse(unwrappedParams.slug);
+  }, [unwrappedParams.slug, isAuthenticated]);
+
+  useEffect(() => {
+    if (!courseData?.id) return;
+    if (!isAuthenticated) {
+      setIsEnrolled(false);
+      return;
+    }
+    void syncEnrollment(courseData.id);
+  }, [isAuthenticated, courseData?.id]);
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
@@ -82,12 +126,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
       await apiClient.post(PathApi.enrollment.enroll(courseData.id));
       setIsEnrolled(true);
       toast.success('Đăng ký khóa học thành công!');
+      void loadCourse(unwrappedParams.slug);
     } catch (err: any) {
       const msg = err?.message || 'Không thể đăng ký, vui lòng thử lại!';
       // Already enrolled is treated as success
       if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('enrolled')) {
         setIsEnrolled(true);
         toast.info('Bạn đã đăng ký khóa học này rồi.');
+        void loadCourse(unwrappedParams.slug);
       } else {
         toast.error(msg);
       }
@@ -98,90 +144,68 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
 
   const handlePlayLesson = async (lesson: any) => {
     if (!lesson.id) {
-      toast.info("Bài giảng này chưa có video.");
+      toast.info("Bài giảng này chưa sẵn sàng.");
       return;
     }
-    if (!isEnrolled && !lesson.preview) {
+
+    const canAccess =
+      Boolean(lesson.preview) ||
+      isEnrolled ||
+      lesson.locked === false;
+
+    if (!canAccess) {
       toast.error("Bạn cần đăng ký khóa học để xem bài giảng này.");
       return;
     }
-    
+
+    const linkedPost = lesson.linkedPost ?? null;
+    const lessonContent =
+      typeof lesson.content === "string" && lesson.content.trim()
+        ? lesson.content
+        : null;
+
+    setSelectedLinkedPost(linkedPost);
+    setSelectedLessonContent(lessonContent);
+    setSelectedVideoTitle(lesson.title);
+    setSelectedVideoUrl("");
+
+    if (!courseData?.id) return;
+
+    const openModal = (videoUrl = "") => {
+      setSelectedVideoUrl(videoUrl);
+      setIsVideoModalOpen(true);
+    };
+
     try {
-      // Fetch lesson video info
-      const res: any = await apiClient.get(PathApi.video.lessonVideo(courseData?.id || "", lesson.id));
+      const res: any = await apiClient.get(
+        PathApi.video.lessonVideo(courseData.id, lesson.id),
+      );
       if (!res?.data?.videoId) {
+        if (lessonContent || linkedPost) {
+          openModal("");
+          return;
+        }
         toast.info("Video chưa khả dụng hoặc chưa được tải lên.");
         return;
       }
-      
-      // Fetch actual playback URL
-      const playbackRes: any = await apiClient.get(PathApi.video.playback(courseData?.id || "", res.data.videoId));
+
+      const playbackRes: any = await apiClient.get(
+        PathApi.video.playback(courseData.id, res.data.videoId),
+      );
       if (playbackRes?.data?.playbackUrl) {
-        setSelectedVideoUrl(playbackRes.data.playbackUrl);
-        setSelectedVideoTitle(lesson.title);
-        setIsVideoModalOpen(true);
+        openModal(playbackRes.data.playbackUrl);
+      } else if (lessonContent || linkedPost) {
+        openModal("");
       } else {
         toast.info("Video chưa sẵn sàng để phát.");
       }
     } catch (err: any) {
-      toast.error(err?.message || "Không thể tải video bài giảng.");
-    }
-  };
-
-  // Fallback mock data matching the new template for fields not yet in API
-  const mockCourse = {
-    subtitle: "Chinh Phục Python Trong 30 Ngày: Từ Cơ Bản Đến Nâng Cao (Tiếng Việt) - Lập trình Python",
-    rating: 4.6,
-    reviews: "1.102 xếp hạng",
-    students: "10.391 học viên",
-    author: "AI Coding",
-    updated: "6/2026",
-    language: "Tiếng Việt",
-    breadcrumbs: ["CNTT & Phần mềm", "CNTT & Phần mềm khác", "Python"],
-    badges: ["Bán chạy nhất", "Nhập vai"],
-    whatYouWillLearn: [
-      "Nền tảng Python vững chắc để học tiếp AI, Data Science hay lập trình Web",
-      "Kiến thức toàn diện về Python, bắt đầu với biến, kiểu dữ liệu, chuỗi, các phép toán",
-      "Khám phá cách sử dụng cấu trúc điều khiển, vòng lặp, hàm, xử lý file",
-      "Quản lý môi trường lập trình với virtual environment, quản lý các gói trong Python",
-      "Các khái niệm nâng cao như xử lý lỗi, biểu thức chính quy, giúp tối ưu hóa quá trình viết code.",
-      "Lập trình hướng đối tượng trong Python",
-      "Sử dụng các công cụ mạnh mẽ như Numpy, Matplotlib, Pandas để phục cho cho trí tuệ nhân tạo.",
-      "Thực hành với cơ sở dữ liệu như SQLite3 giúp lưu trữ dữ liệu"
-    ],
-    relatedTopics: ["Python", "CNTT & Phần mềm khác", "CNTT & Phần mềm"],
-    features: [
-      { icon: Monitor, text: "24 giờ video theo yêu cầu" },
-      { icon: Download, text: "20 tài nguyên có thể tải xuống" },
-      { icon: FileText, text: "8 bài viết" },
-      { icon: Smartphone, text: "Truy cập trên thiết bị di động và TV" },
-      { icon: Trophy, text: "Giấy chứng nhận hoàn thành" },
-    ],
-    curriculumStats: "35 phần • 189 bài giảng • 23 giờ 51 phút tổng thời lượng",
-    curriculum: [
-      {
-        title: "Introduction",
-        lectures: 6,
-        duration: "16 phút",
-        lessons: [
-          { title: "Introduction - Giới thiệu giảng viên", duration: "0:54", preview: true },
-          { title: "Khóa học này dành cho ai", duration: "2:12", preview: true },
-          { title: "Lộ trình chinh phục Python trong 30 ngày", duration: "4:12", preview: true },
-          { title: "Thông tin về additional sections", duration: "2:32", preview: false },
-          { title: "Cách học hiệu quả trên Udemy", duration: "5:05", preview: false },
-          { title: "Vấn đề bản quyền khóa học - Quan trọng", duration: "0:55", preview: false },
-        ]
-      },
-      {
-        title: "Cài đặt môi trường lập trình Python",
-        lectures: 4,
-        duration: "35 phút",
-        lessons: [
-          { title: "Cài đặt Python trên Windows", duration: "10:20", preview: false },
-          { title: "Cài đặt VS Code", duration: "12:15", preview: false },
-        ]
+      if (lessonContent || linkedPost) {
+        openModal("");
+      } else {
+        toast.error(err?.message || "Không thể tải video bài giảng.");
       }
-    ]
+    }
   };
 
   const [openChapters, setOpenChapters] = useState<number[]>([0]);
@@ -193,85 +217,139 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     );
   };
 
-  if (isLoading) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold">Đang tải...</div>;
-  if (!courseData) return <div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold">Không tìm thấy khóa học</div>;
+  // Map API payload only — no marketing mock fallbacks
+  const course = useMemo(() => {
+    if (!courseData) return null;
 
-  // Merge API data with mock data
-  const course = {
-    ...mockCourse,
-    title: courseData.title,
-    price: courseData.price,
-    salePrice: courseData.salePrice,
-    thumbnail: courseData.thumbnail,
-    categoryName: courseData.category?.name || "Khóa học",
-    description: courseData.description || mockCourse.subtitle,
-    tags: courseData.tags,
-    author: courseData.author?.userName || mockCourse.author,
-    rating: courseData.stats?.averageRating || mockCourse.rating,
-    reviews: courseData.stats?.ratingCount ? `${courseData.stats.ratingCount} xếp hạng` : mockCourse.reviews,
-    students: courseData.stats?.enrollmentCount ? `${courseData.stats.enrollmentCount} học viên` : mockCourse.students,
-    updated: courseData.updatedAt
-      ? new Date(courseData.updatedAt).toLocaleDateString("vi-VN", { month: "2-digit", year: "numeric" })
-      : mockCourse.updated,
-    whatYouWillLearn: courseData.learningOutcomes?.length
-      ? courseData.learningOutcomes.map((item: any) => typeof item === 'string' ? item : item.content)
-      : mockCourse.whatYouWillLearn,
-    features: courseData.includes?.length
-      ? courseData.includes.map((item: any) => {
-        let text = item.label;
-        if (item.value) {
-          if (item.unit === 'hour') {
-            text = `${item.value} giờ ${item.label.toLowerCase()}`;
-          } else if (item.unit === 'resource') {
-            text = `${item.value} tài liệu tải về`;
-          } else if (item.unit === 'article') {
-            text = `${item.value} bài viết`;
-          } else {
-            text = `${item.value} ${item.unit} ${item.label.toLowerCase()}`;
-          }
-        }
+    const ratingCount = courseData.stats?.ratingCount ?? 0;
+    const averageRating = courseData.stats?.averageRating ?? null;
+    const enrollmentCount = courseData.stats?.enrollmentCount ?? 0;
 
-        const lucideIconMap: Record<string, any> = {
-          Monitor,
-          FileText,
-          Download,
-          Smartphone,
-          Trophy,
-          Check,
-        };
-        const Icon = lucideIconMap[item.key] || Check;
+    return {
+      title: courseData.title,
+      price: courseData.price,
+      salePrice: courseData.salePrice,
+      thumbnail: courseData.thumbnail,
+      categoryName: courseData.category?.name || "Khóa học",
+      description: courseData.description || "",
+      tags: courseData.tags,
+      author: courseData.author?.userName || "Giảng viên",
+      rating: averageRating,
+      ratingCount,
+      reviews:
+        ratingCount > 0 ? `${ratingCount} xếp hạng` : null,
+      students:
+        enrollmentCount > 0
+          ? `${enrollmentCount.toLocaleString("vi-VN")} học viên`
+          : null,
+      updated: courseData.updatedAt
+        ? new Date(courseData.updatedAt).toLocaleDateString("vi-VN", {
+            month: "2-digit",
+            year: "numeric",
+          })
+        : null,
+      language: "Tiếng Việt",
+      whatYouWillLearn: courseData.learningOutcomes?.length
+        ? courseData.learningOutcomes.map((item: any) =>
+            typeof item === "string" ? item : item.content,
+          )
+        : [],
+      features: courseData.includes?.length
+        ? courseData.includes.map((item: any) => {
+            let text = item.label;
+            if (item.value) {
+              if (item.unit === "hour") {
+                text = `${item.value} giờ ${item.label.toLowerCase()}`;
+              } else if (item.unit === "resource") {
+                text = `${item.value} tài liệu tải về`;
+              } else if (item.unit === "article") {
+                text = `${item.value} bài viết`;
+              } else {
+                text = `${item.value} ${item.unit} ${item.label.toLowerCase()}`;
+              }
+            }
 
-        return { icon: Icon, text };
-      })
-      : mockCourse.features,
-    curriculumStats: courseData.stats
-      ? `${courseData.stats.sectionCount} phần • ${courseData.stats.lessonCount} bài giảng • ${courseData.stats.totalDurationSeconds > 3600
-        ? `${Math.round(courseData.stats.totalDurationSeconds / 3600)} giờ`
-        : `${Math.round(courseData.stats.totalDurationSeconds / 60)} phút`
-      } tổng thời lượng`
-      : mockCourse.curriculumStats,
-    curriculum: courseData.sections?.length
-      ? courseData.sections.map((sec: any) => {
-        const lessonCount = sec.lessons?.length || 0;
-        const totalSec = sec.lessons?.reduce((acc: number, cur: any) => acc + (cur.duration || 0), 0) || 0;
-        const totalMin = Math.round(totalSec / 60);
+            const lucideIconMap: Record<string, any> = {
+              Monitor,
+              FileText,
+              Download,
+              Smartphone,
+              Trophy,
+              Check,
+            };
+            const Icon = lucideIconMap[item.key] || Check;
 
-        return {
-          title: sec.title,
-          lectures: lessonCount,
-          duration: `${totalMin} phút`,
-          lessons: sec.lessons?.map((les: any) => ({
-            id: les.id,
-            title: les.title,
-            preview: les.isPreview || les.is_preview || les.preview,
-            duration: typeof les.duration === 'number'
-              ? `${Math.floor(les.duration / 60)}:${String(les.duration % 60).padStart(2, '0')}`
-              : les.duration || "0:00"
-          })) || []
-        };
-      })
-      : mockCourse.curriculum,
-  };
+            return { icon: Icon, text };
+          })
+        : [],
+      curriculumStats: courseData.stats
+        ? `${courseData.stats.sectionCount} phần • ${courseData.stats.lessonCount} bài giảng • ${
+            courseData.stats.totalDurationSeconds > 3600
+              ? `${Math.round(courseData.stats.totalDurationSeconds / 3600)} giờ`
+              : `${Math.round(courseData.stats.totalDurationSeconds / 60)} phút`
+          } tổng thời lượng`
+        : null,
+      curriculum: courseData.sections?.length
+        ? courseData.sections.map((sec: any) => {
+            const lessonCount = sec.lessons?.length || 0;
+            const totalSec =
+              sec.lessons?.reduce(
+                (acc: number, cur: any) => acc + (cur.duration || 0),
+                0,
+              ) || 0;
+            const totalMin = Math.round(totalSec / 60);
+
+            return {
+              title: sec.title,
+              lectures: lessonCount,
+              duration: `${totalMin} phút`,
+              lessons:
+                sec.lessons?.map((les: any) => ({
+                  id: les.id,
+                  title: les.title,
+                  preview: les.isPreview || les.is_preview || les.preview,
+                  locked: les.locked === true,
+                  duration:
+                    typeof les.duration === "number"
+                      ? `${Math.floor(les.duration / 60)}:${String(les.duration % 60).padStart(2, "0")}`
+                      : les.duration || "0:00",
+                  content: les.content ?? null,
+                  linkedPost: les.linkedPost ?? null,
+                })) || [],
+            };
+          })
+        : [],
+    };
+  }, [courseData]);
+
+  const firstPreviewLesson = useMemo(() => {
+    if (!course) return null;
+    for (const chapter of course.curriculum) {
+      const lesson = chapter.lessons?.find(
+        (l: any) => l.preview && l.id,
+      );
+      if (lesson) return lesson;
+    }
+    return null;
+  }, [course]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold">
+        Đang tải...
+      </div>
+    );
+  }
+  if (!courseData || !course) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground font-bold">
+        Không tìm thấy khóa học
+      </div>
+    );
+  }
+
+  const displayPrice = effectiveCoursePrice(course.price, course.salePrice);
+  const isFreeCourse = displayPrice === 0;
 
 
   return (
@@ -360,32 +438,36 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             </div>
 
             {/* Ratings & Students */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5 text-yellow-500 font-bold">
-                <span>{course.rating}</span>
-                <div className="flex text-yellow-500">
-                  <Star className="w-4 h-4 fill-current" />
-                  <Star className="w-4 h-4 fill-current" />
-                  <Star className="w-4 h-4 fill-current" />
-                  <Star className="w-4 h-4 fill-current" />
-                  <Star className="w-4 h-4 fill-current" />
-                </div>
-                <span className="text-blue-300 font-normal underline cursor-pointer hover:text-white">
-                  ({course.reviews})
-                </span>
+            {(course.rating != null && course.ratingCount > 0) || course.students ? (
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                {course.rating != null && course.ratingCount > 0 ? (
+                  <div className="flex items-center gap-1.5 text-yellow-500 font-bold">
+                    <span>{Number(course.rating).toFixed(1)}</span>
+                    <div className="flex text-yellow-500">
+                      <Star className="w-4 h-4 fill-current" />
+                    </div>
+                    {course.reviews ? (
+                      <span className="text-blue-300 font-normal underline cursor-pointer hover:text-white">
+                        ({course.reviews})
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+                {course.students ? <span>{course.students}</span> : null}
               </div>
-              <span>{course.students}</span>
-            </div>
+            ) : null}
 
             <div className="text-sm">
               Được tạo bởi <span className="text-blue-300 underline cursor-pointer hover:text-white font-bold">{course.author}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-sm pt-2">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-4 h-4" />
-                <span>Lần cập nhật gần đây nhất {course.updated}</span>
-              </div>
+              {course.updated ? (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  <span>Lần cập nhật gần đây nhất {course.updated}</span>
+                </div>
+              ) : null}
               <div className="flex items-center gap-1.5">
                 <Globe className="w-4 h-4" />
                 <span>{course.language}</span>
@@ -410,56 +492,102 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         <div className="lg:w-2/3 py-8 space-y-10">
 
           {/* What you'll learn Box */}
-          <div className="border border-border p-6 shadow-sm bg-card text-card-foreground rounded-2xl">
-            <h2 className="text-2xl font-bold mb-6">Nội dung bài học</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
-              {(showAllLearning ? course.whatYouWillLearn : course.whatYouWillLearn.slice(0, 6)).map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3 text-sm">
-                  <Check className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span className="leading-relaxed">{item}</span>
-                </div>
-              ))}
+          {course.whatYouWillLearn.length > 0 ? (
+            <div className="border border-border p-6 shadow-sm bg-card text-card-foreground rounded-2xl">
+              <h2 className="text-2xl font-bold mb-6">Bạn sẽ học được gì</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+                {(showAllLearning ? course.whatYouWillLearn : course.whatYouWillLearn.slice(0, 6)).map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3 text-sm">
+                    <Check className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span className="leading-relaxed">{item}</span>
+                  </div>
+                ))}
+              </div>
+              {course.whatYouWillLearn.length > 6 && (
+                <button
+                  onClick={() => setShowAllLearning(!showAllLearning)}
+                  className="text-primary font-bold text-sm mt-4 flex items-center gap-1 hover:text-primary/80"
+                >
+                  {showAllLearning ? "Thu gọn" : "Hiển thị thêm"}
+                  {showAllLearning ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+              )}
             </div>
-            {course.whatYouWillLearn.length > 6 && (
-              <button
-                onClick={() => setShowAllLearning(!showAllLearning)}
-                className="text-primary font-bold text-sm mt-4 flex items-center gap-1 hover:text-primary/80"
-              >
-                {showAllLearning ? "Thu gọn" : "Hiển thị thêm"}
-                {showAllLearning ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </button>
-            )}
-          </div>
+          ) : null}
 
 
           {/* Features */}
-          <div>
-            <h2 className="text-xl font-bold mb-4">Khóa học này bao gồm:</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
-              {course.features.map((feat, idx) => {
-                const Icon = feat.icon;
-                return (
-                  <div key={idx} className="flex items-center gap-3">
-                    <Icon className="w-4 h-4 text-foreground/70 shrink-0" />
-                    <span>{feat.text}</span>
-                  </div>
-                );
-              })}
+          {course.features.length > 0 ? (
+            <div>
+              <h2 className="text-xl font-bold mb-4">Khóa học này bao gồm:</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm">
+                {course.features.map((feat, idx) => {
+                  const Icon = feat.icon;
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <Icon className="w-4 h-4 text-foreground/70 shrink-0" />
+                      <span>{feat.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {/* Curriculum Accordion */}
           <div>
             <h2 className="text-2xl font-bold mb-2">Nội dung khóa học</h2>
             <div className="flex justify-between items-center text-sm mb-4">
-              <span className="text-muted-foreground">{course.curriculumStats}</span>
-              <button onClick={() => setOpenChapters(course.curriculum.map((_, i) => i))} className="text-primary font-bold hover:text-primary/80">
-                Mở rộng tất cả các phần
-              </button>
+              <span className="text-muted-foreground">
+                {course.curriculumStats || "Nội dung đang được cập nhật"}
+              </span>
+              {course.curriculum.length > 0 ? (
+                <button onClick={() => setOpenChapters(course.curriculum.map((_, i) => i))} className="text-primary font-bold hover:text-primary/80">
+                  Mở rộng tất cả các phần
+                </button>
+              ) : null}
             </div>
 
+            {selectedLinkedPost ? (
+              <div className="mb-4 rounded-2xl border border-border bg-card p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">
+                  Bài viết liên quan
+                </p>
+                <div className="flex gap-4">
+                  {selectedLinkedPost.thumbnail ? (
+                    <img
+                      src={resolveMediaUrl(selectedLinkedPost.thumbnail, "")}
+                      alt=""
+                      className="h-20 w-28 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-foreground line-clamp-2">
+                      {selectedLinkedPost.title}
+                    </h3>
+                    {selectedLinkedPost.excerpt ? (
+                      <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+                        {selectedLinkedPost.excerpt}
+                      </p>
+                    ) : null}
+                    <Link
+                      href={`/posts/${selectedLinkedPost.slug}`}
+                      className="mt-2 inline-flex text-sm font-semibold text-primary hover:underline"
+                    >
+                      Đọc bài viết →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="border border-border bg-card rounded-2xl overflow-hidden">
-              {course.curriculum.map((chapter, idx) => (
+              {course.curriculum.length === 0 ? (
+                <p className="p-6 text-sm text-muted-foreground">
+                  Giáo trình chưa được công bố. Vui lòng quay lại sau.
+                </p>
+              ) : (
+                course.curriculum.map((chapter, idx) => (
                 <div key={idx} className={`border-b border-border last:border-b-0`}>
                   <button
                     onClick={() => toggleChapter(idx)}
@@ -504,7 +632,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                     )}
                   </AnimatePresence>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         </div>
@@ -514,8 +643,26 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
           <div className="lg:absolute lg:top-[-300px] lg:right-0 lg:w-full bg-card text-card-foreground shadow-2xl border border-border/40 shadow-black/20 flex flex-col rounded-2xl overflow-hidden">
 
             {/* Video Thumbnail area */}
-            <div className="relative aspect-video w-full border-b border-border bg-black overflow-hidden flex items-center justify-center cursor-pointer group">
-              <img src={course.thumbnail || "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?auto=format&fit=crop&q=80&w=600"} alt="Video Preview" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+            <div
+              role={firstPreviewLesson ? "button" : undefined}
+              tabIndex={firstPreviewLesson ? 0 : undefined}
+              onClick={() => {
+                if (firstPreviewLesson) {
+                  void handlePlayLesson(firstPreviewLesson);
+                } else {
+                  toast.info("Khóa học chưa có bài xem trước.");
+                }
+              }}
+              onKeyDown={(e) => {
+                if (!firstPreviewLesson) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  void handlePlayLesson(firstPreviewLesson);
+                }
+              }}
+              className="relative aspect-video w-full border-b border-border bg-black overflow-hidden flex items-center justify-center cursor-pointer group"
+            >
+              <img src={course.thumbnail || "/auth-bg.jpg"} alt="Video Preview" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="relative z-10 w-14 h-14 bg-white/90 text-black rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white transition-all duration-300">
                 <Play className="w-5 h-5 fill-current translate-x-[2px]" />
@@ -533,9 +680,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                   <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Học phí khóa học</span>
                   <div className="flex items-baseline gap-3">
                     <span className="text-3xl font-black text-foreground">
-                      {course.salePrice ? course.salePrice.toLocaleString('vi-VN') : course.price.toLocaleString('vi-VN')} đ
+                      {displayPrice.toLocaleString('vi-VN')} đ
                     </span>
-                    {course.salePrice && course.price > course.salePrice && (
+                    {course.salePrice != null && course.price > course.salePrice && (
                       <span className="text-sm text-muted-foreground line-through">
                         {course.price.toLocaleString('vi-VN')} đ
                       </span>
@@ -543,42 +690,66 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                   </div>
                 </div>
 
-                {course.price === 0 || (course.salePrice !== undefined && course.salePrice === 0) ? (
+                {isFreeCourse ? (
+                  isEnrolled ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/learn/${unwrappedParams.slug}`)}
+                      className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg bg-emerald-500 hover:bg-emerald-500/90 text-white shadow-emerald-500/25 cursor-pointer text-center text-base"
+                    >
+                      Vào học ngay
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleEnroll}
+                      disabled={enrolling}
+                      className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg cursor-pointer text-center text-base disabled:opacity-70 disabled:cursor-not-allowed bg-primary hover:bg-primary/90 text-white shadow-primary/25"
+                    >
+                      {enrolling ? 'Đang xử lý...' : 'Đăng ký miễn phí'}
+                    </button>
+                  )
+                ) : isEnrolled ? (
                   <button
-                    onClick={handleEnroll}
-                    disabled={enrolling || isEnrolled}
-                    className={`w-full font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg cursor-pointer text-center text-base disabled:opacity-70 disabled:cursor-not-allowed ${
-                      isEnrolled
-                        ? 'bg-emerald-500 hover:bg-emerald-500/90 text-white shadow-emerald-500/25'
-                        : 'bg-primary hover:bg-primary/90 text-white shadow-primary/25'
-                    }`}
+                    type="button"
+                    onClick={() => router.push(`/learn/${unwrappedParams.slug}`)}
+                    className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg bg-emerald-500 hover:bg-emerald-500/90 text-white shadow-emerald-500/25 cursor-pointer text-center text-base"
                   >
-                    {enrolling ? 'Đang xử lý...' : isEnrolled ? '✓ Đã đăng ký' : 'Đăng ký miễn phí'}
+                    Vào học ngay
                   </button>
                 ) : (
-                  <div className="flex flex-col gap-3">
+                  <div className="relative z-10 flex flex-col gap-3 isolate">
                     <button
+                      type="button"
                       onClick={async () => {
                         try {
                           await addToCart(courseData?.id || "");
-                        } catch (err) {}
+                          toast.success("Đã thêm vào giỏ hàng");
+                        } catch (err: any) {
+                          toast.error(err?.message || "Không thêm được vào giỏ");
+                        }
                       }}
-                      className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all border-2 border-primary text-primary bg-transparent hover:bg-primary/5 cursor-pointer text-center text-base"
+                      className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all border-2 border-primary text-primary bg-card hover:bg-primary/5 cursor-pointer text-center text-base"
                     >
                       Thêm vào giỏ hàng
                     </button>
                     <button
+                      type="button"
                       onClick={async () => {
                         if (!isAuthenticated) {
                           openAuthModal('login');
                           return;
                         }
                         try {
+                          // Buy now = chỉ khóa này, tránh cộng dồn giỏ cũ
+                          await clearCart();
                           await addToCart(courseData?.id || "");
                           router.push("/checkout");
                         } catch (err: any) {
                           if (err?.message?.includes("already enrolled") || err?.message?.includes("already in cart")) {
                              router.push("/checkout");
+                          } else {
+                            toast.error(err?.message || "Không thể mua ngay");
                           }
                         }
                       }}
@@ -608,11 +779,17 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
       </div>
       <Footer />
 
-      <VideoPlayerModal 
-        isOpen={isVideoModalOpen} 
-        onClose={() => setIsVideoModalOpen(false)} 
-        url={selectedVideoUrl} 
-        title={selectedVideoTitle} 
+      <VideoPlayerModal
+        isOpen={isVideoModalOpen}
+        onClose={() => {
+          setIsVideoModalOpen(false);
+          setSelectedVideoUrl("");
+          setSelectedLessonContent(null);
+        }}
+        url={selectedVideoUrl}
+        title={selectedVideoTitle}
+        content={selectedLessonContent}
+        linkedPost={selectedLinkedPost}
       />
     </main>
   );

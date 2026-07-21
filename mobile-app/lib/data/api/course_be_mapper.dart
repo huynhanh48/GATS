@@ -17,7 +17,8 @@ abstract final class CourseBeMapper {
     final price = (json['price'] as num?)?.toDouble() ?? 0;
     final saleRaw = json['salePrice'];
     final salePrice = saleRaw == null ? null : (saleRaw as num).toDouble();
-    final isFree = price <= 0;
+    // Free khi giá gốc = 0 hoặc salePrice = 0 (khuyến mãi miễn phí).
+    final isFree = price <= 0 || (salePrice != null && salePrice <= 0);
 
     final tags = json['tags'];
     final category = json['category'];
@@ -83,12 +84,16 @@ abstract final class CourseBeMapper {
         for (final lesson in lessons) {
           if (lesson is! Map) continue;
           final durationSec = (lesson['duration'] as num?)?.toInt();
+          final isPreview = lesson['isPreview'] as bool? ?? false;
+          final locked = lesson['locked'] as bool? ?? !isPreview;
           lectures.add(
             CourseLecture(
               id: lesson['id'] as String? ?? '',
               title: lesson['title'] as String? ?? '',
               durationMinutes:
                   durationSec == null ? 0 : (durationSec / 60).round(),
+              isPreview: isPreview,
+              locked: locked,
             ),
           );
         }

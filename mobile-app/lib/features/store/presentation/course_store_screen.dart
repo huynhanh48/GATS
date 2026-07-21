@@ -158,16 +158,22 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     );
   }
 
-  void _addToCart(AppCourse course) {
-    CartController.instance.addToCart(course.id);
-    GatsNotificationService.showInApp(
-      message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
-      actionLabel: AppStrings.storeViewCart,
-      onAction: () {
-        final ctx = rootNavigatorKey.currentContext;
-        if (ctx != null) openCart(ctx);
-      },
-    );
+  Future<void> _addToCart(AppCourse course) async {
+    try {
+      await CartController.instance.addToCart(course.id);
+      GatsNotificationService.showInApp(
+        message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
+        actionLabel: AppStrings.storeViewCart,
+        onAction: () {
+          final ctx = rootNavigatorKey.currentContext;
+          if (ctx != null) openCart(ctx);
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = CartController.instance.lastError ?? e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
   }
 
   Widget _storeCourseCard(AppCourse course, {double? width}) {

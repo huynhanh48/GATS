@@ -13,9 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { MOCK_CATEGORIES } from '@/constants/mockPosts';
-
-// MOCK DATA FALLBACK
 export const PostsClient = () => {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
@@ -53,14 +50,14 @@ export const PostsClient = () => {
       try {
         const response = await apiClient.get(PathApi.categories.list, { params: { type: 'post', status: 'active' } });
         const data = response as any;
-        if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+        if (data?.data && Array.isArray(data.data)) {
           setCategories(data.data);
         } else {
-          setCategories(MOCK_CATEGORIES);
+          setCategories([]);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
-        setCategories(MOCK_CATEGORIES);
+        setCategories([]);
       }
     };
     fetchCategories();

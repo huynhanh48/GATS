@@ -22,6 +22,15 @@ import QuizApi from '@src/routes/quiz/quizApi';
 import AssignmentApi from '@src/routes/assignment/assignmentApi';
 import VideoApi from '@src/routes/video/videoApi';
 import MediaApi from '@src/routes/media/mediaApi';
+import LeadApi from '@src/routes/lead/leadApi';
+import NotificationApi from '@src/routes/notification/notificationApi';
+import AdminUserApi from '@src/routes/admin-user/adminUserApi';
+import ModerationApi from '@src/routes/moderation/moderationApi';
+import AdminMetricsApi from '@src/routes/admin-metrics/adminMetricsApi';
+import CouponApi from '@src/routes/coupon/couponApi';
+import CertificateApi from '@src/routes/certificate/certificateApi';
+import AnalyticsApi from '@src/routes/analytics/analyticsApi';
+import LearnExtrasApi from '@src/routes/learn-extras/learnExtrasApi';
 import EnvVars, { NodeEnvs } from './common/constants/env';
 import cors from 'cors';
 import originGuard from './middleware/originGuard';
@@ -73,6 +82,15 @@ app.use(Paths._, QuizApi);
 app.use(Paths._, AssignmentApi);
 app.use(Paths._, VideoApi);
 app.use(Paths._, MediaApi);
+app.use(Paths._, LeadApi);
+app.use(Paths._, NotificationApi);
+app.use(Paths._, AdminUserApi);
+app.use(Paths._, ModerationApi);
+app.use(Paths._, AdminMetricsApi);
+app.use(Paths._, CouponApi);
+app.use(Paths._, CertificateApi);
+app.use(Paths._, AnalyticsApi);
+app.use(Paths._, LearnExtrasApi);
 
 // Add error handler
 app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
@@ -86,6 +104,16 @@ app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
       body.issues = err.issues;
     }
     return res.status(err.status).json(body);
+  }
+
+  // Zod parse outside errorHandle → still return 422, not 500
+  if (err?.name === 'ZodError' && Array.isArray((err as { issues?: unknown }).issues)) {
+    const issues = (err as { issues: { path?: (string | number)[]; message?: string }[] }).issues;
+    const first = issues[0];
+    const message = first
+      ? `Validation Error (${(first.path ?? []).join('.')}): ${first.message ?? 'Invalid'}`
+      : 'Unprocessable Entity';
+    return res.status(422).json({ error: message, issues });
   }
 
   return next(err);

@@ -4,9 +4,13 @@ import type {
   GradeEssayAnswerInput,
   SaveQuizAnswerInput,
 } from '@src/models/Quiz.model';
+import * as AuditLogRepo from '@src/repos/AuditLogRepo';
+import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
+import * as LessonRepo from '@src/repos/LessonRepo';
 import * as QuizAttemptRepo from '@src/repos/QuizAttemptRepo';
 import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
+import * as UserRepo from '@src/repos/UserRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 import * as LessonProgressSyncService from '@src/services/LessonProgressSyncService';
 import * as QuizGradingService from '@src/services/QuizGradingService';
@@ -347,6 +351,80 @@ async function gradeEssayAnswer(
   return { message: 'Answer graded' };
 }
 
+async function assertQuizManageAccess(quizId: string, actorUserId: number) {
+  const quiz = await QuizRepo.findById(quizId);
+  if (!quiz) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.QUIZ_NOT_FOUND);
+  }
+
+  const lesson = await LessonRepo.findById(quiz.lessonId);
+  if (!lesson) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.QUIZ_NOT_FOUND);
+  }
+
+  const canManage = await CourseAccessService.canManageCourse(
+    actorUserId,
+    lesson.courseId,
+  );
+  if (!canManage) {
+    throw new RouteError(HttpStatusCodes.FORBIDDEN, Errors.FORBIDDEN);
+  }
+
+  return { quiz, lesson };
+}
+
+async function listAttemptsForQuiz(quizId: string, actorUserId: number) {
+  await assertQuizManageAccess(quizId, actorUserId);
+
+  const attempts = await QuizAttemptRepo.listByQuiz(quizId);
+  const userIds = [...new Set(attempts.map((a) => a.userId))];
+  const users = await UserRepo.findByIds(userIds);
+  const userById = new Map(users.map((u) => [u.id, u]));
+
+  return {
+    data: attempts.map((attempt) => ({
+      id: attempt.id,
+      userId: attempt.userId,
+      userName: userById.get(attempt.userId)?.userName ?? null,
+      email: userById.get(attempt.userId)?.email ?? null,
+      attemptNumber: attempt.attemptNumber,
+      status: attempt.status,
+      score: attempt.score,
+      maxScore: attempt.maxScore,
+      percentage: attempt.percentage,
+      passed: attempt.passed,
+      startedAt: attempt.startedAt,
+      submittedAt: attempt.submittedAt,
+      gradedAt: attempt.gradedAt,
+      expiresAt: attempt.expiresAt,
+    })),
+  };
+}
+
+async function resetAttemptsForUser(
+  quizId: string,
+  targetUserId: number,
+  actorUserId: number,
+) {
+  const { lesson } = await assertQuizManageAccess(quizId, actorUserId);
+
+  const deletedCount = await QuizAttemptRepo.deleteAttemptsForUserByQuiz(
+    quizId,
+    targetUserId,
+  );
+  await LessonProgressRepo.deleteByUserAndLesson(targetUserId, lesson.id);
+
+  await AuditLogRepo.record({
+    actorUserId,
+    action: 'quiz.reset_attempts',
+    resourceType: 'quiz',
+    resourceId: quizId,
+    meta: { targetUserId, deletedCount },
+  });
+
+  return { message: 'Đã reset lượt làm bài của học viên', deletedCount };
+}
+
 async function getAttemptResult(attemptId: string, userId: number) {
   const attempt = await assertAttemptOwner(attemptId, userId);
   const quiz = await QuizRepo.findById(attempt.quizId);
@@ -407,4 +485,6 @@ export default {
   submitAttempt,
   gradeEssayAnswer,
   getAttemptResult,
+  listAttemptsForQuiz,
+  resetAttemptsForUser,
 };

@@ -96,6 +96,7 @@ export async function create(data: {
   content?: string | null;
   isPreview?: boolean;
   duration?: number | null;
+  linkedPostId?: string | null;
 }): Promise<LessonRecord> {
   const rows = await db
     .insert(lessonsTable)
@@ -109,6 +110,7 @@ export async function create(data: {
       content: data.content ?? null,
       isPreview: data.isPreview ?? false,
       duration: data.duration ?? null,
+      linkedPostId: data.linkedPostId ?? null,
     })
     .returning();
   return parseRow(rows[0]);
@@ -124,6 +126,7 @@ export async function update(
     content?: string | null;
     isPreview?: boolean;
     duration?: number | null;
+    linkedPostId?: string | null;
   },
 ): Promise<LessonRecord | undefined> {
   const rows = await db

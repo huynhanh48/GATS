@@ -3,9 +3,9 @@
 import { useCart } from "@/components/providers/CartProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import Image from "next/image";
 import Link from "next/link";
 import { Trash2, ArrowRight, ShoppingCart } from "lucide-react";
+import { resolveMediaUrl } from "@/lib/media/url";
 
 export default function CartPage() {
   const { items, totalAmount, isLoading, removeFromCart } = useCart();
@@ -35,13 +35,18 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
-                <div key={item.courseId} className="flex gap-4 bg-card border border-border rounded-2xl p-4 shadow-sm items-center relative pr-12">
-                  <div className="relative w-32 h-20 rounded-lg overflow-hidden shrink-0">
-                    <Image
-                      src={item.thumbnail || "/auth-bg.jpg"}
+                <div
+                  key={item.courseId}
+                  className="flex gap-4 bg-card border border-border rounded-2xl p-4 shadow-sm items-center relative pr-12"
+                >
+                  <div className="relative w-32 h-20 rounded-lg overflow-hidden shrink-0 bg-muted">
+                    <img
+                      src={resolveMediaUrl(item.thumbnail)}
                       alt={item.courseName}
-                      fill
-                      className="object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/auth-bg.jpg";
+                      }}
                     />
                   </div>
                   <div className="flex-1">

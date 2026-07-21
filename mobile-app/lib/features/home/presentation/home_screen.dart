@@ -21,6 +21,7 @@ import 'package:gats_academy/features/home/presentation/widgets/continue_learnin
 import 'package:gats_academy/features/home/presentation/widgets/daily_reward_sheet.dart';
 import 'package:gats_academy/features/home/presentation/widgets/learning_tools_entry.dart';
 import 'package:gats_academy/features/post/presentation/widgets/home_posts_section.dart';
+import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
 import 'package:gats_academy/features/settings/presentation/settings_screen.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
@@ -35,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   AuthUser? _user;
   String _userName = 'Học viên GATS';
-  List<CourseItem> _courses = MockData.courses;
+  List<CourseItem> _courses = const [];
 
   List<CourseItem> _yourCourses = [];
   bool _isLoading = true;
@@ -46,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSession();
     CourseModule.repository.addListener(_onCoursesChanged);
     CartController.instance.addListener(_onCartChanged);
+    MockPostStore.instance.addListener(_onCartChanged);
+    MockPostStore.instance.syncFromApi();
     StreakController.instance.ensureLoaded();
   }
 
@@ -54,16 +57,22 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {});
   }
 
-  void _addToCart(CourseItem course) {
-    CartController.instance.addToCart(course.id);
-    GatsNotificationService.showInApp(
-      message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
-      actionLabel: AppStrings.storeViewCart,
-      onAction: () {
-        final ctx = rootNavigatorKey.currentContext;
-        if (ctx != null) openCart(ctx);
-      },
-    );
+  Future<void> _addToCart(CourseItem course) async {
+    try {
+      await CartController.instance.addToCart(course.id);
+      GatsNotificationService.showInApp(
+        message: AppStrings.storeAddedToCart.replaceFirst('%s', course.title),
+        actionLabel: AppStrings.storeViewCart,
+        onAction: () {
+          final ctx = rootNavigatorKey.currentContext;
+          if (ctx != null) openCart(ctx);
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = CartController.instance.lastError ?? e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    }
   }
 
   Future<void> _loadSession() async {
@@ -117,6 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     CourseModule.repository.removeListener(_onCoursesChanged);
     CartController.instance.removeListener(_onCartChanged);
+    MockPostStore.instance.removeListener(_onCartChanged);
     super.dispose();
   }
 

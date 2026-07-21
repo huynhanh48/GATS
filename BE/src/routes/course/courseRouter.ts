@@ -120,6 +120,13 @@ async function publish(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json({ course });
 }
 
+async function getPublishReadiness(req: Request, res: Response) {
+  const result = await CourseService.getPublishReadiness(
+    getUuidRouteParam(req.params.id, 'id'),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function remove(req: Request, res: Response) {
   const mode =
     req.query.mode === 'hard' ? ('hard' as const) : ('soft' as const);
@@ -256,6 +263,7 @@ export default {
   create: errorHandle(create),
   update: errorHandle(update),
   publish: errorHandle(publish),
+  getPublishReadiness: errorHandle(getPublishReadiness),
   remove: errorHandle(remove),
   restore: errorHandle(restore),
   getCurriculum: errorHandle(getCurriculum),

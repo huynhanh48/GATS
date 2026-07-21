@@ -6,12 +6,25 @@ import type {
 } from '@src/models/Lesson.model';
 import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
+import * as PostRepo from '@src/repos/PostRepo';
 
 const Errors = {
   SECTION_NOT_FOUND: 'Section not found',
   LESSON_NOT_FOUND: 'Lesson not found',
   COURSE_MISMATCH: 'Lesson does not belong to this course',
+  LINKED_POST_NOT_FOUND: 'Linked post not found or not published',
 } as const;
+
+async function assertPublishedLinkedPost(linkedPostId: string | null | undefined) {
+  if (linkedPostId == null) return;
+  const post = await PostRepo.findById(linkedPostId);
+  if (!post || post.status !== 'published' || post.deletedAt) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      Errors.LINKED_POST_NOT_FOUND,
+    );
+  }
+}
 
 async function create(
   courseId: string,
@@ -26,6 +39,8 @@ async function create(
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.SECTION_NOT_FOUND);
   }
 
+  await assertPublishedLinkedPost(input.linked_post_id ?? null);
+
   const order =
     input.order ?? (await LessonRepo.getNextOrderInSection(sectionId));
 
@@ -39,6 +54,7 @@ async function create(
     content: input.content ?? null,
     isPreview: input.is_preview,
     duration: input.duration ?? null,
+    linkedPostId: input.linked_post_id ?? null,
   });
   return { data: lesson };
 }
@@ -58,6 +74,10 @@ async function update(
     await QuizService.assertLessonTypeChangeAllowed(lessonId, input.type);
   }
 
+  if (input.linked_post_id !== undefined) {
+    await assertPublishedLinkedPost(input.linked_post_id);
+  }
+
   const updated = await LessonRepo.update(lessonId, {
     ...(input.title !== undefined ? { title: input.title } : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
@@ -66,6 +86,9 @@ async function update(
     ...(input.content !== undefined ? { content: input.content } : {}),
     ...(input.is_preview !== undefined ? { isPreview: input.is_preview } : {}),
     ...(input.duration !== undefined ? { duration: input.duration } : {}),
+    ...(input.linked_post_id !== undefined
+      ? { linkedPostId: input.linked_post_id }
+      : {}),
   });
   return { data: updated };
 }

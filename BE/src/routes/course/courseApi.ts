@@ -168,6 +168,12 @@ courseRouter.post(
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
   courseHandlers.publish,
 );
+courseRouter.get(
+  CoursePaths.Course.PublishReadiness,
+  errorHandle(authMiddleware),
+  errorHandle(requireCourseRead()),
+  courseHandlers.getPublishReadiness,
+);
 courseRouter.post(
   CoursePaths.Course.Restore,
   errorHandle(authMiddleware),

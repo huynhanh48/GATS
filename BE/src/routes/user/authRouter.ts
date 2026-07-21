@@ -10,8 +10,11 @@ import { mailService } from '@src/common/utils/mail';
 import { RouteError } from '@src/common/utils/route-errors';
 import { errorHandle } from '@src/middleware/errorHandle';
 import {
+  parseChangePasswordInput,
+  parseForgotPasswordInput,
   parseLoginInput,
   parseRegisterInput,
+  parseResetPasswordInput,
   parseVerifyEmailInput,
   verifyEmailSchema,
 } from '@src/models/User.model';
@@ -137,6 +140,27 @@ async function verifyEmailByLink(req: Request, res: Response) {
   }
 }
 
+async function changePassword(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const input = parseChangePasswordInput(req.body);
+  const result = await AuthService.changePassword(req.authUser.id, input);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function forgotPassword(req: Request, res: Response) {
+  const input = parseForgotPasswordInput(req.body);
+  const result = await AuthService.forgotPassword(input);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function resetPassword(req: Request, res: Response) {
+  const input = parseResetPasswordInput(req.body);
+  const result = await AuthService.resetPassword(input);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   register: errorHandle(register),
   login: errorHandle(login),
@@ -146,4 +170,7 @@ export default {
   updateMe: errorHandle(updateMe),
   verifyEmail: errorHandle(verifyEmail),
   verifyEmailByLink: errorHandle(verifyEmailByLink),
+  changePassword: errorHandle(changePassword),
+  forgotPassword: errorHandle(forgotPassword),
+  resetPassword: errorHandle(resetPassword),
 } as const;

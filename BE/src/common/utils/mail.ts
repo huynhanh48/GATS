@@ -66,6 +66,45 @@ export class MailService {
     );
   }
 
+  async sendPasswordResetEmail(input: {
+    to: string;
+    userName: string;
+    resetUrl: string;
+  }) {
+    return this.sendEmailWithTemplate(
+      input.to,
+      'Đặt lại mật khẩu - GATS Academy',
+      'reset-password.html',
+      {
+        appName: APP_NAME,
+        userName: input.userName,
+        resetUrl: input.resetUrl,
+        year: new Date().getFullYear(),
+      },
+    );
+  }
+
+  async sendOrderEmail(input: {
+    to: string;
+    userName: string;
+    subject: string;
+    templateName: 'order-created.html' | 'order-paid.html' | 'order-expired.html';
+    orderId: string;
+    amountLabel: string;
+    courseNames: string;
+    actionUrl?: string;
+  }) {
+    return this.sendEmailWithTemplate(input.to, input.subject, input.templateName, {
+      appName: APP_NAME,
+      userName: input.userName,
+      orderId: input.orderId,
+      amountLabel: input.amountLabel,
+      courseNames: input.courseNames,
+      actionUrl: input.actionUrl ?? '',
+      year: new Date().getFullYear(),
+    });
+  }
+
   renderTemplate(templateName: string, data: TemplateData): string {
     const html = this.loadTemplate(templateName);
     return this.interpolate(html, data);

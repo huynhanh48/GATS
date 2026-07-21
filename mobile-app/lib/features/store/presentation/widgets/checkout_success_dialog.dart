@@ -1,11 +1,12 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:gats_academy/core/services/cart_controller.dart';
+import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/xp_popup.dart';
-import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 
+/// Dialog sau khi Sepay/order xác nhận đã thanh toán (enrollment đã có trên BE).
 class CheckoutSuccessDialog extends StatefulWidget {
   const CheckoutSuccessDialog({
     super.key,
@@ -30,9 +31,6 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
   @override
   void initState() {
     super.initState();
-    // Complete checkout logic in CartController
-    CartController.instance.checkout(widget.userId);
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
@@ -53,11 +51,11 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
       final speed = 30.0 + _random.nextDouble() * 120.0;
       final size = 5.0 + _random.nextDouble() * 10.0;
       final color = [
-        const Color(0xFF0070EB), // Primary Blue
-        const Color(0xFFFF7622), // Accent Orange
-        const Color(0xFFEC4899), // Pink Store color
-        const Color(0xFF10B981), // Emerald Success
-        const Color(0xFFFBBF24), // Amber star
+        const Color(0xFF0070EB),
+        const Color(0xFFFF7622),
+        const Color(0xFFEC4899),
+        const Color(0xFF10B981),
+        const Color(0xFFFBBF24),
       ][_random.nextInt(5)];
 
       return _ConfettiParticle(
@@ -87,7 +85,6 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // Background Card
           Container(
             width: 320,
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
@@ -125,17 +122,20 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Primary CTA
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: gats.lavenderAccent,
-                    foregroundColor: gats.isStarry ? AppColors.nightSkyBottom : Colors.white,
+                    foregroundColor:
+                        gats.isStarry ? AppColors.nightSkyBottom : Colors.white,
                     minimumSize: const Size.fromHeight(48),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   onPressed: () async {
-                    final courseId = widget.courseIds.isNotEmpty ? widget.courseIds.first : null;
+                    final courseId = widget.courseIds.isNotEmpty
+                        ? widget.courseIds.first
+                        : null;
                     Navigator.pop(context);
                     Navigator.pop(context);
 
@@ -167,8 +167,6 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
               ],
             ),
           ),
-
-          // Confetti sparks overlay behind checkmark
           Positioned(
             top: -50,
             child: AnimatedBuilder(
@@ -184,8 +182,6 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
               },
             ),
           ),
-
-          // Animated Checkmark on Top
           Positioned(
             top: -40,
             child: ScaleTransition(
@@ -194,7 +190,7 @@ class _CheckoutSuccessDialogState extends State<CheckoutSuccessDialog>
                 width: 80,
                 height: 80,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF10B981), // Emerald Success
+                  color: Color(0xFF10B981),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
@@ -249,21 +245,21 @@ class _ConfettiPainter extends CustomPainter {
     final paint = Paint()..style = PaintingStyle.fill;
 
     for (final p in particles) {
-      // Linear gravity/drag effect
       final distance = p.speed * progress * (1.0 - progress * 0.4);
       final x = center.dx + cos(p.angle) * distance;
-      final y = center.dy + sin(p.angle) * distance + (progress * progress * 50.0); // Gravity drop
+      final y =
+          center.dy + sin(p.angle) * distance + (progress * progress * 50.0);
 
       paint.color = p.color.withValues(alpha: 1.0 - progress);
 
       canvas.save();
       canvas.translate(x, y);
       canvas.rotate(p.rotationSpeed * progress * pi);
-      
-      // Draw small colorful square / rectangle confetti shards
-      final rect = Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size);
+
+      final rect =
+          Rect.fromCenter(center: Offset.zero, width: p.size, height: p.size);
       canvas.drawRect(rect, paint);
-      
+
       canvas.restore();
     }
   }

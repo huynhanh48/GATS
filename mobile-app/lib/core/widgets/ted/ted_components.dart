@@ -269,24 +269,37 @@ class _TedPromoBannerState extends State<TedPromoBanner> {
 }
 
 class _TedCourseCover extends StatelessWidget {
-  const _TedCourseCover({required this.seed});
+  const _TedCourseCover({
+    required this.seed,
+    this.thumbnailUrl,
+  });
 
   final int seed;
+  final String? thumbnailUrl;
 
   @override
   Widget build(BuildContext context) {
+    final fallback = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: AppGradients.courseCover(seed),
+      ),
+    );
+    final url = thumbnailUrl;
+    if (url != null && url.isNotEmpty) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    }
     return Image.asset(
       CourseCoverAssets.pathForSeed(seed),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      errorBuilder: (context, error, stackTrace) {
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: AppGradients.courseCover(seed),
-          ),
-        );
-      },
+      errorBuilder: (context, error, stackTrace) => fallback,
     );
   }
 }
@@ -352,7 +365,10 @@ class TedCourseCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  _TedCourseCover(seed: course.id.hashCode),
+                  _TedCourseCover(
+                    seed: course.id.hashCode,
+                    thumbnailUrl: course.thumbnailUrl,
+                  ),
                   if (isPurchased)
                     Positioned(
                       top: 6,
@@ -486,7 +502,10 @@ class TedCourseCard extends StatelessWidget {
                   child: SizedBox(
                     width: thumbSize,
                     height: thumbSize,
-                    child: _TedCourseCover(seed: course.id.hashCode),
+                    child: _TedCourseCover(
+                      seed: course.id.hashCode,
+                      thumbnailUrl: course.thumbnailUrl,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),

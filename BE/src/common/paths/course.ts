@@ -16,6 +16,7 @@ const CoursePaths = {
     Delete: '/:id',
     Restore: '/:id/restore',
     Publish: '/:id/publish',
+    PublishReadiness: '/:id/publish-readiness',
     Curriculum: '/:courseId/curriculum',
     Sections: {
       _: '/:courseId/sections',

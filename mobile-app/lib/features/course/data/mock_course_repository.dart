@@ -60,6 +60,20 @@ final class MockCourseRepository implements CourseRepository {
   void enroll(String courseId, String userId) => _store.enrollUser(courseId, userId);
 
   @override
+  void unenroll(String courseId, String userId) {
+    // Mock store không expose unenroll — no-op an toàn cho dev.
+  }
+
+  @override
+  Future<void> ensureDetailLoaded(String courseId) async {}
+
+  @override
+  Future<bool> enrollFree(String courseId, String userId) async {
+    enroll(courseId, userId);
+    return true;
+  }
+
+  @override
   void setUserProgress(String courseId, String userId, double progress) =>
       _store.setUserProgress(courseId, userId, progress);
 

@@ -56,6 +56,30 @@ export async function listAttemptsByUser(
     .orderBy(desc(quizAttemptsTable.attemptNumber));
 }
 
+export async function listByQuiz(quizId: string): Promise<QuizAttempt[]> {
+  return db
+    .select()
+    .from(quizAttemptsTable)
+    .where(eq(quizAttemptsTable.quizId, quizId))
+    .orderBy(desc(quizAttemptsTable.createdAt));
+}
+
+export async function deleteAttemptsForUserByQuiz(
+  quizId: string,
+  userId: number,
+): Promise<number> {
+  const rows = await db
+    .delete(quizAttemptsTable)
+    .where(
+      and(
+        eq(quizAttemptsTable.quizId, quizId),
+        eq(quizAttemptsTable.userId, userId),
+      ),
+    )
+    .returning({ id: quizAttemptsTable.id });
+  return rows.length;
+}
+
 export async function createAttempt(data: {
   quizId: string;
   userId: number;

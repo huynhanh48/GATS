@@ -6,7 +6,7 @@ import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/utils/price_formatter.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/store/presentation/course_store_detail_screen.dart';
 
 class WishlistScreen extends StatefulWidget {
@@ -31,12 +31,26 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   void _onCartChanged() => setState(() {});
 
-  void _addAllToCart(Set<String> wishItems) {
+  Future<void> _addAllToCart(Set<String> wishItems) async {
+    var ok = 0;
+    String? err;
     for (final courseId in wishItems) {
-      CartController.instance.addToCart(courseId, quantity: 1);
+      try {
+        await CartController.instance.addToCart(courseId);
+        ok++;
+      } catch (e) {
+        err = CartController.instance.lastError ?? e.toString();
+      }
     }
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppStrings.wishlistAllAdded)),
+      SnackBar(
+        content: Text(
+          err != null && ok == 0
+              ? err
+              : AppStrings.wishlistAllAdded,
+        ),
+      ),
     );
   }
 
@@ -90,7 +104,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final courseId = wishlist.elementAt(index);
-                      final course = MockCourseStore.instance.courseById(courseId);
+                      final course =
+                          CourseModule.repository.getCourse(courseId);
 
                       if (course == null) return const SizedBox.shrink();
 

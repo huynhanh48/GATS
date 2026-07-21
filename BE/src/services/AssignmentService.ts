@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { RouteError } from '@src/common/utils/route-errors';
+import { buildPublicUrl } from '@src/libs/s3-storage';
 import { getS3Bucket, getS3BrowserClient } from '@src/libs/s3.client';
 import type {
   CompleteAssignmentUploadInput,
@@ -20,6 +21,7 @@ import {
 import * as AssignmentRepo from '@src/repos/AssignmentRepo';
 import * as AssignmentSubmissionRepo from '@src/repos/AssignmentSubmissionRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
+import * as UserRepo from '@src/repos/UserRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 import * as LessonProgressSyncService from '@src/services/LessonProgressSyncService';
 
@@ -277,16 +279,29 @@ async function listSubmissions(assignmentId: string) {
 
   const submissions =
     await AssignmentSubmissionRepo.listByAssignment(assignmentId);
+  const userIds = [...new Set(submissions.map((s) => s.userId))];
+  const users = await UserRepo.findByIds(userIds);
+  const userById = new Map(users.map((u) => [u.id, u]));
+
   const withAttachments = await Promise.all(
-    submissions.map(async (submission) => ({
-      ...submission,
-      attachments: await AssignmentSubmissionRepo.listAttachmentsBySubmission(
-        submission.id,
-      ),
-    })),
+    submissions.map(async (submission) => {
+      const attachments =
+        await AssignmentSubmissionRepo.listAttachmentsBySubmission(
+          submission.id,
+        );
+      return {
+        ...submission,
+        userName: userById.get(submission.userId)?.userName ?? null,
+        email: userById.get(submission.userId)?.email ?? null,
+        attachments: attachments.map((attachment) => ({
+          ...attachment,
+          url: buildPublicUrl(attachment.storageKey),
+        })),
+      };
+    }),
   );
 
-  return { data: withAttachments };
+  return { data: withAttachments, maxScore: assignment.maxScore };
 }
 
 async function getMySubmission(assignmentId: string, userId: number) {

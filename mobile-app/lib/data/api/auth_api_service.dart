@@ -260,7 +260,7 @@ abstract final class AuthApiService {
 
   static String _networkHint() =>
       'Không kết nối được API tại ${ApiConfig.baseUrl}. '
-      'Bật backend, cùng WiFi với điện thoại, và sửa API_BASE_URL trong .env '
+      'Kiểm tra mạng / api.gats.vn, hoặc sửa API_BASE_URL trong .env '
       '(IP máy tính hiện tại, ví dụ http://192.168.1.45:3000).';
 
   static AuthException _mapApiException(ApiException error) {

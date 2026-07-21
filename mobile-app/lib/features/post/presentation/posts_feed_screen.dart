@@ -4,10 +4,10 @@ import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/data/mock/mock_post_store.dart';
 import 'package:gats_academy/features/post/presentation/post_detail_screen.dart';
 import 'package:gats_academy/features/post/presentation/widgets/post_card.dart';
 
@@ -26,6 +26,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     super.initState();
     _loadUser();
     MockPostStore.instance.addListener(_onStoreChanged);
+    MockPostStore.instance.syncFromApi();
   }
 
   @override
@@ -44,7 +45,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     if (mounted) setState(() {});
   }
 
-  void _enrollFromPost(String courseId) {
+  Future<void> _enrollFromPost(String courseId) async {
     final userId = _user?.id;
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,7 +53,14 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
       );
       return;
     }
-    MockCourseStore.instance.enrollUser(courseId, userId);
+    final ok = await CourseModule.repository.enrollFree(courseId, userId);
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng ký thất bại. Vui lòng thử lại.')),
+      );
+      return;
+    }
     setState(() {});
   }
 

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { getRouteParam } from '@src/common/utils/route-params';
+import { parseUserIdParam } from '@src/models/Enrollment.model';
 import {
   parseCreateQuizInput,
   parseCreateQuizQuestionInput,
@@ -157,6 +158,24 @@ async function getAttemptResult(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function listAttempts(req: Request, res: Response) {
+  const result = await QuizAttemptService.listAttemptsForQuiz(
+    getRouteParam(req.params.quizId),
+    authUserId(req),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function resetAttempts(req: Request, res: Response) {
+  const targetUserId = parseUserIdParam(getRouteParam(req.params.userId));
+  const result = await QuizAttemptService.resetAttemptsForUser(
+    getRouteParam(req.params.quizId),
+    targetUserId,
+    authUserId(req),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function gradeEssayAnswer(req: Request, res: Response) {
   const input = parseGradeEssayAnswerInput(req.body);
   const result = await QuizAttemptService.gradeEssayAnswer(
@@ -185,4 +204,6 @@ export default {
   submitAttempt,
   getAttemptResult,
   gradeEssayAnswer,
+  listAttempts,
+  resetAttempts,
 };

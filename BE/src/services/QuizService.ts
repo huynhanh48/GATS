@@ -14,6 +14,7 @@ import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
 import * as VideoRepo from '@src/repos/VideoRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
+import * as LessonProgressSyncService from '@src/services/LessonProgressSyncService';
 import {
   computeAttemptTotals,
   gradeFillBlankQuestion,
@@ -207,7 +208,8 @@ async function takeQuiz(quizId: string, userId: number) {
         order: question.order,
         isRequired: question.isRequired,
         caseSensitive: question.caseSensitive,
-        ...(question.type === 'single_choice'
+        ...(question.type === 'single_choice' ||
+        question.type === 'multiple_choice'
           ? {
               answers: (quiz.shuffleOptions
                 ? shuffleArray(question.answers)
@@ -305,7 +307,10 @@ async function submitQuiz(
   if (!quiz) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.QUIZ_NOT_FOUND);
   }
-  await CourseAccessService.assertLessonAccess(userId, quiz.lessonId);
+  const lesson = await CourseAccessService.assertLessonAccess(
+    userId,
+    quiz.lessonId,
+  );
 
   const questions = await QuizQuestionRepo.listWithAnswersByQuizId(quizId);
   const questionMap = new Map(
@@ -410,12 +415,25 @@ async function submitQuiz(
     quiz.passingScore,
   );
 
+  const attemptCount = await QuizRepo.countAttemptsByUser(quiz.id, userId);
+  await LessonProgressSyncService.syncQuizResult({
+    userId,
+    courseId: lesson.courseId,
+    lessonId: lesson.id,
+    score: totals.score,
+    maxScore: totals.maxScore,
+    percentage: totals.percentage,
+    passed: totals.passed,
+    attemptCount: Math.max(1, attemptCount),
+  });
+
   return {
     success: true,
     data: {
       score: totals.score,
       maxScore: totals.maxScore,
       percentage: totals.percentage,
+      passed: totals.passed,
       correctCount: results.filter((result) => result.isCorrect).length,
       totalQuestions: questions.length,
       results,

@@ -120,6 +120,13 @@ export const PathApi = {
     create: `${API_PREFIX}/orders`,
     /** GET – auth: member */
     list: `${API_PREFIX}/orders`,
+    /** GET – auth: admin – query: page, limit, status?, q? */
+    adminList: `${API_PREFIX}/orders/admin`,
+    /** GET – auth: admin */
+    adminDetail: (orderId: string) => `${API_PREFIX}/orders/admin/${orderId}`,
+    /** PATCH – auth: admin – body: { status: 'paid'|'cancelled'|'refunded' } */
+    adminUpdateStatus: (orderId: string) =>
+      `${API_PREFIX}/orders/admin/${orderId}/status`,
     /** GET – auth: member */
     detail: (orderId: string) => `${API_PREFIX}/orders/${orderId}`,
     /** POST – auth: member – cancel pending order */

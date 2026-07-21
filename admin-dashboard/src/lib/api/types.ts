@@ -177,6 +177,14 @@ export type CourseDetailLesson = {
   videoUrl?: string | null;
   /** Downloadable files attached to this lesson (PDF, DOC, TXT, …) */
   attachments?: LessonAttachment[];
+  linkedPostId?: string | null;
+  linkedPost?: {
+    id: string;
+    title: string;
+    slug: string;
+    excerpt: string | null;
+    thumbnail: string | null;
+  } | null;
 };
 
 export type CourseDetailSection = {
@@ -257,6 +265,7 @@ export type CreateLessonInput = {
   content?: string;
   is_preview?: boolean;
   duration?: number;
+  linked_post_id?: string | null;
 };
 
 export type UpdateLessonInput = {
@@ -268,6 +277,7 @@ export type UpdateLessonInput = {
   content?: string | null;
   is_preview?: boolean;
   duration?: number | null;
+  linked_post_id?: string | null;
 };
 
 /** Shape of the data object returned by POST lesson endpoint */
@@ -707,4 +717,121 @@ export type EnrollmentRecord = {
 
 export type EnrollmentListResponse = {
   data: EnrollmentRecord[];
+};
+
+// ─── Course learners + progress (admin) ──────────────────────────────────────
+
+export type CourseLearner = {
+  enrollmentId: string;
+  userId: number;
+  userName: string | null;
+  email: string | null;
+  status: string;
+  source: string;
+  enrolledAt: string;
+  expiredAt: string | null;
+  completedLessons: number;
+  totalLessons: number;
+  percent: number;
+  lastActivityAt: string | null;
+};
+
+export type CourseLearnersResponse = {
+  data: CourseLearner[];
+  totalLessons: number;
+};
+
+// ─── Publish readiness checklist (admin) ─────────────────────────────────────
+
+export type PublishReadinessCheck = {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail?: string;
+};
+
+export type PublishReadiness = {
+  ready: boolean;
+  checks: PublishReadinessCheck[];
+};
+
+export type PublishReadinessResponse = {
+  data: PublishReadiness;
+};
+
+// ─── Quiz attempts (admin) ───────────────────────────────────────────────────
+
+export type QuizAttemptStatus =
+  | "in_progress"
+  | "submitted"
+  | "graded"
+  | "expired";
+
+export type QuizAttemptAdmin = {
+  id: string;
+  userId: number;
+  userName: string | null;
+  email: string | null;
+  attemptNumber: number;
+  status: QuizAttemptStatus;
+  score: number | null;
+  maxScore: number | null;
+  percentage: number | null;
+  passed: boolean | null;
+  startedAt: string;
+  submittedAt: string | null;
+  gradedAt: string | null;
+  expiresAt: string | null;
+};
+
+export type QuizAttemptsResponse = {
+  data: QuizAttemptAdmin[];
+};
+
+// ─── Assignment submissions (admin grading inbox) ────────────────────────────
+
+export type AssignmentSubmissionStatus =
+  | "draft"
+  | "submitted"
+  | "graded"
+  | "returned";
+
+export type AssignmentSubmissionAttachment = {
+  id: string;
+  submissionId: string;
+  fileName: string;
+  storageKey: string;
+  mimeType: string | null;
+  size: number | null;
+  url: string;
+  createdAt: string;
+};
+
+export type AssignmentSubmissionAdmin = {
+  id: string;
+  assignmentId: string;
+  userId: number;
+  userName: string | null;
+  email: string | null;
+  submissionNumber: number;
+  status: AssignmentSubmissionStatus;
+  textContent: string | null;
+  url: string | null;
+  score: number | null;
+  feedback: string | null;
+  gradedById: number | null;
+  gradedAt: string | null;
+  submittedAt: string | null;
+  createdAt: string;
+  attachments: AssignmentSubmissionAttachment[];
+};
+
+export type AssignmentSubmissionsResponse = {
+  data: AssignmentSubmissionAdmin[];
+  maxScore: number;
+};
+
+export type GradeAssignmentSubmissionInput = {
+  score: number;
+  feedback?: string;
 };

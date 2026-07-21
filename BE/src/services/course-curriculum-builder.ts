@@ -8,6 +8,16 @@ import type { LessonAttachmentPublic } from '@src/models/LessonAttachment.model'
 
 export type AttachmentsByLesson = Map<string, LessonAttachmentPublic[]>;
 
+export type LinkedPostSummary = {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  thumbnail: string | null;
+};
+
+export type LinkedPostsById = Map<string, LinkedPostSummary>;
+
 export function isLessonUnlocked(
   lesson: Pick<LessonRecord, 'isPreview'>,
   hasFullAccess: boolean,
@@ -27,13 +37,23 @@ export function groupLessonsBySectionId(
   return grouped;
 }
 
+function resolveLinkedPost(
+  lesson: LessonRecord,
+  linkedPostsById?: LinkedPostsById,
+): LinkedPostSummary | null {
+  if (!lesson.linkedPostId || !linkedPostsById) return null;
+  return linkedPostsById.get(lesson.linkedPostId) ?? null;
+}
+
 export function mapDetailLesson(
   lesson: LessonRecord,
   hasFullAccess: boolean,
   attachmentsByLesson?: AttachmentsByLesson,
+  linkedPostsById?: LinkedPostsById,
 ): CourseDetailLesson {
   const unlocked = isLessonUnlocked(lesson, hasFullAccess);
   const attachments = attachmentsByLesson?.get(lesson.id) ?? [];
+  const linkedPost = resolveLinkedPost(lesson, linkedPostsById);
   return {
     id: lesson.id,
     title: lesson.title,
@@ -42,6 +62,8 @@ export function mapDetailLesson(
     order: lesson.order,
     isPreview: lesson.isPreview,
     duration: lesson.duration,
+    linkedPostId: lesson.linkedPostId ?? null,
+    linkedPost,
     ...(unlocked ? { content: lesson.content } : {}),
     ...(unlocked ? { attachments } : {}),
     locked: !unlocked,
@@ -52,6 +74,7 @@ export function mapCurriculumLesson(
   lesson: LessonRecord,
   hasFullAccess: boolean,
   attachmentsByLesson?: AttachmentsByLesson,
+  linkedPostsById?: LinkedPostsById,
 ): {
   id: string;
   title: string;
@@ -63,9 +86,12 @@ export function mapCurriculumLesson(
   content?: string | null;
   attachments?: LessonAttachmentPublic[];
   locked: boolean;
+  linkedPostId: string | null;
+  linkedPost: LinkedPostSummary | null;
 } {
   const unlocked = isLessonUnlocked(lesson, hasFullAccess);
   const attachments = attachmentsByLesson?.get(lesson.id) ?? [];
+  const linkedPost = resolveLinkedPost(lesson, linkedPostsById);
   return {
     id: lesson.id,
     title: lesson.title,
@@ -74,6 +100,8 @@ export function mapCurriculumLesson(
     order: lesson.order,
     isPreview: lesson.isPreview,
     duration: lesson.duration,
+    linkedPostId: lesson.linkedPostId ?? null,
+    linkedPost,
     ...(unlocked ? { content: lesson.content } : {}),
     ...(unlocked ? { attachments } : {}),
     locked: !unlocked,
@@ -85,6 +113,7 @@ export function buildDetailSections(
   lessons: LessonRecord[],
   hasFullAccess: boolean,
   attachmentsByLesson?: AttachmentsByLesson,
+  linkedPostsById?: LinkedPostsById,
 ): CourseDetailSection[] {
   const lessonsBySectionId = groupLessonsBySectionId(lessons);
   const sortedSections = [...sections].sort((a, b) => a.order - b.order);
@@ -94,7 +123,12 @@ export function buildDetailSections(
       (a, b) => a.order - b.order,
     );
     const mappedLessons = sectionLessons.map((lesson) =>
-      mapDetailLesson(lesson, hasFullAccess, attachmentsByLesson),
+      mapDetailLesson(
+        lesson,
+        hasFullAccess,
+        attachmentsByLesson,
+        linkedPostsById,
+      ),
     );
 
     return {
@@ -116,6 +150,7 @@ export function buildCurriculumSections(
   lessons: LessonRecord[],
   hasFullAccess: boolean,
   attachmentsByLesson?: AttachmentsByLesson,
+  linkedPostsById?: LinkedPostsById,
 ) {
   const lessonsBySectionId = groupLessonsBySectionId(lessons);
   const sortedSections = [...sections].sort((a, b) => a.order - b.order);
@@ -130,7 +165,12 @@ export function buildCurriculumSections(
       title: section.title,
       order: section.order,
       lessons: sectionLessons.map((lesson) =>
-        mapCurriculumLesson(lesson, hasFullAccess, attachmentsByLesson),
+        mapCurriculumLesson(
+          lesson,
+          hasFullAccess,
+          attachmentsByLesson,
+          linkedPostsById,
+        ),
       ),
     };
   });

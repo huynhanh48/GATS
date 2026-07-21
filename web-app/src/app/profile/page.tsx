@@ -12,20 +12,31 @@ import {
   ShieldCheck, Mail, LogOut, ChevronRight, Activity, TrendingUp, CreditCard
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
+import { changePasswordRequest } from "@/lib/auth/api";
 import { orderApi } from "@/lib/cart/api";
+import { fetchMyCertificates, type MyCertificate } from "@/lib/certificates/api";
 import { PathApi } from "@/constants/PathApi";
 import Link from "next/link";
 import { Course } from "@/types/course";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user, status, logout } = useAuth();
   const router = useRouter();
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [certificates, setCertificates] = useState<MyCertificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "certificates" | "settings" | "orders">("overview");
   const [userName, setUserName] = useState(user?.userName || "");
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [progressByCourseId, setProgressByCourseId] = useState<
+    Record<string, number>
+  >({});
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -47,11 +58,36 @@ export default function ProfilePage() {
     if (status === "authenticated") {
       Promise.all([
         apiClient.get(PathApi.enrollment.listMine),
-        orderApi.listOrders()
+        orderApi.listOrders(),
+        fetchMyCertificates().catch(() => []),
       ])
-        .then(([enrollRes, ordersRes]: any) => {
-          if (enrollRes.data) setEnrollments(enrollRes.data);
+        .then(async ([enrollRes, ordersRes, certs]: any) => {
+          const list = Array.isArray(enrollRes?.data) ? enrollRes.data : [];
+          if (list.length) setEnrollments(list);
           if (ordersRes.data) setOrders(ordersRes.data);
+          setCertificates(Array.isArray(certs) ? certs : []);
+
+          const progressEntries = await Promise.all(
+            list.map(async (enr: any) => {
+              const courseId = enr?.course?.id || enr?.courseId;
+              if (!courseId) return null;
+              try {
+                const prog: any = await apiClient.get(
+                  PathApi.progress.course(courseId),
+                );
+                const percent = Number(prog?.data?.percent ?? 0);
+                return [courseId, Number.isFinite(percent) ? percent : 0] as const;
+              } catch {
+                return [courseId, 0] as const;
+              }
+            }),
+          );
+
+          const map: Record<string, number> = {};
+          for (const entry of progressEntries) {
+            if (entry) map[entry[0]] = entry[1];
+          }
+          setProgressByCourseId(map);
         })
         .catch(console.error)
         .finally(() => setLoading(false));
@@ -133,7 +169,7 @@ export default function ProfilePage() {
                 <div className="text-xs text-muted-foreground font-medium uppercase mt-0.5">Khóa học</div>
               </div>
               <div className="bg-muted/50 p-3 rounded-2xl text-center border border-border/50">
-                <div className="text-xl font-bold text-foreground">0</div>
+                <div className="text-xl font-bold text-foreground">{certificates.length}</div>
                 <div className="text-xs text-muted-foreground font-medium uppercase mt-0.5">Chứng chỉ</div>
               </div>
             </div>
@@ -249,13 +285,20 @@ export default function ProfilePage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm font-medium">
                           <span className="text-muted-foreground">Tiến độ</span>
-                          <span className="text-primary font-bold">0%</span>
+                          <span className="text-primary font-bold">
+                            {progressByCourseId[enrollments[0]?.course?.id] ?? 0}%
+                          </span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
-                          <div className="bg-primary h-full rounded-full" style={{ width: "0%" }}></div>
+                          <div
+                            className="bg-primary h-full rounded-full"
+                            style={{
+                              width: `${progressByCourseId[enrollments[0]?.course?.id] ?? 0}%`,
+                            }}
+                          ></div>
                         </div>
                       </div>
-                      <Link href={`/courses/${enrollments[0]?.course?.slug}`} className="inline-block">
+                      <Link href={`/learn/${enrollments[0]?.course?.slug}`} className="inline-block">
                         <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25">
                           Học tiếp
                         </button>
@@ -348,6 +391,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {enrollments.map((enr: any) => {
                     const c: Course = enr.course;
+                    const percent = progressByCourseId[c?.id] ?? 0;
                     return (
                       <div key={enr.id} className="border border-border rounded-3xl overflow-hidden bg-card hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group">
                         <div className="relative aspect-video w-full bg-muted overflow-hidden">
@@ -370,16 +414,16 @@ export default function ProfilePage() {
                             <div className="space-y-1.5">
                               <div className="flex justify-between text-xs font-semibold">
                                 <span className="text-muted-foreground">Đã hoàn thành</span>
-                                <span className="text-primary">0%</span>
+                                <span className="text-primary">{percent}%</span>
                               </div>
                               <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                                <div className="bg-primary h-full rounded-full" style={{ width: `0%` }}></div>
+                                <div className="bg-primary h-full rounded-full" style={{ width: `${percent}%` }}></div>
                               </div>
                             </div>
                             
-                            <Link href={`/courses/${c.slug}`} className="block">
+                            <Link href={`/learn/${c.slug}`} className="block">
                               <button className="w-full bg-muted/50 text-foreground hover:bg-primary hover:text-primary-foreground font-bold py-2.5 rounded-xl transition-colors">
-                                Học tiếp
+                                {percent > 0 ? "Học tiếp" : "Bắt đầu học"}
                               </button>
                             </Link>
                           </div>
@@ -396,22 +440,71 @@ export default function ProfilePage() {
           {activeTab === "certificates" && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <h2 className="text-2xl font-bold text-foreground mb-6">Chứng chỉ</h2>
-              
-              <div className="text-center py-20 bg-card border border-border rounded-3xl shadow-sm">
-                <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Award className="w-12 h-12 text-muted-foreground/50" />
+
+              {certificates.length === 0 ? (
+                <div className="text-center py-20 bg-card border border-border rounded-3xl shadow-sm">
+                  <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                    <Award className="w-12 h-12 text-muted-foreground/50" />
+                  </div>
+                  <h3 className="text-2xl font-bold mb-3">Bạn chưa có chứng chỉ nào</h3>
+                  <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                    Hoàn thành 100% các bài học trong một khóa học để nhận được chứng nhận hoàn thành từ GATS Academy.
+                  </p>
+                  <Link
+                    href="/learning"
+                    className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
+                  >
+                    Tiếp tục học ngay
+                  </Link>
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Bạn chưa có chứng chỉ nào</h3>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Hoàn thành 100% các bài học trong một khóa học để nhận được chứng nhận hoàn thành từ GATS Academy.
-                </p>
-                <button 
-                  onClick={() => setActiveTab("courses")}
-                  className="bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
-                >
-                  Tiếp tục học ngay
-                </button>
-              </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {certificates.map((cert) => (
+                    <div
+                      key={cert.id}
+                      className={`relative overflow-hidden rounded-3xl border p-6 shadow-sm ${
+                        cert.status === "revoked"
+                          ? "border-border bg-muted/40 opacity-70"
+                          : "border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <Award className="w-6 h-6" />
+                        </div>
+                        {cert.status === "revoked" ? (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                            Đã thu hồi
+                          </span>
+                        ) : (
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                            Đã hoàn thành
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="mt-4 font-bold text-lg text-foreground line-clamp-2">
+                        {cert.courseTitle ?? "Khóa học"}
+                      </h4>
+                      <p className="mt-1 text-xs font-mono text-muted-foreground">
+                        Số hiệu: {cert.certificateNumber}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Cấp ngày {new Date(cert.issuedAt).toLocaleDateString("vi-VN")}
+                      </p>
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {cert.courseSlug ? (
+                          <Link
+                            href={`/courses/${cert.courseSlug}`}
+                            className="text-sm font-semibold text-primary hover:underline"
+                          >
+                            Xem khóa học
+                          </Link>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -469,19 +562,69 @@ export default function ProfilePage() {
                   <div className="space-y-4 max-w-md">
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-muted-foreground">Mật khẩu hiện tại</label>
-                      <input type="password" placeholder="••••••••" className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-muted-foreground">Mật khẩu mới</label>
-                      <input type="password" placeholder="••••••••" className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-semibold text-muted-foreground">Xác nhận mật khẩu mới</label>
-                      <input type="password" placeholder="••••••••" className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all" />
+                      <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-muted/50 border border-border rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                      />
                     </div>
-                    <button className="bg-foreground text-background px-6 py-2.5 rounded-xl font-bold hover:bg-foreground/90 transition-colors">
-                      Cập nhật mật khẩu
+                    <button
+                      type="button"
+                      disabled={isChangingPassword}
+                      onClick={async () => {
+                        if (!currentPassword || !newPassword) {
+                          toast.error("Vui lòng nhập đủ mật khẩu");
+                          return;
+                        }
+                        if (newPassword !== confirmPassword) {
+                          toast.error("Mật khẩu xác nhận không khớp");
+                          return;
+                        }
+                        try {
+                          setIsChangingPassword(true);
+                          await changePasswordRequest(currentPassword, newPassword);
+                          setCurrentPassword("");
+                          setNewPassword("");
+                          setConfirmPassword("");
+                          toast.success("Đã cập nhật mật khẩu");
+                        } catch (err: any) {
+                          toast.error(err?.message || "Cập nhật mật khẩu thất bại");
+                        } finally {
+                          setIsChangingPassword(false);
+                        }
+                      }}
+                      className="bg-foreground text-background px-6 py-2.5 rounded-xl font-bold hover:bg-foreground/90 transition-colors disabled:opacity-50"
+                    >
+                      {isChangingPassword ? "Đang cập nhật..." : "Cập nhật mật khẩu"}
                     </button>
+                    <p className="text-xs text-muted-foreground">
+                      Quên mật khẩu hiện tại?{" "}
+                      <Link href="/forgot-password" className="text-primary font-semibold hover:underline">
+                        Đặt lại qua email
+                      </Link>
+                    </p>
                   </div>
                 </div>
 

@@ -1,10 +1,11 @@
 "use client";
 
 import { Logo } from "@/components/logo";
+import { hasAdminRole } from "@/lib/auth/access";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
@@ -33,17 +34,29 @@ function getBestActiveUrl(
     .sort((a, b) => b.length - a.length)[0];
 }
 
-export function Sidebar() {
+export function Sidebar({ roles = [] }: { roles?: string[] }) {
   const pathname = usePathname();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const isAdmin = hasAdminRole(roles);
+
+  const navData = useMemo(
+    () =>
+      NAV_DATA.map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) => !("adminOnly" in item && item.adminOnly) || isAdmin,
+        ),
+      })).filter((section) => section.items.length > 0),
+    [isAdmin],
+  );
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
   };
 
   useEffect(() => {
-    for (const section of NAV_DATA) {
+    for (const section of navData) {
       const active = section.items.find((item) => item.items.length && isGroupActive(pathname, item));
       if (active) {
         setExpandedItems((prev) =>
@@ -52,7 +65,7 @@ export function Sidebar() {
         return;
       }
     }
-  }, [pathname]);
+  }, [pathname, navData]);
 
   return (
     <>
@@ -96,7 +109,7 @@ export function Sidebar() {
           </div>
 
           <div className="custom-scrollbar mt-8 flex-1 overflow-y-auto pr-2">
-            {NAV_DATA.map((section) => (
+            {navData.map((section) => (
               <div key={section.label} className="mb-7">
                 <h2 className="mb-3 px-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                   {section.label}

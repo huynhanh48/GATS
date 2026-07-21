@@ -1,4 +1,4 @@
-import { and, count, eq, gt, isNull, or } from 'drizzle-orm';
+import { and, count, eq, gt, gte, isNull, or } from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -88,6 +88,41 @@ export async function countActiveByCourse(courseId: string): Promise<number> {
     .from(courseEnrollmentsTable)
     .where(activeEnrollmentByCourseCondition(courseId));
   return Number(result?.total ?? 0);
+}
+
+export async function countByStatus(): Promise<
+  Record<EnrollmentStatus, number> & { all: number }
+> {
+  const rows = await db
+    .select({
+      status: courseEnrollmentsTable.status,
+      value: count(),
+    })
+    .from(courseEnrollmentsTable)
+    .groupBy(courseEnrollmentsTable.status);
+
+  const result: Record<EnrollmentStatus, number> & { all: number } = {
+    active: 0,
+    expired: 0,
+    cancelled: 0,
+    all: 0,
+  };
+
+  for (const row of rows) {
+    const n = Number(row.value ?? 0);
+    result[row.status] = n;
+    result.all += n;
+  }
+
+  return result;
+}
+
+export async function countCreatedSince(since: Date): Promise<number> {
+  const rows = await db
+    .select({ value: count() })
+    .from(courseEnrollmentsTable)
+    .where(gte(courseEnrollmentsTable.createdAt, since));
+  return Number(rows[0]?.value ?? 0);
 }
 
 export async function listByCourse(

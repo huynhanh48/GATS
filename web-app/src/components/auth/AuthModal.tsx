@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import type { AuthModalMode } from "@/types/auth";
@@ -254,6 +255,18 @@ export function AuthModal({
                         )}
                       </button>
                     </div>
+
+                    {isLogin ? (
+                      <div className="-mt-2 text-right">
+                        <Link
+                          href="/forgot-password"
+                          onClick={onClose}
+                          className="text-xs font-semibold text-primary hover:underline"
+                        >
+                          Quên mật khẩu?
+                        </Link>
+                      </div>
+                    ) : null}
 
                     <AnimatePresence mode="popLayout">
                       {!isLogin && (

@@ -6,10 +6,10 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
-import 'package:gats_academy/data/mock/mock_data.dart';
+import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 
 /// Tìm kiếm + lọc khóa học (mở từ nút sấm sét giữa).
@@ -26,7 +26,7 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
   int _categoryIndex = 0;
   int _chipIndex = 0;
   AuthUser? _user;
-  List<CourseItem> _courses = MockData.courses;
+  List<CourseItem> _courses = const [];
 
   static const _tags = [
     'Tất cả',
@@ -42,7 +42,7 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
   void initState() {
     super.initState();
     _loadSession();
-    MockCourseStore.instance.addListener(_onStoreChanged);
+    CourseModule.repository.addListener(_onStoreChanged);
   }
 
   Future<void> _loadSession() async {
@@ -61,7 +61,10 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
 
   void _refreshCourses() {
     final role = _user?.role ?? UserRole.user;
-    _courses = MockCourseStore.instance.courseItemsFor(_user?.id, role: role);
+    _courses = CourseModule.repository.listPublished(
+      userId: _user?.id,
+      role: role,
+    );
   }
 
   List<CourseItem> get _filteredCourses {
@@ -98,7 +101,7 @@ class _CourseSearchScreenState extends State<CourseSearchScreen> {
   @override
   void dispose() {
     _queryController.dispose();
-    MockCourseStore.instance.removeListener(_onStoreChanged);
+    CourseModule.repository.removeListener(_onStoreChanged);
     super.dispose();
   }
 

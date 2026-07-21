@@ -73,6 +73,76 @@ export const NAV_DATA = [
         ],
       },
       {
+        title: "Thanh toán",
+        icon: Icons.PieChart,
+        adminOnly: true,
+        items: [
+          {
+            title: "Đơn hàng",
+            url: "/orders",
+          },
+          {
+            title: "Ngoại lệ thanh toán",
+            url: "/orders/exceptions",
+          },
+          {
+            title: "Mã giảm giá",
+            url: "/coupons",
+          },
+        ],
+      },
+      {
+        title: "Chứng chỉ",
+        icon: Icons.BookIcon,
+        items: [
+          {
+            title: "Danh sách",
+            url: "/certificates",
+          },
+        ],
+      },
+      {
+        title: "Phân tích",
+        icon: Icons.PieChart,
+        adminOnly: true,
+        items: [
+          {
+            title: "Tổng quan",
+            url: "/analytics",
+          },
+        ],
+      },
+      {
+        title: "Đăng ký tư vấn",
+        icon: Icons.User,
+        items: [
+          {
+            title: "Danh sách lead",
+            url: "/leads",
+          },
+        ],
+      },
+      {
+        title: "Thông báo",
+        icon: Icons.Calendar,
+        items: [
+          {
+            title: "Tất cả",
+            url: "/notifications",
+          },
+        ],
+      },
+      {
+        title: "Kiểm duyệt",
+        icon: Icons.ShieldIcon,
+        items: [
+          {
+            title: "Hàng đợi bình luận",
+            url: "/moderation",
+          },
+        ],
+      },
+      {
         title: "Thùng rác",
         icon: Icons.TrashIcon,
         items: [
@@ -92,10 +162,15 @@ export const NAV_DATA = [
     label: "Hệ thống",
     items: [
       {
-        title: "Calendar",
-        url: "/calendar",
-        icon: Icons.Calendar,
-        items: [],
+        title: "Người dùng",
+        icon: Icons.User,
+        adminOnly: true,
+        items: [
+          {
+            title: "Danh sách",
+            url: "/users",
+          },
+        ],
       },
       {
         title: "Profile",

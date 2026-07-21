@@ -1,15 +1,17 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/data/api/video_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/course/data/lecture_progress_store.dart';
 import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
-import 'package:gats_academy/core/services/auth_prefs.dart';
 
 class LecturePreviewSheet extends StatefulWidget {
   const LecturePreviewSheet({
     super.key,
+    required this.courseId,
     required this.lecture,
     required this.index,
     required this.total,
@@ -17,6 +19,7 @@ class LecturePreviewSheet extends StatefulWidget {
     required this.onMarkComplete,
   });
 
+  final String courseId;
   final CourseLecture lecture;
   final int index;
   final int total;
@@ -25,6 +28,7 @@ class LecturePreviewSheet extends StatefulWidget {
 
   static Future<void> show(
     BuildContext context, {
+    required String courseId,
     required CourseLecture lecture,
     required int index,
     required int total,
@@ -36,6 +40,7 @@ class LecturePreviewSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => LecturePreviewSheet(
+        courseId: courseId,
         lecture: lecture,
         index: index,
         total: total,
@@ -53,6 +58,7 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -62,16 +68,28 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
 
   Future<void> _initPlayer() async {
     try {
-      // Gọi API lấy thông tin video của lesson (mock URL tạm thời nếu BE chưa có)
-      // Sử dụng S3 public URL thông qua HLS thay vì MP4
-      // Thực tế: fetch /api/videos/lesson/${widget.lecture.id}
       final token = await AuthPrefs.accessToken();
-      
-      _videoController = VideoPlayerController.networkUrl(
-        Uri.parse('https://s3-hn1-r1.longvan.net/s3-video-gats/video-test.mp4'), // Sử dụng test video
-        httpHeaders: {'Authorization': 'Bearer $token'},
+      final playback = await VideoApiService.getLessonPlayback(
+        courseId: widget.courseId,
+        lessonId: widget.lecture.id,
+        token: token,
       );
-      
+
+      if (playback == null) {
+        if (mounted) {
+          setState(() {
+            _error = 'Video chưa khả dụng cho bài học này.';
+            _isLoading = false;
+          });
+        }
+        return;
+      }
+
+      // Không gắn Authorization lên URL S3/HLS công khai (CORS/auth sai).
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse(playback.playbackUrl),
+      );
+
       await _videoController!.initialize();
       _chewieController = ChewieController(
         videoPlayerController: _videoController!,
@@ -81,6 +99,7 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
       );
     } catch (e) {
       debugPrint('Error init video: $e');
+      _error = 'Không tải được video. Thử lại sau.';
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -104,7 +123,12 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
         color: gats.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      padding: EdgeInsets.fromLTRB(AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, bottom + AppSpacing.lg),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        bottom + AppSpacing.lg,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,11 +197,12 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline_rounded, color: gats.lavenderAccent, size: 20),
+                  Icon(Icons.error_outline_rounded,
+                      color: gats.lavenderAccent, size: 20),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Video chưa khả dụng cho bài học này.',
+                      _error ?? 'Video chưa khả dụng cho bài học này.',
                       style: TextStyle(
                         fontSize: 13,
                         color: gats.textSecondary,

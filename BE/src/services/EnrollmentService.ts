@@ -6,6 +6,9 @@ import type {
 } from '@src/models/Enrollment.model';
 import * as CourseRepo from '@src/repos/CourseRepo';
 import * as EnrollmentRepo from '@src/repos/EnrollmentRepo';
+import * as LessonRepo from '@src/repos/LessonRepo';
+import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
+import * as UserRepo from '@src/repos/UserRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 
 const Errors = {
@@ -53,7 +56,14 @@ async function selfEnrollFree(courseId: string, userId: number) {
   if (course.status !== 'published') {
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NOT_PUBLISHED);
   }
-  if (course.price > 0) {
+  // Payable amount: sale only when it is a real discount below list price.
+  const effectivePrice =
+    course.salePrice != null &&
+    course.salePrice > 0 &&
+    course.salePrice < course.price
+      ? course.salePrice
+      : course.price;
+  if (effectivePrice > 0) {
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NOT_FREE);
   }
 
@@ -93,6 +103,56 @@ async function listByCourse(courseId: string, actorUserId: number) {
 
   const data = await EnrollmentRepo.listByCourse(courseId);
   return { data };
+}
+
+async function listLearners(courseId: string, actorUserId: number) {
+  const canRead = await CourseAccessService.canReadCourseEnrollments(
+    actorUserId,
+    courseId,
+  );
+  if (!canRead) {
+    throw new RouteError(HttpStatusCodes.FORBIDDEN, Errors.FORBIDDEN);
+  }
+
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+
+  const enrollments = await EnrollmentRepo.listByCourse(courseId);
+  const userIds = [...new Set(enrollments.map((e) => e.userId))];
+  const totalLessons = await LessonRepo.countByCourse(courseId);
+
+  const [users, progressByUser] = await Promise.all([
+    UserRepo.findByIds(userIds),
+    LessonProgressRepo.getCourseAggregateByUsers(
+      courseId,
+      userIds,
+      totalLessons,
+    ),
+  ]);
+  const userById = new Map(users.map((u) => [u.id, u]));
+
+  const data = enrollments.map((enrollment) => {
+    const user = userById.get(enrollment.userId);
+    const progress = progressByUser.get(enrollment.userId);
+    return {
+      enrollmentId: enrollment.id,
+      userId: enrollment.userId,
+      userName: user?.userName ?? null,
+      email: user?.email ?? null,
+      status: enrollment.status,
+      source: enrollment.source,
+      enrolledAt: enrollment.enrolledAt,
+      expiredAt: enrollment.expiredAt,
+      completedLessons: progress?.completedLessons ?? 0,
+      totalLessons,
+      percent: progress?.percent ?? 0,
+      lastActivityAt: progress?.lastActivityAt ?? null,
+    };
+  });
+
+  return { data, totalLessons };
 }
 
 async function listMine(userId: number) {
@@ -176,6 +236,7 @@ export default {
   grant,
   selfEnrollFree,
   listByCourse,
+  listLearners,
   listMine,
   revoke,
   updateEnrollment,

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
+import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/data/api/auth_api_service.dart';
 import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/features/auth/presentation/widgets/auth_provider_button.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/l10n/app_localizations.dart';
 
 /// Ngữ cảnh mở auth — cùng một UI, khác headline / skip / demo / đích sau đăng nhập.
@@ -110,6 +112,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _completeSession(AuthSession session) async {
     await AuthService.persistSession(session);
+    await CourseModule.init();
+    await CartController.instance.syncFromApi();
     if (!mounted) return;
     widget.onAuthenticated();
   }

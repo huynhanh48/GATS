@@ -22,6 +22,7 @@ export const userRecordSchema = z.object({
   verifyToken: z.string().nullable(),
   accessToken: z.string().nullable(),
   tokenExpiresAt: z.coerce.date().nullable(),
+  isLocked: z.boolean().default(false),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -33,6 +34,7 @@ export const userPublicSchema = z.object({
   email: z.string().email(),
   type: authTypeSchema,
   roles: z.array(z.string()),
+  isLocked: z.boolean().optional(),
 });
 
 export const registerSchema = z
@@ -112,6 +114,20 @@ export const verifyEmailSchema = z.object({
   token: z.string().min(1),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: passwordSchema,
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: passwordSchema,
+});
+
 export const registerResponseSchema = z.object({
   message: z.string(),
   verifyToken: z.string().optional(),
@@ -134,6 +150,9 @@ export type UserPublic = z.infer<typeof userPublicSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export function parseRegisterInput(data: unknown): RegisterInput {
   return registerSchema.parse(data);
@@ -145,6 +164,18 @@ export function parseLoginInput(data: unknown): LoginInput {
 
 export function parseVerifyEmailInput(data: unknown): VerifyEmailInput {
   return verifyEmailSchema.parse(data);
+}
+
+export function parseChangePasswordInput(data: unknown): ChangePasswordInput {
+  return changePasswordSchema.parse(data);
+}
+
+export function parseForgotPasswordInput(data: unknown): ForgotPasswordInput {
+  return forgotPasswordSchema.parse(data);
+}
+
+export function parseResetPasswordInput(data: unknown): ResetPasswordInput {
+  return resetPasswordSchema.parse(data);
 }
 
 export function parseUserPublic(data: unknown): UserPublic {

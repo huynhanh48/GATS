@@ -6,10 +6,11 @@ const config = defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
-    setupFiles: ['dotenv/config', './tests/support/agent.ts'],
+    setupFiles: ['dotenv/config'],
     isolate: true,
     exclude: ['tests/users.test.ts'],
     env: {
+      NODE_ENV: 'test',
       DOTENV_CONFIG_PATH: 'config/.env.test',
     },
   },

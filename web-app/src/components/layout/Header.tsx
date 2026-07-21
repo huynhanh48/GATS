@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Command, ChevronDown, ShoppingCart, Menu, BookOpen, Wrench, PenTool, Users, ArrowRight, LayoutGrid, Cpu, MessageSquare } from "lucide-react";
+import { Moon, Sun, Command, ChevronDown, ShoppingCart, Menu, BookOpen, Wrench, PenTool, Users, ArrowRight, LayoutGrid, Cpu, MessageSquare, GraduationCap } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
@@ -66,6 +66,15 @@ export function Header() {
           >
             Khoá học
           </Link>
+
+          {sessionReady && status === "authenticated" ? (
+            <Link
+              href="/learning"
+              className="hover:text-foreground transition-colors"
+            >
+              Học tập
+            </Link>
+          ) : null}
 
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger className="hover:text-foreground transition-colors cursor-pointer flex items-center gap-1 focus:outline-none py-1">
@@ -153,6 +162,9 @@ export function Header() {
                   className="w-40 bg-background/90 backdrop-blur-md border border-border/40 shadow-xl rounded-2xl p-1"
                 >
                   <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
+                    <Link href="/learning" className="w-full">Học tập</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
                     <Link href="/profile" className="w-full">Hồ sơ cá nhân</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -221,6 +233,18 @@ export function Header() {
                       </div>
                       <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 group-hover:text-primary transition-colors" />
                     </Link>
+
+                    {sessionReady && status === "authenticated" ? (
+                      <Link href="/learning" className="flex items-center justify-between p-3 rounded-xl hover:bg-primary/5 active:bg-primary/10 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <GraduationCap className="w-5 h-5" />
+                          </div>
+                          <span className="font-medium text-foreground group-hover:text-primary transition-colors">Học tập</span>
+                        </div>
+                        <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 group-hover:text-primary transition-colors" />
+                      </Link>
+                    ) : null}
                     
                     <div className="flex flex-col mt-2 mb-2">
                       <div className="flex items-center gap-3 p-3 rounded-xl">

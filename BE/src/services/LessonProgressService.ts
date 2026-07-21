@@ -7,6 +7,7 @@ import {
 } from '@src/models/LessonProgress.model';
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
+import CertificateService from '@src/services/CertificateService';
 import CourseAccessService from '@src/services/CourseAccessService';
 
 const Errors = {
@@ -31,7 +32,13 @@ async function upsert(
     input.watched_seconds,
     durationSeconds,
   );
-  const completed = isLessonCompleted(percent);
+  const existing = await LessonProgressRepo.findByUserAndLesson(
+    userId,
+    lessonId,
+  );
+  // Đã hoàn thành thì không hạ xuống incomplete khi lưu tiến độ xem lại
+  const completed =
+    isLessonCompleted(percent) || Boolean(existing?.isCompleted);
 
   const progress = await LessonProgressRepo.upsert({
     userId,
@@ -40,12 +47,36 @@ async function upsert(
     videoId: input.video_id ?? null,
     watchedSeconds: input.watched_seconds,
     durationSeconds,
-    percent,
+    percent: Math.max(percent, existing?.percent ?? 0),
     isCompleted: completed,
-    completedAt: completed ? new Date() : null,
+    completedAt: completed
+      ? (existing?.completedAt ?? new Date())
+      : null,
   });
 
+  if (completed) {
+    void maybeIssueCertificate(userId, courseId);
+  }
+
   return { data: progress };
+}
+
+/** Fire-and-forget: issues a certificate once course progress reaches 100%. */
+async function maybeIssueCertificate(userId: number, courseId: string) {
+  try {
+    const totalLessons = await LessonRepo.countByCourse(courseId);
+    if (totalLessons === 0) return;
+    const aggregate = await LessonProgressRepo.getCourseAggregate(
+      userId,
+      courseId,
+      totalLessons,
+    );
+    if (aggregate.percent >= 100) {
+      await CertificateService.issueIfEligible(userId, courseId);
+    }
+  } catch (err) {
+    console.error('Auto certificate issuance failed', err);
+  }
 }
 
 async function getLessonProgress(
@@ -78,13 +109,21 @@ async function getCourseProgress(userId: number, courseId: string) {
   }
 
   const totalLessons = await LessonRepo.countByCourse(courseId);
-  const aggregate = await LessonProgressRepo.getCourseAggregate(
-    userId,
-    courseId,
-    totalLessons,
-  );
+  const [aggregate, rows] = await Promise.all([
+    LessonProgressRepo.getCourseAggregate(userId, courseId, totalLessons),
+    LessonProgressRepo.listByUserAndCourse(userId, courseId),
+  ]);
 
-  return { data: aggregate };
+  const completedLessonIds = rows
+    .filter((row) => row.isCompleted)
+    .map((row) => row.lessonId);
+
+  return {
+    data: {
+      ...aggregate,
+      completedLessonIds,
+    },
+  };
 }
 
 export default {

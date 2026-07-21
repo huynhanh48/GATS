@@ -6,10 +6,9 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
-import 'package:gats_academy/data/mock/mock_accounts.dart';
-import 'package:gats_academy/data/mock/mock_course_store.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
 import 'package:gats_academy/features/settings/presentation/settings_screen.dart';
 
@@ -28,13 +27,13 @@ class _MentorShellState extends State<MentorShell> {
   void initState() {
     super.initState();
     _loadUser();
-    MockCourseStore.instance.addListener(_onStoreChanged);
+    CourseModule.repository.addListener(_onStoreChanged);
   }
 
   Future<void> _loadUser() async {
     final user = await AuthPrefs.currentUser();
     if (!mounted) return;
-    setState(() => _userId = user?.id ?? MockAccounts.mentor.id);
+    setState(() => _userId = user?.id);
   }
 
   void _onStoreChanged() {
@@ -43,7 +42,7 @@ class _MentorShellState extends State<MentorShell> {
 
   @override
   void dispose() {
-    MockCourseStore.instance.removeListener(_onStoreChanged);
+    CourseModule.repository.removeListener(_onStoreChanged);
     super.dispose();
   }
 
@@ -56,10 +55,18 @@ class _MentorShellState extends State<MentorShell> {
 
   @override
   Widget build(BuildContext context) {
-    final courses = MockCourseStore.instance.coursesForUser(
-      _userId,
-      role: UserRole.mentor,
-    );
+    final all = CourseModule.repository.listPublishedCourses();
+    final courses = _userId == null
+        ? <AppCourse>[]
+        : all
+            .where((c) =>
+                c.mentorId == _userId ||
+                CourseModule.repository.isOwned(
+                  c.id,
+                  _userId,
+                  role: UserRole.mentor,
+                ))
+            .toList();
 
     return GatsThemedScaffold(
       extendBody: true,

@@ -1,4 +1,24 @@
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
+import * as LessonRepo from '@src/repos/LessonRepo';
+import CertificateService from '@src/services/CertificateService';
+
+/** Fire-and-forget: issues a certificate once course progress reaches 100%. */
+async function maybeIssueCertificate(userId: number, courseId: string) {
+  try {
+    const totalLessons = await LessonRepo.countByCourse(courseId);
+    if (totalLessons === 0) return;
+    const aggregate = await LessonProgressRepo.getCourseAggregate(
+      userId,
+      courseId,
+      totalLessons,
+    );
+    if (aggregate.percent >= 100) {
+      await CertificateService.issueIfEligible(userId, courseId);
+    }
+  } catch (err) {
+    console.error('Auto certificate issuance failed', err);
+  }
+}
 
 export async function syncQuizResult(data: {
   userId: number;
@@ -36,6 +56,10 @@ export async function syncQuizResult(data: {
     isCompleted: isPassed,
     completedAt: isPassed ? new Date() : null,
   });
+
+  if (isPassed) {
+    void maybeIssueCertificate(data.userId, data.courseId);
+  }
 }
 
 export async function syncAssignmentResult(data: {
@@ -58,6 +82,10 @@ export async function syncAssignmentResult(data: {
     isCompleted: data.passed,
     completedAt: data.passed ? new Date() : null,
   });
+
+  if (data.passed) {
+    void maybeIssueCertificate(data.userId, data.courseId);
+  }
 }
 
 export default {

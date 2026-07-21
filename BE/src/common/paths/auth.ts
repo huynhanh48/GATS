@@ -10,6 +10,9 @@ const AuthPaths = {
     Logout: '/logout',
     Me: '/me',
     VerifyEmail: '/verify-email',
+    ChangePassword: '/change-password',
+    ForgotPassword: '/forgot-password',
+    ResetPassword: '/reset-password',
   }
 } as const;
 

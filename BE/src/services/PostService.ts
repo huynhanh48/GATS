@@ -16,6 +16,7 @@ import * as PostRepo from '@src/repos/PostRepo';
 import * as PostTagRepo from '@src/repos/PostTagRepo';
 import authorizationService from '@src/services/AuthorizationService';
 import CategoryService from '@src/services/CategoryService';
+import NotificationService from '@src/services/NotificationService';
 import TagService from '@src/services/TagService';
 
 const Errors = {
@@ -321,6 +322,18 @@ async function create(input: CreatePostInput, authorId: number) {
   );
   const tags = await TagService.syncPostTags(post.id, input.tags);
   const categoryMap = await CategoryRepo.findByPostIds([post.id]);
+
+  void NotificationService.notify({
+    type: input.status === 'published' ? 'post_published' : 'post_created',
+    title:
+      input.status === 'published'
+        ? `Bài viết đã xuất bản: ${post.title}`
+        : `Bài viết mới: ${post.title}`,
+    body: post.slug,
+    href: `/post/${post.id}/edit`,
+    entityId: post.id,
+  });
+
   return {
     ...post,
     category: categoryMap.get(post.id) ?? null,
@@ -374,6 +387,16 @@ async function update(id: string, input: UpdatePostInput) {
       : await TagService.syncPostTags(id);
 
   const categoryMap = await CategoryRepo.findByPostIds([id]);
+
+  if (input.status === 'published' && existing.status !== 'published') {
+    void NotificationService.notify({
+      type: 'post_published',
+      title: `Bài viết đã xuất bản: ${updated.title}`,
+      body: updated.slug,
+      href: `/post/${updated.id}/edit`,
+      entityId: updated.id,
+    });
+  }
 
   return {
     ...updated,

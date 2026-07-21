@@ -28,6 +28,12 @@ export const PathApi = {
     me: `${API_PREFIX}/user/me`,
     /** PUT – auth: member */
     updateMe: `${API_PREFIX}/user/me`,
+    /** POST – auth: member */
+    changePassword: `${API_PREFIX}/user/change-password`,
+    /** POST – auth: public */
+    forgotPassword: `${API_PREFIX}/user/forgot-password`,
+    /** POST – auth: public */
+    resetPassword: `${API_PREFIX}/user/reset-password`,
   },
 
   courses: {
@@ -120,6 +126,26 @@ export const PathApi = {
       `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/video`,
   },
 
+  quiz: {
+    /** GET – auth: member – take quiz payload (no correct answers) */
+    byLesson: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/quiz`,
+    /** POST – auth: member */
+    submit: (quizId: string) => `${API_PREFIX}/quizzes/${quizId}/submit`,
+  },
+
+  assignment: {
+    /** GET – auth: member */
+    byLesson: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/assignment`,
+    /** POST – auth: member */
+    submit: (assignmentId: string) =>
+      `${API_PREFIX}/assignments/${assignmentId}/submissions`,
+    /** GET – auth: member */
+    mySubmission: (assignmentId: string) =>
+      `${API_PREFIX}/assignments/${assignmentId}/submissions/mine`,
+  },
+
   cart: {
     /** GET - auth: member */
     list: `${API_PREFIX}/cart`,
@@ -142,5 +168,58 @@ export const PathApi = {
     get: (orderId: string) => `${API_PREFIX}/orders/${orderId}`,
     /** POST - auth: member */
     cancel: (orderId: string) => `${API_PREFIX}/orders/${orderId}/cancel`,
+  },
+
+  payment: {
+    /** GET - auth: member – query: txnRef */
+    sepayCheck: `${API_PREFIX}/payment/sepay/check`,
+  },
+
+  leads: {
+    /** POST - auth: public */
+    create: `${API_PREFIX}/leads`,
+  },
+
+  coupon: {
+    /** POST - auth: member – body: { code, orderAmount } */
+    preview: `${API_PREFIX}/coupons/preview`,
+  },
+
+  certificate: {
+    /** GET - auth: member */
+    mine: `${API_PREFIX}/certificates/mine`,
+    /** GET - auth: public */
+    verify: (certificateNumber: string) =>
+      `${API_PREFIX}/certificates/verify/${certificateNumber}`,
+  },
+
+  learnExtras: {
+    /** GET/POST - auth: member */
+    questions: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/questions`,
+    /** POST - auth: member */
+    answerQuestion: (questionId: string) =>
+      `${API_PREFIX}/questions/${questionId}/answers`,
+    /** PATCH - auth: member (owner/instructor) */
+    resolveQuestion: (questionId: string) =>
+      `${API_PREFIX}/questions/${questionId}/resolve`,
+    /** DELETE - auth: member (owner/instructor) */
+    deleteQuestion: (questionId: string) =>
+      `${API_PREFIX}/questions/${questionId}`,
+    /** GET/POST - auth: member */
+    lessonNotes: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/notes`,
+    /** GET - auth: member */
+    courseNotes: (courseId: string) => `${API_PREFIX}/courses/${courseId}/notes`,
+    /** PATCH/DELETE - auth: member (owner) */
+    note: (noteId: string) => `${API_PREFIX}/notes/${noteId}`,
+    /** GET/POST - auth: member */
+    lessonBookmarks: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/bookmarks`,
+    /** GET - auth: member */
+    courseBookmarks: (courseId: string) =>
+      `${API_PREFIX}/courses/${courseId}/bookmarks`,
+    /** DELETE - auth: member (owner) */
+    bookmark: (bookmarkId: string) => `${API_PREFIX}/bookmarks/${bookmarkId}`,
   },
 } as const;

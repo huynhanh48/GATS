@@ -1,4 +1,4 @@
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, max, sql } from 'drizzle-orm';
 
 import db from '@src/db';
 import { lessonProgressTable } from '@src/db/schema/lesson-progress';
@@ -142,9 +142,15 @@ export async function getCourseAggregate(
   completedLessons: number;
   totalLessons: number;
   percent: number;
+  lastActivityAt: Date | null;
 }> {
   if (totalLessons === 0) {
-    return { completedLessons: 0, totalLessons: 0, percent: 0 };
+    return {
+      completedLessons: 0,
+      totalLessons: 0,
+      percent: 0,
+      lastActivityAt: null,
+    };
   }
 
   const [result] = await db
@@ -152,6 +158,7 @@ export async function getCourseAggregate(
       completed: count(
         sql`CASE WHEN ${lessonProgressTable.isCompleted} = true THEN 1 END`,
       ),
+      lastActivityAt: max(lessonProgressTable.lastWatchedAt),
     })
     .from(lessonProgressTable)
     .where(
@@ -164,5 +171,92 @@ export async function getCourseAggregate(
   const completedLessons = Number(result?.completed ?? 0);
   const percent = Math.round((completedLessons / totalLessons) * 100);
 
-  return { completedLessons, totalLessons, percent };
+  return {
+    completedLessons,
+    totalLessons,
+    percent,
+    lastActivityAt: result?.lastActivityAt ?? null,
+  };
+}
+
+export async function getCourseAggregateByUsers(
+  courseId: string,
+  userIds: number[],
+  totalLessons: number,
+): Promise<
+  Map<
+    number,
+    {
+      completedLessons: number;
+      totalLessons: number;
+      percent: number;
+      lastActivityAt: Date | null;
+    }
+  >
+> {
+  const result = new Map<
+    number,
+    {
+      completedLessons: number;
+      totalLessons: number;
+      percent: number;
+      lastActivityAt: Date | null;
+    }
+  >();
+
+  if (userIds.length === 0) return result;
+
+  for (const userId of userIds) {
+    result.set(userId, {
+      completedLessons: 0,
+      totalLessons,
+      percent: 0,
+      lastActivityAt: null,
+    });
+  }
+
+  if (totalLessons === 0) return result;
+
+  const rows = await db
+    .select({
+      userId: lessonProgressTable.userId,
+      completed: count(
+        sql`CASE WHEN ${lessonProgressTable.isCompleted} = true THEN 1 END`,
+      ),
+      lastActivityAt: max(lessonProgressTable.lastWatchedAt),
+    })
+    .from(lessonProgressTable)
+    .where(
+      and(
+        eq(lessonProgressTable.courseId, courseId),
+        inArray(lessonProgressTable.userId, userIds),
+      ),
+    )
+    .groupBy(lessonProgressTable.userId);
+
+  for (const row of rows) {
+    const completedLessons = Number(row.completed ?? 0);
+    result.set(row.userId, {
+      completedLessons,
+      totalLessons,
+      percent: Math.round((completedLessons / totalLessons) * 100),
+      lastActivityAt: row.lastActivityAt ?? null,
+    });
+  }
+
+  return result;
+}
+
+export async function deleteByUserAndLesson(
+  userId: number,
+  lessonId: string,
+): Promise<void> {
+  await db
+    .delete(lessonProgressTable)
+    .where(
+      and(
+        eq(lessonProgressTable.userId, userId),
+        eq(lessonProgressTable.lessonId, lessonId),
+      ),
+    );
 }

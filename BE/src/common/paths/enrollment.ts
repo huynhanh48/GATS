@@ -6,6 +6,7 @@ const EnrollmentPaths = {
     List: '/',
     Update: '/:userId',
     Revoke: '/:userId',
+    Learners: '/learners',
   },
   Me: {
     _: '/me/enrollments',

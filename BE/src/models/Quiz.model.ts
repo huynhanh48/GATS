@@ -347,7 +347,7 @@ function addDuplicateAnswerIssues(
       ctx.addIssue({
         code: 'custom',
         path: ['answers', index, 'answer'],
-        message: 'Answer content must be unique',
+        message: 'Nội dung đáp án không được trùng nhau',
       });
     }
     seen.add(normalized);

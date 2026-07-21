@@ -40,6 +40,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     super.initState();
     _loadUser();
     _repo.addListener(_onStoreChanged);
+    _repo.ensureDetailLoaded(widget.courseId);
   }
 
   Future<void> _loadUser() async {
@@ -222,10 +223,18 @@ class _CourseLearningViewState extends State<_CourseLearningView>
   }
 
   Future<void> _openLecture(CourseLecture lecture) async {
+    if (lecture.locked && !lecture.isPreview) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bài học này đã bị khóa.')),
+      );
+      return;
+    }
     final index = _progress.indexOf(lecture);
     if (index < 0) return;
     await LecturePreviewSheet.show(
       context,
+      courseId: widget.course.id,
       lecture: lecture,
       index: index,
       total: _progress.totalCount,

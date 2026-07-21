@@ -42,6 +42,7 @@ class CourseItem {
   /// Giá thanh toán thực tế (giống CartService.finalPrice trên BE).
   double get effectivePrice {
     if (isFree || price <= 0) return 0;
+    if (salePrice != null && salePrice! <= 0) return 0;
     if (hasActiveSale) return salePrice!;
     return price;
   }
@@ -53,12 +54,18 @@ class CourseLecture {
     required this.title,
     required this.durationMinutes,
     this.isPublished = true,
+    this.isPreview = false,
+    this.locked = false,
   });
 
   final String id;
   final String title;
   final int durationMinutes;
   final bool isPublished;
+  /// Khớp BE `isPreview` — guest / chưa enroll vẫn xem được.
+  final bool isPreview;
+  /// Khớp BE `locked` — true khi chưa có quyền xem nội dung đầy đủ.
+  final bool locked;
 }
 
 class CourseQuiz {
@@ -127,6 +134,7 @@ class AppCourse {
 
   double get effectivePrice {
     if (isFree || price <= 0) return 0;
+    if (salePrice != null && salePrice! <= 0) return 0;
     if (hasActiveSale) return salePrice!;
     return price;
   }

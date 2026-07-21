@@ -72,12 +72,27 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
           </div>
         </div>
 
-        <Link
-          href={`/course/${course.id}/edit`}
-          className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
-        >
-          Sửa khóa học
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Link
+            href={`/course/${course.id}/learners`}
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
+          >
+            Học viên
+          </Link>
+          <Link
+            href={`/course/${course.id}/preview`}
+            target="_blank"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
+          >
+            Xem như học viên
+          </Link>
+          <Link
+            href={`/course/${course.id}/edit`}
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
+          >
+            Sửa khóa học
+          </Link>
+        </div>
       </div>
 
       {course.description && (

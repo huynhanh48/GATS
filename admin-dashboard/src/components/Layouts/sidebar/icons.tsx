@@ -323,6 +323,34 @@ export function TrashIcon(props: PropsType) {
   );
 }
 
+export function ShieldIcon(props: PropsType) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={24}
+      height={24}
+      viewBox="0 0 24 24"
+      fill="none"
+      {...props}
+    >
+      <path
+        d="M12 2.75l7.25 3.25v5.25c0 5-3.5 8.25-7.25 9.75-3.75-1.5-7.25-4.75-7.25-9.75V6l7.25-3.25z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9 12.25l2 2 4-4.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function SparklesIcon(props: PropsType) {
   return (
     <svg

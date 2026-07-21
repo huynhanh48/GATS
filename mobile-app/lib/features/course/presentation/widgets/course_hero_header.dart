@@ -31,8 +31,13 @@ class CourseHeroHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            CourseCoverAssets.pathForSeed(course.id.hashCode),
+          Image(
+            image: (course.thumbnailUrl != null &&
+                    course.thumbnailUrl!.isNotEmpty)
+                ? NetworkImage(course.thumbnailUrl!) as ImageProvider
+                : AssetImage(
+                    CourseCoverAssets.pathForSeed(course.id.hashCode),
+                  ),
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return DecoratedBox(

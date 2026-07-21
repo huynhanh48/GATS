@@ -19,6 +19,11 @@ enrollmentRouter.get(
   errorHandle(authMiddleware),
   enrollmentHandlers.listByCourse,
 );
+enrollmentRouter.get(
+  EnrollmentPaths.Enrollment.Learners,
+  errorHandle(authMiddleware),
+  enrollmentHandlers.listLearners,
+);
 enrollmentRouter.delete(
   EnrollmentPaths.Enrollment.Revoke,
   errorHandle(authMiddleware),

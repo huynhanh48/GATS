@@ -24,6 +24,15 @@ abstract class CourseRepository {
 
   void enroll(String courseId, String userId);
 
+  /// Gỡ enroll local (dùng khi BE enrollFree thất bại).
+  void unenroll(String courseId, String userId);
+
+  /// Hydrate sections/lessons từ BE nếu cache chưa có lectures.
+  Future<void> ensureDetailLoaded(String courseId);
+
+  /// Enroll miễn phí qua BE; rollback local nếu API lỗi. Trả `true` nếu thành công.
+  Future<bool> enrollFree(String courseId, String userId);
+
   void setUserProgress(String courseId, String userId, double progress);
 
   bool canAccessGroupChat({

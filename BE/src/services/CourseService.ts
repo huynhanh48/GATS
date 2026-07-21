@@ -22,11 +22,17 @@ import * as CourseReviewRepo from '@src/repos/CourseReviewRepo';
 import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as CourseTagRepo from '@src/repos/CourseTagRepo';
 import * as EnrollmentRepo from '@src/repos/EnrollmentRepo';
+import * as AssignmentRepo from '@src/repos/AssignmentRepo';
 import * as LessonAttachmentRepo from '@src/repos/LessonAttachmentRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
+import * as PostRepo from '@src/repos/PostRepo';
+import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
+import * as QuizRepo from '@src/repos/QuizRepo';
 import * as RoleRepo from '@src/repos/RoleRepo';
 import * as UserRepo from '@src/repos/UserRepo';
+import * as VideoRepo from '@src/repos/VideoRepo';
 import CategoryService from '@src/services/CategoryService';
+import NotificationService from '@src/services/NotificationService';
 import CourseAccessService from '@src/services/CourseAccessService';
 import TagService from '@src/services/TagService';
 import {
@@ -298,11 +304,18 @@ async function getBySlug(
   const attachmentsByLesson =
     await LessonAttachmentRepo.listByLessonIds(unlockedLessonIds);
 
+  const linkedPostIds = lessons
+    .map((lesson) => lesson.linkedPostId)
+    .filter((id): id is string => Boolean(id));
+  const linkedPostsById =
+    await PostRepo.findPublishedSummariesByIds(linkedPostIds);
+
   const detailSections = buildDetailSections(
     sections,
     lessons,
     hasFullAccess,
     attachmentsByLesson,
+    linkedPostsById,
   );
 
   return parseCourseDetail({
@@ -406,6 +419,14 @@ async function create(input: CreateCourseInput, actorUserId?: number) {
     }
   }
 
+  void NotificationService.notify({
+    type: 'course_created',
+    title: `Khóa học mới: ${course.title}`,
+    body: course.slug,
+    href: `/course/${course.id}`,
+    entityId: course.id,
+  });
+
   return attachPublic(course);
 }
 
@@ -460,6 +481,99 @@ async function update(id: string, input: UpdateCourseInput) {
   return attachPublic(updated);
 }
 
+type ReadinessCheck = {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail?: string;
+};
+
+async function getPublishReadiness(id: string) {
+  const course = await CourseRepo.findById(id);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+
+  const [sections, lessons, learningOutcomes] = await Promise.all([
+    CourseSectionRepo.listByCourse(id),
+    LessonRepo.listByCourse(id),
+    CourseLearningOutcomeRepo.listByCourse(id),
+  ]);
+
+  const checks: ReadinessCheck[] = [
+    {
+      id: 'thumbnail',
+      label: 'Đã có ảnh đại diện khóa học',
+      passed: Boolean(course.thumbnail),
+    },
+    {
+      id: 'description',
+      label: 'Đã có mô tả khóa học',
+      passed: Boolean(course.description?.trim()),
+    },
+    {
+      id: 'learning_outcomes',
+      label: 'Đã có mục tiêu học tập',
+      passed: learningOutcomes.length > 0,
+    },
+    {
+      id: 'sections',
+      label: 'Có ít nhất 1 chương học',
+      passed: sections.length > 0,
+    },
+    {
+      id: 'lessons',
+      label: 'Có ít nhất 1 bài học',
+      passed: lessons.length > 0,
+    },
+  ];
+
+  const incompleteLessons: string[] = [];
+  for (const lesson of lessons) {
+    if (lesson.type === 'video') {
+      const video = await VideoRepo.findByLessonId(lesson.id);
+      if (!video || video.status !== 'ready') {
+        incompleteLessons.push(`${lesson.title} (video chưa xử lý xong)`);
+      }
+    } else if (lesson.type === 'quiz') {
+      const quiz = await QuizRepo.findByLessonId(lesson.id);
+      const questions = quiz
+        ? await QuizQuestionRepo.listByQuizId(quiz.id)
+        : [];
+      if (!quiz || questions.length === 0) {
+        incompleteLessons.push(`${lesson.title} (quiz chưa có câu hỏi)`);
+      }
+    } else if (lesson.type === 'assignment') {
+      const assignment = await AssignmentRepo.findByLessonId(lesson.id);
+      if (!assignment) {
+        incompleteLessons.push(`${lesson.title} (chưa cấu hình bài tập)`);
+      }
+    } else if (lesson.type === 'text') {
+      if (!lesson.content?.trim()) {
+        incompleteLessons.push(`${lesson.title} (chưa có nội dung)`);
+      }
+    }
+  }
+
+  checks.push({
+    id: 'lesson_content',
+    label: 'Tất cả bài học đã có nội dung đầy đủ',
+    passed: lessons.length > 0 && incompleteLessons.length === 0,
+    detail:
+      incompleteLessons.length > 0
+        ? `Chưa hoàn thiện: ${incompleteLessons.slice(0, 5).join(', ')}${
+            incompleteLessons.length > 5
+              ? ` và ${incompleteLessons.length - 5} bài khác`
+              : ''
+          }`
+        : undefined,
+  });
+
+  const ready = checks.every((check) => check.passed);
+
+  return { data: { ready, checks } };
+}
+
 async function publish(id: string) {
   return update(id, { status: 'published' });
 }
@@ -494,6 +608,7 @@ export default {
   create,
   update,
   publish,
+  getPublishReadiness,
   remove,
   restore,
 };

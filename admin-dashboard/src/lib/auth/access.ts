@@ -6,6 +6,11 @@ export function hasAdminAccess(roles: string[]): boolean {
   return ALLOWED_ADMIN_ROLES.some((role) => roles.includes(role));
 }
 
+/** Full admin only — instructors cannot access payment/order management. */
+export function hasAdminRole(roles: string[]): boolean {
+  return roles.includes("admin");
+}
+
 /** Any signed-in account (learner `user`, admin, instructor, …). */
 export function isSignedIn(roles: string[] | null | undefined): boolean {
   return Array.isArray(roles) && roles.length > 0;

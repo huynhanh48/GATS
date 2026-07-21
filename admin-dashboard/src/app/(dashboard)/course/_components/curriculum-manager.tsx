@@ -449,53 +449,80 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
                                   Đang tải...
                                 </p>
                               ) : lesson.type === "quiz" ? (
-                                expandedLessonData[lesson.id].noData ? (
-                                  <QuizBuilder
-                                    courseId={course.id}
-                                    lessonId={lesson.id}
-                                    onCreated={(quiz) =>
-                                      handleQuizCreated(lesson.id, quiz)
-                                    }
-                                  />
-                                ) : (
-                                  <QuizBuilder
-                                    courseId={course.id}
-                                    lessonId={lesson.id}
-                                    existingQuiz={
-                                      expandedLessonData[lesson.id].quiz
-                                    }
-                                    onCreated={(quiz) =>
-                                      handleQuizCreated(lesson.id, quiz)
-                                    }
-                                  />
-                                )
+                                <div className="space-y-3">
+                                  {!expandedLessonData[lesson.id].noData &&
+                                  expandedLessonData[lesson.id].quiz ? (
+                                    <div className="flex justify-end">
+                                      <Link
+                                        href={`/course/quiz/attempts/${expandedLessonData[lesson.id].quiz!.id}`}
+                                        className="text-xs font-medium text-primary hover:underline"
+                                      >
+                                        Xem lượt làm bài →
+                                      </Link>
+                                    </div>
+                                  ) : null}
+                                  {expandedLessonData[lesson.id].noData ? (
+                                    <QuizBuilder
+                                      courseId={course.id}
+                                      lessonId={lesson.id}
+                                      onCreated={(quiz) =>
+                                        handleQuizCreated(lesson.id, quiz)
+                                      }
+                                    />
+                                  ) : (
+                                    <QuizBuilder
+                                      courseId={course.id}
+                                      lessonId={lesson.id}
+                                      existingQuiz={
+                                        expandedLessonData[lesson.id].quiz
+                                      }
+                                      onCreated={(quiz) =>
+                                        handleQuizCreated(lesson.id, quiz)
+                                      }
+                                    />
+                                  )}
+                                </div>
                               ) : lesson.type === "assignment" ? (
-                                expandedLessonData[lesson.id].noData ? (
-                                  <AssignmentBuilder
-                                    courseId={course.id}
-                                    lessonId={lesson.id}
-                                    onSaved={(assignment) =>
-                                      handleAssignmentSaved(
-                                        lesson.id,
-                                        assignment,
-                                      )
-                                    }
-                                  />
-                                ) : (
-                                  <AssignmentBuilder
-                                    courseId={course.id}
-                                    lessonId={lesson.id}
-                                    existingAssignment={
-                                      expandedLessonData[lesson.id].assignment
-                                    }
-                                    onSaved={(assignment) =>
-                                      handleAssignmentSaved(
-                                        lesson.id,
-                                        assignment,
-                                      )
-                                    }
-                                  />
-                                )
+                                <div className="space-y-3">
+                                  {!expandedLessonData[lesson.id].noData &&
+                                  expandedLessonData[lesson.id].assignment ? (
+                                    <div className="flex justify-end">
+                                      <Link
+                                        href={`/course/assignment/${expandedLessonData[lesson.id].assignment!.id}/submissions`}
+                                        className="text-xs font-medium text-primary hover:underline"
+                                      >
+                                        Chấm bài nộp →
+                                      </Link>
+                                    </div>
+                                  ) : null}
+                                  {expandedLessonData[lesson.id].noData ? (
+                                    <AssignmentBuilder
+                                      courseId={course.id}
+                                      lessonId={lesson.id}
+                                      onSaved={(assignment) =>
+                                        handleAssignmentSaved(
+                                          lesson.id,
+                                          assignment,
+                                        )
+                                      }
+                                    />
+                                  ) : (
+                                    <AssignmentBuilder
+                                      courseId={course.id}
+                                      lessonId={lesson.id}
+                                      existingAssignment={
+                                        expandedLessonData[lesson.id]
+                                          .assignment
+                                      }
+                                      onSaved={(assignment) =>
+                                        handleAssignmentSaved(
+                                          lesson.id,
+                                          assignment,
+                                        )
+                                      }
+                                    />
+                                  )}
+                                </div>
                               ) : lesson.type === "video" ? (
                                 <VideoUploader
                                   courseId={course.id}

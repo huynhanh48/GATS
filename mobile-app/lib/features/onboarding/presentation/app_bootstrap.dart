@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/utils/runtime_env.dart';
 import 'package:gats_academy/core/services/onboarding_prefs.dart';
 import 'package:gats_academy/core/services/review_prompt_service.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/auth/presentation/login_screen.dart';
 import 'package:gats_academy/features/auth/services/auth_service.dart';
+import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/onboarding/presentation/splash_screen.dart';
 import 'package:gats_academy/features/onboarding/presentation/entry_screen.dart';
 import 'package:gats_academy/features/onboarding/presentation/language_picker_screen.dart';
@@ -66,6 +68,8 @@ class _AppBootstrapState extends State<AppBootstrap> {
           final restored = await AuthService.restoreSession();
           if (restored != null) {
             await AuthService.persistSession(restored);
+            await CourseModule.init();
+            await CartController.instance.syncFromApi();
           } else {
             await AuthPrefs.signOut();
             signedIn = false;

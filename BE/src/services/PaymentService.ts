@@ -7,7 +7,9 @@ import {
   extractTxnRefFromContent,
   toSepayTransferContent,
 } from '@src/common/utils/sepay';
+import * as PaymentExceptionRepo from '@src/repos/PaymentExceptionRepo';
 import * as TransactionRepo from '@src/repos/TransactionRepo';
+import type { PaymentExceptionType } from '@src/db/schema/payment-exception';
 import OrderService from '@src/services/OrderService';
 
 const Errors = {
@@ -44,6 +46,32 @@ type SepayApiTransaction = {
   bank_brand_name?: string;
 };
 
+/** Fire-and-forget exception log — never throws to callers. */
+async function logException(input: {
+  type: PaymentExceptionType;
+  orderId?: string | null;
+  txnRef?: string | null;
+  expectedAmount?: number | null;
+  actualAmount?: number | null;
+  rawPayload?: unknown;
+}) {
+  try {
+    await PaymentExceptionRepo.create({
+      type: input.type,
+      orderId: input.orderId ?? null,
+      txnRef: input.txnRef ?? null,
+      expectedAmount: input.expectedAmount ?? null,
+      actualAmount: input.actualAmount ?? null,
+      rawPayload: (input.rawPayload as Record<string, unknown>) ?? null,
+      resolvedById: null,
+      resolvedAt: null,
+      resolutionNote: null,
+    });
+  } catch (err) {
+    console.error('PaymentException write failed', err);
+  }
+}
+
 function assertWebhookAuth(apiKey: string | undefined) {
   const expected = EnvVars.SepayApiKey;
   if (!expected) return;
@@ -70,6 +98,7 @@ async function confirmPayment(
 ) {
   const transaction = await TransactionRepo.findByTxnRef(txnRef);
   if (!transaction) {
+    void logException({ type: 'txn_not_found', txnRef, rawPayload: gatewayResponse });
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.TXN_NOT_FOUND);
   }
 
@@ -83,11 +112,22 @@ async function confirmPayment(
     };
   }
 
+  // Auto-cancel and refuse confirmation after 30-minute payment window
+  await OrderService.assertPaymentWindowOpen(transaction.orderId);
+
   if (
     paidAmount !== undefined &&
     paidAmount > 0 &&
     paidAmount !== transaction.amount
   ) {
+    void logException({
+      type: 'amount_mismatch',
+      orderId: transaction.orderId,
+      txnRef: transaction.txnRef,
+      expectedAmount: transaction.amount,
+      actualAmount: paidAmount,
+      rawPayload: gatewayResponse,
+    });
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.AMOUNT_MISMATCH);
   }
 
@@ -129,6 +169,7 @@ async function handleSepayWebhook(
 
   const extracted = extractTxnRefFromContent(content);
   if (!extracted) {
+    void logException({ type: 'txn_ref_not_found', rawPayload: payload });
     return {
       success: true,
       ignored: true,
@@ -139,10 +180,21 @@ async function handleSepayWebhook(
 
   const transaction = await findTransactionByContentRef(extracted);
   if (!transaction) {
+    void logException({
+      type: 'txn_not_found',
+      txnRef: extracted,
+      rawPayload: payload,
+    });
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.TXN_NOT_FOUND);
   }
 
   if (!contentMatchesTxnRef(content, transaction.txnRef)) {
+    void logException({
+      type: 'txn_ref_mismatch',
+      orderId: transaction.orderId,
+      txnRef: transaction.txnRef,
+      rawPayload: payload,
+    });
     return {
       success: true,
       ignored: true,
@@ -215,6 +267,21 @@ async function checkSepayPayment(txnRef: string) {
       amount: transaction.amount,
       paidAt: transaction.paidAt,
       message: 'Payment already confirmed',
+    };
+  }
+
+  const expired = await OrderService.expirePendingOrderIfNeeded(
+    transaction.orderId,
+  );
+  if (expired) {
+    return {
+      success: false,
+      status: 'EXPIRED' as const,
+      txnRef: transaction.txnRef,
+      orderId: transaction.orderId,
+      amount: transaction.amount,
+      paidAt: null,
+      message: 'Payment window expired (30 minutes)',
     };
   }
 
