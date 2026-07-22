@@ -32,7 +32,9 @@ x-backend-env: &backend-env
   EMAIL_PASSWORD: changeme
   APP_URL: ${APP_URL:-https://api.gats.vn}
   FRONTEND_URL: ${FRONTEND_URL:-https://gats.vn,https://www.gats.vn,https://admin.gats.vn,http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100}
-  GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+  # Must match the Web client ID used by the browser (NEXT_PUBLIC_*).
+  # Empty → BE returns "Google Login is not configured".
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-${NEXT_PUBLIC_GOOGLE_CLIENT_ID}}
   VIDEO_STORAGE_PROVIDER: s3
   AWS_REGION: us-east-1
   # In-cluster MinIO for API/worker. Override on VPS with LongVan HTTPS (or any
@@ -55,6 +57,13 @@ x-backend-env: &backend-env
   MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-}
   ADMIN_DEFAULT_EMAIL: admin@gmail.com
   ADMIN_DEFAULT_PASSWORD: admin12345
+  # Bank transfer / Sepay (override via .env on VPS)
+  BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:-}
+  BANK_NAME: ${BANK_NAME:-VietinBank}
+  BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME:-}
+  SEPAY_API_KEY: ${SEPAY_API_KEY:-}
+  VNP_TMN_CODE: ${VNP_TMN_CODE:-}
+  VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
   VIDEO_WORKER_CONCURRENCY: "1"
   HLS_UPLOAD_CONCURRENCY: "16"
   FFMPEG_X264_PRESET: veryfast

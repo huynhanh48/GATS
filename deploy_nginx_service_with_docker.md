@@ -975,3 +975,38 @@ test is successful
 ```
 
 HTTP reverse proxy hiện đã hoạt động. Phần chứng chỉ HTTPS/Certbot cần được quản lý riêng và kiểm tra lại trước khi thay đổi cấu hình cổng `443`.
+
+---
+
+## 12. Google Login trên Docker / máy khác
+
+Google Identity Services chỉ chạy khi **origin trình duyệt** khớp OAuth client.
+
+### Triệu chứng
+
+- Máy build/local đăng nhập Google được, máy khác / domain production không được
+- Nút Google không hiện popup, hoặc báo lỗi ngay khi bấm
+- BE log: `Google Login is not configured`
+
+### Checklist
+
+1. File `.env` cạnh `docker-compose.yml` có:
+   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID=...`
+   - `GOOGLE_CLIENT_ID=...` (cùng Client ID)
+2. **Rebuild** web sau khi đổi Client ID (biến `NEXT_PUBLIC_*` bake lúc build):
+
+```bash
+docker compose -p gats-academy up --build -d
+```
+
+3. Google Cloud Console → Credentials → OAuth Web client → **Authorized JavaScript origins**:
+   - `https://gats.vn`
+   - `https://www.gats.vn`
+   - (dev) `http://localhost:3005`
+4. User phải mở đúng domain (`https://gats.vn`). **Không** dùng `http://IP:3005` trừ khi IP đó đã được thêm vào origins.
+5. Kiểm tra Client ID đã bake vào bundle (DevTools → Sources → search `apps.googleusercontent.com`).
+
+### Không làm
+
+- Đổi `.env` rồi chỉ `restart` container mà không `--build`
+- Test Google Login qua LAN IP khi Console chỉ khai báo `localhost` / `gats.vn`
