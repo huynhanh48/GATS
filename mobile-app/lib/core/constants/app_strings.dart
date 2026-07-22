@@ -124,6 +124,18 @@ abstract final class AppStrings {
   static String get hubCertButton => _l10n.hubCertButton;
   static String get settingsTitle => _l10n.settingsTitle;
   static String get settingsAccount => _l10n.settingsAccount;
+  static String get ordersMineTitle => _l10n.ordersMineTitle;
+  static String get ordersLoginRequired => _l10n.ordersLoginRequired;
+  static String get ordersCancelSuccess => _l10n.ordersCancelSuccess;
+  static String get ordersEmptyTitle => _l10n.ordersEmptyTitle;
+  static String get ordersEmptyDescription => _l10n.ordersEmptyDescription;
+  static String get ordersRetry => _l10n.ordersRetry;
+  static String get ordersCancel => _l10n.ordersCancel;
+  static String get ordersStatusPending => _l10n.ordersStatusPending;
+  static String get ordersStatusPaid => _l10n.ordersStatusPaid;
+  static String get ordersStatusCancelled => _l10n.ordersStatusCancelled;
+  static String get ordersStatusFailed => _l10n.ordersStatusFailed;
+  static String ordersCouponCode(String code) => _l10n.ordersCouponCode(code);
   static String get settingsNotifications => _l10n.settingsNotifications;
   static String get notificationsScreenTitle => _l10n.notificationsScreenTitle;
   static String get notificationsToday => _l10n.notificationsToday;
@@ -346,6 +358,11 @@ abstract final class AppStrings {
   static String get coachWelcomeCardBody => _l10n.coachWelcomeCardBody;
   static String get coachThinking => _l10n.coachThinking;
   static String get aiCoachInputHint => _l10n.aiCoachInputHint;
+  static String get aiQuickAskTitle => _l10n.aiQuickAskTitle;
+  static String get aiQuickAskLearnNext => _l10n.aiQuickAskLearnNext;
+  static String get aiQuickAskExplainAi => _l10n.aiQuickAskExplainAi;
+  static String get aiQuickAskScheduleToday => _l10n.aiQuickAskScheduleToday;
+  static String get aiQuickAskPromptQuiz => _l10n.aiQuickAskPromptQuiz;
     // Library enhancements
   static String get librarySearchHint => _l10n.librarySearchHint;
   static String get libraryNoResults => _l10n.libraryNoResults;

@@ -11,6 +11,7 @@ import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_action_bar.dart';
 import 'package:gats_academy/features/onboarding/presentation/widgets/course_landing_preview.dart';
+import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 
 /// Màn giới thiệu khóa học kiểu landing page — mở từ kết quả onboarding.
 class OnboardingCourseLandingScreen extends StatefulWidget {
@@ -147,6 +148,7 @@ class _OnboardingCourseLandingScreenState extends State<OnboardingCourseLandingS
                   mode: CourseOpenMode.learn,
                 ),
                 onEnrollFree: _enrollAndOpen,
+                onViewCart: () => openCart(context),
               ),
             ),
         ],

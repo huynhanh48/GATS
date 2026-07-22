@@ -11,8 +11,12 @@ abstract final class ApiConfig {
 
   static String get baseUrl {
     if (_dartDefineBaseUrl.isNotEmpty) return _dartDefineBaseUrl;
-    final fromEnv = dotenv.maybeGet('API_BASE_URL')?.trim();
-    if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
+    try {
+      final fromEnv = dotenv.maybeGet('API_BASE_URL')?.trim();
+      if (fromEnv != null && fromEnv.isNotEmpty) return fromEnv;
+    } catch (_) {
+      // dotenv not loaded (unit tests / early boot)
+    }
     return _defaultBaseUrl;
   }
 

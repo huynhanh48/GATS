@@ -25,5 +25,10 @@ class AuthUser {
         AuthMethod.demo => 'Demo',
       };
 
-  String get roleLabel => role.label;
+  @Deprecated('Use AuthL10n.roleLabel')
+  String get roleLabel => switch (role) {
+        UserRole.user => 'Học viên',
+        UserRole.mentor => 'Mentor',
+        UserRole.admin => 'Admin',
+      };
 }

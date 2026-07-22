@@ -2055,4 +2055,58 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get headerSubtitleNotifications => 'Tin tức & nhắc nhở học tập';
+
+  @override
+  String get ordersMineTitle => 'Đơn hàng của tôi';
+
+  @override
+  String get ordersLoginRequired => 'Vui lòng đăng nhập để xem đơn hàng.';
+
+  @override
+  String get ordersCancelSuccess => 'Đã hủy đơn hàng';
+
+  @override
+  String get ordersEmptyTitle => 'Chưa có đơn hàng';
+
+  @override
+  String get ordersEmptyDescription =>
+      'Các đơn thanh toán khóa học sẽ hiện ở đây.';
+
+  @override
+  String get ordersRetry => 'Thử lại';
+
+  @override
+  String get ordersCancel => 'Hủy đơn';
+
+  @override
+  String get ordersStatusPending => 'Chờ thanh toán';
+
+  @override
+  String get ordersStatusPaid => 'Đã thanh toán';
+
+  @override
+  String get ordersStatusCancelled => 'Đã hủy';
+
+  @override
+  String get ordersStatusFailed => 'Thất bại';
+
+  @override
+  String ordersCouponCode(String code) {
+    return 'Mã $code';
+  }
+
+  @override
+  String get aiQuickAskTitle => 'Thử hỏi nhanh';
+
+  @override
+  String get aiQuickAskLearnNext => 'Tôi nên học gì tiếp?';
+
+  @override
+  String get aiQuickAskExplainAi => 'Giải thích AI cơ bản';
+
+  @override
+  String get aiQuickAskScheduleToday => 'Lên lịch học hôm nay';
+
+  @override
+  String get aiQuickAskPromptQuiz => 'Quiz nhanh về Prompt';
 }

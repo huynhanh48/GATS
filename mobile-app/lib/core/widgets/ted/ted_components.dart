@@ -3,6 +3,7 @@ import 'package:gats_academy/core/constants/course_cover_assets.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/theme/gats_surface.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 
 class TedSearchBar extends StatelessWidget {
@@ -284,14 +285,23 @@ class _TedCourseCover extends StatelessWidget {
         gradient: AppGradients.courseCover(seed),
       ),
     );
-    final url = thumbnailUrl;
+    final url = MediaUrl.resolve(thumbnailUrl);
     if (url != null && url.isNotEmpty) {
       return Image.network(
         url,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => fallback,
+        errorBuilder: (context, error, stackTrace) {
+          // Broken remote URL → local asset cover, then gradient.
+          return Image.asset(
+            CourseCoverAssets.pathForSeed(seed),
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (context, error, stackTrace) => fallback,
+          );
+        },
       );
     }
     return Image.asset(

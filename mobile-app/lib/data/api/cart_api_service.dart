@@ -1,4 +1,5 @@
 import 'package:gats_academy/core/network/api_client.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/api/course_api_paths.dart';
 
 class BeCartItem {
@@ -30,7 +31,7 @@ class BeCartItem {
       finalPrice: (json['finalPrice'] as num?)?.toInt() ?? 0,
       lineTotal: (json['lineTotal'] as num?)?.toInt() ?? 0,
       title: courseMap?['title']?.toString(),
-      thumbnail: courseMap?['thumbnail']?.toString(),
+      thumbnail: MediaUrl.resolve(courseMap?['thumbnail']?.toString()),
     );
   }
 }

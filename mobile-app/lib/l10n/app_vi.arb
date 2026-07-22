@@ -813,5 +813,29 @@
   "notificationsTestScheduled": "Sẽ hiện push sau 5 giây — thu app xuống ngay!",
   "notificationsTestSent": "Đã gửi thông báo test.",
   "notificationsEmpty": "Chưa có thông báo",
-  "headerSubtitleNotifications": "Tin tức & nhắc nhở học tập"
+  "headerSubtitleNotifications": "Tin tức & nhắc nhở học tập",
+  "ordersMineTitle": "Đơn hàng của tôi",
+  "ordersLoginRequired": "Vui lòng đăng nhập để xem đơn hàng.",
+  "ordersCancelSuccess": "Đã hủy đơn hàng",
+  "ordersEmptyTitle": "Chưa có đơn hàng",
+  "ordersEmptyDescription": "Các đơn thanh toán khóa học sẽ hiện ở đây.",
+  "ordersRetry": "Thử lại",
+  "ordersCancel": "Hủy đơn",
+  "ordersStatusPending": "Chờ thanh toán",
+  "ordersStatusPaid": "Đã thanh toán",
+  "ordersStatusCancelled": "Đã hủy",
+  "ordersStatusFailed": "Thất bại",
+  "ordersCouponCode": "Mã {code}",
+  "@ordersCouponCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "aiQuickAskTitle": "Thử hỏi nhanh",
+  "aiQuickAskLearnNext": "Tôi nên học gì tiếp?",
+  "aiQuickAskExplainAi": "Giải thích AI cơ bản",
+  "aiQuickAskScheduleToday": "Lên lịch học hôm nay",
+  "aiQuickAskPromptQuiz": "Quiz nhanh về Prompt"
 }

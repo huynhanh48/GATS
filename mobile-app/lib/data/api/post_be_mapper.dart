@@ -1,3 +1,5 @@
+import 'package:gats_academy/core/utils/html_plain_text.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 
@@ -17,9 +19,10 @@ abstract final class PostBeMapper {
 
     final excerpt = json['excerpt'] as String?;
     final content = json['content'] as String?;
-    final body = (content != null && content.isNotEmpty)
+    final rawBody = (content != null && content.isNotEmpty)
         ? content
         : (excerpt ?? '');
+    final body = HtmlPlainText.from(rawBody);
 
     final status = json['status'] as String? ?? 'published';
 
@@ -31,7 +34,7 @@ abstract final class PostBeMapper {
       authorName: authorName,
       authorRole: UserRole.user,
       scope: PostScope.global,
-      coverImage: json['thumbnail'] as String?,
+      coverImage: MediaUrl.resolve(json['thumbnail'] as String?),
       publishedAt: publishedAt,
       isPublished: status == 'published',
     );
@@ -60,7 +63,7 @@ abstract final class PostBeMapper {
       postId: json['postId'] as String? ?? '',
       authorId: authorId,
       authorName: authorName,
-      body: json['content'] as String? ?? '',
+      body: HtmlPlainText.from(json['content'] as String? ?? ''),
       createdAt: createdAt,
     );
   }

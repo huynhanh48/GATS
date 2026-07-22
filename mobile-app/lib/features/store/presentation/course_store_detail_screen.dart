@@ -391,6 +391,7 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
                 CourseDetailScreen(courseId: course.id),
               ),
               onEnrollFree: () => _enrollFree(course),
+              onViewCart: () => openCart(context),
               onAddToCart: () async {
                 try {
                   await CartController.instance.addToCart(course.id);

@@ -3,6 +3,7 @@ import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/services/app_theme_controller.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/l10n/auth_l10n.dart';
 import 'package:gats_academy/core/services/onboarding_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
@@ -14,6 +15,7 @@ import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/features/settings/presentation/account_screen.dart';
 import 'package:gats_academy/features/store/presentation/order_history_screen.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -157,8 +159,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         future: _loadUser(),
         builder: (context, snapshot) {
           final user = snapshot.data;
+          final l10n = AppLocalizations.of(context);
           final accountSubtitle = user != null
-              ? '${AppStrings.authSignedInAs.replaceFirst('%s', '${user.displayName} (${user.methodLabel})')}\n${AppStrings.authRoleLabel.replaceFirst('%s', user.roleLabel)}'
+              ? '${AppStrings.authSignedInAs.replaceFirst('%s', AuthL10n.userIdentity(l10n, user))}\n${AppStrings.authRoleLabel.replaceFirst('%s', AuthL10n.roleLabel(l10n, user.role))}'
               : AppStrings.authNotSignedIn;
 
           return ListView(
@@ -186,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Divider(height: 1, color: gats.divider),
                       _SettingsTile(
                         icon: Icons.receipt_long_outlined,
-                        title: 'Đơn hàng của tôi',
+                        title: AppStrings.ordersMineTitle,
                         onTap: () => openOrderHistory(context),
                       ),
                       Divider(height: 1, color: gats.divider),

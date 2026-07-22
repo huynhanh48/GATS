@@ -1,3 +1,5 @@
+import 'package:gats_academy/core/utils/html_plain_text.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/api/course_api_paths.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 
@@ -41,13 +43,13 @@ abstract final class CourseBeMapper {
       durationMinutes = (seconds / 60).round();
     }
 
-    final thumb = json['thumbnail'] as String?;
+    final thumb = MediaUrl.resolve(json['thumbnail'] as String?);
 
     return AppCourse(
       id: json['id'] as String,
       slug: json['slug'] as String? ?? '',
       title: json['title'] as String? ?? '',
-      description: json['description'] as String? ?? '',
+      description: HtmlPlainText.from(json['description'] as String? ?? ''),
       tag: tag,
       lessonCount: lessonCount,
       durationMinutes: durationMinutes,
@@ -59,7 +61,7 @@ abstract final class CourseBeMapper {
       isFree: isFree,
       price: price,
       salePrice: salePrice,
-      thumbnailUrl: (thumb != null && thumb.isNotEmpty) ? thumb : null,
+      thumbnailUrl: thumb,
       enrolledUserIds: enrolledUserIds,
       progressByUser: progressByUser,
       lectures: lectures,

@@ -60,7 +60,7 @@ class _CartScreenState extends State<CartScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Đơn hàng',
+            tooltip: AppStrings.ordersMineTitle,
             icon: Icon(Icons.receipt_long_outlined, color: gats.textPrimary),
             onPressed: () => openOrderHistory(context),
           ),

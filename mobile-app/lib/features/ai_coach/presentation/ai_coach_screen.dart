@@ -97,16 +97,33 @@ class _WelcomeHero extends StatelessWidget {
 
   final ValueChanged<String> onPrompt;
 
-  static const _suggestions = [
-    _Suggestion('Tôi nên học gì tiếp?', Icons.school_rounded, [Color(0xFF3D8FEF), Color(0xFF7C3AED)]),
-    _Suggestion('Giải thích AI cơ bản', Icons.lightbulb_rounded, [Color(0xFFFF9A56), Color(0xFFFF7622)]),
-    _Suggestion('Lên lịch học hôm nay', Icons.calendar_month_rounded, [Color(0xFF10B981), Color(0xFF059669)]),
-    _Suggestion('Quiz nhanh về Prompt', Icons.quiz_rounded, [Color(0xFFEC4899), Color(0xFF8B5CF6)]),
-  ];
+  static List<_Suggestion> _suggestions(BuildContext context) => [
+        _Suggestion(
+          AppStrings.aiQuickAskLearnNext,
+          Icons.school_rounded,
+          const [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
+        ),
+        _Suggestion(
+          AppStrings.aiQuickAskExplainAi,
+          Icons.lightbulb_rounded,
+          const [Color(0xFFFF9A56), Color(0xFFFF7622)],
+        ),
+        _Suggestion(
+          AppStrings.aiQuickAskScheduleToday,
+          Icons.calendar_month_rounded,
+          const [Color(0xFF10B981), Color(0xFF059669)],
+        ),
+        _Suggestion(
+          AppStrings.aiQuickAskPromptQuiz,
+          Icons.quiz_rounded,
+          const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
+    final suggestions = _suggestions(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -144,7 +161,7 @@ class _WelcomeHero extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            'Thử hỏi nhanh',
+            AppStrings.aiQuickAskTitle,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
@@ -156,7 +173,7 @@ class _WelcomeHero extends StatelessWidget {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _suggestions.length,
+            itemCount: suggestions.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: AppSpacing.md,
@@ -164,7 +181,7 @@ class _WelcomeHero extends StatelessWidget {
               childAspectRatio: 1.28,
             ),
             itemBuilder: (context, i) {
-              final s = _suggestions[i];
+              final s = suggestions[i];
               return _SuggestionTile(
                 suggestion: s,
                 onTap: () => onPrompt(s.label),

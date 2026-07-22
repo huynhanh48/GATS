@@ -1009,5 +1009,29 @@
   "notificationsTestScheduled": "Push in 5 seconds — minimize the app now!",
   "notificationsTestSent": "Test notification sent.",
   "notificationsEmpty": "No notifications yet",
-  "headerSubtitleNotifications": "News & learning reminders"
+  "headerSubtitleNotifications": "News & learning reminders",
+  "ordersMineTitle": "My orders",
+  "ordersLoginRequired": "Please sign in to view your orders.",
+  "ordersCancelSuccess": "Order cancelled",
+  "ordersEmptyTitle": "No orders yet",
+  "ordersEmptyDescription": "Course payment orders will appear here.",
+  "ordersRetry": "Try again",
+  "ordersCancel": "Cancel order",
+  "ordersStatusPending": "Awaiting payment",
+  "ordersStatusPaid": "Paid",
+  "ordersStatusCancelled": "Cancelled",
+  "ordersStatusFailed": "Failed",
+  "ordersCouponCode": "Code {code}",
+  "@ordersCouponCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "aiQuickAskTitle": "Try asking",
+  "aiQuickAskLearnNext": "What should I learn next?",
+  "aiQuickAskExplainAi": "Explain basic AI",
+  "aiQuickAskScheduleToday": "Plan today's study",
+  "aiQuickAskPromptQuiz": "Quick quiz on Prompt"
 }

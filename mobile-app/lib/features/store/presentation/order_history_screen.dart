@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/network/api_exception.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
@@ -28,13 +29,17 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   Future<List<BeOrderSummary>> _load() async {
     final token = await AuthPrefs.accessToken();
     if (token == null || token.isEmpty) {
-      throw ApiException('Vui lòng đăng nhập để xem đơn hàng.');
+      throw ApiException(AppStrings.ordersLoginRequired);
     }
     return OrderApiService.listMine(token: token);
   }
 
-  void _reload() {
-    setState(() => _future = _load());
+  Future<void> _reload() {
+    final future = _load();
+    setState(() {
+      _future = future;
+    });
+    return future;
   }
 
   Future<void> _cancel(BeOrderSummary order) async {
@@ -45,9 +50,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       await OrderApiService.cancel(token: token, orderId: order.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã hủy đơn hàng')),
+        SnackBar(content: Text(AppStrings.ordersCancelSuccess)),
       );
-      _reload();
+      await _reload();
     } catch (e) {
       if (!mounted) return;
       final msg = e is ApiException ? e.message : e.toString();
@@ -59,10 +64,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   static String _statusLabel(String status) {
     return switch (status) {
-      'pending' => 'Chờ thanh toán',
-      'paid' => 'Đã thanh toán',
-      'cancelled' || 'canceled' => 'Đã hủy',
-      'failed' => 'Thất bại',
+      'pending' => AppStrings.ordersStatusPending,
+      'paid' => AppStrings.ordersStatusPaid,
+      'cancelled' || 'canceled' => AppStrings.ordersStatusCancelled,
+      'failed' => AppStrings.ordersStatusFailed,
       _ => status,
     };
   }
@@ -76,7 +81,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         backgroundColor: gats.isStarry ? Colors.transparent : gats.background,
         surfaceTintColor: Colors.transparent,
         title: Text(
-          'Đơn hàng của tôi',
+          AppStrings.ordersMineTitle,
           style: AppTypography.style(
             fontSize: 18,
             fontWeight: FontWeight.w800,
@@ -104,7 +109,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _reload,
-                      child: const Text('Thử lại'),
+                      child: Text(AppStrings.ordersRetry),
                     ),
                   ],
                 ),
@@ -117,14 +122,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             return Center(
               child: EmptyState(
                 icon: Icons.receipt_long_outlined,
-                title: 'Chưa có đơn hàng',
-                description: 'Các đơn thanh toán khóa học sẽ hiện ở đây.',
+                title: AppStrings.ordersEmptyTitle,
+                description: AppStrings.ordersEmptyDescription,
               ),
             );
           }
 
           return RefreshIndicator(
-            onRefresh: () async => _reload(),
+            onRefresh: _reload,
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               itemCount: orders.length,
@@ -176,7 +181,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                             order.paymentMethod,
                           if (order.couponCode != null &&
                               order.couponCode!.isNotEmpty)
-                            'Mã ${order.couponCode}',
+                            AppStrings.ordersCouponCode(order.couponCode!),
                           if (order.createdAt != null) order.createdAt!,
                         ].join(' · '),
                         style: TextStyle(
@@ -198,7 +203,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                       strokeWidth: 2,
                                     ),
                                   )
-                                : const Text('Hủy đơn'),
+                                : Text(AppStrings.ordersCancel),
                           ),
                         ),
                       ],

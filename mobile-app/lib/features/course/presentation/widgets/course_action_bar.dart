@@ -20,6 +20,7 @@ class CourseActionBar extends StatelessWidget {
     this.onContinue,
     this.onEnrollFree,
     this.onAddToCart,
+    this.onViewCart,
     this.onBuyNow,
     this.priceLabel,
   });
@@ -29,6 +30,7 @@ class CourseActionBar extends StatelessWidget {
   final VoidCallback? onContinue;
   final VoidCallback? onEnrollFree;
   final VoidCallback? onAddToCart;
+  final VoidCallback? onViewCart;
   final VoidCallback? onBuyNow;
   final String? priceLabel;
 
@@ -91,7 +93,7 @@ class CourseActionBar extends StatelessWidget {
     final (label, onPressed) = switch (kind) {
       CourseActionKind.continueLearning => (AppStrings.continueLearning, onContinue),
       CourseActionKind.enrollFree => (AppStrings.courseEnrollFree, onEnrollFree),
-      CourseActionKind.inCart => (AppStrings.storeViewCart, null),
+      CourseActionKind.inCart => (AppStrings.storeViewCart, onViewCart),
       CourseActionKind.addToCart => (AppStrings.storeAddToCart, onAddToCart),
       CourseActionKind.buyNow => (AppStrings.cartCheckout, onBuyNow),
     };

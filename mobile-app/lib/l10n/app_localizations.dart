@@ -3817,6 +3817,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'News & learning reminders'**
   String get headerSubtitleNotifications;
+
+  /// No description provided for @ordersMineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My orders'**
+  String get ordersMineTitle;
+
+  /// No description provided for @ordersLoginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign in to view your orders.'**
+  String get ordersLoginRequired;
+
+  /// No description provided for @ordersCancelSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Order cancelled'**
+  String get ordersCancelSuccess;
+
+  /// No description provided for @ordersEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders yet'**
+  String get ordersEmptyTitle;
+
+  /// No description provided for @ordersEmptyDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Course payment orders will appear here.'**
+  String get ordersEmptyDescription;
+
+  /// No description provided for @ordersRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get ordersRetry;
+
+  /// No description provided for @ordersCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel order'**
+  String get ordersCancel;
+
+  /// No description provided for @ordersStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting payment'**
+  String get ordersStatusPending;
+
+  /// No description provided for @ordersStatusPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get ordersStatusPaid;
+
+  /// No description provided for @ordersStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get ordersStatusCancelled;
+
+  /// No description provided for @ordersStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get ordersStatusFailed;
+
+  /// No description provided for @ordersCouponCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code {code}'**
+  String ordersCouponCode(String code);
+
+  /// No description provided for @aiQuickAskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Try asking'**
+  String get aiQuickAskTitle;
+
+  /// No description provided for @aiQuickAskLearnNext.
+  ///
+  /// In en, this message translates to:
+  /// **'What should I learn next?'**
+  String get aiQuickAskLearnNext;
+
+  /// No description provided for @aiQuickAskExplainAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain basic AI'**
+  String get aiQuickAskExplainAi;
+
+  /// No description provided for @aiQuickAskScheduleToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan today\'s study'**
+  String get aiQuickAskScheduleToday;
+
+  /// No description provided for @aiQuickAskPromptQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick quiz on Prompt'**
+  String get aiQuickAskPromptQuiz;
 }
 
 class _AppLocalizationsDelegate

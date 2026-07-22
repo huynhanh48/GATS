@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 
 /// Ảnh bìa bài viết — crop vừa khung [aspectRatio].
@@ -19,8 +20,10 @@ class PostCoverImage extends StatelessWidget {
   final BorderRadius? borderRadius;
   final int fallbackSeed;
 
-  bool get _isNetwork =>
-      assetPath.startsWith('http://') || assetPath.startsWith('https://');
+  bool get _isNetwork {
+    final resolved = MediaUrl.resolve(assetPath) ?? assetPath;
+    return resolved.startsWith('http://') || resolved.startsWith('https://');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +33,7 @@ class PostCoverImage extends StatelessWidget {
         gradient: AppGradients.courseCover(fallbackSeed),
       ),
     );
+    final path = MediaUrl.resolve(assetPath) ?? assetPath;
 
     return ClipRRect(
       borderRadius: radius,
@@ -37,13 +41,13 @@ class PostCoverImage extends StatelessWidget {
         aspectRatio: aspectRatio,
         child: _isNetwork
             ? Image.network(
-                assetPath,
+                path,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) => fallback,
               )
             : Image.asset(
-                assetPath,
+                path,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 errorBuilder: (context, error, stackTrace) => fallback,

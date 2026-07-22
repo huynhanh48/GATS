@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/utils/html_plain_text.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/catalog/catalog_paths.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 
@@ -137,13 +139,13 @@ class CourseCatalogLoader {
     final saleRaw = json['salePrice'];
     final salePrice = saleRaw == null ? null : (saleRaw as num).toDouble();
     final isFree = json['isFree'] as bool? ?? price <= 0;
-    final thumb = json['thumbnail'] as String?;
+    final thumb = MediaUrl.resolve(json['thumbnail'] as String?);
 
     return AppCourse(
       id: id,
       slug: json['slug'] as String? ?? '',
       title: json['title'] as String,
-      description: json['description'] as String,
+      description: HtmlPlainText.from(json['description'] as String? ?? ''),
       tag: json['tag'] as String,
       lessonCount: json['lessonCount'] as int,
       durationMinutes: json['durationMinutes'] as int,
@@ -153,7 +155,7 @@ class CourseCatalogLoader {
       isFree: isFree,
       price: price,
       salePrice: salePrice,
-      thumbnailUrl: (thumb != null && thumb.isNotEmpty) ? thumb : null,
+      thumbnailUrl: thumb,
       enrolledUserIds: enrolledUserIds,
       progressByUser: progressByUser,
       lectures: lectures

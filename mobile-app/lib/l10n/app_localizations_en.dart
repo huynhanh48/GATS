@@ -2071,4 +2071,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get headerSubtitleNotifications => 'News & learning reminders';
+
+  @override
+  String get ordersMineTitle => 'My orders';
+
+  @override
+  String get ordersLoginRequired => 'Please sign in to view your orders.';
+
+  @override
+  String get ordersCancelSuccess => 'Order cancelled';
+
+  @override
+  String get ordersEmptyTitle => 'No orders yet';
+
+  @override
+  String get ordersEmptyDescription =>
+      'Course payment orders will appear here.';
+
+  @override
+  String get ordersRetry => 'Try again';
+
+  @override
+  String get ordersCancel => 'Cancel order';
+
+  @override
+  String get ordersStatusPending => 'Awaiting payment';
+
+  @override
+  String get ordersStatusPaid => 'Paid';
+
+  @override
+  String get ordersStatusCancelled => 'Cancelled';
+
+  @override
+  String get ordersStatusFailed => 'Failed';
+
+  @override
+  String ordersCouponCode(String code) {
+    return 'Code $code';
+  }
+
+  @override
+  String get aiQuickAskTitle => 'Try asking';
+
+  @override
+  String get aiQuickAskLearnNext => 'What should I learn next?';
+
+  @override
+  String get aiQuickAskExplainAi => 'Explain basic AI';
+
+  @override
+  String get aiQuickAskScheduleToday => 'Plan today\'s study';
+
+  @override
+  String get aiQuickAskPromptQuiz => 'Quick quiz on Prompt';
 }

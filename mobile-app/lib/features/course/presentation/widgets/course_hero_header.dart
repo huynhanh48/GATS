@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/course_cover_assets.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
+import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 
 /// Banner đầu màn preview khóa — ảnh bìa + app bar overlay (back / yêu thích).
@@ -24,6 +25,8 @@ class CourseHeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final topInset = MediaQuery.paddingOf(context).top;
     final height = bannerHeight + topInset;
+    final thumb = MediaUrl.resolve(course.thumbnailUrl);
+    final assetPath = CourseCoverAssets.pathForSeed(course.id.hashCode);
 
     return SizedBox(
       height: height,
@@ -32,18 +35,21 @@ class CourseHeroHeader extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Image(
-            image: (course.thumbnailUrl != null &&
-                    course.thumbnailUrl!.isNotEmpty)
-                ? NetworkImage(course.thumbnailUrl!) as ImageProvider
-                : AssetImage(
-                    CourseCoverAssets.pathForSeed(course.id.hashCode),
-                  ),
+            image: (thumb != null && thumb.isNotEmpty)
+                ? NetworkImage(thumb) as ImageProvider
+                : AssetImage(assetPath),
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              return DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: AppGradients.courseCover(course.id.hashCode),
-                ),
+              return Image.asset(
+                assetPath,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: AppGradients.courseCover(course.id.hashCode),
+                    ),
+                  );
+                },
               );
             },
           ),

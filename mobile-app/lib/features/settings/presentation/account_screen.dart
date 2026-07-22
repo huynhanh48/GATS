@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/l10n/auth_l10n.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
@@ -7,6 +8,7 @@ import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/data/api/auth_api_service.dart';
+import 'package:gats_academy/l10n/app_localizations.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -168,6 +170,7 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
+    final l10n = AppLocalizations.of(context);
 
     return GatsThemedScaffold(
       appBar: AppBar(
@@ -195,7 +198,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_user!.methodLabel} · ${_user!.roleLabel}',
+                      '${AuthL10n.methodLabel(l10n, _user!.method)} · ${AuthL10n.roleLabel(l10n, _user!.role)}',
                       style: TextStyle(
                         color: gats.textSecondary,
                         fontSize: 13,
