@@ -17,6 +17,8 @@ import 'package:gats_academy/features/course/presentation/widgets/course_lecture
 import 'package:gats_academy/features/course/presentation/widgets/course_tab_shell.dart';
 import 'package:gats_academy/features/course/presentation/widgets/group_chat_panel.dart';
 import 'package:gats_academy/features/course/presentation/widgets/lecture_preview_sheet.dart';
+import 'package:gats_academy/features/course/presentation/quiz_take_screen.dart';
+import 'package:gats_academy/features/course/presentation/lesson_quiz_launcher.dart';
 import 'package:gats_academy/features/store/presentation/course_store_detail_screen.dart';
 
 /// Màn học đầy đủ — chỉ dành cho khóa đã mua / đăng ký (hoặc mentor/admin).
@@ -192,6 +194,10 @@ class _CourseLearningViewState extends State<_CourseLearningView>
     setState(() => _progressReady = true);
   }
 
+  Future<void> _markLectureComplete(CourseLecture lecture) async {
+    await _progress.markComplete(lecture.id);
+  }
+
   void _onProgressChanged() {
     if (mounted) setState(() {});
   }
@@ -239,7 +245,7 @@ class _CourseLearningViewState extends State<_CourseLearningView>
       index: index,
       total: _progress.totalCount,
       state: _progress.stateOf(lecture),
-      onMarkComplete: () => _progress.markComplete(lecture.id),
+      onMarkComplete: () => _markLectureComplete(lecture),
     );
   }
 
@@ -293,11 +299,27 @@ class _CourseLearningViewState extends State<_CourseLearningView>
             )
           : null,
       tabBodies: [
-        _LecturesTab(
-          lectures: _published,
-          progressReady: _progressReady,
-          bottomInset: showContinueBar ? 96 : 0,
-          onOpen: _openLecture,
+        Column(
+          children: [
+            if (_progress.syncError != null)
+              MaterialBanner(
+                content: Text(_progress.syncError!),
+                actions: [
+                  TextButton(
+                    onPressed: () => _progress.retrySync(),
+                    child: const Text('Thử lại'),
+                  ),
+                ],
+              ),
+            Expanded(
+              child: _LecturesTab(
+                lectures: _published,
+                progressReady: _progressReady && !_progress.isLoading,
+                bottomInset: showContinueBar ? 96 : 0,
+                onOpen: _openLecture,
+              ),
+            ),
+          ],
         ),
         _QuizTab(
           course: course,
@@ -380,11 +402,14 @@ class _QuizTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final quizzes = course.quizzes
+    final fromCourse = course.quizzes
         .where((q) => q.isPublished || isMentor)
         .toList();
+    final fromLessons = course.lectures
+        .where((l) => l.isPublished && l.isQuiz && (isMentor || !l.locked))
+        .toList();
 
-    if (quizzes.isEmpty) {
+    if (fromCourse.isEmpty && fromLessons.isEmpty) {
       return EmptyState(
         icon: Icons.quiz_outlined,
         title: AppStrings.quizEmptyTitle,
@@ -392,92 +417,167 @@ class _QuizTab extends StatelessWidget {
       );
     }
 
-    return ListView.separated(
+    return ListView(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
         AppSpacing.lg,
         AppSpacing.lg,
         AppSpacing.lg + bottomInset,
       ),
-      itemCount: quizzes.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) {
-        final quiz = quizzes[index];
-        return SectionCard(
-          padding: EdgeInsets.zero,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              onTap: quiz.isPublished && !isMentor
-                  ? () => ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(AppStrings.comingSoon)),
-                      )
-                  : null,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: gats.lavenderAccent.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        quiz.isPublished
-                            ? Icons.quiz_outlined
-                            : Icons.edit_note_outlined,
-                        color: gats.lavenderAccent,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            quiz.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
-                              color: gats.textPrimary,
-                            ),
+      children: [
+        ...fromCourse.map((quiz) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: SectionCard(
+              padding: EdgeInsets.zero,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onTap: quiz.isPublished && !isMentor
+                      ? () => QuizTakeScreen.open(
+                            context,
+                            quizId: quiz.id,
+                            title: quiz.title,
+                          )
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: gats.lavenderAccent.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${quiz.questionCount} câu · ${quiz.isPublished ? 'Đã giao' : 'Nháp'}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: gats.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Icon(
+                            quiz.isPublished
+                                ? Icons.quiz_outlined
+                                : Icons.edit_note_outlined,
+                            color: gats.lavenderAccent,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                quiz.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: gats.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${quiz.questionCount} câu · ${quiz.isPublished ? 'Đã giao' : 'Nháp'}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: gats.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isMentor && !quiz.isPublished)
+                          TextButton(
+                            onPressed: () {
+                              CourseModule.repository
+                                  .publishQuiz(course.id, quiz.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text(AppStrings.courseQuizPublished),
+                                ),
+                              );
+                            },
+                            child: const Text('Giao bài'),
+                          )
+                        else if (quiz.isPublished)
+                          Icon(Icons.chevron_right, color: gats.textSecondary),
+                      ],
                     ),
-                    if (isMentor && !quiz.isPublished)
-                      TextButton(
-                        onPressed: () {
-                          CourseModule.repository.publishQuiz(course.id, quiz.id);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(AppStrings.courseQuizPublished)),
-                          );
-                        },
-                        child: const Text('Giao bài'),
-                      )
-                    else if (quiz.isPublished)
-                      Icon(Icons.chevron_right, color: gats.textSecondary),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        }),
+        ...fromLessons.map((lecture) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: SectionCard(
+              padding: EdgeInsets.zero,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onTap: () => LessonQuizLauncher.open(
+                    context,
+                    courseId: course.id,
+                    lessonId: lecture.id,
+                    title: lecture.title,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: gats.lavenderAccent.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.quiz_outlined,
+                            color: gats.lavenderAccent,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                lecture.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  color: gats.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Quiz bài học',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: gats.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, color: gats.textSecondary),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 }

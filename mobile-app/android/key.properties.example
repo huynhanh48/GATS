@@ -1,0 +1,5 @@
+# Copy to android/key.properties (do not commit) and point storeFile to your .jks/.keystore.
+storePassword=
+keyPassword=
+keyAlias=
+storeFile=

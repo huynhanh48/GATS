@@ -8,6 +8,7 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/store/presentation/payment_screen.dart';
+import 'package:gats_academy/features/store/presentation/order_history_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -57,6 +58,13 @@ class _CartScreenState extends State<CartScreen> {
             color: gats.textPrimary,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Đơn hàng',
+            icon: Icon(Icons.receipt_long_outlined, color: gats.textPrimary),
+            onPressed: () => openOrderHistory(context),
+          ),
+        ],
       ),
       body: cartItems.isEmpty
           ? Center(

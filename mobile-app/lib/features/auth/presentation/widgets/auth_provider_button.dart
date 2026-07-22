@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/brand_icon.dart';
 
-/// Nút provider kiểu Brilliant — Apple / Google cạnh nhau.
+/// Nút provider kiểu Brilliant — Google (+ Apple/MoMo khi có callback).
 class AuthProviderButton extends StatelessWidget {
   const AuthProviderButton({
     super.key,
@@ -38,7 +38,7 @@ class AuthProviderButton extends StatelessWidget {
 class AuthProviderRow extends StatelessWidget {
   const AuthProviderRow({
     super.key,
-    required this.onApple,
+    this.onApple,
     required this.onGoogle,
     this.onMomo,
     this.momoLabel,
@@ -53,17 +53,20 @@ class AuthProviderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showApple = onApple != null;
     return Column(
       children: [
         Row(
           children: [
-            Expanded(
-              child: AuthProviderButton(
-                onPressed: enabled ? onApple : null,
-                icon: const BrandIcon(type: BrandIconType.apple, size: 28),
+            if (showApple) ...[
+              Expanded(
+                child: AuthProviderButton(
+                  onPressed: enabled ? onApple : null,
+                  icon: const BrandIcon(type: BrandIconType.apple, size: 28),
+                ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
+            ],
             Expanded(
               child: AuthProviderButton(
                 onPressed: enabled ? onGoogle : null,

@@ -94,6 +94,7 @@ abstract final class CourseBeMapper {
                   durationSec == null ? 0 : (durationSec / 60).round(),
               isPreview: isPreview,
               locked: locked,
+              type: lesson['type'] as String? ?? 'video',
             ),
           );
         }

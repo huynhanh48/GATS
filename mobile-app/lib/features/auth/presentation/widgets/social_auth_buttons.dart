@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
@@ -20,6 +21,7 @@ class SocialAuthButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final showMomo = kDebugMode && onMomo != null;
 
     return Column(
       children: [
@@ -45,12 +47,14 @@ class SocialAuthButtons extends StatelessWidget {
               onPressed: isLoading ? null : onApple,
               child: const BrandIcon(type: BrandIconType.apple, size: 31),
             ),
-            const SizedBox(width: AppSpacing.xl),
-            _SocialCircleButton(
-              tooltip: l10n.authMomo,
-              onPressed: isLoading ? null : onMomo,
-              child: const BrandIcon(type: BrandIconType.momo, size: 32),
-            ),
+            if (showMomo) ...[
+              const SizedBox(width: AppSpacing.xl),
+              _SocialCircleButton(
+                tooltip: l10n.authMomo,
+                onPressed: isLoading ? null : onMomo,
+                child: const BrandIcon(type: BrandIconType.momo, size: 32),
+              ),
+            ],
           ],
         ),
       ],

@@ -59,15 +59,28 @@ abstract final class SocialAuthService {
       if (kDebugMode) {
         debugPrint('SocialAuth[google] GoogleSignInException: ${e.code.name} — ${e.description}');
       }
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        throw const AuthException(AuthErrorCode.socialCancelled);
-      }
-      if (e.code == GoogleSignInExceptionCode.clientConfigurationError ||
+      final desc = (e.description ?? '').toLowerCase();
+      // CredMan [16] Account reauth failed — thường do thiếu Android OAuth client
+      // (package + SHA-1) trên Google Cloud, không phải user bấm Cancel.
+      final looksMisconfigured = desc.contains('reauth failed') ||
+          desc.contains('developer_error') ||
+          desc.contains('10:') ||
+          desc.contains('[10]');
+      if (looksMisconfigured ||
+          e.code == GoogleSignInExceptionCode.clientConfigurationError ||
           e.code == GoogleSignInExceptionCode.providerConfigurationError) {
         throw AuthException(
           AuthErrorCode.socialGoogleMisconfigured,
-          serverMessage: e.description,
+          serverMessage:
+              'Google OAuth Android chưa cấu hình đúng. '
+              'Tạo OAuth client kiểu Android với package com.gat.academy '
+              'và SHA-1 debug/release trên Google Cloud Console '
+              '(xem docs/huong-dan-van-hanh-ngay.md §5). '
+              '${e.description ?? ""}',
         );
+      }
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        throw const AuthException(AuthErrorCode.socialCancelled);
       }
       throw AuthException(
         AuthErrorCode.socialFailed,

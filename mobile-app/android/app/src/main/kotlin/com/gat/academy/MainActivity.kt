@@ -1,4 +1,4 @@
-package com.gat.academy.test
+package com.gat.academy
 
 import io.flutter.embedding.android.FlutterActivity
 

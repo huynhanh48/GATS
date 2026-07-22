@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
@@ -370,9 +371,11 @@ class _ChoiceStep extends StatelessWidget {
           const Spacer(flex: 3),
           AuthProviderRow(
             enabled: !isLoading,
-            onApple: onApple,
+            // Apple: ẩn production — BE chưa có auth Apple.
+            onApple: kDebugMode ? onApple : null,
             onGoogle: onGoogle,
-            onMomo: onMomo,
+            // MoMo: ẩn trên production; debug giữ để smoke nội bộ.
+            onMomo: kDebugMode ? onMomo : null,
             momoLabel: l10n.authMomo,
           ),
           const SizedBox(height: AppSpacing.xl),

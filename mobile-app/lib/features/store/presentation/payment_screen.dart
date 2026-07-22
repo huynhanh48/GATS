@@ -9,6 +9,7 @@ import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/utils/price_formatter.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
+import 'package:gats_academy/data/api/coupon_api_service.dart';
 import 'package:gats_academy/data/api/order_api_service.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/store/domain/payment_method.dart';
@@ -33,10 +34,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _couponController = TextEditingController();
   final _cardNumberController = TextEditingController();
   final _cardNameController = TextEditingController();
   final _cardExpiryController = TextEditingController();
   final _cardCvvController = TextEditingController();
+
+  CouponPreviewDto? _couponPreview;
+  String? _couponError;
+  bool _couponLoading = false;
 
   @override
   void initState() {
@@ -57,6 +63,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _pollTimer?.cancel();
     _nameController.dispose();
     _phoneController.dispose();
+    _couponController.dispose();
     _cardNumberController.dispose();
     _cardNameController.dispose();
     _cardExpiryController.dispose();
@@ -121,12 +128,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       final courseIds = CartController.instance.items.keys.toList();
+      final couponCode = _couponPreview?.code.trim().isNotEmpty == true
+          ? _couponPreview!.code
+          : (_couponController.text.trim().isNotEmpty
+              ? _couponController.text.trim()
+              : null);
       final result = await OrderApiService.createFromCart(
         token: token,
         paymentMethod: backendMethod,
         customerName: _nameController.text,
         customerEmail: user.email,
         customerPhone: _phoneController.text,
+        couponCode: couponCode,
       );
 
       // BE đã xóa item khỏi cart server khi tạo order.
@@ -240,12 +253,64 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return e.toString();
   }
 
+  double get _displayTotal {
+    if (_pendingQr != null) return _pendingQr!.amount.toDouble();
+    if (_couponPreview != null) return _couponPreview!.finalAmount.toDouble();
+    return CartController.instance.totalPrice;
+  }
+
+  Future<void> _applyCoupon() async {
+    final code = _couponController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _couponError = 'Nhập mã giảm giá';
+        _couponPreview = null;
+      });
+      return;
+    }
+    final token = await AuthPrefs.accessToken();
+    if (token == null) {
+      _snack(AppStrings.courseLoginToEnroll);
+      return;
+    }
+    setState(() {
+      _couponLoading = true;
+      _couponError = null;
+    });
+    try {
+      final preview = await CouponApiService.preview(
+        token: token,
+        code: code,
+        orderAmount: CartController.instance.totalPrice.round(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _couponPreview = preview;
+        _couponLoading = false;
+        _couponError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _couponPreview = null;
+        _couponLoading = false;
+        _couponError = _messageOf(e);
+      });
+    }
+  }
+
+  void _clearCoupon() {
+    setState(() {
+      _couponController.clear();
+      _couponPreview = null;
+      _couponError = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final total = _pendingQr != null
-        ? _pendingQr!.amount.toDouble()
-        : CartController.instance.totalPrice;
+    final total = _displayTotal;
     final itemCount = _pendingQr != null
         ? _pendingCourseIds.length
         : CartController.instance.totalQuantity;
@@ -271,6 +336,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
               _OrderSummaryCard(
                 totalLabel: formatVndPrice(total),
                 itemCount: itemCount,
+                discountLabel: _pendingQr == null && _couponPreview != null
+                    ? 'Giảm ${formatVndPrice(_couponPreview!.discountAmount.toDouble())}'
+                    : null,
               ),
               const SizedBox(height: 20),
               if (_pendingQr == null) ...[
@@ -287,6 +355,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   nameController: _nameController,
                   phoneController: _phoneController,
                   onChanged: () => setState(() {}),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Mã giảm giá',
+                  style: AppTypography.style(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: gats.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _CouponField(
+                  controller: _couponController,
+                  loading: _couponLoading,
+                  error: _couponError,
+                  applied: _couponPreview,
+                  onApply: _applyCoupon,
+                  onClear: _clearCoupon,
+                  onChanged: () {
+                    if (_couponPreview != null || _couponError != null) {
+                      setState(() {
+                        _couponPreview = null;
+                        _couponError = null;
+                      });
+                    }
+                  },
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -531,10 +625,15 @@ class _LiveQrPanel extends StatelessWidget {
 }
 
 class _OrderSummaryCard extends StatelessWidget {
-  const _OrderSummaryCard({required this.totalLabel, required this.itemCount});
+  const _OrderSummaryCard({
+    required this.totalLabel,
+    required this.itemCount,
+    this.discountLabel,
+  });
 
   final String totalLabel;
   final int itemCount;
+  final String? discountLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -571,6 +670,13 @@ class _OrderSummaryCard extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (discountLabel != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              discountLabel!,
+              style: const TextStyle(color: Color(0xFFB8F0C8), fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 4),
           Text(
             AppStrings.paymentItemCount.replaceFirst('%d', '$itemCount'),
@@ -578,6 +684,96 @@ class _OrderSummaryCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CouponField extends StatelessWidget {
+  const _CouponField({
+    required this.controller,
+    required this.loading,
+    required this.error,
+    required this.applied,
+    required this.onApply,
+    required this.onClear,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final bool loading;
+  final String? error;
+  final CouponPreviewDto? applied;
+  final VoidCallback onApply;
+  final VoidCallback onClear;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: controller,
+                textCapitalization: TextCapitalization.characters,
+                onChanged: (_) => onChanged(),
+                decoration: InputDecoration(
+                  hintText: 'Nhập mã',
+                  filled: true,
+                  fillColor: gats.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: gats.divider),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: gats.divider),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            if (applied != null)
+              OutlinedButton(
+                onPressed: onClear,
+                child: const Text('Xóa'),
+              )
+            else
+              FilledButton(
+                onPressed: loading ? null : onApply,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(88, 48),
+                ),
+                child: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Áp dụng'),
+              ),
+          ],
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 8),
+          Text(error!, style: TextStyle(color: Colors.red.shade400, fontSize: 13)),
+        ],
+        if (applied != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Đã áp dụng ${applied!.code}',
+            style: TextStyle(color: gats.lavenderAccent, fontSize: 13),
+          ),
+        ],
+      ],
     );
   }
 }

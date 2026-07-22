@@ -3,7 +3,6 @@ import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/services/app_theme_controller.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
-import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/services/onboarding_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
@@ -11,6 +10,10 @@ import 'package:gats_academy/core/widgets/rate_app_sheet.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
+import 'package:gats_academy/features/auth/services/auth_service.dart';
+import 'package:gats_academy/features/settings/presentation/account_screen.dart';
+import 'package:gats_academy/features/store/presentation/order_history_screen.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -169,21 +172,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.person_outline,
                       title: AppStrings.settingsAccount,
                       subtitle: accountSubtitle,
-                      onTap: () => _showComingSoon(context),
+                      onTap: () {
+                        if (user == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(AppStrings.authNotSignedIn)),
+                          );
+                          return;
+                        }
+                        openAccount(context);
+                      },
                     ),
                     if (user != null) ...[
+                      Divider(height: 1, color: gats.divider),
+                      _SettingsTile(
+                        icon: Icons.receipt_long_outlined,
+                        title: 'Đơn hàng của tôi',
+                        onTap: () => openOrderHistory(context),
+                      ),
                       Divider(height: 1, color: gats.divider),
                       _SettingsTile(
                         icon: Icons.logout_rounded,
                         title: AppStrings.authSignOut,
                         onTap: () async {
-                          await AuthPrefs.signOut();
+                          await AuthService.signOut();
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(AppStrings.settingsSignOutSuccess),
                             ),
                           );
+                          setState(() {});
                         },
                       ),
                     ],

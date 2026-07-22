@@ -16,7 +16,7 @@ class AuthSession {
   final String token;
 }
 
-/// Gọi API auth theo Postman collection GATS.
+/// Auth REST — mirror Web: token rồi hydrate user qua `/me`.
 abstract final class AuthApiService {
   static Future<AuthSession> register({
     required String userName,
@@ -34,7 +34,12 @@ abstract final class AuthApiService {
           'type': type,
         },
       );
-      return _sessionFromResponse(json, fallbackEmail: email, fallbackName: userName);
+      return _hydrateAfterAuth(
+        json,
+        fallbackEmail: email,
+        fallbackName: userName,
+        fallbackMethod: AuthMethod.email,
+      );
     } on ApiException catch (e) {
       throw _mapApiException(e);
     } on http.ClientException {
@@ -56,7 +61,11 @@ abstract final class AuthApiService {
           'password': password,
         },
       );
-      return _sessionFromResponse(json, fallbackEmail: email);
+      return _hydrateAfterAuth(
+        json,
+        fallbackEmail: email,
+        fallbackMethod: AuthMethod.email,
+      );
     } on ApiException catch (e) {
       throw _mapApiException(e);
     } catch (_) {
@@ -70,7 +79,7 @@ abstract final class AuthApiService {
         AuthApiPaths.verifyEmail,
         body: {'token': token.trim()},
       );
-      return _sessionFromResponse(json);
+      return _hydrateAfterAuth(json);
     } on ApiException catch (e) {
       throw _mapApiException(e);
     } catch (_) {
@@ -78,92 +87,64 @@ abstract final class AuthApiService {
     }
   }
 
-  static Future<AuthSession> loginWithSocial(SocialAuthCredential credential) async {
-    final attempts = <_SocialLoginAttempt>[
-      _SocialLoginAttempt(
-        label: 'login+type+token',
-        path: AuthApiPaths.login,
-        body: {
-          'type': credential.providerType,
-          'token': credential.idToken,
-          if (credential.email != null && credential.email!.isNotEmpty)
-            'email': credential.email,
-          if (credential.displayName != null && credential.displayName!.isNotEmpty)
-            'user_name': credential.displayName,
-        },
-      ),
-      _SocialLoginAttempt(
-        label: 'login+type+id_token',
-        path: AuthApiPaths.login,
-        body: {
-          'type': credential.providerType,
-          'id_token': credential.idToken,
-          if (credential.email != null && credential.email!.isNotEmpty)
-            'email': credential.email,
-        },
-      ),
-      _SocialLoginAttempt(
-        label: 'provider path + token',
-        path: credential.provider == AuthMethod.google
-            ? AuthApiPaths.loginGoogle
-            : AuthApiPaths.loginApple,
-        body: {
-          'token': credential.idToken,
-          'id_token': credential.idToken,
-          if (credential.authorizationCode != null)
-            'authorization_code': credential.authorizationCode,
-        },
-      ),
-    ];
-
-    ApiException? lastError;
-    for (final attempt in attempts) {
-      try {
-        if (kDebugMode) {
-          debugPrint(
-            'AuthApiService.social: try ${attempt.label} → ${attempt.path}',
-          );
-        }
-        final json = await ApiClient.post(attempt.path, body: attempt.body);
-        return _sessionFromResponse(
-          json,
-          fallbackEmail: credential.email,
-          fallbackName: credential.displayName,
-          fallbackMethod: credential.provider,
-        );
-      } on ApiException catch (e) {
-        lastError = e;
-        if (kDebugMode) {
-          debugPrint(
-            'AuthApiService.social: ${attempt.label} failed '
-            '(${e.statusCode}) ${e.message}',
-          );
-        }
-        if (e.statusCode == 404) continue;
-        throw _mapApiException(e);
-      } on http.ClientException catch (e) {
-        if (kDebugMode) {
-          debugPrint('AuthApiService.social: network — ${ApiConfig.baseUrl}${attempt.path} — $e');
-        }
-        throw AuthException(AuthErrorCode.networkError, serverMessage: _networkHint());
-      } on Exception catch (e) {
-        if (kDebugMode) {
-          debugPrint('AuthApiService.social: error — ${ApiConfig.baseUrl}${attempt.path} — $e');
-        }
-        throw AuthException(AuthErrorCode.networkError, serverMessage: _networkHint());
+  /// Google: chỉ `POST /api/user/auth/google` + `{ idToken }`, rồi `/me`.
+  static Future<AuthSession> loginWithGoogle(SocialAuthCredential credential) async {
+    if (credential.provider != AuthMethod.google) {
+      throw const AuthException(
+        AuthErrorCode.socialFailed,
+        serverMessage: 'Provider không phải Google.',
+      );
+    }
+    try {
+      if (kDebugMode) {
+        debugPrint('AuthApiService: Google → ${AuthApiPaths.loginGoogle}');
       }
+      final json = await ApiClient.post(
+        AuthApiPaths.loginGoogle,
+        body: {'idToken': credential.idToken},
+      );
+      return _hydrateAfterAuth(
+        json,
+        fallbackEmail: credential.email,
+        fallbackName: credential.displayName,
+        fallbackMethod: AuthMethod.google,
+      );
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } on http.ClientException {
+      throw AuthException(
+        AuthErrorCode.networkError,
+        serverMessage: _networkHint(),
+      );
+    } catch (_) {
+      throw AuthException(
+        AuthErrorCode.networkError,
+        serverMessage: _networkHint(),
+      );
     }
+  }
 
-    if (lastError != null) {
-      throw _mapApiException(lastError);
-    }
-    throw const AuthException(AuthErrorCode.serverError);
+  /// Apple: BE chưa có — luôn fail rõ ràng.
+  static Future<AuthSession> loginWithApple(SocialAuthCredential credential) async {
+    throw const AuthException(
+      AuthErrorCode.socialFailed,
+      serverMessage: 'Đăng nhập Apple sắp ra mắt.',
+    );
+  }
+
+  @Deprecated('Use loginWithGoogle / loginWithApple')
+  static Future<AuthSession> loginWithSocial(SocialAuthCredential credential) {
+    return switch (credential.provider) {
+      AuthMethod.google => loginWithGoogle(credential),
+      AuthMethod.apple => loginWithApple(credential),
+      _ => throw const AuthException(AuthErrorCode.socialFailed),
+    };
   }
 
   static Future<AuthSession> getMe({required String token}) async {
     try {
       final json = await ApiClient.get(AuthApiPaths.me, token: token);
-      return _sessionFromResponse(json, token: token);
+      return _sessionFromMe(json, token: token);
     } on ApiException catch (e) {
       throw _mapApiException(e);
     } catch (_) {
@@ -171,28 +152,124 @@ abstract final class AuthApiService {
     }
   }
 
-  static AuthSession _sessionFromResponse(
+  static Future<AuthUser> updateMe({
+    required String token,
+    required String userName,
+  }) async {
+    try {
+      final json = await ApiClient.put(
+        AuthApiPaths.me,
+        token: token,
+        body: {'userName': userName.trim()},
+      );
+      return _sessionFromMe(json, token: token).user;
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } catch (_) {
+      throw const AuthException(AuthErrorCode.networkError);
+    }
+  }
+
+  static Future<void> changePassword({
+    required String token,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await ApiClient.post(
+        AuthApiPaths.changePassword,
+        token: token,
+        body: {
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        },
+      );
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } catch (_) {
+      throw const AuthException(AuthErrorCode.networkError);
+    }
+  }
+
+  static Future<void> forgotPassword({required String email}) async {
+    try {
+      await ApiClient.post(
+        AuthApiPaths.forgotPassword,
+        body: {'email': email.trim()},
+      );
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } catch (_) {
+      throw const AuthException(AuthErrorCode.networkError);
+    }
+  }
+
+  static Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await ApiClient.post(
+        AuthApiPaths.resetPassword,
+        body: {
+          'token': token.trim(),
+          'newPassword': newPassword,
+        },
+      );
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } catch (_) {
+      throw const AuthException(AuthErrorCode.networkError);
+    }
+  }
+
+  static Future<void> logout({required String token}) async {
+    try {
+      await ApiClient.post(AuthApiPaths.logout, token: token);
+    } catch (_) {
+      // Local sign-out vẫn chạy dù BE logout fail.
+    }
+  }
+
+  /// Token từ login/google → hydrate user thật từ `/me`.
+  static Future<AuthSession> _hydrateAfterAuth(
     Map<String, dynamic> json, {
-    String? token,
     String? fallbackEmail,
     String? fallbackName,
     AuthMethod? fallbackMethod,
-  }) {
+  }) async {
     final payload = _unwrap(json);
-    final resolvedToken = _readToken(payload) ?? token;
-    if (resolvedToken == null || resolvedToken.isEmpty) {
+    final token = _readToken(payload);
+    if (token == null || token.isEmpty) {
       throw const AuthException(AuthErrorCode.emailVerificationRequired);
     }
+    try {
+      return await getMe(token: token);
+    } on AuthException {
+      // Fallback tạm nếu /me lỗi — vẫn giữ token để retry sau.
+      return AuthSession(
+        user: _userFromJson(
+          _readUserMap(payload),
+          fallbackEmail: fallbackEmail,
+          fallbackName: fallbackName,
+          fallbackMethod: fallbackMethod,
+        ),
+        token: token,
+      );
+    }
+  }
 
+  static AuthSession _sessionFromMe(
+    Map<String, dynamic> json, {
+    required String token,
+    AuthMethod? fallbackMethod,
+  }) {
+    final payload = _unwrap(json);
     final userJson = _readUserMap(payload);
-    final user = _userFromJson(
-      userJson,
-      fallbackEmail: fallbackEmail,
-      fallbackName: fallbackName,
-      fallbackMethod: fallbackMethod,
+    return AuthSession(
+      user: _userFromJson(userJson, fallbackMethod: fallbackMethod),
+      token: token,
     );
-
-    return AuthSession(user: user, token: resolvedToken);
   }
 
   static Map<String, dynamic> _unwrap(Map<String, dynamic> json) {
@@ -225,18 +302,25 @@ abstract final class AuthApiService {
   }) {
     final id = json['id'] ?? json['_id'] ?? json['user_id'];
     final email = (json['email'] as String?)?.trim() ?? fallbackEmail ?? '';
-    final displayName = (json['user_name'] as String?)?.trim().isNotEmpty == true
-        ? (json['user_name'] as String).trim()
-        : (json['name'] as String?)?.trim().isNotEmpty == true
-            ? (json['name'] as String).trim()
-            : (fallbackName ?? email.split('@').first);
+    final rawName = (json['userName'] as String?) ??
+        (json['user_name'] as String?) ??
+        (json['name'] as String?) ??
+        fallbackName;
+    final displayName = (rawName ?? email.split('@').first).trim();
+
+    final roles = json['roles'];
+    final roleFromRoles = roles is List
+        ? roles.map((e) => e.toString().toLowerCase()).toList()
+        : const <String>[];
 
     return AuthUser(
       id: id?.toString() ?? email,
       displayName: displayName.isEmpty ? 'GATS Learner' : displayName,
       email: email,
-      method: _mapMethod(json['type'] as String?) ?? fallbackMethod ?? AuthMethod.email,
-      role: _mapRole(json['type'] as String?),
+      method: _mapMethod(json['type'] as String?) ??
+          fallbackMethod ??
+          AuthMethod.email,
+      role: _mapRole(json['type'] as String?, roleFromRoles),
     );
   }
 
@@ -250,7 +334,9 @@ abstract final class AuthApiService {
     };
   }
 
-  static UserRole _mapRole(String? type) {
+  static UserRole _mapRole(String? type, List<String> roles) {
+    if (roles.contains('admin')) return UserRole.admin;
+    if (roles.contains('mentor')) return UserRole.mentor;
     return switch (type?.toLowerCase()) {
       'mentor' => UserRole.mentor,
       'admin' => UserRole.admin,
@@ -270,16 +356,4 @@ abstract final class AuthApiService {
     }
     return AuthException(AuthErrorCode.serverError, serverMessage: message);
   }
-}
-
-class _SocialLoginAttempt {
-  const _SocialLoginAttempt({
-    required this.label,
-    required this.path,
-    required this.body,
-  });
-
-  final String label;
-  final String path;
-  final Map<String, dynamic> body;
 }

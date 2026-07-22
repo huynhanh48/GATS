@@ -2,6 +2,55 @@ import 'package:gats_academy/core/network/api_client.dart';
 import 'package:gats_academy/data/api/course_api_paths.dart';
 import 'package:gats_academy/data/api/payment_api_paths.dart';
 
+class BeOrderSummary {
+  const BeOrderSummary({
+    required this.id,
+    required this.status,
+    required this.totalAmount,
+    required this.paymentMethod,
+    this.couponCode,
+    this.createdAt,
+    this.txnRef,
+    this.txnStatus,
+    this.itemTitles = const [],
+  });
+
+  final String id;
+  final String status;
+  final int totalAmount;
+  final String paymentMethod;
+  final String? couponCode;
+  final String? createdAt;
+  final String? txnRef;
+  final String? txnStatus;
+  final List<String> itemTitles;
+
+  bool get isPending => status == 'pending';
+  bool get isPaid => status == 'paid';
+
+  factory BeOrderSummary.fromJson(Map<String, dynamic> json) {
+    final items = json['items'];
+    final titles = items is List
+        ? items
+            .whereType<Map>()
+            .map((e) => e['courseName']?.toString() ?? '')
+            .where((t) => t.isNotEmpty)
+            .toList()
+        : <String>[];
+    return BeOrderSummary(
+      id: json['id']?.toString() ?? '',
+      status: json['status']?.toString() ?? '',
+      totalAmount: (json['totalAmount'] as num?)?.toInt() ?? 0,
+      paymentMethod: json['paymentMethod']?.toString() ?? '',
+      couponCode: json['couponCode']?.toString(),
+      createdAt: json['createdAt']?.toString(),
+      txnRef: json['txnRef']?.toString(),
+      txnStatus: json['txnStatus']?.toString(),
+      itemTitles: titles,
+    );
+  }
+}
+
 class BeBankTransferPayment {
   const BeBankTransferPayment({
     required this.txnRef,
@@ -99,6 +148,7 @@ abstract final class OrderApiService {
     String? customerName,
     String? customerEmail,
     String? customerPhone,
+    String? couponCode,
   }) async {
     final json = await ApiClient.post(
       OrderApiPaths.orders,
@@ -111,10 +161,29 @@ abstract final class OrderApiService {
           'customerEmail': customerEmail.trim(),
         if (customerPhone != null && customerPhone.trim().isNotEmpty)
           'customerPhone': customerPhone.trim(),
+        if (couponCode != null && couponCode.trim().isNotEmpty)
+          'couponCode': couponCode.trim(),
       },
       token: token,
     );
     return _parseCreateResult(json);
+  }
+
+  static Future<List<BeOrderSummary>> listMine({required String token}) async {
+    final json = await ApiClient.get(OrderApiPaths.orders, token: token);
+    final data = json['data'];
+    if (data is! List) return const [];
+    return data
+        .whereType<Map>()
+        .map((e) => BeOrderSummary.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  static Future<void> cancel({
+    required String token,
+    required String orderId,
+  }) async {
+    await ApiClient.post(OrderApiPaths.cancel(orderId), token: token);
   }
 
   static Future<BeSepayCheckResult> checkSepay({

@@ -8,8 +8,8 @@
       script: "npm",
       args: "start",
       env: {
-        // development so BootstrapService seeds sample courses/posts/admin.
-        NODE_ENV: "development",
+        // Inherit Compose/VPS env; do not force development (cookie Secure, Helmet…).
+        NODE_ENV: "production",
       },
     },
     {
@@ -19,7 +19,7 @@
       script: "npm",
       args: "run start:worker",
       env: {
-        NODE_ENV: "development",
+        NODE_ENV: "production",
       },
     },
     {
@@ -30,6 +30,8 @@
       env: {
         NODE_ENV: "production",
         PORT: 3005,
+        // Bind all interfaces so host port mapping (3005:3005) works.
+        HOSTNAME: "0.0.0.0",
       },
     },
     {
@@ -40,6 +42,7 @@
       env: {
         NODE_ENV: "production",
         PORT: 9000,
+        HOSTNAME: "0.0.0.0",
       },
     },
   ],

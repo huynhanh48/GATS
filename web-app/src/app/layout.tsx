@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { AuthModalProvider } from "@/components/providers/AuthModalProvider";
-import { CustomCursor } from "@/components/common/CustomCursor";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "@/components/providers/CartProvider";
@@ -42,7 +41,6 @@ export default function RootLayout({
             <AuthProvider>
               <AuthModalProvider>
                 <CartProvider>
-                  <CustomCursor />
                   {children}
                   <Toaster />
                 </CartProvider>

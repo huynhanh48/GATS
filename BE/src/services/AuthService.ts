@@ -4,6 +4,7 @@ import { signToken, getTokenExpiresAt, verifyToken } from '@src/common/utils/jwt
 import { mailService } from '@src/common/utils/mail';
 import { comparePassword, hashPassword } from '@src/common/utils/password';
 import { RouteError } from '@src/common/utils/route-errors';
+import type { CookieOptions, Request } from 'express';
 import logger from 'jet-logger';
 import { OAuth2Client } from 'google-auth-library';
 import {
@@ -376,21 +377,32 @@ async function logout(userId: number, token?: string) {
   return { message: 'Logged out.' };
 }
 
-function getCookieOptions() {
+/**
+ * Cookie options for access token.
+ * Optional `req` enables Secure behind HTTPS reverse proxies (`x-forwarded-proto`).
+ */
+function getCookieOptions(req?: Request): CookieOptions {
   const isProd = EnvVars.NodeEnv === NodeEnvs.PRODUCTION;
+  const forwardedProto = req?.headers?.['x-forwarded-proto'];
+  const proto = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : forwardedProto?.split(',')[0]?.trim();
+  const secure =
+    isProd ||
+    proto === 'https' ||
+    Boolean(req?.secure);
+
   return {
     httpOnly: true,
-    secure: isProd,
-    sameSite: 'lax' as const,
+    secure,
+    sameSite: 'lax',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
-    // Omit domain so the cookie stays host-only (api host in prod;
-    // fine for localhost cross-port FE↔BE in development).
   };
 }
 
-function getClearCookieOptions() {
-  const { httpOnly, secure, sameSite, path } = getCookieOptions();
+function getClearCookieOptions(req?: Request): CookieOptions {
+  const { httpOnly, secure, sameSite, path } = getCookieOptions(req);
   return { httpOnly, secure, sameSite, path };
 }
 

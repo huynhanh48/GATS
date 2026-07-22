@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/data/api/course_api_service.dart';
+import 'package:gats_academy/data/api/progress_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/domain/course_repository.dart';
@@ -13,14 +14,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///   2. Gọi [init] một lần ở app startup (hoặc khi user login/logout).
 ///   3. Sau đó tất cả read operation dùng local cache; write operation
 ///      (enroll) cập nhật cache ngay và gọi API async.
+///
+/// Progress: BE là source of truth; SharedPreferences chỉ cache offline.
 final class ApiCourseRepository extends ChangeNotifier
     implements CourseRepository {
   List<AppCourse> _courses = [];
 
-  /// courseId → Set<userId> đã enroll (được hydrate từ BE khi user login).
+  /// courseId → set of userId đã enroll (được hydrate từ BE khi user login).
   final Map<String, Set<String>> _enrolledByUser = {};
 
-  /// progress theo userId → courseId → 0.0‥1.0 (local SharedPreferences).
+  /// progress theo userId → courseId → 0.0..1.0 (cache; hydrated từ BE).
   final Map<String, Map<String, double>> _progressMap = {};
 
   static const _progressKeyPrefix = 'api_progress_';
@@ -51,25 +54,59 @@ final class ApiCourseRepository extends ChangeNotifier
   Future<void> _fetchMyEnrollments({required String token}) async {
     try {
       final rows = await CourseApiService.listMyEnrollments(token: token);
-      // rows: List<Map<String, dynamic>> where each has 'courseId'
       final userId = (await AuthPrefs.currentUser())?.id;
       if (userId == null) return;
+      final courseIds = <String>[];
       for (final row in rows) {
         final courseId = row['courseId']?.toString();
         if (courseId == null) continue;
         _enrolledByUser.putIfAbsent(courseId, () => {}).add(userId);
+        courseIds.add(courseId);
       }
+      await Future.wait(
+        courseIds.map((id) => refreshCourseProgress(id, userId, token: token)),
+      );
     } catch (e) {
       debugPrint('ApiCourseRepository: fetch enrollments failed — $e');
     }
   }
 
-  Future<void> _loadProgress(String userId, String courseId) async {
+  /// Hydrate % khóa học từ BE; fallback prefs cache nếu offline.
+  Future<void> refreshCourseProgress(
+    String courseId,
+    String userId, {
+    String? token,
+  }) async {
+    final authToken = token ?? await AuthPrefs.accessToken();
+    if (authToken != null && authToken.isNotEmpty) {
+      try {
+        final remote = await ProgressApiService.getCourseProgress(
+          courseId: courseId,
+          token: authToken,
+        );
+        _setProgressLocal(userId, courseId, remote.fraction);
+        return;
+      } catch (e) {
+        debugPrint('ApiCourseRepository: progress API failed — $e');
+      }
+    }
+    await _loadProgressCache(userId, courseId);
+  }
+
+  Future<void> _loadProgressCache(String userId, String courseId) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getDouble('$_progressKeyPrefix${userId}_$courseId');
     if (raw != null) {
       _progressMap.putIfAbsent(userId, () => {})[courseId] = raw;
     }
+  }
+
+  void _setProgressLocal(String userId, String courseId, double progress) {
+    final clamped = progress.clamp(0.0, 1.0);
+    _progressMap.putIfAbsent(userId, () => {})[courseId] = clamped;
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setDouble('$_progressKeyPrefix${userId}_$courseId', clamped);
+    });
   }
 
   // ─── CourseRepository interface ─────────────────────────────────────────────
@@ -207,6 +244,8 @@ final class ApiCourseRepository extends ChangeNotifier
         _courses[idx] = _courses[idx].copyWith(lectures: const []);
       }
       await ensureDetailLoaded(courseId);
+      await refreshCourseProgress(courseId, userId, token: token);
+      notifyListeners();
       return true;
     } catch (e) {
       debugPrint('ApiCourseRepository: enrollFree failed — $e');
@@ -217,13 +256,7 @@ final class ApiCourseRepository extends ChangeNotifier
 
   @override
   void setUserProgress(String courseId, String userId, double progress) {
-    _progressMap.putIfAbsent(userId, () => {})[courseId] =
-        progress.clamp(0.0, 1.0);
-    // Persist local
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setDouble(
-          '$_progressKeyPrefix${userId}_$courseId', progress.clamp(0.0, 1.0));
-    });
+    _setProgressLocal(userId, courseId, progress);
     notifyListeners();
   }
 

@@ -11,7 +11,8 @@ cd /app/gats-academy
 if npx --no-install drizzle-kit push --force; then
   echo "[entrypoint] Schema synced."
 else
-  echo "[entrypoint] WARNING: schema push failed; continuing to start processes anyway."
+  echo "[entrypoint] ERROR: schema push failed; refusing to start production processes."
+  exit 1
 fi
 
 cd /app

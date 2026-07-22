@@ -14,6 +14,8 @@
 #   - MinIO console     http://localhost:9011  (minioadmin / minioadmin)
 #   - MinIO S3 API      http://localhost:9010
 
+# Shared BE/runtime env for worker (dev profile) and app.
+# Production `app` MUST override NODE_ENV=production below.
 x-backend-env: &backend-env
   NODE_ENV: development
   PORT: "3000"
@@ -31,7 +33,7 @@ x-backend-env: &backend-env
   EMAIL_USER: noreply@gats.dev
   EMAIL_PASSWORD: changeme
   APP_URL: ${APP_URL:-https://api.gats.vn}
-  FRONTEND_URL: ${FRONTEND_URL:-https://gats.vn,https://www.gats.vn,https://admin.gats.vn,http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100}
+  FRONTEND_URL: ${FRONTEND_URL:-https://gats.vn,https://admin.gats.vn,http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100}
   # Must match the Web client ID used by the browser (NEXT_PUBLIC_*).
   # Empty → BE returns "Google Login is not configured".
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-${NEXT_PUBLIC_GOOGLE_CLIENT_ID}}
@@ -176,6 +178,8 @@ services:
       - "9100:9000" # admin-dashboard (host 9100; 9000 busy on VPS)
     environment:
       <<: *backend-env
+      # Production gate — do not inherit development from x-backend-env.
+      NODE_ENV: production
       # Admin SSR/proxy → API inside the same container (NOT the public URL).
       BE_API_URL: http://localhost:3000
       # Browser sockets / any NEXT_PUBLIC client calls from admin.

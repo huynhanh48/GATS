@@ -6,6 +6,9 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/data/api/video_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/course/data/lecture_progress_store.dart';
+import 'package:gats_academy/features/course/presentation/assignment_submit_sheet.dart';
+import 'package:gats_academy/features/course/presentation/lesson_quiz_launcher.dart';
+import 'package:gats_academy/features/course/presentation/widgets/learn_extras_panel.dart';
 import 'package:video_player/video_player.dart';
 
 class LecturePreviewSheet extends StatefulWidget {
@@ -58,6 +61,7 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _isLoading = true;
+  bool _marking = false;
   String? _error;
 
   @override
@@ -129,7 +133,11 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
         AppSpacing.xl,
         bottom + AppSpacing.lg,
       ),
-      child: Column(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -214,19 +222,76 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
               ),
             ),
           const SizedBox(height: AppSpacing.xl),
+          if (widget.lecture.isQuiz)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    await LessonQuizLauncher.open(
+                      context,
+                      courseId: widget.courseId,
+                      lessonId: widget.lecture.id,
+                      title: widget.lecture.title,
+                    );
+                  },
+                  icon: const Icon(Icons.quiz_outlined),
+                  label: const Text('Làm quiz'),
+                ),
+              ),
+            ),
+          if (widget.lecture.isAssignment)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  onPressed: () => AssignmentSubmitSheet.show(
+                    context,
+                    courseId: widget.courseId,
+                    lessonId: widget.lecture.id,
+                  ),
+                  icon: const Icon(Icons.assignment_outlined),
+                  label: const Text('Nộp bài tập'),
+                ),
+              ),
+            ),
+          LearnExtrasPanel(
+            courseId: widget.courseId,
+            lessonId: widget.lecture.id,
+          ),
           if (!isCompleted) ...[
             const SizedBox(height: AppSpacing.md),
             SizedBox(
               height: 52,
               child: OutlinedButton(
-                onPressed: () async {
-                  await widget.onMarkComplete();
-                  if (!context.mounted) return;
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(AppStrings.lectureMarkedDone)),
-                  );
-                },
+                onPressed: _marking
+                    ? null
+                    : () async {
+                        setState(() => _marking = true);
+                        try {
+                          await widget.onMarkComplete();
+                          if (!context.mounted) return;
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(AppStrings.lectureMarkedDone),
+                            ),
+                          );
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Không lưu được tiến độ. Thử lại.',
+                              ),
+                            ),
+                          );
+                        } finally {
+                          if (mounted) setState(() => _marking = false);
+                        }
+                      },
                 style: OutlinedButton.styleFrom(
                   foregroundColor: gats.lavenderAccent,
                   side: BorderSide(color: gats.lavenderAccent),
@@ -234,11 +299,18 @@ class _LecturePreviewSheetState extends State<LecturePreviewSheet> {
                     borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                 ),
-                child: Text(AppStrings.lectureMarkComplete),
+                child: _marking
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(AppStrings.lectureMarkComplete),
               ),
             ),
           ],
         ],
+      ),
       ),
     );
   }

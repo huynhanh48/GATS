@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/core/widgets/ui_components.dart';
+import 'package:gats_academy/data/api/certificate_api_service.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
 import 'package:gats_academy/features/hub/presentation/widgets/achievement_timeline.dart';
 import 'package:gats_academy/features/hub/presentation/widgets/leaderboard_section.dart';
@@ -16,8 +18,6 @@ class HubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
     final progress = MockData.hubProgress;
-    final xpRemaining = progress.certXpRequired - progress.currentXp;
-    final canTakeCert = xpRemaining <= 0;
     final rankTitle = MockData.rankTitle(progress.level);
 
     return GatsThemedScaffold(
@@ -89,17 +89,12 @@ class HubScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           const AchievementTimeline(),
           const SizedBox(height: AppSpacing.xl),
-          _CertificateCard(
-            progress: progress,
-            canTakeCert: canTakeCert,
-            xpRemaining: xpRemaining,
-          ),
+          const _CertificatesSection(),
         ],
       ),
     );
   }
 }
-
 class _XpLevelCard extends StatefulWidget {
   const _XpLevelCard({
     required this.progress,
@@ -226,7 +221,6 @@ class _XpLevelCardState extends State<_XpLevelCard>
     );
   }
 }
-
 class _BadgeCard extends StatelessWidget {
   const _BadgeCard({required this.badge});
 
@@ -313,115 +307,149 @@ class _BadgeCard extends StatelessWidget {
   }
 }
 
-class _CertificateCard extends StatelessWidget {
-  const _CertificateCard({
-    required this.progress,
-    required this.canTakeCert,
-    required this.xpRemaining,
-  });
+class _CertificatesSection extends StatefulWidget {
+  const _CertificatesSection();
 
-  final HubProgress progress;
-  final bool canTakeCert;
-  final int xpRemaining;
+  @override
+  State<_CertificatesSection> createState() => _CertificatesSectionState();
+}
+
+class _CertificatesSectionState extends State<_CertificatesSection> {
+  bool _loading = true;
+  String? _error;
+  List<MyCertificateDto> _certs = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final token = await AuthPrefs.accessToken();
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _loading = false;
+          _error = 'Đăng nhập để xem chứng chỉ.';
+          _certs = const [];
+        });
+        return;
+      }
+      final list = await CertificateApiService.listMine(token: token);
+      if (!mounted) return;
+      setState(() {
+        _certs = list.where((c) => c.isIssued).toList();
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Không tải được chứng chỉ.';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
     return SectionCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             AppStrings.hubCertTitle,
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.lg),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withValues(alpha: gats.isStarry ? 0.12 : 0.06),
-                  AppColors.accent.withValues(alpha: gats.isStarry ? 0.12 : 0.06),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(
-                color: canTakeCert
-                    ? gats.lavenderAccent.withValues(alpha: 0.3)
-                    : gats.divider,
-                width: 1.5,
-              ),
-            ),
-            child: Column(
+          if (_loading)
+            const Center(child: CircularProgressIndicator())
+          else if (_error != null)
+            Column(
               children: [
-                Icon(
-                  Icons.workspace_premium,
-                  size: 48,
-                  color: canTakeCert ? gats.lavenderAccent : gats.textSecondary,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'CHỨNG CHỈ',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 3,
-                    color: canTakeCert ? gats.lavenderAccent : gats.textSecondary,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'GATS Academy — AI cho Công sở',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: canTakeCert ? gats.textPrimary : gats.textSecondary,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                ProgressRing(
-                  progress: progress.currentXp / progress.certXpRequired,
-                  size: 60,
-                  strokeWidth: 5,
-                  color: canTakeCert ? gats.lavenderAccent : gats.textSecondary,
-                  child: Text(
-                    '${(progress.currentXp / progress.certXpRequired * 100).round()}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: canTakeCert ? gats.lavenderAccent : gats.textSecondary,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
-                ),
+                Text(_error!, textAlign: TextAlign.center),
+                TextButton(onPressed: _load, child: const Text('Thử lại')),
               ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            canTakeCert
-                ? AppStrings.hubCertReady
-                : AppStrings.hubCertLocked.replaceFirst('%d', '$xpRemaining'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  decoration: TextDecoration.none,
+            )
+          else if (_certs.isEmpty)
+            Text(
+              'Hoàn thành khóa học để nhận chứng chỉ từ GATS Academy.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: gats.textSecondary),
+            )
+          else
+            ..._certs.map((c) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(color: gats.divider),
                 ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: canTakeCert ? () {} : null,
-              child: Text(AppStrings.hubCertButton),
-            ),
-          ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.workspace_premium,
+                            color: gats.lavenderAccent),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            c.courseTitle ?? 'Chứng chỉ khóa học',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: gats.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Số: ${c.certificateNumber}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: gats.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      'Cấp: ${c.issuedAt}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: gats.textSecondary,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: c.certificateNumber),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đã copy mã chứng chỉ'),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.copy, size: 16),
+                        label: const Text('Copy mã'),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
   }
 }
+

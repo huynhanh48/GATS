@@ -4,8 +4,25 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Avoid java.util.Properties / java.io.* — AGP 9 Kotlin DSL fails with Unresolved reference util/io.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties: Map<String, String> =
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile
+            .readLines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() && !it.startsWith("#") && it.contains("=") }
+            .associate { line ->
+                val i = line.indexOf('=')
+                line.substring(0, i).trim() to line.substring(i + 1).trim()
+            }
+    } else {
+        emptyMap()
+    }
+val hasReleaseKeystore = keystoreProperties.isNotEmpty()
+
 android {
-    namespace = "com.gat.academy.test"
+    namespace = "com.gat.academy"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,21 +33,35 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.gat.academy.test"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Production application ID (was com.gat.academy.test).
+        // Re-register Android OAuth client SHA-1/256 in Google Cloud after changing this.
+        applicationId = "com.gat.academy"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties.getValue("keyAlias")
+                keyPassword = keystoreProperties.getValue("keyPassword")
+                storeFile = file(keystoreProperties.getValue("storeFile"))
+                storePassword = keystoreProperties.getValue("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Prefer release keystore; debug fallback for local smoke only — not for Play Store.
+            signingConfig =
+                if (hasReleaseKeystore) {
+                    signingConfigs.getByName("release")
+                } else {
+                    signingConfigs.getByName("debug")
+                }
         }
     }
 }

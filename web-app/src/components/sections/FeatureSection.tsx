@@ -63,7 +63,7 @@ export function FeatureSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.2 }}
-            className="md:col-span-1 md:row-span-2 rounded-3xl border border-border dark:border-white/5 bg-white dark:bg-[#0f1423] p-8 flex flex-col relative overflow-hidden group hover:border-blue-500/30 transition-colors shadow-sm dark:shadow-none"
+            className="md:col-span-1 md:row-span-2 rounded-3xl border border-border dark:border-white/5 bg-card dark:bg-[#0f1423] p-8 flex flex-col relative overflow-hidden group hover:border-blue-500/30 transition-colors shadow-sm dark:shadow-none"
           >
             {/* Reliable inline style radial glow */}
             <div className="absolute inset-0 pointer-events-none dark:hidden" style={{ background: 'radial-gradient(circle at 0% 0%, rgba(0,112,235,0.08) 0%, transparent 60%)' }}></div>
@@ -85,7 +85,7 @@ export function FeatureSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3 }}
-            className="md:col-span-2 md:row-span-1 rounded-3xl border border-border dark:border-white/5 bg-white dark:bg-[#0f1423] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 relative overflow-hidden group hover:border-purple-500/30 transition-colors shadow-sm dark:shadow-none"
+            className="md:col-span-2 md:row-span-1 rounded-3xl border border-border dark:border-white/5 bg-card dark:bg-[#0f1423] p-8 flex flex-col md:flex-row items-start md:items-center gap-6 relative overflow-hidden group hover:border-purple-500/30 transition-colors shadow-sm dark:shadow-none"
           >
             {/* Reliable inline style radial glow */}
             <div className="absolute inset-0 pointer-events-none dark:hidden" style={{ background: 'radial-gradient(circle at 0% 50%, rgba(217,70,239,0.07) 0%, transparent 50%)' }}></div>
@@ -107,7 +107,7 @@ export function FeatureSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.4 }}
-            className="md:col-span-1 md:row-span-1 rounded-3xl border border-border dark:border-white/5 bg-white dark:bg-[#0f1423] p-6 flex flex-col relative overflow-hidden group hover:border-cyan-500/30 transition-colors shadow-sm dark:shadow-none"
+            className="md:col-span-1 md:row-span-1 rounded-3xl border border-border dark:border-white/5 bg-card dark:bg-[#0f1423] p-6 flex flex-col relative overflow-hidden group hover:border-cyan-500/30 transition-colors shadow-sm dark:shadow-none"
           >
             {/* Reliable inline style radial glow */}
             <div className="absolute inset-0 pointer-events-none dark:hidden" style={{ background: 'radial-gradient(circle at 0% 0%, rgba(16,185,129,0.08) 0%, transparent 60%)' }}></div>
@@ -129,7 +129,7 @@ export function FeatureSection() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ delay: 0.5 }}
-            className="md:col-span-1 md:row-span-1 rounded-3xl border border-border dark:border-white/5 bg-white dark:bg-[#0f1423] p-6 flex flex-col relative overflow-hidden group hover:border-amber-500/30 transition-colors shadow-sm dark:shadow-none"
+            className="md:col-span-1 md:row-span-1 rounded-3xl border border-border dark:border-white/5 bg-card dark:bg-[#0f1423] p-6 flex flex-col relative overflow-hidden group hover:border-amber-500/30 transition-colors shadow-sm dark:shadow-none"
           >
             {/* Reliable inline style radial glow */}
             <div className="absolute inset-0 pointer-events-none dark:hidden" style={{ background: 'radial-gradient(circle at 0% 0%, rgba(245,158,11,0.08) 0%, transparent 60%)' }}></div>

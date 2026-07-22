@@ -15,7 +15,6 @@ class BrandIcon extends StatelessWidget {
   final double size;
 
   static const _assetByType = {
-    BrandIconType.google: AppAssets.brandGoogle,
     BrandIconType.apple: AppAssets.brandApple,
     BrandIconType.facebook: AppAssets.brandFacebook,
     BrandIconType.youtube: AppAssets.brandYoutube,
@@ -27,6 +26,13 @@ class BrandIcon extends StatelessWidget {
     if (type == BrandIconType.momo) {
       return _MoMoIcon(size: size);
     }
+    // Google: CustomPaint — tránh SVG asset lỗi render trên một số build.
+    if (type == BrandIconType.google) {
+      return SizedBox.square(
+        dimension: size,
+        child: CustomPaint(painter: _GoogleGPainter()),
+      );
+    }
 
     return SizedBox.square(
       dimension: size,
@@ -35,9 +41,65 @@ class BrandIcon extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.contain,
+        placeholderBuilder: (_) => Icon(
+          Icons.broken_image_outlined,
+          size: size * 0.7,
+          color: Colors.grey,
+        ),
       ),
     );
   }
+}
+
+/// Official-style Google "G" (4-color) — không phụ thuộc file SVG.
+class _GoogleGPainter extends CustomPainter {
+  static const _blue = Color(0xFF4285F4);
+  static const _green = Color(0xFF34A853);
+  static const _yellow = Color(0xFFFBBC05);
+  static const _red = Color(0xFFEA4335);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final s = size.shortestSide;
+    final stroke = s * 0.18;
+    final radius = (s - stroke) / 2;
+    final center = Offset(s / 2, s / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.butt;
+
+    paint.color = _blue;
+    canvas.drawArc(rect, -0.35, 1.55, false, paint);
+
+    paint.color = _green;
+    canvas.drawArc(rect, 1.2, 1.35, false, paint);
+
+    paint.color = _yellow;
+    canvas.drawArc(rect, 2.55, 1.0, false, paint);
+
+    paint.color = _red;
+    canvas.drawArc(rect, 3.55, 1.35, false, paint);
+
+    final barPaint = Paint()
+      ..color = _blue
+      ..style = PaintingStyle.fill;
+    final barH = stroke;
+    final barTop = center.dy - barH / 2;
+    final barLeft = center.dx - s * 0.02;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(barLeft, barTop, s * 0.42, barH),
+        Radius.circular(barH * 0.15),
+      ),
+      barPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _MoMoIcon extends StatelessWidget {

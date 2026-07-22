@@ -1,10 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/data/api/auth_api_service.dart';
 import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/services/mock_auth_provider.dart';
 import 'package:gats_academy/features/auth/services/social_auth_service.dart';
 
-/// Facade auth — API email/password + OAuth + mock MoMo (tạm).
+/// Facade auth — API email/password + Google (Apple/MoMo gated).
 abstract final class AuthService {
   static Future<AuthSession> registerWithEmail({
     required String email,
@@ -28,16 +29,28 @@ abstract final class AuthService {
 
   static Future<AuthSession> signInWithGoogle() async {
     final credential = await SocialAuthService.signInWithGoogle();
-    return AuthApiService.loginWithSocial(credential);
+    return AuthApiService.loginWithGoogle(credential);
   }
 
   static Future<AuthSession> signInWithApple() async {
+    if (!kDebugMode) {
+      throw const AuthException(
+        AuthErrorCode.socialFailed,
+        serverMessage: 'Đăng nhập Apple sắp ra mắt.',
+      );
+    }
     final credential = await SocialAuthService.signInWithApple();
-    return AuthApiService.loginWithSocial(credential);
+    return AuthApiService.loginWithApple(credential);
   }
 
-  /// MoMo mock — bỏ qua API, vào app ngay (dev / demo).
+  /// MoMo mock — chỉ debug.
   static Future<AuthSession> signInWithMomo() async {
+    if (!kDebugMode) {
+      throw const AuthException(
+        AuthErrorCode.socialFailed,
+        serverMessage: 'Đăng nhập MoMo sắp ra mắt.',
+      );
+    }
     await Future<void>.delayed(const Duration(milliseconds: 350));
     return MockAuthProvider.momoSession();
   }
@@ -50,15 +63,22 @@ abstract final class AuthService {
     return AuthPrefs.saveSession(session.user, token: session.token);
   }
 
+  static Future<void> signOut() async {
+    final token = await AuthPrefs.accessToken();
+    if (token != null && token.isNotEmpty) {
+      await AuthApiService.logout(token: token);
+    }
+    await AuthPrefs.signOut();
+  }
+
   static Future<AuthSession?> restoreSession() async {
     final token = await AuthPrefs.accessToken();
     if (token == null || token.isEmpty) return null;
 
-    final cachedUser = await AuthPrefs.currentUser();
-    final mockSession = cachedUser != null
-        ? MockAuthProvider.restoreFromPrefs(cachedUser, token)
-        : null;
-    if (mockSession != null) return mockSession;
+    if (MockAuthProvider.isMockToken(token)) {
+      await AuthPrefs.signOut();
+      return null;
+    }
 
     try {
       return AuthApiService.getMe(token: token);

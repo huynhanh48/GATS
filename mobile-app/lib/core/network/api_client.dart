@@ -70,6 +70,22 @@ abstract final class ApiClient {
     return _decodeObject(response);
   }
 
+  static Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic>? body,
+    String? token,
+    Map<String, String>? headers,
+  }) async {
+    final response = await http
+        .patch(
+          _uri(path),
+          headers: _headers(token: token, extra: headers),
+          body: body == null ? null : jsonEncode(body),
+        )
+        .timeout(ApiConfig.timeout);
+    return _decodeObject(response);
+  }
+
   static Future<Map<String, dynamic>> delete(
     String path, {
     String? token,

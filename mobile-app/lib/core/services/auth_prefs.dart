@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Session prefs — JWT trong Keychain/Keystore; profile fields trong SharedPreferences.
 abstract final class AuthPrefs {
   static const _signedInKey = 'auth_signed_in';
   static const _userIdKey = 'auth_user_id';
@@ -11,16 +13,24 @@ abstract final class AuthPrefs {
   static const _emailKey = 'auth_email';
   static const _methodKey = 'auth_method';
   static const _roleKey = 'auth_role';
-  static const _tokenKey = 'auth_access_token';
+
+  /// Legacy plain-text key — migrate 1 lần rồi xóa.
+  static const _legacyTokenKey = 'auth_access_token';
+  static const _secureTokenKey = 'auth_access_token';
 
   static SharedPreferences? _prefs;
   static bool _memoryFallback = false;
   static AuthUser? _memoryUser;
   static String? _memoryToken;
+  static bool _tokenMigrated = false;
+
+  static const FlutterSecureStorage _secure = FlutterSecureStorage();
 
   static Future<void> init() async {
     _prefs = null;
+    _tokenMigrated = false;
     await _loadPrefs();
+    await _migrateTokenIfNeeded();
   }
 
   static void _useMemoryFallback(Object error) {
@@ -46,6 +56,26 @@ abstract final class AuthPrefs {
     }
   }
 
+  /// Chuyển JWT từ SharedPreferences → secure storage (một lần).
+  static Future<void> _migrateTokenIfNeeded() async {
+    if (_tokenMigrated || _memoryFallback) return;
+    _tokenMigrated = true;
+    try {
+      final prefs = await _loadPrefs();
+      final legacy = prefs?.getString(_legacyTokenKey);
+      if (legacy == null || legacy.isEmpty) return;
+
+      final existing = await _secure.read(key: _secureTokenKey);
+      if (existing == null || existing.isEmpty) {
+        await _secure.write(key: _secureTokenKey, value: legacy);
+      }
+      await prefs?.remove(_legacyTokenKey);
+      debugPrint('AuthPrefs: migrated access token to secure storage');
+    } catch (e) {
+      debugPrint('AuthPrefs: token migrate skipped — $e');
+    }
+  }
+
   static Future<bool> isSignedIn() async {
     final token = await accessToken();
     if (token == null || token.isEmpty) return false;
@@ -66,8 +96,20 @@ abstract final class AuthPrefs {
   static Future<String?> accessToken() async {
     if (_memoryFallback) return _memoryToken;
     try {
+      await _migrateTokenIfNeeded();
+      final secure = await _secure.read(key: _secureTokenKey);
+      if (secure != null && secure.isNotEmpty) {
+        _memoryToken = secure;
+        return secure;
+      }
+      // Fallback legacy nếu migrate chưa chạy / secure fail.
       final prefs = await _loadPrefs();
-      return prefs?.getString(_tokenKey) ?? _memoryToken;
+      final legacy = prefs?.getString(_legacyTokenKey);
+      if (legacy != null && legacy.isNotEmpty) {
+        _memoryToken = legacy;
+        return legacy;
+      }
+      return _memoryToken;
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
       return _memoryToken;
@@ -83,7 +125,7 @@ abstract final class AuthPrefs {
       final prefs = await _loadPrefs();
       if (prefs == null) return _memoryUser;
       if (!(prefs.getBool(_signedInKey) ?? false)) return null;
-      final token = prefs.getString(_tokenKey);
+      final token = await accessToken();
       if (token == null || token.isEmpty) return null;
       final methodName = prefs.getString(_methodKey);
       final roleName = prefs.getString(_roleKey);
@@ -124,7 +166,9 @@ abstract final class AuthPrefs {
       await prefs.setString(_emailKey, user.email);
       await prefs.setString(_methodKey, user.method.name);
       await prefs.setString(_roleKey, user.role.name);
-      await prefs.setString(_tokenKey, token);
+      // Không ghi JWT plain vào prefs.
+      await prefs.remove(_legacyTokenKey);
+      await _secure.write(key: _secureTokenKey, value: token);
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {
@@ -138,14 +182,16 @@ abstract final class AuthPrefs {
     if (_memoryFallback) return;
     try {
       final prefs = await _loadPrefs();
-      if (prefs == null) return;
-      await prefs.remove(_signedInKey);
-      await prefs.remove(_userIdKey);
-      await prefs.remove(_displayNameKey);
-      await prefs.remove(_emailKey);
-      await prefs.remove(_methodKey);
-      await prefs.remove(_roleKey);
-      await prefs.remove(_tokenKey);
+      if (prefs != null) {
+        await prefs.remove(_signedInKey);
+        await prefs.remove(_userIdKey);
+        await prefs.remove(_displayNameKey);
+        await prefs.remove(_emailKey);
+        await prefs.remove(_methodKey);
+        await prefs.remove(_roleKey);
+        await prefs.remove(_legacyTokenKey);
+      }
+      await _secure.delete(key: _secureTokenKey);
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {

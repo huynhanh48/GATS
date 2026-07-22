@@ -47,7 +47,11 @@ async function register(req: Request, res: Response) {
 async function login(req: Request, res: Response) {
   const input = parseLoginInput(req.body);
   const result = await AuthService.login(input);
-  res.cookie(ACCESS_TOKEN_COOKIE, result.token, AuthService.getCookieOptions());
+  res.cookie(
+    ACCESS_TOKEN_COOKIE,
+    result.token,
+    AuthService.getCookieOptions(req),
+  );
   // Cookie for web (admin/web-app); `token` in body for mobile Bearer clients.
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in.',
@@ -63,7 +67,11 @@ async function googleLogin(req: Request, res: Response) {
   }
 
   const result = await AuthService.googleLogin(idToken);
-  res.cookie(ACCESS_TOKEN_COOKIE, result.token, AuthService.getCookieOptions());
+  res.cookie(
+    ACCESS_TOKEN_COOKIE,
+    result.token,
+    AuthService.getCookieOptions(req),
+  );
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in with Google.',
     token: result.token,
@@ -77,7 +85,10 @@ async function logout(req: Request, res: Response) {
   }
   const token = req.cookies?.[ACCESS_TOKEN_COOKIE] as string | undefined;
   const result = await AuthService.logout(req.authUser.id, token);
-  res.clearCookie(ACCESS_TOKEN_COOKIE, AuthService.getClearCookieOptions());
+  res.clearCookie(
+    ACCESS_TOKEN_COOKIE,
+    AuthService.getClearCookieOptions(req),
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 

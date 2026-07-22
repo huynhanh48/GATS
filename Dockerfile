@@ -1,5 +1,5 @@
 ﻿# Stage 1: Build Web App
-FROM node:20-alpine AS web-builder
+FROM node:22-alpine AS web-builder
 WORKDIR /app/web-app
 # Install with --include=dev so build tools (next, etc.) are present even if
 # the host Bake sets NODE_ENV=production. Do NOT leave NODE_ENV=development
@@ -14,10 +14,13 @@ ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production
-RUN npm run build
+# This image installs with npm/package-lock. The repo also carries pnpm workspace
+# markers; remove them only inside the image so Next does not invoke missing pnpm
+# while resolving/downloading its platform SWC package.
+RUN rm -f pnpm-lock.yaml pnpm-workspace.yaml && npm run build
 
 # Stage 2: Build Backend (folder BE)
-FROM node:20-alpine AS be-builder
+FROM node:22-alpine AS be-builder
 WORKDIR /app/BE
 COPY BE/package*.json ./
 RUN npm ci --include=dev
@@ -26,7 +29,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 3: Build Admin Dashboard
-FROM node:20-alpine AS admin-builder
+FROM node:22-alpine AS admin-builder
 WORKDIR /app/admin-dashboard
 COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
@@ -39,7 +42,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
 RUN npm run build
 
 # Stage 4: Production Image
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Install ffmpeg for the worker and pm2 for process management
 RUN apk add --no-cache ffmpeg && npm install -g pm2
@@ -51,6 +54,7 @@ COPY --from=web-builder /app/web-app/package*.json ./web-app/
 COPY --from=web-builder /app/web-app/node_modules ./web-app/node_modules
 COPY --from=web-builder /app/web-app/.next ./web-app/.next
 COPY --from=web-builder /app/web-app/public ./web-app/public
+COPY --from=web-builder /app/web-app/next.config.ts ./web-app/next.config.ts
 
 # Copy built backend (dist + deps) plus what drizzle-kit needs at runtime.
 # In-image path stays /app/gats-academy (chỉ là đường dẫn trong container).
@@ -61,12 +65,18 @@ COPY --from=be-builder /app/BE/drizzle ./gats-academy/drizzle
 COPY --from=be-builder /app/BE/drizzle.config.ts ./gats-academy/drizzle.config.ts
 COPY --from=be-builder /app/BE/tsconfig.json ./gats-academy/tsconfig.json
 COPY --from=be-builder /app/BE/src ./gats-academy/src
+# start/start:worker load DOTENV_CONFIG_PATH=./config/.env.production — file có thể
+# trống; biến thật lấy từ Compose/VPS env (dotenv không ghi đè env đã set).
+RUN mkdir -p ./gats-academy/config \
+  && printf '%s\n' '# Runtime secrets come from container env (docker-compose / VPS).' \
+    > ./gats-academy/config/.env.production
 
 # Copy built admin dashboard
 COPY --from=admin-builder /app/admin-dashboard/package*.json ./admin-dashboard/
 COPY --from=admin-builder /app/admin-dashboard/node_modules ./admin-dashboard/node_modules
 COPY --from=admin-builder /app/admin-dashboard/.next ./admin-dashboard/.next
 COPY --from=admin-builder /app/admin-dashboard/public ./admin-dashboard/public
+COPY --from=admin-builder /app/admin-dashboard/next.config.mjs ./admin-dashboard/next.config.mjs
 
 # Copy ecosystem config + entrypoint (runs DB migrations, then pm2)
 COPY ecosystem.config.js .

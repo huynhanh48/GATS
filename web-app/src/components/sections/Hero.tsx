@@ -206,7 +206,7 @@ export function Hero() {
                     { label: "Bài tập xong", value: "38", icon: <><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /><path d="m9 16 2 2 4-4" /></> },
                     { label: "Giờ học", value: "120h", icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></> },
                   ].map((stat, i) => (
-                    <div key={i} className="rounded-xl p-5 flex items-center gap-4 transition-colors bg-white dark:bg-[#141414] border border-black/5 dark:border-white/5 shadow-sm dark:shadow-none">
+                    <div key={i} className="rounded-xl p-5 flex items-center gap-4 transition-colors bg-card dark:bg-[#141414] border border-border dark:border-white/5 shadow-sm dark:shadow-none">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-500 dark:text-white/50">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">{stat.icon}</svg>
                       </div>
@@ -221,7 +221,7 @@ export function Hero() {
                 {/* Main Charts Area */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                   {/* Chart */}
-                  <div className="lg:col-span-2 rounded-xl p-6 flex flex-col bg-white dark:bg-[#141414] border border-black/5 dark:border-white/5 shadow-sm dark:shadow-none">
+                  <div className="lg:col-span-2 rounded-xl p-6 flex flex-col bg-card dark:bg-[#141414] border border-border dark:border-white/5 shadow-sm dark:shadow-none">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-sm font-medium text-slate-700 dark:text-white/80">Tiến trình học tập</div>
                       <div className="px-2 py-1 rounded-md text-xs flex items-center gap-1 cursor-pointer bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-white/60">
@@ -246,7 +246,7 @@ export function Hero() {
                         </defs>
                         <circle cx="70" cy="10" r="3" fill={themeColor} className="stroke-white dark:stroke-[#141414] animate-pulse" strokeWidth="1.5" />
                       </svg>
-                      <div className="absolute top-[12%] left-[62%] border text-xs px-3 py-2 rounded-lg shadow-xl flex flex-col items-center bg-white dark:bg-[#1a1a1a] border-slate-200 dark:border-white/10 text-slate-900 dark:text-white/90">
+                      <div className="absolute top-[12%] left-[62%] border text-xs px-3 py-2 rounded-lg shadow-xl flex flex-col items-center bg-popover dark:bg-[#1a1a1a] border-border dark:border-white/10 text-slate-900 dark:text-white/90">
                         <span className="text-[10px] text-slate-400 dark:text-white/40 mb-1">Thứ 6, 2026</span>
                         <span className="font-semibold text-sm">8.5 giờ</span>
                       </div>
@@ -257,7 +257,7 @@ export function Hero() {
                   </div>
 
                   {/* List */}
-                  <div className="rounded-xl p-6 flex flex-col bg-white dark:bg-[#141414] border border-black/5 dark:border-white/5 shadow-sm dark:shadow-none">
+                  <div className="rounded-xl p-6 flex flex-col bg-card dark:bg-[#141414] border border-border dark:border-white/5 shadow-sm dark:shadow-none">
                     <div className="flex items-center justify-between mb-6">
                       <div className="text-sm font-medium text-slate-700 dark:text-white/80">Khóa học đang học</div>
                       <div className="text-xs cursor-pointer transition-colors text-slate-400 dark:text-white/40 hover:text-slate-600 dark:hover:text-white">

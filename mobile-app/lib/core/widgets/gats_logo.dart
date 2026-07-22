@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 
-/// Biểu tượng GATS — chữ G trên nền gradient brand.
+/// Biểu tượng GATS chính thức, dùng chung nhận diện với web-app.
 class GatsLogoMark extends StatelessWidget {
   const GatsLogoMark({
     super.key,
@@ -16,13 +18,16 @@ class GatsLogoMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = borderRadius ?? size * 0.27;
+    final radius = borderRadius ?? size / 2;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: AppGradients.primary,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.08)
+            : AppColors.primary.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(radius),
         boxShadow: showShadow
             ? [
@@ -35,15 +40,11 @@ class GatsLogoMark extends StatelessWidget {
             : null,
       ),
       alignment: Alignment.center,
-      child: Text(
-        'G',
-        style: AppTypography.style(
-          fontSize: size * 0.52,
-          fontWeight: FontWeight.w800,
-          color: Colors.white,
-          height: 1,
-          letterSpacing: -1,
-        ),
+      padding: EdgeInsets.all(size * 0.20),
+      child: SvgPicture.asset(
+        AppAssets.gatsLogoIcon,
+        fit: BoxFit.contain,
+        semanticsLabel: 'GATS logo',
       ),
     );
   }

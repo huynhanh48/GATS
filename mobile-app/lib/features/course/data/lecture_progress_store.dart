@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/data/api/progress_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Tiến độ từng bài giảng (local) — đồng bộ % khóa học lên [CourseModule.repository].
+/// Tiến độ từng bài giảng — BE là source of truth; prefs chỉ cache offline.
 class LectureProgressStore extends ChangeNotifier {
   LectureProgressStore._();
   static final LectureProgressStore instance = LectureProgressStore._();
@@ -15,8 +17,14 @@ class LectureProgressStore extends ChangeNotifier {
   List<CourseLecture> _lectures = const [];
   final Set<String> _completed = {};
   bool _loaded = false;
+  bool _loading = false;
+  String? _syncError;
+  bool _marking = false;
 
   bool get isLoaded => _loaded;
+  bool get isLoading => _loading;
+  bool get isMarking => _marking;
+  String? get syncError => _syncError;
   String? get courseId => _courseId;
   List<CourseLecture> get lectures => _lectures;
 
@@ -65,7 +73,140 @@ class LectureProgressStore extends ChangeNotifier {
     _courseId = courseId;
     _lectures = List.of(lectures);
     _completed.clear();
+    _syncError = null;
+    _loading = true;
+    _loaded = false;
+    notifyListeners();
 
+    try {
+      final token = await AuthPrefs.accessToken();
+      if (token != null && token.isNotEmpty) {
+        final remote = await ProgressApiService.getCourseProgress(
+          courseId: courseId,
+          token: token,
+        );
+        _completed.addAll(remote.completedLessonIds);
+        await _persistCache();
+        CourseModule.repository.setUserProgress(
+          courseId,
+          userId,
+          remote.fraction,
+        );
+      } else {
+        await _hydrateFromCache(
+          userId: userId,
+          courseId: courseId,
+          fallbackCourseProgress: fallbackCourseProgress,
+        );
+      }
+    } catch (e) {
+      debugPrint('LectureProgressStore: hydrate failed — $e');
+      _syncError = 'Không đồng bộ được tiến độ. Đang dùng bản lưu cục bộ.';
+      await _hydrateFromCache(
+        userId: userId,
+        courseId: courseId,
+        fallbackCourseProgress: fallbackCourseProgress,
+      );
+    } finally {
+      _loading = false;
+      _loaded = true;
+      notifyListeners();
+    }
+  }
+
+  Future<void> retrySync() async {
+    final userId = _userId;
+    final courseId = _courseId;
+    if (userId == null || courseId == null) return;
+    await load(
+      userId: userId,
+      courseId: courseId,
+      lectures: _lectures,
+      fallbackCourseProgress: progress,
+    );
+  }
+
+  Future<void> markComplete(String lectureId) async {
+    final userId = _userId;
+    final courseId = _courseId;
+    if (userId == null || courseId == null) return;
+    if (_completed.contains(lectureId)) {
+      notifyListeners();
+      return;
+    }
+
+    final token = await AuthPrefs.accessToken();
+    if (token == null || token.isEmpty) {
+      throw StateError('Chưa đăng nhập — không thể cập nhật tiến độ.');
+    }
+
+    CourseLecture? lecture;
+    for (final l in _lectures) {
+      if (l.id == lectureId) {
+        lecture = l;
+        break;
+      }
+    }
+    final durationSeconds =
+        ((lecture?.durationMinutes ?? 0) * 60).clamp(100, 24 * 3600);
+
+    _marking = true;
+    _syncError = null;
+    notifyListeners();
+
+    try {
+      final result = await ProgressApiService.markLessonComplete(
+        courseId: courseId,
+        lessonId: lectureId,
+        token: token,
+        durationSeconds: durationSeconds,
+      );
+      if (result.isCompleted || result.percent >= 90) {
+        _completed.add(lectureId);
+      } else {
+        // BE chưa đánh complete (hiếm) — vẫn tin client intent sau PUT.
+        _completed.add(lectureId);
+      }
+      await _persistCache();
+      _syncCourseProgress();
+      // Làm mới % khóa từ BE nếu có.
+      try {
+        final remote = await ProgressApiService.getCourseProgress(
+          courseId: courseId,
+          token: token,
+        );
+        CourseModule.repository.setUserProgress(
+          courseId,
+          userId,
+          remote.fraction,
+        );
+      } catch (_) {
+        _syncCourseProgress();
+      }
+    } catch (e) {
+      debugPrint('LectureProgressStore: markComplete failed — $e');
+      _syncError = 'Không lưu được tiến độ. Thử lại.';
+      rethrow;
+    } finally {
+      _marking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> markIncomplete(String lectureId) async {
+    // BE không hạ hoàn thành khi xem lại; local-only toggle không sync.
+    if (_userId == null || _courseId == null) return;
+    if (!_completed.remove(lectureId)) return;
+    await _persistCache();
+    _syncCourseProgress();
+    notifyListeners();
+  }
+
+  Future<void> _hydrateFromCache({
+    required String userId,
+    required String courseId,
+    required double fallbackCourseProgress,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     final key = _storageKey(userId, courseId);
     final saved = prefs.getStringList(key);
@@ -81,34 +222,12 @@ class LectureProgressStore extends ChangeNotifier {
       for (var i = 0; i < seedCount; i++) {
         _completed.add(publishedLectures[i].id);
       }
-      await _persist();
+      await _persistCache();
       _syncCourseProgress();
     }
-
-    _loaded = true;
-    notifyListeners();
   }
 
-  Future<void> markComplete(String lectureId) async {
-    if (_userId == null || _courseId == null) return;
-    if (!_completed.add(lectureId)) {
-      notifyListeners();
-      return;
-    }
-    await _persist();
-    _syncCourseProgress();
-    notifyListeners();
-  }
-
-  Future<void> markIncomplete(String lectureId) async {
-    if (_userId == null || _courseId == null) return;
-    if (!_completed.remove(lectureId)) return;
-    await _persist();
-    _syncCourseProgress();
-    notifyListeners();
-  }
-
-  Future<void> _persist() async {
+  Future<void> _persistCache() async {
     final userId = _userId;
     final courseId = _courseId;
     if (userId == null || courseId == null) return;
