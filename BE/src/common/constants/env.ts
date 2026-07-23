@@ -105,6 +105,57 @@ const EnvVars = jetEnv({
   GoogleClientId: optionalStr,
 });
 
+const INSECURE_PRODUCTION_VALUES = new Set([
+  'dev-secret-change-me-please-min-32-characters',
+  'changeme',
+  'admin12345',
+  'minioadmin',
+]);
+
+/**
+ * Fail before serving traffic when production accidentally inherits local
+ * compose defaults. This intentionally does not print secret values.
+ */
+export function assertProductionConfiguration(): void {
+  if (EnvVars.NodeEnv !== NodeEnvs.PRODUCTION) return;
+
+  const missing: string[] = [];
+  const insecure: string[] = [];
+  const required = [
+    ['JWT_SECRET', EnvVars.JwtSecret],
+    ['EMAIL_PASSWORD', EnvVars.EmailPassword],
+    ['FRONTEND_URL', EnvVars.FrontendUrl],
+    ['APP_URL', EnvVars.AppUrl],
+    ['SEPAY_API_KEY', EnvVars.SepayApiKey],
+    ['S3_ACCESS_KEY_ID', EnvVars.S3AccessKeyId],
+    ['S3_SECRET_ACCESS_KEY', EnvVars.S3SecretAccessKey],
+    ['MINIO_ACCESS_KEY', EnvVars.MinioAccessKey],
+    ['MINIO_SECRET_KEY', EnvVars.MinioSecretKey],
+  ] as const;
+
+  for (const [name, value] of required) {
+    if (!value?.trim()) missing.push(name);
+    else if (INSECURE_PRODUCTION_VALUES.has(value.trim())) insecure.push(name);
+  }
+
+  if (
+    EnvVars.AdminDefaultPassword &&
+    INSECURE_PRODUCTION_VALUES.has(EnvVars.AdminDefaultPassword)
+  ) {
+    insecure.push('ADMIN_DEFAULT_PASSWORD');
+  }
+
+  if (missing.length || insecure.length) {
+    const details = [
+      missing.length ? `missing: ${missing.join(', ')}` : '',
+      insecure.length ? `insecure defaults: ${insecure.join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join('; ');
+    throw new Error(`Unsafe production configuration (${details})`);
+  }
+}
+
 /******************************************************************************
                             Export default
 ******************************************************************************/

@@ -34,15 +34,18 @@ class CourseHeroHeader extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
           Image(
             image: (thumb != null && thumb.isNotEmpty)
                 ? NetworkImage(thumb) as ImageProvider
                 : AssetImage(assetPath),
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               return Image.asset(
                 assetPath,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return DecoratedBox(
                     decoration: BoxDecoration(

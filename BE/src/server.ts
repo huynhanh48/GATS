@@ -32,26 +32,46 @@ import CouponApi from '@src/routes/coupon/couponApi';
 import CertificateApi from '@src/routes/certificate/certificateApi';
 import AnalyticsApi from '@src/routes/analytics/analyticsApi';
 import LearnExtrasApi from '@src/routes/learn-extras/learnExtrasApi';
-import EnvVars, { NodeEnvs } from './common/constants/env';
+import CourseChatApi from '@src/routes/course-chat/courseChatApi';
+import HealthApi from '@src/routes/health/healthApi';
+import CourseChatPaths from '@src/common/paths/course-chat';
+import EnvVars, {
+  assertProductionConfiguration,
+  NodeEnvs,
+} from './common/constants/env';
 import cors from 'cors';
 import originGuard from './middleware/originGuard';
 import { errorHandle } from './middleware/errorHandle';
+import { getAllowedOrigins } from './common/utils/cors';
+import requestContext from './middleware/requestContext';
 /******************************************************************************
                                 Setup
 ******************************************************************************/
 
 const app = express();
+assertProductionConfiguration();
 
 // **** Middleware **** //
 
+// Exactly one trusted reverse-proxy hop (nginx) terminates TLS in production.
+if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
+  app.set('trust proxy', 1);
+}
+
 // Basic middleware
+app.use(requestContext);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    // Reflect any Origin (required when credentials: true — cannot use "*").
-    origin: true,
+    origin(origin, callback) {
+      // Server-to-server/mobile clients do not send Origin.
+      if (!origin || getAllowedOrigins().includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: true,
   }),
 );
@@ -68,6 +88,7 @@ if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
 }
 
 // Add APIs, must be after middleware
+app.use('/health', HealthApi);
 app.use(Paths._, AuthApi);
 app.use(Paths._, CategoryApi);
 app.use(Paths._, TagApi);
@@ -92,11 +113,24 @@ app.use(Paths._, CouponApi);
 app.use(Paths._, CertificateApi);
 app.use(Paths._, AnalyticsApi);
 app.use(Paths._, LearnExtrasApi);
+app.use(CourseChatPaths._, CourseChatApi);
 
 // Add error handler
 app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
   if (EnvVars.NodeEnv !== NodeEnvs.TEST.valueOf()) {
-    logger.err(err, true);
+    if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          event: 'unhandled_error',
+          requestId: res.locals.requestId,
+          message: err.message,
+          stack: err.stack,
+        }),
+      );
+    } else {
+      logger.err(err, true);
+    }
   }
 
   if (isHttpException(err)) {

@@ -3,29 +3,20 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/navigation/shell_tab_scope.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/core/theme/gats_surface.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
 import 'package:gats_academy/core/widgets/lazy_indexed_stack.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/features/ai_coach/presentation/ai_coach_screen.dart';
-import 'package:gats_academy/features/daily/data/daily_tasks_controller.dart';
-import 'package:gats_academy/features/daily/presentation/daily_screen.dart';
 import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
 import 'package:gats_academy/features/home/presentation/home_screen.dart';
-import 'package:gats_academy/features/hub/presentation/hub_screen.dart';
-import 'package:gats_academy/features/library/presentation/library_screen.dart';
 import 'package:gats_academy/features/post/presentation/posts_feed_screen.dart';
 import 'package:gats_academy/features/store/presentation/course_store_screen.dart';
 
 /// Tab indices trong [LazyIndexedStack].
 abstract final class MainShellTabs {
   static const home = 0;
-  static const daily = 1;
-  static const library = 2;
-  static const coach = 3;
-  static const store = 4;
-  static const count = 5;
+  static const store = 1;
+  static const count = 2;
 }
 
 class MainShell extends StatefulWidget {
@@ -38,29 +29,10 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = MainShellTabs.home;
 
-  @override
-  void initState() {
-    super.initState();
-    DailyTasksController.instance.ensureLoaded();
-  }
-
-  /// Map screen index → nav bar index (4 tabs, không gồm Thư viện).
-  int _navSelectedIndex(int screenIndex) {
-    return switch (screenIndex) {
-      MainShellTabs.home => 0,
-      MainShellTabs.daily => 1,
-      MainShellTabs.coach => 2,
-      MainShellTabs.store => 3,
-      _ => 0,
-    };
-  }
-
   void _onNavDestinationSelected(int navIndex) {
     final screenIndex = switch (navIndex) {
       0 => MainShellTabs.home,
-      1 => MainShellTabs.daily,
-      2 => MainShellTabs.coach,
-      3 => MainShellTabs.store,
+      1 => MainShellTabs.store,
       _ => MainShellTabs.home,
     };
     setState(() => _currentIndex = screenIndex);
@@ -69,9 +41,6 @@ class _MainShellState extends State<MainShell> {
   Widget _screenAt(BuildContext context, int index) {
     return switch (index) {
       MainShellTabs.home => const HomeScreen(),
-      MainShellTabs.daily => const DailyScreen(),
-      MainShellTabs.library => const LibraryScreen(),
-      MainShellTabs.coach => const AiCoachScreen(),
       MainShellTabs.store => const CourseStoreScreen(embeddedInShell: true),
       _ => const SizedBox.shrink(),
     };
@@ -130,12 +99,6 @@ class _MainShellState extends State<MainShell> {
                     color: const Color(0xFF0EA5E9),
                     onTap: () => _openQuickAction(const CourseSearchScreen()),
                   ),
-                  _QuickActionButton(
-                    icon: Icons.emoji_events_outlined,
-                    label: AppStrings.quickActionHub,
-                    color: AppColors.accent,
-                    onTap: () => _openQuickAction(const HubScreen()),
-                  ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
@@ -152,17 +115,11 @@ class _MainShellState extends State<MainShell> {
 
     final titles = [
       AppStrings.navHome,
-      AppStrings.navDaily,
-      AppStrings.navLibrary,
-      AppStrings.navCoach,
       AppStrings.navStore,
     ];
 
     final subtitles = [
       AppHeaderSubtitles.home,
-      AppHeaderSubtitles.daily,
-      AppHeaderSubtitles.library,
-      AppHeaderSubtitles.aiCoach,
       AppHeaderSubtitles.store,
     ];
 
@@ -183,38 +140,22 @@ class _MainShellState extends State<MainShell> {
         ),
         floatingActionButton: null,
         bottomNavigationBar: RepaintBoundary(
-          child: ListenableBuilder(
-            listenable: DailyTasksController.instance,
-            builder: (context, _) {
-              return FloatingNavBar(
-                selectedIndex: _navSelectedIndex(_currentIndex),
-                onDestinationSelected: _onNavDestinationSelected,
-                centerAction: FloatingNavCenterButton(onPressed: _showQuickActions),
-                destinations: [
-                  FloatingNavDestination(
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home_rounded,
-                    label: AppStrings.navHome,
-                  ),
-                  FloatingNavDestination(
-                    icon: Icons.today_outlined,
-                    selectedIcon: Icons.today_rounded,
-                    label: AppStrings.navDaily,
-                    badgeLabel: DailyTasksController.instance.badgeLabel,
-                  ),
-                  FloatingNavDestination(
-                    icon: Icons.psychology_outlined,
-                    selectedIcon: Icons.psychology_rounded,
-                    label: AppStrings.navCoach,
-                  ),
-                  FloatingNavDestination(
-                    icon: Icons.storefront_outlined,
-                    selectedIcon: Icons.storefront_rounded,
-                    label: AppStrings.navStore,
-                  ),
-                ],
-              );
-            },
+          child: FloatingNavBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: _onNavDestinationSelected,
+            centerAction: FloatingNavCenterButton(onPressed: _showQuickActions),
+            destinations: [
+              FloatingNavDestination(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: AppStrings.navHome,
+              ),
+              FloatingNavDestination(
+                icon: Icons.storefront_outlined,
+                selectedIcon: Icons.storefront_rounded,
+                label: AppStrings.navStore,
+              ),
+            ],
           ),
         ),
       ),

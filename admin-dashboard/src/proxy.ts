@@ -1,6 +1,10 @@
 import { ACCESS_TOKEN_COOKIE, BE_API_URL } from "@/lib/api/config";
 import type { MeResponse } from "@/lib/api/types";
-import { defaultPostLoginPath, hasAdminAccess } from "@/lib/auth/access";
+import {
+  canAccessDashboardPath,
+  defaultPostLoginPath,
+  hasAdminAccess,
+} from "@/lib/auth/access";
 import { NextRequest, NextResponse } from "next/server";
 
 const AUTH_ONLY_PATHS = ["/auth/sign-in", "/auth/sign-up"];
@@ -73,6 +77,12 @@ export async function proxy(request: NextRequest) {
     if (isAuthOnly) {
       const dest = defaultPostLoginPath(roles);
       return NextResponse.redirect(new URL(dest, request.url));
+    }
+
+    if (!canAccessDashboardPath(roles, pathname)) {
+      return NextResponse.redirect(
+        new URL(defaultPostLoginPath(roles), request.url),
+      );
     }
   } catch (error) {
     console.error(error);

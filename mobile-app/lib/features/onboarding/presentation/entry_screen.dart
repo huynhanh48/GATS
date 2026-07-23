@@ -3,7 +3,7 @@ import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 
-/// Welcome theo mockup: nền full màn + coach + CTA.
+/// Welcome toàn màn hình với coach và CTA đăng nhập.
 class EntryScreen extends StatelessWidget {
   const EntryScreen({
     super.key,

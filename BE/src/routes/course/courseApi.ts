@@ -1,19 +1,22 @@
-import { Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 
 import CoursePaths from '@src/common/paths/course';
 import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import authMiddleware from '@src/middleware/authMiddleware';
+import { errorHandle } from '@src/middleware/errorHandle';
 import {
   fileUploadMiddleware,
   handleMediaUploadError,
 } from '@src/middleware/mediaUploadMiddleware';
 import optionalAuthMiddleware from '@src/middleware/optionalAuthMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
-import { errorHandle } from '@src/middleware/errorHandle';
+import requireStaff from '@src/middleware/requireStaff';
+
 import courseHandlers from './courseRouter';
 
 const apiRouter = Router();
 const courseRouter = Router();
+const courseManagementRouter = Router();
 
 const requireCourseUpdate = (courseIdParam = 'courseId') =>
   requirePermission('update', RESOURCE_TYPES.COURSE, (req) => {
@@ -26,6 +29,17 @@ const requireCourseRead = (courseIdParam = 'courseId') =>
     const raw = req.params[courseIdParam] ?? req.params.id;
     return typeof raw === 'string' ? raw : undefined;
   });
+
+const requireCourseCreate = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (req.authUser?.roles.includes('instructor')) {
+    return next();
+  }
+  return requirePermission('create', RESOURCE_TYPES.COURSE)(req, res, next);
+};
 
 courseRouter.get(
   CoursePaths.Course.List,
@@ -153,7 +167,7 @@ courseRouter.get(
 courseRouter.post(
   CoursePaths.Course.Create,
   errorHandle(authMiddleware),
-  errorHandle(requirePermission('create', RESOURCE_TYPES.COURSE)),
+  errorHandle(requireCourseCreate),
   courseHandlers.create,
 );
 courseRouter.patch(
@@ -187,5 +201,17 @@ courseRouter.delete(
   courseHandlers.remove,
 );
 
+courseManagementRouter.use(errorHandle(authMiddleware));
+courseManagementRouter.use(errorHandle(requireStaff));
+courseManagementRouter.get(
+  CoursePaths.Management.List,
+  courseHandlers.listManaged,
+);
+courseManagementRouter.get(
+  CoursePaths.Management.Get,
+  courseHandlers.getManagedById,
+);
+
 apiRouter.use(CoursePaths.Course._, courseRouter);
+apiRouter.use(CoursePaths.Management._, courseManagementRouter);
 export default apiRouter;

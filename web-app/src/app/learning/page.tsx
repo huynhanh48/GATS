@@ -247,7 +247,7 @@ export default function LearningHubPage() {
                 <img
                   src={resolveMediaUrl(continueCourse.course.thumbnail)}
                   alt={`Ảnh bìa khóa học ${continueCourse.course.title}`}
-                  className="absolute inset-0 h-full w-full object-cover transition duration-500 motion-safe:group-hover:scale-[1.03]"
+                  className="absolute inset-0 h-full w-full bg-muted object-contain"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/10 to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-slate-950/20" />
                 <span className="absolute left-5 top-5 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-black text-slate-950 shadow-lg">
@@ -357,7 +357,7 @@ export default function LearningHubPage() {
                         <img
                           src={resolveMediaUrl(item.course.thumbnail)}
                           alt={`Ảnh bìa khóa học ${item.course.title}`}
-                          className="absolute inset-0 h-full w-full object-cover transition duration-500 motion-safe:group-hover:scale-105"
+                          className="absolute inset-0 h-full w-full bg-muted object-contain"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/55 via-transparent to-transparent" />
                         <span className={`absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold shadow-sm backdrop-blur ${courseStatus.className}`}>

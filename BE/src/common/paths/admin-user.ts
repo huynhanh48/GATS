@@ -9,6 +9,8 @@ const AdminUserPaths = {
     RevokeSessions: '/:id/revoke-sessions',
     Lock: '/:id/lock',
     Unlock: '/:id/unlock',
+    Role: '/:id/role',
+    MentorCourse: '/:id/mentor-course',
   },
 } as const;
 

@@ -27,8 +27,10 @@ const footerColumns: Array<{
     title: "Pháp lý",
     links: [
       { label: "Điều khoản dịch vụ", href: "/terms" },
-      { label: "Chính sách bảo mật", href: "/privacy" },
+      { label: "Chính sách quyền riêng tư", href: "/privacy" },
       { label: "Chính sách hoàn tiền", href: "/refund" },
+      { label: "Chính sách thanh toán", href: "/payment-policy" },
+      { label: "Yêu cầu dữ liệu", href: "/data-request" },
       { label: "Liên hệ", href: "/contact" },
     ],
   },

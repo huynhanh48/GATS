@@ -1100,6 +1100,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsAbout => 'Về ứng dụng';
 
   @override
+  String get settingsLegal => 'Pháp lý và quyền riêng tư';
+
+  @override
+  String get legalTerms => 'Điều khoản dịch vụ';
+
+  @override
+  String get legalPrivacy => 'Chính sách quyền riêng tư';
+
+  @override
+  String get legalRefund => 'Chính sách hoàn tiền';
+
+  @override
+  String get legalPayment => 'Chính sách thanh toán';
+
+  @override
+  String get legalDataRequest => 'Yêu cầu xóa hoặc truy cập dữ liệu';
+
+  @override
+  String get legalOpenFailed =>
+      'Không thể mở trang chính sách. Vui lòng thử lại.';
+
+  @override
+  String get paymentLegalPrefix => 'Khi thanh toán, bạn đồng ý với ';
+
+  @override
   String get settingsReplayOnboarding => 'Làm lại onboarding';
 
   @override

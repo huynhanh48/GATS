@@ -8,7 +8,7 @@ import paymentHandlers from './paymentRouter';
 const apiRouter = Router();
 const paymentRouter = Router();
 
-/** Sepay bank-transfer webhook — no user auth; optional API key */
+/** Sepay bank-transfer webhook — authenticated by required SEPAY_API_KEY. */
 paymentRouter.post(
   PaymentPaths.Payment.SepayWebhook,
   paymentHandlers.sepayWebhook,

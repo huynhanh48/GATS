@@ -7,8 +7,7 @@ import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/shimmer_loading.dart';
 import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
-import 'package:gats_academy/core/widgets/xp_popup.dart';
-import 'package:gats_academy/data/mock/mock_data.dart';
+import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
@@ -18,11 +17,8 @@ import 'package:gats_academy/features/home/presentation/course_search_screen.dar
 import 'package:gats_academy/features/home/presentation/widgets/home_course_carousel_section.dart';
 import 'package:gats_academy/features/home/presentation/widgets/your_courses_section.dart';
 import 'package:gats_academy/features/home/presentation/widgets/continue_learning_card.dart';
-import 'package:gats_academy/features/home/presentation/widgets/daily_reward_sheet.dart';
-import 'package:gats_academy/features/home/presentation/widgets/learning_tools_entry.dart';
 import 'package:gats_academy/features/post/presentation/widgets/home_posts_section.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
-import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/features/settings/presentation/settings_screen.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 
@@ -47,8 +43,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadSession();
     CourseModule.repository.addListener(_onCoursesChanged);
     CartController.instance.addListener(_onCartChanged);
-    MockPostStore.instance.addListener(_onCartChanged);
-    MockPostStore.instance.syncFromApi();
+    PostStore.instance.addListener(_onCartChanged);
+    PostStore.instance.syncFromApi();
     StreakController.instance.ensureLoaded();
   }
 
@@ -77,25 +73,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadSession() async {
     final user = await AuthPrefs.currentUser();
-    final name = await MockData.userName();
     await StreakController.instance.refresh();
     if (!mounted) return;
     setState(() {
       _user = user;
-      _userName = name;
+      _userName = user?.displayName.trim().isNotEmpty == true
+          ? user!.displayName.trim()
+          : 'Học viên GATS';
       _refreshCourses();
       _isLoading = false;
     });
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
-        await Future<void>.delayed(const Duration(milliseconds: 350));
-        if (!mounted) return;
-        final xp = await DailyRewardSheet.showIfNeeded(context);
-        if (!mounted || xp == null) return;
-        XpPopup.show(context, xp: xp);
-      });
-    }
   }
 
   void _onCoursesChanged() {
@@ -126,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     CourseModule.repository.removeListener(_onCoursesChanged);
     CartController.instance.removeListener(_onCartChanged);
-    MockPostStore.instance.removeListener(_onCartChanged);
+    PostStore.instance.removeListener(_onCartChanged);
     super.dispose();
   }
 
@@ -158,12 +145,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               );
             },
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          _HomeHeaderIconButton(
-            icon: Icons.notifications_none_rounded,
-            showDot: true,
-            onTap: () => openNotifications(context),
           ),
           const SizedBox(width: AppSpacing.sm),
           _HomeHeaderIconButton(
@@ -285,8 +266,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onAddToCart: _addToCart,
               ),
               const SizedBox(height: AppSpacing.lg),
-              LearningToolsEntry(userId: _user?.id),
-              const SizedBox(height: AppSpacing.xl),
               HomePostsSection(
                 userId: _user?.id,
                 role: _user?.role ?? UserRole.user,
@@ -332,12 +311,10 @@ class _HomeHeaderIconButton extends StatelessWidget {
   const _HomeHeaderIconButton({
     required this.icon,
     required this.onTap,
-    this.showDot = false,
   });
 
   final IconData icon;
   final VoidCallback onTap;
-  final bool showDot;
 
   @override
   Widget build(BuildContext context) {
@@ -351,27 +328,7 @@ class _HomeHeaderIconButton extends StatelessWidget {
         child: SizedBox(
           width: 40,
           height: 40,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(icon, color: gats.textPrimary, size: 22),
-              if (showDot)
-                const Positioned(
-                  top: 10,
-                  right: 10,
-                  child: SizedBox(
-                    width: 7,
-                    height: 7,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.accent,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          child: Icon(icon, color: gats.textPrimary, size: 22),
         ),
       ),
     );

@@ -13,7 +13,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function CTASection() {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -31,10 +30,6 @@ export function CTASection() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -139,9 +134,10 @@ export function CTASection() {
       reset();
       setOpen(false);
       window.setTimeout(() => triggerRef.current?.focus(), 0);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { message?: string; error?: string };
       toast.error(
-        err?.message || err?.error || "Không gửi được. Vui lòng thử lại.",
+        error.message || error.error || "Không gửi được. Vui lòng thử lại.",
       );
     } finally {
       setSubmitting(false);
@@ -154,9 +150,9 @@ export function CTASection() {
     }`;
 
   const modal =
-    open && mounted
+    open && typeof document !== "undefined"
       ? createPortal(
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-200 flex items-center justify-center p-4">
             <button
               type="button"
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -185,8 +181,8 @@ export function CTASection() {
                 Đăng ký tư vấn
               </h3>
               <p className="text-sm text-muted-foreground mb-5">
-                Để lại thông tin, đội ngũ GATS sẽ liên hệ tư vấn lộ trình phù
-                hợp.
+                Để lại thông tin, đội ngũ GATS sẽ trao đổi về nhu cầu ứng dụng
+                AI của bạn.
               </p>
               <form
                 onSubmit={submit}
@@ -296,7 +292,7 @@ export function CTASection() {
                     onChange={(e) => setMessage(e.target.value)}
                     rows={3}
                     className="w-full rounded-xl border border-border bg-background px-3 py-2.5 outline-none focus:ring-1 focus:ring-primary resize-none"
-                    placeholder="Bạn muốn tư vấn về khóa nào?"
+                    placeholder="Bạn muốn dùng AI cho công việc nào?"
                     disabled={submitting}
                   />
                 </div>
@@ -316,7 +312,7 @@ export function CTASection() {
 
   return (
     <section className="w-full py-32 relative z-20 bg-transparent overflow-hidden border-t border-border/10">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-primary/20 blur-[120px] rounded-full pointer-events-none z-0" />
+      <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px]" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center">
         <motion.div
@@ -326,12 +322,12 @@ export function CTASection() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-            Xây dựng <span className="text-primary">Trợ lý AI</span> đầu tiên
-            của bạn
+            Bắt đầu ứng dụng <span className="text-primary">AI</span> vào công
+            việc
           </h2>
           <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 text-balance">
-            Tham gia cùng hàng ngàn học viên và doanh nghiệp đang tự động hóa
-            công việc với các trợ lý AI thông minh từ GATS Academy.
+            Chọn khóa học để tự thực hành hoặc trao đổi với GATS về bài toán bạn
+            đang muốn giải quyết.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -340,7 +336,7 @@ export function CTASection() {
               size="lg"
               className="rounded-full px-8 w-full sm:w-auto text-base h-12 shadow-[0_0_30px_rgba(0,112,235,0.3)] hover:shadow-[0_0_40px_rgba(0,112,235,0.5)] transition-shadow"
             >
-              <Link href="/courses">Bắt đầu miễn phí</Link>
+              <Link href="/courses">Khám phá khóa học</Link>
             </Button>
             <Button
               ref={triggerRef}

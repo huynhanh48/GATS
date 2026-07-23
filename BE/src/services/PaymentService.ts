@@ -74,7 +74,12 @@ async function logException(input: {
 
 function assertWebhookAuth(apiKey: string | undefined) {
   const expected = EnvVars.SepayApiKey;
-  if (!expected) return;
+  if (!expected) {
+    throw new RouteError(
+      HttpStatusCodes.SERVICE_UNAVAILABLE,
+      Errors.SEPAY_API_KEY_MISSING,
+    );
+  }
   if (!apiKey || apiKey !== expected) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, Errors.UNAUTHORIZED);
   }

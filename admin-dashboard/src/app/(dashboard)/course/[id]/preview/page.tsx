@@ -38,9 +38,8 @@ export default async function CoursePreviewPage({ params }: PageProps) {
       </div>
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300">
-        Đây là chế độ xem trước dành cho quản trị/giảng viên. Nội dung
-        tương tác (video, quiz, bài tập) chỉ hiển thị đầy đủ trên trang học
-        viên.
+        Đây là chế độ xem trước dành cho quản trị/giảng viên. Nội dung tương tác
+        (video, quiz, bài tập) chỉ hiển thị đầy đủ trên trang học viên.
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#0b1220]">
@@ -49,7 +48,7 @@ export default async function CoursePreviewPage({ params }: PageProps) {
           alt={course.title}
           width={960}
           height={360}
-          className="h-56 w-full object-cover"
+          className="h-56 w-full bg-slate-100 object-contain p-3 dark:bg-slate-900"
           unoptimized
         />
         <div className="p-6">

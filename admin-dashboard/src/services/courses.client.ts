@@ -56,7 +56,7 @@ export type CourseCurriculumResponse = {
 export const coursesClient = {
   list(params: ListCoursesParams = {}): Promise<ApiResult<CourseListResponse>> {
     return apiRequest<CourseListResponse>({
-      url: "/courses",
+      url: "/course-management/courses",
       method: "GET",
       params,
     });
@@ -71,7 +71,7 @@ export const coursesClient = {
 
   getById(id: string): Promise<ApiResult<{ course: CoursePublic }>> {
     return apiRequest<{ course: CoursePublic }>({
-      url: `/courses/${id}`,
+      url: `/course-management/courses/${id}`,
       method: "GET",
     });
   },
@@ -102,14 +102,19 @@ export const coursesClient = {
     });
   },
 
-  restore(id: string): Promise<ApiResult<{ course?: CoursePublic; message?: string }>> {
+  restore(
+    id: string,
+  ): Promise<ApiResult<{ course?: CoursePublic; message?: string }>> {
     return apiRequest<{ course?: CoursePublic; message?: string }>({
       url: `/courses/${id}/restore`,
       method: "POST",
     });
   },
 
-  remove(id: string, mode?: "soft" | "hard"): Promise<ApiResult<{ message?: string }>> {
+  remove(
+    id: string,
+    mode?: "soft" | "hard",
+  ): Promise<ApiResult<{ message?: string }>> {
     return apiRequest<{ message?: string }>({
       url: `/courses/${id}${mode === "hard" ? "?mode=hard" : ""}`,
       method: "DELETE",

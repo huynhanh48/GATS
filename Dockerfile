@@ -14,10 +14,7 @@ ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production
-# This image installs with npm/package-lock. The repo also carries pnpm workspace
-# markers; remove them only inside the image so Next does not invoke missing pnpm
-# while resolving/downloading its platform SWC package.
-RUN rm -f pnpm-lock.yaml pnpm-workspace.yaml && npm run build
+RUN npm run build
 
 # Stage 2: Build Backend (folder BE)
 FROM node:22-alpine AS be-builder
@@ -35,7 +32,9 @@ COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
 COPY admin-dashboard/ .
 ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
+    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_BE_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_BE_SOCKET_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production
@@ -61,7 +60,8 @@ COPY --from=web-builder /app/web-app/next.config.ts ./web-app/next.config.ts
 COPY --from=be-builder /app/BE/package*.json ./gats-academy/
 COPY --from=be-builder /app/BE/node_modules ./gats-academy/node_modules
 COPY --from=be-builder /app/BE/dist ./gats-academy/dist
-COPY --from=be-builder /app/BE/drizzle ./gats-academy/drizzle
+COPY --from=be-builder /app/BE/migrations ./gats-academy/migrations
+COPY --from=be-builder /app/BE/scripts ./gats-academy/scripts
 COPY --from=be-builder /app/BE/drizzle.config.ts ./gats-academy/drizzle.config.ts
 COPY --from=be-builder /app/BE/tsconfig.json ./gats-academy/tsconfig.json
 COPY --from=be-builder /app/BE/src ./gats-academy/src

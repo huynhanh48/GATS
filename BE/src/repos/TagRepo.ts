@@ -89,6 +89,17 @@ export async function findById(id: string): Promise<Tag | undefined> {
   return rows[0] ? parseRow(rows[0]) : undefined;
 }
 
+export async function findByIds(ids: string[]): Promise<Tag[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+  const rows = await db
+    .select()
+    .from(tagsTable)
+    .where(inArray(tagsTable.id, ids));
+  return rows.map(parseRow);
+}
+
 export async function findByTypeAndSlug(
   type: TagType,
   slug: string,

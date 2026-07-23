@@ -3,6 +3,7 @@
 import { useCart } from "@/components/providers/CartProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -737,7 +738,7 @@ export default function CheckoutPage() {
                       <img
                         src={resolveMediaUrl(item.thumbnail)}
                         alt={item.courseName}
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 h-full w-full bg-muted p-1 object-contain"
                         onError={(e) => {
                           e.currentTarget.src = "/auth-bg.jpg";
                         }}
@@ -842,8 +843,19 @@ export default function CheckoutPage() {
                 {isSubmitting ? "Đang xử lý..." : "Hoàn tất thanh toán"}
               </button>
               <p className="text-center text-xs text-muted-foreground mt-4">
-                Bằng việc hoàn tất thanh toán, bạn đồng ý với Điều khoản sử dụng
-                của chúng tôi.
+                Bằng việc hoàn tất thanh toán, bạn đồng ý với{" "}
+                <Link href="/terms" className="font-semibold text-foreground hover:underline">
+                  Điều khoản dịch vụ
+                </Link>
+                ,{" "}
+                <Link href="/payment-policy" className="font-semibold text-foreground hover:underline">
+                  Chính sách thanh toán
+                </Link>{" "}
+                và{" "}
+                <Link href="/refund" className="font-semibold text-foreground hover:underline">
+                  Chính sách hoàn tiền
+                </Link>
+                .
               </p>
             </div>
           </div>

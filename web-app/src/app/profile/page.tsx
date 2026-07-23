@@ -272,7 +272,7 @@ export default function ProfilePage() {
                         src={enrollments[0]?.course?.thumbnail || "/auth-bg.jpg"} 
                         alt="Course"
                         fill
-                        className="object-cover"
+                        className="bg-muted p-2 object-contain"
                       />
                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
                         <PlayCircle className="w-12 h-12 text-white" />
@@ -399,7 +399,7 @@ export default function ProfilePage() {
                             src={c.thumbnail || "/auth-bg.jpg"} 
                             alt={c.title} 
                             fill 
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                            className="bg-muted p-2 object-contain"
                           />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <PlayCircle className="w-12 h-12 text-white" />

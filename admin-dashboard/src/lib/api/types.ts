@@ -81,6 +81,28 @@ export type TagPublic = {
   type?: string;
 };
 
+export type TagType = "course" | "post" | "global";
+export type TagStatus = "active" | "inactive";
+
+export type TagWithCounts = TagPublic & {
+  type: TagType;
+  status: TagStatus;
+  description?: string | null;
+  courseCount: number;
+  postCount: number;
+};
+
+export type TagListResponse = {
+  data: TagWithCounts[];
+};
+
+export type CreateTagInput = {
+  name: string;
+  type: TagType;
+  slug?: string;
+  description?: string;
+};
+
 export type CoursePublic = {
   id: string;
   title: string;
@@ -139,7 +161,7 @@ export type CourseInclude = {
   id: string;
   key: string;
   label: string;
-  value: number | null;
+  value: string | null;
   unit: string | null;
   order: number;
 };
@@ -211,7 +233,7 @@ export type LearningOutcomeInput = {
 export type CourseIncludeInput = {
   key: string;
   label: string;
-  value?: number | null;
+  value?: string | null;
   unit?: string | null;
 };
 

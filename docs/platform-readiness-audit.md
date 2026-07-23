@@ -64,7 +64,8 @@ Các kết luận build ở trên phản ánh đúng working tree này, không c
 
 ### 4.1. Domain đã có
 
-- Auth/session: email/password, verify/reset/change password, Google token, session revoke, role/permission.
+- Auth/session: email/password, verify/reset/change password, Google token, session revoke, role/permission. Admin đã có UI + API đổi role tài khoản `user | admin`; chỉ admin được thao tác, chặn tự hạ quyền/chặn xóa admin cuối cùng và thu hồi session sau khi đổi. Mentor/instructor được phân công riêng theo khóa học: admin phải chọn khóa, hệ thống cập nhật `course.instructorId`, gắn role scope `course` và gỡ quyền scope của mentor cũ khi thay người.
+  - Web-app hiển thị “Giảng dạy” cho tài khoản có role `instructor/admin`, dẫn sang khu vực quản lý khóa học. Admin-dashboard hỗ trợ Google Sign-In bằng cùng Web Client ID và từ chối/đăng xuất ngay tài khoản không có quyền staff.
 - Catalog/content: course, section, lesson, category, tag, post, comment, review.
 - Commerce: cart, order, transaction, bank account, coupon, SePay poll/webhook.
 - Learning: enrollment, lesson progress, video/HLS, quiz attempt, assignment submission/attachment.
@@ -317,7 +318,8 @@ Contract source đã đồng bộ. Việc còn lại là integration test Mobile
 
 - Hub **XP, badge, leaderboard, achievements** — `MockData`.
 - **AI coach** — mock reply.
-- **Group chat** — `MockGroupChatStore`.
+- ~~**Group chat** — `MockGroupChatStore`.~~ **Đã chuyển sang BE SoT**: mỗi khóa có một nhóm chung ngầm định theo `courseId`; học viên có enrollment active, mentor của khóa và admin mới truy cập được. Web + Mobile dùng chung API, poll 5 giây; mentor ghim, người gửi/mentor xóa. Cần apply migration và UAT nhiều tài khoản trên staging.
+  - Vòng đời đã khóa rõ: soft-delete giữ lịch sử nhưng API chat trả `410` và client dừng polling; restore mở lại cùng nhóm; khóa mới dùng UUID/nhóm mới; hard-delete cascade chat nhưng bị chặn `409` nếu khóa đã phát sinh đơn hàng. Restore trả `409` rõ ràng nếu slug đã được khóa khác sử dụng.
 - **Admin / Mentor** mobile shell — mock.
 - **Reviews** — hard-coded/mock.
 - **Wishlist** — local trong `CartController`, không server SoT.
@@ -383,6 +385,7 @@ Contract source đã đồng bộ. Việc còn lại là integration test Mobile
 | Assignment | Có | Text/URL | Builder/grading | Text/URL submit API + UI | **MVP, cần file/status UAT** |
 | Linked post | Có | Có | Có | Chưa xác nhận | **Web/Admin đạt** |
 | Q&A/note/bookmark | Có | Có | Chưa có ops sâu | API + lesson UI | **Web/Mobile code done** |
+| Nhóm chat khóa học | API + DB + enrollment ACL | Panel trong `/learn`, light/dark | Có quyền mentor/admin qua course ACL; chưa có màn moderation riêng | Panel cũ đã nối API thật | **MVP code done; cần migration + multi-user UAT, realtime hiện poll 5s** |
 | Certificate | Có | Profile có | Manager có | Hub `certificates/mine`; XP/badge vẫn mock | **Certificate code done; gamification mock** |
 | Leads | Có | Có | CRM MVP | Không bắt buộc | **MVP** |
 | Moderation | Có | Thiếu report flow | Comment moderation có | Chưa đủ | **Partial** |

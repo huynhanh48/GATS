@@ -8,6 +8,8 @@ import * as EnrollmentRepo from '@src/repos/EnrollmentRepo';
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
 import * as OrderRepo from '@src/repos/OrderRepo';
+import * as RoleRepo from '@src/repos/RoleRepo';
+import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import {
   clearSession,
   createVerifyToken,
@@ -22,6 +24,10 @@ const Errors = {
   USER_NOT_FOUND: 'User not found',
   ALREADY_VERIFIED: 'Email is already verified',
   NO_PASSWORD: 'Account does not use password login',
+  SELF_ROLE_CHANGE: 'Bạn không thể tự hạ quyền admin của chính mình',
+  LAST_ADMIN: 'Không thể hạ quyền admin cuối cùng của hệ thống',
+  COURSE_NOT_FOUND: 'Không tìm thấy khóa học để phân công mentor',
+  INSTRUCTOR_ROLE_NOT_FOUND: 'Role instructor chưa được khởi tạo',
 } as const;
 
 function frontendOrigin(): string {
@@ -50,6 +56,7 @@ async function listUsers(query: {
   const users = await Promise.all(
     data.map(async (user) => {
       const roles = await getRoleNames(user.id);
+      const globalRoles = await RoleRepo.getGlobalRoleNames(user.id);
       return {
         id: user.id,
         userName: user.userName,
@@ -58,6 +65,7 @@ async function listUsers(query: {
         type: user.type,
         isLocked: user.isLocked,
         roles,
+        globalRoles,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       };
@@ -83,8 +91,10 @@ async function getUser(userId: number) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.USER_NOT_FOUND);
   }
 
-  const [roles, orders, enrollments, auditLogs] = await Promise.all([
+  const [roles, globalRoles, managedCourses, orders, enrollments, auditLogs] = await Promise.all([
     getRoleNames(userId),
+    RoleRepo.getGlobalRoleNames(userId),
+    CourseRepo.listByInstructorId(userId),
     OrderRepo.listByUserId(userId),
     EnrollmentRepo.listByUser(userId),
     AuditLogRepo.listByResource({
@@ -137,11 +147,18 @@ async function getUser(userId: number) {
   return {
     user: {
       ...toPublicUser(user, roles),
+      globalRoles,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       hasPassword: Boolean(user.passwordHash),
     },
     recentOrders,
+    managedCourses: managedCourses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      slug: course.slug,
+      status: course.status,
+    })),
     enrollments: enrichedEnrollments,
     enrollmentsSummary: {
       total: enrollments.length,
@@ -156,6 +173,106 @@ async function getUser(userId: number) {
       meta: log.meta,
       createdAt: log.createdAt,
     })),
+  };
+}
+
+async function assignMentorCourse(
+  userId: number,
+  courseId: string,
+  actorUserId: number,
+) {
+  const [user, course, instructorRole] = await Promise.all([
+    findById(userId),
+    CourseRepo.findById(courseId),
+    RoleRepo.findByName('instructor'),
+  ]);
+  if (!user) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.USER_NOT_FOUND);
+  }
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+  if (!instructorRole) {
+    throw new RouteError(
+      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+      Errors.INSTRUCTOR_ROLE_NOT_FOUND,
+    );
+  }
+
+  const previousInstructorId = course.instructorId;
+  if (previousInstructorId && previousInstructorId !== userId) {
+    await RoleRepo.removeScopedRoleFromUser(
+      previousInstructorId,
+      instructorRole.id,
+      RESOURCE_TYPES.COURSE,
+      courseId,
+    );
+  }
+
+  await CourseRepo.update(courseId, { instructorId: userId });
+  await RoleRepo.assignRoleToUser(userId, instructorRole.id, {
+    resourceType: RESOURCE_TYPES.COURSE,
+    resourceId: courseId,
+  });
+  await clearSession(userId);
+  if (previousInstructorId && previousInstructorId !== userId) {
+    await clearSession(previousInstructorId);
+  }
+  await AuditLogRepo.record({
+    actorUserId,
+    action: 'course.mentor_assigned',
+    resourceType: 'course',
+    resourceId: courseId,
+    meta: { userId, previousInstructorId },
+  });
+
+  return {
+    message: `Đã phân công ${user.userName} làm mentor khóa ${course.title}`,
+  };
+}
+
+async function updateGlobalRole(
+  userId: number,
+  role: 'user' | 'admin',
+  actorUserId: number,
+) {
+  const user = await findById(userId);
+  if (!user) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.USER_NOT_FOUND);
+  }
+
+  const previousRoles = await RoleRepo.getGlobalRoleNames(userId);
+  if (previousRoles.length === 1 && previousRoles[0] === role) {
+    return {
+      user: toPublicUser(user, await getRoleNames(userId)),
+      globalRoles: previousRoles,
+      message: 'Role không thay đổi',
+    };
+  }
+  if (userId === actorUserId && previousRoles.includes('admin') && role !== 'admin') {
+    throw new RouteError(HttpStatusCodes.CONFLICT, Errors.SELF_ROLE_CHANGE);
+  }
+  if (previousRoles.includes('admin') && role !== 'admin') {
+    const adminCount = await RoleRepo.countUsersWithGlobalRole('admin');
+    if (adminCount <= 1) {
+      throw new RouteError(HttpStatusCodes.CONFLICT, Errors.LAST_ADMIN);
+    }
+  }
+
+  await RoleRepo.replaceGlobalRole(userId, role);
+  await clearSession(userId);
+  await AuditLogRepo.record({
+    actorUserId,
+    action: 'user.role_updated',
+    resourceType: 'user',
+    resourceId: String(userId),
+    meta: { previousRoles, role },
+  });
+
+  return {
+    user: toPublicUser(user, await getRoleNames(userId)),
+    globalRoles: [role],
+    message: 'Đã cập nhật role và thu hồi phiên đăng nhập của người dùng',
   };
 }
 
@@ -299,4 +416,6 @@ export default {
   sendPasswordReset,
   revokeSessions,
   setLocked,
+  updateGlobalRole,
+  assignMentorCourse,
 };

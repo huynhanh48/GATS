@@ -7,13 +7,10 @@ import {
   type NewCourse,
 } from '@src/db/schema/course';
 import {
-  softDeleteVisibilityCondition,
   type SoftDeleteVisibility,
+  softDeleteVisibilityCondition,
 } from '@src/db/soft-delete';
-import {
-  type CourseRecord,
-  parseCourseRecord,
-} from '@src/models/Course.model';
+import { type CourseRecord, parseCourseRecord } from '@src/models/Course.model';
 
 function parseRow(row: unknown): CourseRecord {
   return parseCourseRecord(row);
@@ -62,6 +59,22 @@ export async function findBySlug(
   return rows[0] ? parseRow(rows[0]) : undefined;
 }
 
+export async function listByInstructorId(
+  instructorId: number,
+): Promise<CourseRecord[]> {
+  const rows = await db
+    .select()
+    .from(coursesTable)
+    .where(
+      and(
+        eq(coursesTable.instructorId, instructorId),
+        softDeleteVisibilityCondition(coursesTable.deletedAt)!,
+      ),
+    )
+    .orderBy(desc(coursesTable.updatedAt));
+  return rows.map(parseRow);
+}
+
 export async function slugExists(
   slug: string,
   excludeId?: string,
@@ -84,6 +97,7 @@ export async function findMany(options: {
   status?: CourseStatus;
   level?: string;
   categoryId?: string;
+  instructorId?: number;
   courseIds?: string[];
   skip: number;
   take: number;
@@ -102,6 +116,9 @@ export async function findMany(options: {
   }
   if (options.categoryId) {
     conditions.push(eq(coursesTable.categoryId, options.categoryId));
+  }
+  if (options.instructorId !== undefined) {
+    conditions.push(eq(coursesTable.instructorId, options.instructorId));
   }
   if (options.courseIds) {
     conditions.push(inArray(coursesTable.id, options.courseIds));
@@ -138,7 +155,12 @@ export async function update(
   const rows = await db
     .update(coursesTable)
     .set({ ...data, updatedAt: new Date() })
-    .where(and(eq(coursesTable.id, id), softDeleteVisibilityCondition(coursesTable.deletedAt)!))
+    .where(
+      and(
+        eq(coursesTable.id, id),
+        softDeleteVisibilityCondition(coursesTable.deletedAt)!,
+      ),
+    )
     .returning();
   return rows[0] ? parseRow(rows[0]) : undefined;
 }

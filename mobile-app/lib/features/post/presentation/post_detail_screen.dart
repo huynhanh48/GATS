@@ -3,7 +3,7 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
@@ -33,9 +33,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void initState() {
     super.initState();
     _loadUser();
-    MockPostStore.instance.addListener(_onStoreChanged);
+    PostStore.instance.addListener(_onStoreChanged);
     CourseModule.repository.addListener(_onStoreChanged);
-    MockPostStore.instance.syncFromApi(focusPostId: widget.postId);
+    PostStore.instance.syncFromApi(focusPostId: widget.postId);
   }
 
   Future<void> _loadUser() async {
@@ -52,7 +52,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   void dispose() {
     _commentController.dispose();
     _commentFocus.dispose();
-    MockPostStore.instance.removeListener(_onStoreChanged);
+    PostStore.instance.removeListener(_onStoreChanged);
     CourseModule.repository.removeListener(_onStoreChanged);
     super.dispose();
   }
@@ -100,7 +100,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    MockPostStore.instance.addComment(
+    PostStore.instance.addComment(
       postId: widget.postId,
       authorId: user.id,
       authorName: user.displayName,
@@ -113,7 +113,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final post = MockPostStore.instance.postById(widget.postId);
+    final post = PostStore.instance.postById(widget.postId);
 
     if (post == null) {
       return GatsThemedScaffold(
@@ -126,16 +126,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     }
 
     final role = _user?.role ?? UserRole.user;
-    final canReadFull = MockPostStore.instance.canReadFull(
+    final canReadFull = PostStore.instance.canReadFull(
       post: post,
       userId: _user?.id,
       role: role,
     );
-    final courseTitle = MockPostStore.instance.courseTitleFor(post);
+    final courseTitle = PostStore.instance.courseTitleFor(post);
     final course = post.courseId != null
         ? CourseModule.repository.getCourse(post.courseId!)
         : null;
-    final comments = MockPostStore.instance.commentsFor(post.id);
+    final comments = PostStore.instance.commentsFor(post.id);
     final canComment = canReadFull && _user != null;
 
     return GatsThemedScaffold(

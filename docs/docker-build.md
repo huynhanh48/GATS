@@ -41,10 +41,10 @@ notepad .env
 cd c:\Users\admin\Documents\CODE\GATS-ACADEMY
 
 # Build lại app (web + BE + admin) + hạ tầng
-docker compose -p gats-academy up --build -d
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 # Xem log
-docker compose -p gats-academy logs -f app
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml logs -f app
 ```
 
 Chỉ rebuild service `app` (nhanh hơn khi chỉ đổi code):
@@ -69,7 +69,7 @@ curl -i http://127.0.0.1:9100/
 
 Trong log `app` kỳ vọng:
 
-- `[entrypoint] Syncing database schema...` rồi `Schema synced`; nếu push fail, container phải dừng để tránh chạy app với schema lệch
+- `[entrypoint] Applying versioned database migrations...` rồi `Schema is current`; nếu migration fail, container dừng để tránh chạy app với schema lệch
 - pm2: `gats-academy-api`, `gats-academy-worker`, `web-app`, `admin-dashboard` online
 
 ## Những gì Dockerfile làm
@@ -77,7 +77,7 @@ Trong log `app` kỳ vọng:
 1. **web-builder** — `npm ci` + `next build` với `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_API_URL`
 2. **be-builder** — `npm run build` (tsc) — cần pass sau fix cookie
 3. **admin-builder** — `next build`
-4. Image runtime — copy artifact + `ecosystem.config.js` + `docker-entrypoint.sh` → `drizzle-kit push` rồi `pm2-runtime`
+4. Image runtime — copy artifact + versioned SQL + `docker-entrypoint.sh` → checksum migration runner rồi `pm2-runtime`
 
 ## Đã chỉnh gần đây (tránh lỗi deploy)
 
@@ -95,7 +95,7 @@ Trong log `app` kỳ vọng:
 | Google icon/login fail trên domain mới | Thêm origin đúng vào Google Console; set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` rồi **rebuild** |
 | Web gọi API sai host | Sửa `NEXT_PUBLIC_API_URL` rồi rebuild |
 | Build BE fail cookie | Đảm bảo `AuthService.getCookieOptions(req?)` đã merge trước khi build |
-| `Schema push failed` | Container chủ động dừng; kiểm tra `DATABASE_URL`, DB healthy và log trước khi retry |
+| Migration failed | Container chủ động dừng; không sửa migration đã apply, kiểm tra `DATABASE_URL`, checksum và backup trước khi retry |
 | Port đã dùng | Đổi mapping trong `docker-compose.yml` hoặc tắt process host |
 
 ## Chỉ chạy infra (dev BE trên máy)

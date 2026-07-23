@@ -1,22 +1,38 @@
-"use client";
-import { motion } from "framer-motion";
-import React from "react";
-import { CoverflowCarousel } from "../common/CoverflowCarousel";
+import { SectionHeader } from "@/components/ted/section-header";
+import { Surface } from "@/components/ui/surface";
+
+const experts = [
+  { src: "/professional/person-1.jpg", name: "Liam Johnson", role: "AI Research Lead" },
+  { src: "/professional/person-2.jpg", name: "Oliver Smith", role: "Machine Learning Engineer" },
+  { src: "/professional/person-3.jpg", name: "Nguyễn Minh Quân", role: "Data Scientist" },
+  { src: "/professional/person-4.jpg", name: "Nguyễn Tuệ Mẫn", role: "AI Solutions Architect" },
+  { src: "/professional/person-5.jpg", name: "Lê Thùy Dương", role: "NLP Specialist" },
+];
 
 export function CapabilitiesSection() {
   return (
-    <section className="w-full py-24 relative z-20 bg-transparent">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10">
-        <div className="mb-4 max-w-2xl">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-foreground">
-            Mentor GATS
-          </h2>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Gặp gỡ đội ngũ chuyên gia dày dặn kinh nghiệm, những người sẽ trực tiếp đồng hành và chia sẻ kiến thức chuyên sâu về AI cho bạn.
-          </p>
-        </div>
-        <div className="w-full">
-          <CoverflowCarousel />
+    <section className="w-full bg-background py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <SectionHeader
+          eyebrow="Đội ngũ chuyên gia"
+          title="Mentor GATS"
+          description="Những chuyên gia trực tiếp đồng hành và chia sẻ kinh nghiệm ứng dụng AI trong công việc thực tế."
+        />
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {experts.map((expert) => (
+            <Surface key={expert.name} className="overflow-hidden">
+              <img
+                src={expert.src}
+                alt={`Chân dung ${expert.name}`}
+                loading="lazy"
+                className="aspect-[4/3] w-full object-cover object-top"
+              />
+              <div className="p-5">
+                <h3 className="text-lg font-semibold">{expert.name}</h3>
+                <p className="mt-1 text-sm font-medium text-brand-primary">{expert.role}</p>
+              </div>
+            </Surface>
+          ))}
         </div>
       </div>
     </section>

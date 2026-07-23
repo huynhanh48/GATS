@@ -289,14 +289,14 @@ class _TedCourseCover extends StatelessWidget {
     if (url != null && url.isNotEmpty) {
       return Image.network(
         url,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain,
         width: double.infinity,
         height: double.infinity,
         errorBuilder: (context, error, stackTrace) {
           // Broken remote URL → local asset cover, then gradient.
           return Image.asset(
             CourseCoverAssets.pathForSeed(seed),
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             width: double.infinity,
             height: double.infinity,
             errorBuilder: (context, error, stackTrace) => fallback,
@@ -306,7 +306,7 @@ class _TedCourseCover extends StatelessWidget {
     }
     return Image.asset(
       CourseCoverAssets.pathForSeed(seed),
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       width: double.infinity,
       height: double.infinity,
       errorBuilder: (context, error, stackTrace) => fallback,

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import SigninWithPassword from "../SigninWithPassword";
 
@@ -9,14 +8,9 @@ export default function Signin() {
         <SigninWithPassword />
       </div>
 
-      <div className="mt-6 text-center">
-        <p>
-          Don’t have any account?{" "}
-          <Link href="/auth/sign-up" className="text-primary">
-            Sign Up
-          </Link>
-        </p>
-      </div>
+      <p className="mt-6 text-center text-sm text-slate-500">
+        Chỉ dành cho quản trị viên và mentor đã được phân công khóa học.
+      </p>
     </Suspense>
   );
 }

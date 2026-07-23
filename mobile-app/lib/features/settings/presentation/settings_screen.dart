@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gats_academy/core/config/legal_urls.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/services/app_theme_controller.dart';
@@ -272,6 +273,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             content: Text(AppStrings.settingsReplaySuccess),
                           ),
                         );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              SectionCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
+                        AppSpacing.sm,
+                      ),
+                      child: Text(
+                        l10n.settingsLegal,
+                        style: TextStyle(
+                          color: gats.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.description_outlined,
+                      title: l10n.legalTerms,
+                      onTap: () async {
+                        await LegalUrls.open(context, LegalUrls.terms);
+                      },
+                    ),
+                    Divider(height: 1, color: gats.divider),
+                    _SettingsTile(
+                      icon: Icons.privacy_tip_outlined,
+                      title: l10n.legalPrivacy,
+                      onTap: () async {
+                        await LegalUrls.open(context, LegalUrls.privacy);
+                      },
+                    ),
+                    Divider(height: 1, color: gats.divider),
+                    _SettingsTile(
+                      icon: Icons.currency_exchange_outlined,
+                      title: l10n.legalRefund,
+                      onTap: () async {
+                        await LegalUrls.open(context, LegalUrls.refund);
+                      },
+                    ),
+                    Divider(height: 1, color: gats.divider),
+                    _SettingsTile(
+                      icon: Icons.payments_outlined,
+                      title: l10n.legalPayment,
+                      onTap: () async {
+                        await LegalUrls.open(context, LegalUrls.payment);
+                      },
+                    ),
+                    Divider(height: 1, color: gats.divider),
+                    _SettingsTile(
+                      icon: Icons.manage_accounts_outlined,
+                      title: l10n.legalDataRequest,
+                      onTap: () async {
+                        await LegalUrls.open(context, LegalUrls.dataRequest);
                       },
                     ),
                   ],

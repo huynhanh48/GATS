@@ -872,19 +872,19 @@ const RAG_INCLUDES = [
   {
     key: 'Monitor',
     label: 'Video theo yêu cầu',
-    value: 24,
+    value: '24',
     unit: 'hour',
   },
   {
     key: 'Download',
     label: 'Tài liệu tải về',
-    value: 12,
+    value: '12',
     unit: 'resource',
   },
   {
     key: 'FileText',
     label: 'Bài viết',
-    value: 8,
+    value: '8',
     unit: 'article',
   },
   {

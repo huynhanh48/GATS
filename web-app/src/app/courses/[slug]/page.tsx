@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { ParticlesBackground } from "@/components/common/ParticlesBackground";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -258,15 +257,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
         ? courseData.includes.map((item: any) => {
             let text = item.label;
             if (item.value) {
-              if (item.unit === "hour") {
-                text = `${item.value} giờ ${item.label.toLowerCase()}`;
-              } else if (item.unit === "resource") {
-                text = `${item.value} tài liệu tải về`;
-              } else if (item.unit === "article") {
-                text = `${item.value} bài viết`;
-              } else {
-                text = `${item.value} ${item.unit} ${item.label.toLowerCase()}`;
-              }
+              const unit = item.unit ? ` ${item.unit}` : "";
+              text = `${item.value}${unit} ${item.label.toLowerCase()}`;
             }
 
             const lucideIconMap: Record<string, any> = {
@@ -356,8 +348,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
     <main className="min-h-screen bg-background relative flex flex-col justify-between">
       <Header />
 
-      {/* TOP DARK BANNER (Full width) */}
-      <div className="bg-[#1C1D1F] pt-32 pb-12 w-full text-white">
+      {/* Light hero aligned with the mobile design system. */}
+      <div className="w-full border-b border-divider bg-card pb-12 pt-32 text-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full lg:flex lg:gap-12 relative">
 
           {/* Left Side (Banner Content) */}
@@ -365,37 +357,37 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             {/* Breadcrumbs */}
             <div className="mb-4">
               <Breadcrumb>
-                <BreadcrumbList className="text-slate-300">
+                <BreadcrumbList className="text-muted-foreground">
                   <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                      <Link href="/" className="hover:text-white transition-colors">
+                      <Link href="/" className="transition-colors hover:text-brand-primary">
                         Trang chủ
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
-                  <BreadcrumbSeparator className="text-slate-500 [&>svg]:size-3" />
+                  <BreadcrumbSeparator className="text-muted-foreground [&>svg]:size-3" />
                   <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                      <Link href="/courses" className="hover:text-white transition-colors">
+                      <Link href="/courses" className="transition-colors hover:text-brand-primary">
                         Khóa học
                       </Link>
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   {courseData?.category && courseData.category.slug !== "course" && courseData.category.name.toLowerCase() !== "khóa học" && (
                     <>
-                      <BreadcrumbSeparator className="text-slate-500 [&>svg]:size-3" />
+                      <BreadcrumbSeparator className="text-muted-foreground [&>svg]:size-3" />
                       <BreadcrumbItem>
                         <BreadcrumbLink asChild>
-                          <Link href={`/courses?category=${courseData.category.slug}`} className="hover:text-white transition-colors">
+                          <Link href={`/courses?category=${courseData.category.slug}`} className="transition-colors hover:text-brand-primary">
                             {courseData.category.name}
                           </Link>
                         </BreadcrumbLink>
                       </BreadcrumbItem>
                     </>
                   )}
-                  <BreadcrumbSeparator className="text-slate-500 [&>svg]:size-3" />
+                  <BreadcrumbSeparator className="text-muted-foreground [&>svg]:size-3" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage className="text-blue-300 font-bold max-w-[200px] truncate sm:max-w-none">
+                    <BreadcrumbPage className="max-w-[200px] truncate font-bold text-brand-primary sm:max-w-none">
                       {course.title}
                     </BreadcrumbPage>
                   </BreadcrumbItem>
@@ -404,34 +396,25 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             </div>
 
             {/* Title & Subtitle */}
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white leading-tight">
+            <h1 className="text-3xl font-bold leading-tight tracking-tight text-foreground md:text-4xl">
               {course.title}
             </h1>
-            <p className="text-lg text-slate-200">
+            <p className="text-lg leading-8 text-muted-foreground">
               {course.description}
             </p>
 
             {/* Badges & Meta */}
             <div className="flex flex-wrap items-center gap-3">
               {course.tags && course.tags.length > 0 ? (
-                course.tags.map((tag, idx) => {
-                  const badgeColors = [
-                    "bg-[#ECEB98] text-[#3D3C0A] hover:bg-[#ECEB98]/80", // Yellowish
-                    "bg-[#D3E5FE] text-[#1D3B6A] hover:bg-[#D3E5FE]/80", // Blueish
-                    "bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200",
-                    "bg-emerald-100 text-emerald-800 hover:bg-emerald-200",
-                    "bg-amber-100 text-amber-900 hover:bg-amber-200"
-                  ];
-                  const colorClass = badgeColors[idx % badgeColors.length];
-
+                course.tags.map((tag) => {
                   return (
-                    <Badge key={tag.id} className={`${colorClass} px-3 py-1 font-bold text-xs uppercase border-none rounded-sm`}>
+                    <Badge key={tag.id} className="rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase text-brand-primary">
                       {tag.name}
                     </Badge>
                   );
                 })
               ) : (
-                <Badge className="bg-[#ECEB98] text-[#3D3C0A] hover:bg-[#ECEB98]/80 px-3 py-1 font-bold text-xs uppercase border-none rounded-sm">
+                <Badge className="rounded-full px-3 py-1 text-xs font-bold uppercase">
                   Khóa học
                 </Badge>
               )}
@@ -447,7 +430,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                       <Star className="w-4 h-4 fill-current" />
                     </div>
                     {course.reviews ? (
-                      <span className="text-blue-300 font-normal underline cursor-pointer hover:text-white">
+                      <span className="cursor-pointer font-normal text-brand-primary underline">
                         ({course.reviews})
                       </span>
                     ) : null}
@@ -458,7 +441,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
             ) : null}
 
             <div className="text-sm">
-              Được tạo bởi <span className="text-blue-300 underline cursor-pointer hover:text-white font-bold">{course.author}</span>
+              Được tạo bởi <span className="cursor-pointer font-bold text-brand-primary underline">{course.author}</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-4 text-sm pt-2">
@@ -662,7 +645,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
               }}
               className="relative aspect-video w-full border-b border-border bg-black overflow-hidden flex items-center justify-center cursor-pointer group"
             >
-              <img src={course.thumbnail || "/auth-bg.jpg"} alt="Video Preview" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+              <img src={course.thumbnail || "/auth-bg.jpg"} alt={`Ảnh bìa khóa học ${course.title}`} className="absolute inset-0 h-full w-full object-contain opacity-70 transition-opacity group-hover:opacity-90" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="relative z-10 w-14 h-14 bg-white/90 text-black rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:bg-white transition-all duration-300">
                 <Play className="w-5 h-5 fill-current translate-x-[2px]" />

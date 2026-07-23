@@ -43,7 +43,7 @@ export async function create(data: {
   courseId: string;
   key: string;
   label: string;
-  value?: number | null;
+  value?: string | null;
   unit?: string | null;
   order: number;
 }): Promise<CourseIncludeRecord> {
@@ -66,7 +66,7 @@ export async function update(
   data: {
     key?: string;
     label?: string;
-    value?: number | null;
+    value?: string | null;
     unit?: string | null;
     order?: number;
   },

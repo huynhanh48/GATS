@@ -3,7 +3,7 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/ted/ted.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/post/presentation/post_detail_screen.dart';
 import 'package:gats_academy/features/post/presentation/posts_feed_screen.dart';
@@ -23,7 +23,7 @@ class HomePostsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final posts = MockPostStore.instance.featuredForUser(userId: userId, role: role);
+    final posts = PostStore.instance.featuredForUser(userId: userId, role: role);
     if (posts.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -36,7 +36,7 @@ class HomePostsSection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         ...posts.map((post) {
-          final canReadFull = MockPostStore.instance.canReadFull(
+          final canReadFull = PostStore.instance.canReadFull(
             post: post,
             userId: userId,
             role: role,
@@ -46,7 +46,7 @@ class HomePostsSection extends StatelessWidget {
             child: PostCard(
               post: post,
               canReadFull: canReadFull,
-              courseTitle: MockPostStore.instance.courseTitleFor(post),
+              courseTitle: PostStore.instance.courseTitleFor(post),
               compact: true,
               onTap: () {
                 GatsMainNavigator.push(

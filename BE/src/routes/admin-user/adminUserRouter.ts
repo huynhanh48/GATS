@@ -95,6 +95,42 @@ async function unlockUser(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+const updateRoleBodySchema = z.object({
+  role: z.enum(['user', 'admin']),
+});
+
+async function updateRole(req: Request, res: Response) {
+  const id = Number(getRouteParam(req.params.id));
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(HttpStatusCodes.BAD_REQUEST).json({ message: 'Invalid id' });
+  }
+  const { role } = updateRoleBodySchema.parse(req.body);
+  const result = await AdminUserService.updateGlobalRole(
+    id,
+    role,
+    authUserId(req),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+const assignMentorBodySchema = z.object({
+  courseId: z.string().uuid(),
+});
+
+async function assignMentorCourse(req: Request, res: Response) {
+  const id = Number(getRouteParam(req.params.id));
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(HttpStatusCodes.BAD_REQUEST).json({ message: 'Invalid id' });
+  }
+  const { courseId } = assignMentorBodySchema.parse(req.body);
+  const result = await AdminUserService.assignMentorCourse(
+    id,
+    courseId,
+    authUserId(req),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   listUsers: errorHandle(listUsers),
   getUser: errorHandle(getUser),
@@ -103,4 +139,6 @@ export default {
   revokeSessions: errorHandle(revokeSessions),
   lockUser: errorHandle(lockUser),
   unlockUser: errorHandle(unlockUser),
+  updateRole: errorHandle(updateRole),
+  assignMentorCourse: errorHandle(assignMentorCourse),
 };

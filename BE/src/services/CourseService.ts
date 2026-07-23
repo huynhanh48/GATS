@@ -1,9 +1,10 @@
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import { appendSlugSuffix, slugify } from '@src/common/utils/slug';
 import { RouteError } from '@src/common/utils/route-errors';
+import { appendSlugSuffix, slugify } from '@src/common/utils/slug';
 import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import type { CourseStatus } from '@src/db/schema/course';
 import type { CategoryPublic } from '@src/models/Category.model';
+import type { AuthUser } from '@src/models/common/types';
 import type {
   CourseDetail,
   CoursePublic,
@@ -14,6 +15,7 @@ import type {
 } from '@src/models/Course.model';
 import { parseCourseDetail, parseCoursePublic } from '@src/models/Course.model';
 import type { TagPublic } from '@src/models/Tag.model';
+import * as AssignmentRepo from '@src/repos/AssignmentRepo';
 import * as CategoryRepo from '@src/repos/CategoryRepo';
 import * as CourseIncludeRepo from '@src/repos/CourseIncludeRepo';
 import * as CourseLearningOutcomeRepo from '@src/repos/CourseLearningOutcomeRepo';
@@ -22,9 +24,9 @@ import * as CourseReviewRepo from '@src/repos/CourseReviewRepo';
 import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as CourseTagRepo from '@src/repos/CourseTagRepo';
 import * as EnrollmentRepo from '@src/repos/EnrollmentRepo';
-import * as AssignmentRepo from '@src/repos/AssignmentRepo';
 import * as LessonAttachmentRepo from '@src/repos/LessonAttachmentRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
+import * as OrderRepo from '@src/repos/OrderRepo';
 import * as PostRepo from '@src/repos/PostRepo';
 import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
@@ -32,18 +34,22 @@ import * as RoleRepo from '@src/repos/RoleRepo';
 import * as UserRepo from '@src/repos/UserRepo';
 import * as VideoRepo from '@src/repos/VideoRepo';
 import CategoryService from '@src/services/CategoryService';
-import NotificationService from '@src/services/NotificationService';
-import CourseAccessService from '@src/services/CourseAccessService';
-import TagService from '@src/services/TagService';
 import {
   buildDetailSections,
   computeTotalDurationSeconds,
 } from '@src/services/course-curriculum-builder';
+import CourseAccessService from '@src/services/CourseAccessService';
+import NotificationService from '@src/services/NotificationService';
+import TagService from '@src/services/TagService';
 
 const Errors = {
   NOT_FOUND: 'Course not found',
   SLUG_EXISTS: 'Slug already exists',
   FORBIDDEN: 'Course is not published',
+  RESTORE_SLUG_CONFLICT:
+    'Không thể khôi phục vì slug đang được một khóa học khác sử dụng',
+  HARD_DELETE_HAS_ORDERS:
+    'Không thể xóa vĩnh viễn khóa học đã phát sinh đơn hàng; hãy giữ trong thùng rác để bảo toàn lịch sử giao dịch',
 } as const;
 
 async function resolveUniqueSlug(
@@ -91,7 +97,9 @@ async function attachPublic(course: CourseRecord): Promise<CoursePublic> {
   );
 }
 
-async function attachPublicList(courses: CourseRecord[]): Promise<CoursePublic[]> {
+async function attachPublicList(
+  courses: CourseRecord[],
+): Promise<CoursePublic[]> {
   const [categoryMap, tagMap] = await Promise.all([
     CategoryRepo.findByCourseIds(courses.map((course) => course.id)),
     CourseTagRepo.findByCourseIds(courses.map((course) => course.id)),
@@ -148,10 +156,7 @@ function mapCreateInput(
   };
 }
 
-function mapUpdateInput(
-  input: UpdateCourseInput,
-  categoryId?: string | null,
-) {
+function mapUpdateInput(input: UpdateCourseInput, categoryId?: string | null) {
   return {
     ...(input.title !== undefined ? { title: input.title } : {}),
     ...(input.slug !== undefined ? { slug: input.slug } : {}),
@@ -182,25 +187,36 @@ function assertPublishedAccess(
   }
 }
 
-async function list(query: ListCoursesQuery, isAuthenticated: boolean) {
+async function list(query: ListCoursesQuery, viewer?: AuthUser) {
+  const isAdmin = viewer?.roles.includes('admin') ?? false;
+  const isInstructor =
+    (viewer?.roles.includes('instructor') ?? false) && !isAdmin;
+  const canManageCourses = isAdmin || isInstructor;
   const deletedVisibility = query.deleted ?? 'without';
   if (
     (deletedVisibility === 'only' || deletedVisibility === 'with') &&
-    !isAuthenticated
+    !canManageCourses
   ) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
   }
 
-  const effectiveStatus =
-    query.status ?? (isAuthenticated ? undefined : ('published' as const));
+  const effectiveStatus = canManageCourses
+    ? query.status
+    : ('published' as const);
 
   let categoryId: string | undefined;
   if (query.category) {
     const categorySlug = slugify(query.category);
     if (!categorySlug) {
-      throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Invalid category slug');
+      throw new RouteError(
+        HttpStatusCodes.BAD_REQUEST,
+        'Invalid category slug',
+      );
     }
-    const category = await CategoryRepo.findByTypeAndSlug('course', categorySlug);
+    const category = await CategoryRepo.findByTypeAndSlug(
+      'course',
+      categorySlug,
+    );
     if (!category) {
       return {
         data: [],
@@ -230,6 +246,7 @@ async function list(query: ListCoursesQuery, isAuthenticated: boolean) {
     status: effectiveStatus,
     level: query.level,
     categoryId,
+    instructorId: isInstructor ? viewer?.id : undefined,
     courseIds,
     skip: query.skip,
     take: query.take,
@@ -242,29 +259,50 @@ async function list(query: ListCoursesQuery, isAuthenticated: boolean) {
   };
 }
 
-async function getById(id: string, isAuthenticated: boolean) {
+async function listPublic(query: ListCoursesQuery) {
+  return list({ ...query, status: 'published', deleted: 'without' }, undefined);
+}
+
+async function listManaged(query: ListCoursesQuery, viewer: AuthUser) {
+  return list(query, viewer);
+}
+
+async function getById(id: string, viewer?: AuthUser) {
   const course = await CourseRepo.findById(id);
   if (!course) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
-  assertPublishedAccess(course.status, isAuthenticated);
+
+  const isAdmin = viewer?.roles.includes('admin') ?? false;
+  const isInstructor =
+    (viewer?.roles.includes('instructor') ?? false) && !isAdmin;
+  if (isInstructor && course.instructorId !== viewer?.id) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+
+  assertPublishedAccess(course.status, isAdmin || isInstructor);
   return attachPublic(course);
 }
 
 async function getBySlug(
   slug: string,
   userId: number | null,
-  isAuthenticated: boolean,
+  _isAuthenticated: boolean,
 ): Promise<CourseDetail> {
   const course = await CourseRepo.findBySlug(slug);
   if (!course) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
-  assertPublishedAccess(course.status, isAuthenticated);
+  const canManage =
+    userId !== null &&
+    (await CourseAccessService.canManageCourse(userId, course.id));
+  if (course.status !== 'published' && !canManage) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
 
   const hasFullAccess =
-    userId !== null &&
-    ((await CourseAccessService.canManageCourse(userId, course.id)) ||
+    canManage ||
+    (userId !== null &&
       (await CourseAccessService.isEnrolled(userId, course.id)));
 
   const [
@@ -378,7 +416,13 @@ async function syncIncludes(
   }
 }
 
-async function create(input: CreateCourseInput, actorUserId?: number) {
+async function create(input: CreateCourseInput, actor?: AuthUser) {
+  const isInstructor =
+    (actor?.roles.includes('instructor') ?? false) &&
+    !(actor?.roles.includes('admin') ?? false);
+  const effectiveInput: CreateCourseInput = isInstructor
+    ? { ...input, instructor_id: actor!.id }
+    : input;
   const slug = await resolveUniqueSlug(input.title, input.slug);
   const categoryId =
     (await CategoryService.resolveOrCreateCategoryId(
@@ -386,11 +430,19 @@ async function create(input: CreateCourseInput, actorUserId?: number) {
       input.category_id,
       input.category,
     )) ?? null;
+  const resolvedTagIds =
+    input.tag_ids !== undefined
+      ? await TagService.resolveTagIdsByIds(input.tag_ids, 'course')
+      : input.tags !== undefined
+        ? await TagService.resolveTagIdsBySlugs(input.tags, 'course')
+        : undefined;
 
-  const course = await CourseRepo.create(mapCreateInput(input, slug, categoryId));
+  const course = await CourseRepo.create(
+    mapCreateInput(effectiveInput, slug, categoryId),
+  );
 
-  if (input.tags) {
-    await TagService.syncCourseTags(course.id, input.tags);
+  if (resolvedTagIds !== undefined) {
+    await TagService.syncCourseTagIds(course.id, resolvedTagIds);
   }
 
   if (input.learning_outcomes) {
@@ -401,21 +453,17 @@ async function create(input: CreateCourseInput, actorUserId?: number) {
     await syncIncludes(course.id, input.includes);
   }
 
-  if (input.instructor_id) {
+  if (effectiveInput.instructor_id) {
     const instructorRole = await RoleRepo.findByName('instructor');
     if (instructorRole) {
-      await RoleRepo.assignRoleToUser(input.instructor_id, instructorRole.id, {
-        resourceType: RESOURCE_TYPES.COURSE,
-        resourceId: course.id,
-      });
-    }
-  } else if (actorUserId) {
-    const instructorRole = await RoleRepo.findByName('instructor');
-    if (instructorRole) {
-      await RoleRepo.assignRoleToUser(actorUserId, instructorRole.id, {
-        resourceType: RESOURCE_TYPES.COURSE,
-        resourceId: course.id,
-      });
+      await RoleRepo.assignRoleToUser(
+        effectiveInput.instructor_id,
+        instructorRole.id,
+        {
+          resourceType: RESOURCE_TYPES.COURSE,
+          resourceId: course.id,
+        },
+      );
     }
   }
 
@@ -430,10 +478,24 @@ async function create(input: CreateCourseInput, actorUserId?: number) {
   return attachPublic(course);
 }
 
-async function update(id: string, input: UpdateCourseInput) {
+async function update(id: string, input: UpdateCourseInput, actor?: AuthUser) {
   const existing = await CourseRepo.findById(id);
   if (!existing) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+
+  const isInstructor =
+    (actor?.roles.includes('instructor') ?? false) &&
+    !(actor?.roles.includes('admin') ?? false);
+  if (
+    isInstructor &&
+    input.instructor_id !== undefined &&
+    input.instructor_id !== actor!.id
+  ) {
+    throw new RouteError(
+      HttpStatusCodes.FORBIDDEN,
+      'Instructor cannot transfer course ownership',
+    );
   }
 
   const categoryId = await CategoryService.resolveOrCreateCategoryId(
@@ -443,6 +505,12 @@ async function update(id: string, input: UpdateCourseInput) {
   );
 
   const payload = mapUpdateInput(input, categoryId);
+  const resolvedTagIds =
+    input.tag_ids !== undefined
+      ? await TagService.resolveTagIdsByIds(input.tag_ids, 'course')
+      : input.tags !== undefined
+        ? await TagService.resolveTagIdsBySlugs(input.tags, 'course')
+        : undefined;
 
   if (input.slug !== undefined) {
     const slug = slugify(input.slug);
@@ -466,8 +534,8 @@ async function update(id: string, input: UpdateCourseInput) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
 
-  if (input.tags !== undefined) {
-    await TagService.syncCourseTags(id, input.tags);
+  if (resolvedTagIds !== undefined) {
+    await TagService.syncCourseTagIds(id, resolvedTagIds);
   }
 
   if (input.learning_outcomes !== undefined) {
@@ -583,6 +651,16 @@ async function remove(
   deletedById?: number,
   mode: 'soft' | 'hard' = 'soft',
 ) {
+  if (mode === 'hard') {
+    const orderItemCount = await OrderRepo.countItemsByCourseId(id);
+    if (orderItemCount > 0) {
+      throw new RouteError(
+        HttpStatusCodes.CONFLICT,
+        Errors.HARD_DELETE_HAS_ORDERS,
+      );
+    }
+  }
+
   const deleted = await CourseRepo.remove(id, { deletedById, mode });
   if (!deleted) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
@@ -593,6 +671,16 @@ async function remove(
 }
 
 async function restore(id: string) {
+  const deletedCourse = await CourseRepo.findById(id, { deleted: 'only' });
+  if (!deletedCourse) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+  if (await CourseRepo.slugExists(deletedCourse.slug, id)) {
+    throw new RouteError(
+      HttpStatusCodes.CONFLICT,
+      Errors.RESTORE_SLUG_CONFLICT,
+    );
+  }
   const restored = await CourseRepo.restore(id);
   if (!restored) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
@@ -603,6 +691,8 @@ async function restore(id: string) {
 export default {
   Errors,
   list,
+  listPublic,
+  listManaged,
   getById,
   getBySlug,
   create,

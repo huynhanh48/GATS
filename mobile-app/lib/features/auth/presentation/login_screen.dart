@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/config/legal_urls.dart';
 import 'package:gats_academy/core/l10n/l10n.dart';
 import 'package:gats_academy/core/services/cart_controller.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
@@ -747,21 +748,21 @@ class _LegalSignUpText extends StatelessWidget {
       decoration: TextDecoration.none,
     );
 
-    return RichText(
-      textAlign: TextAlign.center,
-      text: TextSpan(
-        style: bodyStyle,
-        children: [
-          TextSpan(text: l10n.authLegalSignUpPrefix),
-          TextSpan(
-            text: l10n.authTermsLink,
-            style: linkStyle,
-            recognizer: null,
-          ),
-          TextSpan(text: l10n.authLegalSignUpMiddle),
-          TextSpan(text: l10n.authPrivacyLink, style: linkStyle),
-        ],
-      ),
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(l10n.authLegalSignUpPrefix, style: bodyStyle),
+        GestureDetector(
+          onTap: () => LegalUrls.open(context, LegalUrls.terms),
+          child: Text(l10n.authTermsLink, style: linkStyle),
+        ),
+        Text(l10n.authLegalSignUpMiddle, style: bodyStyle),
+        GestureDetector(
+          onTap: () => LegalUrls.open(context, LegalUrls.privacy),
+          child: Text(l10n.authPrivacyLink, style: linkStyle),
+        ),
+      ],
     );
   }
 }

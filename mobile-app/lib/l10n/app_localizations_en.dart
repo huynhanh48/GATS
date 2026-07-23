@@ -1111,6 +1111,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAbout => 'About App';
 
   @override
+  String get settingsLegal => 'Legal and privacy';
+
+  @override
+  String get legalTerms => 'Terms of Service';
+
+  @override
+  String get legalPrivacy => 'Privacy Policy';
+
+  @override
+  String get legalRefund => 'Refund Policy';
+
+  @override
+  String get legalPayment => 'Payment Policy';
+
+  @override
+  String get legalDataRequest => 'Request data access or deletion';
+
+  @override
+  String get legalOpenFailed =>
+      'Unable to open the policy page. Please try again.';
+
+  @override
+  String get paymentLegalPrefix => 'By paying, you agree to the ';
+
+  @override
   String get settingsReplayOnboarding => 'Reset onboarding';
 
   @override

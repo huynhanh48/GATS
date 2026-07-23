@@ -43,7 +43,7 @@ export default function CartPage() {
                     <img
                       src={resolveMediaUrl(item.thumbnail)}
                       alt={item.courseName}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 h-full w-full bg-muted p-1 object-contain"
                       onError={(e) => {
                         e.currentTarget.src = "/auth-bg.jpg";
                       }}

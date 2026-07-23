@@ -32,6 +32,7 @@ const {
   mockUserCreate,
   mockUserFindById,
   mockUserUpdate,
+  mockUserFindByUserName,
   mockCategoryFindByTypeAndSlug,
   mockCourseCreate,
   mockCourseSlugExists,
@@ -67,6 +68,7 @@ const {
   mockUserCreate: vi.fn(),
   mockUserFindById: vi.fn(),
   mockUserUpdate: vi.fn(),
+  mockUserFindByUserName: vi.fn(),
   mockCategoryFindByTypeAndSlug: vi.fn(),
   mockCourseCreate: vi.fn(),
   mockCourseSlugExists: vi.fn(),
@@ -111,12 +113,21 @@ vi.mock('@src/repos/CourseTagRepo', () => ({
   syncForCourse: (...args: unknown[]) => mockAssignTags(...args),
 }));
 
+vi.mock('@src/repos/LessonAttachmentRepo', () => ({
+  listByLessonIds: vi.fn().mockResolvedValue(new Map()),
+}));
+
+vi.mock('@src/repos/PostRepo', () => ({
+  findPublishedSummariesByIds: vi.fn().mockResolvedValue(new Map()),
+}));
+
 vi.mock('@src/repos/UserRepo', () => ({
   findAuthorById: (...args: unknown[]) => mockFindAuthorById(...args),
   findByEmail: (...args: unknown[]) => mockUserFindByEmail(...args),
   create: (...args: unknown[]) => mockUserCreate(...args),
   findById: (...args: unknown[]) => mockUserFindById(...args),
   update: (...args: unknown[]) => mockUserUpdate(...args),
+  findByUserName: (...args: unknown[]) => mockUserFindByUserName(...args),
 }));
 
 vi.mock('@src/repos/EnrollmentRepo', () => ({
@@ -205,6 +216,8 @@ const baseCourse = {
   createdAt: new Date('2026-01-01T00:00:00.000Z'),
   updatedAt: new Date('2026-01-01T00:00:00.000Z'),
   publishedAt: new Date('2026-01-01T00:00:00.000Z'),
+  deletedAt: null,
+  deletedById: null,
 };
 
 const sections = [
@@ -236,6 +249,7 @@ const lessons = [
     type: 'video' as const,
     order: 1,
     content: null,
+    linkedPostId: null,
     isPreview: false,
     duration: 120,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -250,6 +264,7 @@ const lessons = [
     type: 'video' as const,
     order: 0,
     content: 'secret-text',
+    linkedPostId: null,
     isPreview: true,
     duration: 60,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -548,6 +563,7 @@ describe('backfillRagCourseDetail idempotency', () => {
       }),
     );
     mockUserFindByEmail.mockResolvedValue(undefined);
+    mockUserFindByUserName.mockResolvedValue(undefined);
     mockUserCreate.mockImplementation(async (data: { userName: string; email: string }) => ({
       id: Math.floor(Math.random() * 1000) + 10,
       userName: data.userName,

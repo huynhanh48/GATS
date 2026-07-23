@@ -31,8 +31,14 @@ const CoursePaths = {
       Delete: '/:courseId/lessons/:lessonId',
       Attachments: '/:courseId/lessons/:lessonId/attachments',
       AttachmentUpload: '/:courseId/lessons/:lessonId/attachments/upload',
-      AttachmentDelete: '/:courseId/lessons/:lessonId/attachments/:attachmentId',
+      AttachmentDelete:
+        '/:courseId/lessons/:lessonId/attachments/:attachmentId',
     },
+  },
+  Management: {
+    _: '/course-management/courses',
+    List: '/',
+    Get: '/:id',
   },
 } as const;
 

@@ -5,7 +5,7 @@ export const courseIncludeRecordSchema = z.object({
   courseId: z.string().uuid(),
   key: z.string(),
   label: z.string(),
-  value: z.number().int().nullable(),
+  value: z.string().nullable(),
   unit: z.string().nullable(),
   order: z.number().int(),
   createdAt: z.coerce.date(),

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, Command, ChevronDown, ShoppingCart, Menu, BookOpen, Wrench, PenTool, Users, ArrowRight, LayoutGrid, Cpu, MessageSquare, GraduationCap } from "lucide-react";
+import { Moon, Sun, Command, ChevronDown, ShoppingCart, Menu, BookOpen, PenTool, Users, ArrowRight, GraduationCap } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -20,22 +21,34 @@ import {
 } from "@/components/ui/sheet";
 import { useCart } from "@/components/providers/CartProvider";
 
+const subscribeToClient = () => () => {};
+
 export function Header() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribeToClient,
+    () => true,
+    () => false,
+  );
   const { user, logout, status } = useAuth();
   const { openAuthModal } = useAuthModal();
   const { items } = useCart();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleLogout = async () => {
     await logout();
   };
 
   const sessionReady = mounted && status !== "loading";
+  const canTeach = Boolean(
+    user?.roles?.includes("instructor") || user?.roles?.includes("admin"),
+  );
+  const teachingHref =
+    process.env.NEXT_PUBLIC_ADMIN_URL ||
+    (mounted &&
+    typeof window !== "undefined" &&
+    window.location.hostname === "localhost"
+      ? "http://localhost:9000/course"
+      : "https://admin.gats.vn/course");
 
   return (
     <header className="fixed top-6 left-1/2 -translate-x-1/2 w-full max-w-5xl px-4 z-50">
@@ -45,9 +58,11 @@ export function Header() {
           className="flex items-center gap-2 hover:opacity-90 transition-opacity"
         >
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden p-1">
-            <img
+            <Image
               src="/Group.svg"
               alt="GATS logo"
+              width={32}
+              height={32}
               className="w-full h-full object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
@@ -76,40 +91,14 @@ export function Header() {
             </Link>
           ) : null}
 
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger className="hover:text-foreground transition-colors cursor-pointer flex items-center gap-1 focus:outline-none py-1">
-              Công cụ <ChevronDown className="w-3.5 h-3.5" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="center"
-              className="w-40 bg-background/90 backdrop-blur-md border border-border/40 shadow-xl rounded-2xl p-1"
+          {sessionReady && status === "authenticated" && canTeach ? (
+            <a
+              href={teachingHref}
+              className="font-semibold text-primary transition-colors hover:text-primary/80"
             >
-              <DropdownMenuItem
-                asChild
-                className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer"
-              >
-                <Link href="/promptcowboy" className="w-full">
-                  Prompt Cowboy
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild
-                className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer"
-              >
-                <Link href="/tools/ai-code-gen" className="w-full">
-                  Improve Skills
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild
-                className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer"
-              >
-                <Link href="/tools/ai-assistant" className="w-full">
-                  Prompt Follow
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              Giảng dạy
+            </a>
+          ) : null}
 
           <Link
             href="/posts"
@@ -167,6 +156,11 @@ export function Header() {
                   <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
                     <Link href="/profile" className="w-full">Hồ sơ cá nhân</Link>
                   </DropdownMenuItem>
+                  {canTeach ? (
+                    <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
+                      <a href={teachingHref} className="w-full">Khu vực giảng dạy</a>
+                    </DropdownMenuItem>
+                  ) : null}
                   <DropdownMenuItem
                     onClick={() => {
                       void handleLogout();
@@ -206,7 +200,7 @@ export function Header() {
                   <Menu className="w-5 h-5" />
                 </button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[85vw] max-w-[400px] sm:w-[400px] border-l-0 shadow-2xl p-0 flex flex-col bg-background/95 backdrop-blur-xl">
+              <SheetContent side="right" className="flex w-[85vw] max-w-100 flex-col border-l-0 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:w-100">
                 <SheetTitle className="sr-only">Menu</SheetTitle>
                 
                 {/* Header of mobile menu */}
@@ -245,31 +239,19 @@ export function Header() {
                         <ChevronDown className="w-4 h-4 text-muted-foreground -rotate-90 group-hover:text-primary transition-colors" />
                       </Link>
                     ) : null}
-                    
-                    <div className="flex flex-col mt-2 mb-2">
-                      <div className="flex items-center gap-3 p-3 rounded-xl">
-                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
-                          <LayoutGrid className="w-5 h-5" />
-                        </div>
-                        <span className="font-medium text-foreground">Công cụ AI</span>
-                      </div>
-                      
-                      <div className="flex flex-col gap-1.5 pl-[3.25rem] mt-1 relative before:absolute before:left-8 before:top-0 before:bottom-4 before:w-[2px] before:bg-border/50 rounded-bl-xl">
-                        <Link href="/promptcowboy" className="relative p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors group flex items-center gap-2">
-                          <span className="absolute left-[-1.3rem] top-1/2 -translate-y-1/2 w-3 h-[2px] bg-border/50 group-hover:bg-primary/50 transition-colors"></span>
-                          <Cpu className="w-4 h-4" /> Prompt Cowboy
-                        </Link>
-                        <Link href="/tools/ai-code-gen" className="relative p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors group flex items-center gap-2">
-                          <span className="absolute left-[-1.3rem] top-1/2 -translate-y-1/2 w-3 h-[2px] bg-border/50 group-hover:bg-primary/50 transition-colors"></span>
-                          <Wrench className="w-4 h-4" /> Improve Skills
-                        </Link>
-                        <Link href="/tools/ai-assistant" className="relative p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors group flex items-center gap-2">
-                          <span className="absolute left-[-1.3rem] top-1/2 -translate-y-1/2 w-3 h-[2px] bg-border/50 group-hover:bg-primary/50 transition-colors"></span>
-                          <MessageSquare className="w-4 h-4" /> Prompt Follow
-                        </Link>
-                      </div>
-                    </div>
 
+                    {sessionReady && status === "authenticated" && canTeach ? (
+                      <a href={teachingHref} className="flex items-center justify-between p-3 rounded-xl bg-primary/5 hover:bg-primary/10 active:bg-primary/15 transition-colors group">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                            <GraduationCap className="w-5 h-5" />
+                          </div>
+                          <span className="font-semibold text-primary">Khu vực giảng dạy</span>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-primary" />
+                      </a>
+                    ) : null}
+                    
                     <Link href="/posts" className="flex items-center justify-between p-3 rounded-xl hover:bg-primary/5 active:bg-primary/10 transition-colors group mt-2">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">

@@ -115,6 +115,14 @@ export async function listItemsByOrderIds(
   return rows.map(parseItem);
 }
 
+export async function countItemsByCourseId(courseId: string): Promise<number> {
+  const rows = await db
+    .select({ value: count() })
+    .from(orderItemsTable)
+    .where(eq(orderItemsTable.courseId, courseId));
+  return Number(rows[0]?.value ?? 0);
+}
+
 export async function updateStatus(
   id: string,
   status: OrderStatus,

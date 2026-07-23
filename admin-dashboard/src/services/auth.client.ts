@@ -108,6 +108,14 @@ export function login({ email, password }: LoginInput) {
   });
 }
 
+export function loginWithGoogle(idToken: string) {
+  return apiRequest<{ message: string }>({
+    url: "/user/auth/google",
+    method: "POST",
+    data: { idToken },
+  });
+}
+
 export function register({ name, email, password }: RegisterInput) {
   return apiRequest<{ message: string; verifyToken?: string }>({
     url: "/user/register",

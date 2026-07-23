@@ -6,6 +6,7 @@ const {
   mockLessonProgressUpsert,
   mockLessonProgressFind,
   mockLessonProgressAggregate,
+  mockLessonProgressList,
   mockLessonCountByCourse,
   mockCanManageCourse,
   mockIsEnrolled,
@@ -15,6 +16,7 @@ const {
   mockLessonProgressUpsert: vi.fn(),
   mockLessonProgressFind: vi.fn(),
   mockLessonProgressAggregate: vi.fn(),
+  mockLessonProgressList: vi.fn(),
   mockLessonCountByCourse: vi.fn(),
   mockCanManageCourse: vi.fn(),
   mockIsEnrolled: vi.fn(),
@@ -44,6 +46,8 @@ vi.mock('@src/repos/LessonProgressRepo', () => ({
   findByUserAndLesson: (...args: unknown[]) => mockLessonProgressFind(...args),
   getCourseAggregate: (...args: unknown[]) =>
     mockLessonProgressAggregate(...args),
+  listByUserAndCourse: (...args: unknown[]) =>
+    mockLessonProgressList(...args),
 }));
 
 vi.mock('@src/repos/LessonRepo', () => ({
@@ -117,6 +121,7 @@ describe('LessonProgress API', () => {
       totalLessons: 10,
       percent: 30,
     });
+    mockLessonProgressList.mockResolvedValue([sampleProgress]);
   });
 
   it('upserts lesson progress', async () => {

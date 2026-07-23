@@ -59,26 +59,31 @@ export const courseIncludeInputSchema = z.object({
   /** lucide-react icon export name, e.g. Monitor, Download, FileText */
   key: z.string().min(1).max(100),
   label: z.string().min(1).max(255),
-  value: z.number().int().nullable().optional(),
+  value: z.string().max(100).nullable().optional(),
   unit: z.string().max(50).nullable().optional(),
 });
 
-export const createCourseSchema = z.object({
-  title: z.string().min(1).max(255),
-  slug: z.string().min(1).max(255).optional(),
-  description: z.string().optional(),
-  thumbnail: z.string().max(512).optional(),
-  intro_video: z.string().max(512).optional(),
-  price: z.number().int().min(0).default(0),
-  sale_price: z.number().int().min(0).optional(),
-  level: courseLevelSchema.default('beginner'),
-  instructor_id: z.number().int().positive().optional(),
-  category_id: z.string().uuid().optional(),
-  category: z.string().min(1).max(100).optional(),
-  tags: z.array(z.string().min(1).max(100)).optional(),
-  learning_outcomes: z.array(courseLearningOutcomeInputSchema).optional(),
-  includes: z.array(courseIncludeInputSchema).optional(),
-});
+export const createCourseSchema = z
+  .object({
+    title: z.string().min(1).max(255),
+    slug: z.string().min(1).max(255).optional(),
+    description: z.string().optional(),
+    thumbnail: z.string().max(512).optional(),
+    intro_video: z.string().max(512).optional(),
+    price: z.number().int().min(0).default(0),
+    sale_price: z.number().int().min(0).optional(),
+    level: courseLevelSchema.default('beginner'),
+    instructor_id: z.number().int().positive().optional(),
+    category_id: z.string().uuid().optional(),
+    category: z.string().min(1).max(100).optional(),
+    tags: z.array(z.string().min(1).max(100)).optional(),
+    tag_ids: z.array(z.string().uuid()).optional(),
+    learning_outcomes: z.array(courseLearningOutcomeInputSchema).optional(),
+    includes: z.array(courseIncludeInputSchema).optional(),
+  })
+  .refine((data) => data.tags === undefined || data.tag_ids === undefined, {
+    message: 'Use either tags or tag_ids, not both',
+  });
 
 export const updateCourseSchema = z
   .object({
@@ -95,8 +100,12 @@ export const updateCourseSchema = z
     category_id: z.string().uuid().nullable().optional(),
     category: z.string().min(1).max(100).nullable().optional(),
     tags: z.array(z.string().min(1).max(100)).optional(),
+    tag_ids: z.array(z.string().uuid()).optional(),
     learning_outcomes: z.array(courseLearningOutcomeInputSchema).optional(),
     includes: z.array(courseIncludeInputSchema).optional(),
+  })
+  .refine((data) => data.tags === undefined || data.tag_ids === undefined, {
+    message: 'Use either tags or tag_ids, not both',
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field is required',
@@ -184,7 +193,7 @@ export const courseIncludeSchema = z.object({
   /** lucide-react icon export name, e.g. Monitor, Download, FileText */
   key: z.string(),
   label: z.string(),
-  value: z.number().int().nullable(),
+  value: z.string().nullable(),
   unit: z.string().nullable(),
   order: z.number().int(),
 });

@@ -15,6 +15,7 @@ vi.mock('@src/repos/QuizRepo', () => ({
   findByLessonId: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  countAttemptsByUser: vi.fn().mockResolvedValue(1),
 }));
 
 vi.mock('@src/repos/QuizQuestionRepo', () => ({
@@ -43,6 +44,10 @@ vi.mock('@src/services/CourseAccessService', () => ({
   default: {
     assertLessonAccess: (...args: unknown[]) => mockAssertLessonAccess(...args),
   },
+}));
+
+vi.mock('@src/services/LessonProgressSyncService', () => ({
+  syncQuizResult: vi.fn(),
 }));
 
 import QuizService from '@src/services/QuizService';

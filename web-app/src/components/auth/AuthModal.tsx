@@ -32,6 +32,7 @@ export function AuthModal({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [userName, setUserName] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -45,6 +46,7 @@ export function AuthModal({
       setPassword("");
       setConfirmPassword("");
       setUserName("");
+      setAcceptedTerms(false);
     }
   }, [isOpen, initialMode]);
 
@@ -70,6 +72,12 @@ export function AuthModal({
       }
       if (password !== confirmPassword) {
         toast.error("Mật khẩu xác nhận không trùng khớp!");
+        return;
+      }
+      if (!acceptedTerms) {
+        toast.error(
+          "Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách quyền riêng tư!",
+        );
         return;
       }
     }
@@ -305,6 +313,38 @@ export function AuthModal({
                         </motion.div>
                       )}
                     </AnimatePresence>
+
+                    {!isLogin ? (
+                      <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          checked={acceptedTerms}
+                          onChange={(event) =>
+                            setAcceptedTerms(event.target.checked)
+                          }
+                          className="mt-0.5 size-4 shrink-0 rounded border-border accent-primary"
+                        />
+                        <span>
+                          Tôi đã đọc và đồng ý với{" "}
+                          <Link
+                            href="/terms"
+                            onClick={onClose}
+                            className="font-semibold text-foreground hover:underline"
+                          >
+                            Điều khoản dịch vụ
+                          </Link>{" "}
+                          và{" "}
+                          <Link
+                            href="/privacy"
+                            onClick={onClose}
+                            className="font-semibold text-foreground hover:underline"
+                          >
+                            Chính sách quyền riêng tư
+                          </Link>
+                          .
+                        </span>
+                      </label>
+                    ) : null}
 
                     <div className="pt-4">
                       <button

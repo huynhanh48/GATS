@@ -20,6 +20,8 @@ const Errors = {
   INVALID_SLUG: 'Invalid tag slug',
   TYPE_MISMATCH: 'Tag type mismatch',
   INVALID_FOR_ENTITY: 'Tag cannot be used for this entity',
+  INVALID_IDS: 'One or more tag IDs are invalid',
+  INACTIVE: 'Inactive tags cannot be assigned',
 } as const;
 
 async function resolveUniqueSlug(
@@ -136,6 +138,34 @@ async function resolveTagIdsBySlugs(
   return tags.map((tag) => tag.id);
 }
 
+async function resolveTagIdsByIds(
+  ids: string[],
+  entity: 'course' | 'post',
+): Promise<string[]> {
+  const uniqueIds = [...new Set(ids)];
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+
+  const tags = await TagRepo.findByIds(uniqueIds);
+  if (tags.length !== uniqueIds.length) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_IDS);
+  }
+
+  const tagById = new Map(tags.map((tag) => [tag.id, tag]));
+  for (const id of uniqueIds) {
+    const tag = tagById.get(id);
+    if (!tag) {
+      throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_IDS);
+    }
+    if (tag.status !== 'active') {
+      throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INACTIVE);
+    }
+    assertTagForEntity(tag, entity);
+  }
+  return uniqueIds;
+}
+
 async function syncPostTags(postId: string, tagSlugs?: string[]): Promise<TagPublic[]> {
   if (tagSlugs === undefined) {
     const map = await PostTagRepo.findByPostIds([postId]);
@@ -158,6 +188,15 @@ async function syncCourseTags(
   }
 
   const tagIds = await resolveTagIdsBySlugs(tagSlugs, 'course');
+  await CourseTagRepo.syncForCourse(courseId, tagIds);
+  const map = await CourseTagRepo.findByCourseIds([courseId]);
+  return map.get(courseId) ?? [];
+}
+
+async function syncCourseTagIds(
+  courseId: string,
+  tagIds: string[],
+): Promise<TagPublic[]> {
   await CourseTagRepo.syncForCourse(courseId, tagIds);
   const map = await CourseTagRepo.findByCourseIds([courseId]);
   return map.get(courseId) ?? [];
@@ -200,8 +239,10 @@ export default {
   update,
   remove,
   resolveTagIdsBySlugs,
+  resolveTagIdsByIds,
   syncPostTags,
   syncCourseTags,
+  syncCourseTagIds,
   attachTagsToPosts,
   attachTagsToCourses,
   assertTagForEntity,

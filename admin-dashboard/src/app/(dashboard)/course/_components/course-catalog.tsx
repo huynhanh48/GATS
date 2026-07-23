@@ -38,7 +38,13 @@ function formatLevel(level: CoursePublic["level"]) {
   return "Nâng cao";
 }
 
-function CourseCard({ course, index = 0 }: { course: CoursePublic; index?: number }) {
+function CourseCard({
+  course,
+  index = 0,
+}: {
+  course: CoursePublic;
+  index?: number;
+}) {
   const isFree = course.price <= 0;
   const onSale = hasSale(course.price, course.salePrice);
   const tag = course.tags?.[0]?.name ?? course.category?.name ?? "Khóa học";
@@ -53,24 +59,24 @@ function CourseCard({ course, index = 0 }: { course: CoursePublic; index?: numbe
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-700">
       <Link
         href={`/course/${course.id}`}
-        className="relative block aspect-video overflow-hidden bg-[#eaf2ff] dark:bg-[#0f2742]"
+        className="relative block aspect-video overflow-hidden bg-[#eaf2ff] p-2 dark:bg-[#0f2742]"
       >
         <Image
           src={thumb}
           alt={course.title}
           fill
-          className="object-cover transition duration-300 group-hover:scale-[1.03]"
+          className="object-contain"
           sizes="(max-width:768px) 100vw, 33vw"
           unoptimized
         />
         {onSale ? (
-          <span className="absolute left-3 top-3 rounded-full bg-[#FF7622] px-2.5 py-1 text-[10px] font-black uppercase text-white">
+          <span className="absolute top-3 left-3 rounded-full bg-[#FF7622] px-2.5 py-1 text-[10px] font-black text-white uppercase">
             Sale
           </span>
         ) : null}
         <span
           className={cn(
-            "absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-black uppercase text-white",
+            "absolute top-3 right-3 rounded-full px-2.5 py-1 text-[10px] font-black text-white uppercase",
             isFree ? "bg-emerald-600" : "bg-[#0070EB]",
           )}
         >
@@ -164,7 +170,8 @@ export function CourseCatalog({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return courses.filter((course) => {
-      const matchCat = category === "Tất cả" || course.category?.name === category;
+      const matchCat =
+        category === "Tất cả" || course.category?.name === category;
       const matchQ =
         !q ||
         course.title.toLowerCase().includes(q) ||
@@ -180,7 +187,7 @@ export function CourseCatalog({
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#0070EB]">
+            <p className="text-xs font-black tracking-[0.18em] text-[#0070EB] uppercase">
               Course Catalog
             </p>
             <h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">
@@ -236,7 +243,7 @@ export function CourseCatalog({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Tìm theo tên, mô tả, tag..."
-              className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
+              className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 transition outline-none placeholder:text-slate-400 focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
             />
             <div className="flex flex-wrap gap-2">
               {categories.map((cat) => {

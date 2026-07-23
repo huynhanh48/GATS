@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/post/presentation/post_compose_screen.dart';
 import 'package:gats_academy/features/post/presentation/post_detail_screen.dart';
@@ -54,7 +54,7 @@ class CoursePostsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final posts = MockPostStore.instance.postsForCourse(courseId);
+    final posts = PostStore.instance.postsForCourse(courseId);
 
     return Stack(
       children: [
@@ -81,7 +81,7 @@ class CoursePostsTab extends StatelessWidget {
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
             itemBuilder: (context, index) {
               final post = posts[index];
-              final canReadFull = MockPostStore.instance.canReadFull(
+              final canReadFull = PostStore.instance.canReadFull(
                 post: post,
                 userId: userId,
                 role: role,
@@ -89,7 +89,7 @@ class CoursePostsTab extends StatelessWidget {
               return PostCard(
                 post: post,
                 canReadFull: canReadFull,
-                courseTitle: MockPostStore.instance.courseTitleFor(post),
+                courseTitle: PostStore.instance.courseTitleFor(post),
                 onTap: () => _openPost(context, post.id),
               );
             },

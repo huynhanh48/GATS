@@ -58,5 +58,19 @@ router.patch(
   handlers.unlockUser,
 );
 
+router.patch(
+  AdminUserPaths.AdminUsers.Role,
+  errorHandle(authMiddleware),
+  errorHandle(requireAdmin),
+  handlers.updateRole,
+);
+
+router.patch(
+  AdminUserPaths.AdminUsers.MentorCourse,
+  errorHandle(authMiddleware),
+  errorHandle(requireAdmin),
+  handlers.assignMentorCourse,
+);
+
 apiRouter.use(AdminUserPaths.AdminUsers._, router);
 export default apiRouter;

@@ -11,6 +11,7 @@ export type AdminUserListItem = {
   type: string;
   isLocked: boolean;
   roles: string[];
+  globalRoles: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -35,6 +36,12 @@ export type AdminUserDetailResponse = {
     status: string;
     createdAt: string;
     paidAt: string | null;
+  }>;
+  managedCourses: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    status: string;
   }>;
   enrollments: Array<{
     id: string;
@@ -157,4 +164,42 @@ export async function lockUser(id: number, reason?: string) {
 
 export async function unlockUser(id: number, reason?: string) {
   return postAction(id, "/unlock", "PATCH", reason);
+}
+
+export type AccountRole = "user" | "admin";
+
+export async function updateUserRole(id: number, role: AccountRole) {
+  const result = await beFetch<{ message?: string }>(`/admin/users/${id}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+  if (!result.ok) {
+    return { ok: false, message: result.error ?? "Cập nhật role thất bại" };
+  }
+  revalidatePath("/users");
+  revalidatePath(`/users/${id}`);
+  return {
+    ok: true,
+    message: result.data?.message ?? "Đã cập nhật role",
+  };
+}
+
+export async function assignMentorCourse(userId: number, courseId: string) {
+  const result = await beFetch<{ message?: string }>(
+    `/admin/users/${userId}/mentor-course`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ courseId }),
+    },
+  );
+  if (!result.ok) {
+    return { ok: false, message: result.error ?? "Phân công mentor thất bại" };
+  }
+  revalidatePath("/users");
+  revalidatePath(`/users/${userId}`);
+  revalidatePath(`/course/${courseId}`);
+  return {
+    ok: true,
+    message: result.data?.message ?? "Đã phân công mentor",
+  };
 }

@@ -31,6 +31,9 @@ Thumbs.db
 /dist
 /out
 .next/
+.dart_tool/
+**/node_modules/.vite/
+**/.turbo/
 
 # Editor settings
 .vscode/

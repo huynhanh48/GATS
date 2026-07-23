@@ -298,13 +298,13 @@ export default function PromptCowboyPage() {
         {/* Footer Area */}
         <footer className="relative z-10 w-full max-w-5xl mx-auto px-6 py-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0 bg-white">
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-500">
-            <Link href="#" className="hover:text-slate-800 transition-colors">Chính sách bảo mật</Link>
+            <Link href="/privacy" className="hover:text-slate-800 transition-colors">Chính sách quyền riêng tư</Link>
             <span className="text-slate-200">|</span>
-            <Link href="#" className="hover:text-slate-800 transition-colors">Điều khoản</Link>
+            <Link href="/terms" className="hover:text-slate-800 transition-colors">Điều khoản dịch vụ</Link>
             <span className="text-slate-200">|</span>
-            <Link href="#" className="hover:text-slate-800 transition-colors">Bảo vệ</Link>
+            <Link href="/acceptable-use" className="hover:text-slate-800 transition-colors">Sử dụng an toàn</Link>
             <span className="text-slate-200">|</span>
-            <Link href="#" className="hover:text-slate-800 transition-colors">Câu hỏi thường gặp</Link>
+            <Link href="/contact" className="hover:text-slate-800 transition-colors">Liên hệ hỗ trợ</Link>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1 rounded-lg border border-[#FF7622]/20 bg-[#FF7622]/5 text-[#FF7622] text-xs font-bold uppercase tracking-wider">

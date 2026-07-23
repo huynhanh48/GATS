@@ -77,7 +77,13 @@ async function removeCategory(req: Request, res: Response) {
 
 async function list(req: Request, res: Response) {
   const query = parseListCoursesQuery(req.query);
-  const result = await CourseService.list(query, isAuthenticated(req));
+  const result = await CourseService.listPublic(query);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function listManaged(req: Request, res: Response) {
+  const query = parseListCoursesQuery(req.query);
+  const result = await CourseService.listManaged(query, req.authUser!);
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
@@ -93,14 +99,22 @@ async function getBySlug(req: Request, res: Response) {
 async function getById(req: Request, res: Response) {
   const course = await CourseService.getById(
     getUuidRouteParam(req.params.id, 'id'),
-    isAuthenticated(req),
+    undefined,
+  );
+  return res.status(HttpStatusCodes.OK).json({ course });
+}
+
+async function getManagedById(req: Request, res: Response) {
+  const course = await CourseService.getById(
+    getUuidRouteParam(req.params.id, 'id'),
+    req.authUser,
   );
   return res.status(HttpStatusCodes.OK).json({ course });
 }
 
 async function create(req: Request, res: Response) {
   const input = parseCreateCourseInput(req.body);
-  const course = await CourseService.create(input, req.authUser?.id);
+  const course = await CourseService.create(input, req.authUser);
   return res.status(HttpStatusCodes.CREATED).json({ course });
 }
 
@@ -109,6 +123,7 @@ async function update(req: Request, res: Response) {
   const course = await CourseService.update(
     getUuidRouteParam(req.params.id, 'id'),
     input,
+    req.authUser,
   );
   return res.status(HttpStatusCodes.OK).json({ course });
 }
@@ -254,12 +269,14 @@ async function removeLessonAttachment(req: Request, res: Response) {
 
 export default {
   list: errorHandle(list),
+  listManaged: errorHandle(listManaged),
   listCategories: errorHandle(listCategories),
   createCategory: errorHandle(createCategory),
   updateCategory: errorHandle(updateCategory),
   removeCategory: errorHandle(removeCategory),
   getBySlug: errorHandle(getBySlug),
   getById: errorHandle(getById),
+  getManagedById: errorHandle(getManagedById),
   create: errorHandle(create),
   update: errorHandle(update),
   publish: errorHandle(publish),

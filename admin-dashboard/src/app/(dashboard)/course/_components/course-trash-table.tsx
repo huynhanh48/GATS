@@ -214,7 +214,7 @@ export function CourseTrashTable({ courses }: CourseTrashTableProps) {
             <AlertDialogDescription>
               {confirmMode === "restore"
                 ? `Khôi phục ${selectedCourses.length} khóa học khỏi thùng rác?`
-                : `Xóa vĩnh viễn ${selectedCourses.length} khóa học? Hành động này không thể hoàn tác.`}
+                : `Xóa vĩnh viễn ${selectedCourses.length} khóa học? Toàn bộ lịch sử nhóm chat sẽ bị xóa. Khóa đã phát sinh đơn hàng sẽ được hệ thống chặn để bảo toàn lịch sử giao dịch.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

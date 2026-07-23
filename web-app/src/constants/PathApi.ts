@@ -106,6 +106,17 @@ export const PathApi = {
     listMine: `${API_PREFIX}/me/enrollments`,
   },
 
+  courseChat: {
+    /** GET/POST - auth: active learner, course mentor, or admin */
+    messages: (courseId: string) => `${API_PREFIX}/courses/${courseId}/chat`,
+    /** DELETE - auth: sender, course mentor, or admin */
+    message: (courseId: string, messageId: string) =>
+      `${API_PREFIX}/courses/${courseId}/chat/${messageId}`,
+    /** PATCH - auth: course mentor or admin */
+    pin: (courseId: string, messageId: string) =>
+      `${API_PREFIX}/courses/${courseId}/chat/${messageId}/pin`,
+  },
+
   progress: {
     /** PUT – auth: member */
     lesson: (courseId: string, lessonId: string) =>

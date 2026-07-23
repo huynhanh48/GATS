@@ -19,7 +19,7 @@ export const courseIncludesTable = pgTable(
       .references(() => coursesTable.id, { onDelete: 'cascade' }),
     key: varchar('key', { length: 100 }).notNull(),
     label: varchar('label', { length: 255 }).notNull(),
-    value: integer('value'),
+    value: varchar('value', { length: 100 }),
     unit: varchar('unit', { length: 50 }),
     order: integer('order').notNull(),
     createdAt: timestamp('created_at').notNull().defaultNow(),

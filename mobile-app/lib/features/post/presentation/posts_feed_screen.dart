@@ -7,7 +7,7 @@ import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/features/post/presentation/post_detail_screen.dart';
 import 'package:gats_academy/features/post/presentation/widgets/post_card.dart';
 
@@ -25,13 +25,13 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
   void initState() {
     super.initState();
     _loadUser();
-    MockPostStore.instance.addListener(_onStoreChanged);
-    MockPostStore.instance.syncFromApi();
+    PostStore.instance.addListener(_onStoreChanged);
+    PostStore.instance.syncFromApi();
   }
 
   @override
   void dispose() {
-    MockPostStore.instance.removeListener(_onStoreChanged);
+    PostStore.instance.removeListener(_onStoreChanged);
     super.dispose();
   }
 
@@ -79,7 +79,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
     final gats = context.gatsColors;
     final userId = _user?.id;
     final role = _user?.role ?? UserRole.user;
-    final posts = MockPostStore.instance.feedForUser(userId: userId, role: role);
+    final posts = PostStore.instance.feedForUser(userId: userId, role: role);
 
     return GatsThemedScaffold(
       appBar: AppBar(
@@ -103,7 +103,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
               separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
               itemBuilder: (context, index) {
                 final post = posts[index];
-                final canReadFull = MockPostStore.instance.canReadFull(
+                final canReadFull = PostStore.instance.canReadFull(
                   post: post,
                   userId: userId,
                   role: role,
@@ -112,7 +112,7 @@ class _PostsFeedScreenState extends State<PostsFeedScreen> {
                   child: PostCard(
                     post: post,
                     canReadFull: canReadFull,
-                    courseTitle: MockPostStore.instance.courseTitleFor(post),
+                    courseTitle: PostStore.instance.courseTitleFor(post),
                     onTap: () => _openPost(post.id, courseId: post.courseId),
                   ),
                 );

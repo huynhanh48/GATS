@@ -131,7 +131,8 @@ export function CourseTrashRowActions({
               ) : (
                 <>
                   Xóa vĩnh viễn <strong>{courseTitle}</strong>? Hành động này
-                  không thể hoàn tác.
+                  không thể hoàn tác và sẽ xóa toàn bộ lịch sử nhóm chat. Khóa
+                  học đã phát sinh đơn hàng sẽ không được phép xóa vĩnh viễn.
                 </>
               )}
             </AlertDialogDescription>

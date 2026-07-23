@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gats_academy/data/api/progress_api_service.dart';
-import 'package:gats_academy/features/auth/services/mock_auth_provider.dart';
 
 void main() {
   group('CourseProgressDto', () {
@@ -26,14 +25,6 @@ void main() {
       });
       expect(dto.completedLessonIds, isEmpty);
       expect(dto.fraction, 0);
-    });
-  });
-
-  group('MockAuthProvider', () {
-    test('detects mock_session tokens', () {
-      expect(MockAuthProvider.isMockToken('mock_session:momo'), isTrue);
-      expect(MockAuthProvider.isMockToken('eyJhbGciOi...'), isFalse);
-      expect(MockAuthProvider.isMockToken(null), isFalse);
     });
   });
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
@@ -69,7 +69,7 @@ class _PostComposeScreenState extends State<PostComposeScreen> {
     }
 
     setState(() => _publishing = true);
-    final ok = await MockPostStore.instance.addPost(
+    final ok = await PostStore.instance.addPost(
       title: title,
       body: body,
       authorId: widget.authorId,

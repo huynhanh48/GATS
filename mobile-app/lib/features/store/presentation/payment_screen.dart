@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:gats_academy/core/config/legal_urls.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/network/api_exception.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
@@ -14,6 +15,7 @@ import 'package:gats_academy/data/api/order_api_service.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/store/domain/payment_method.dart';
 import 'package:gats_academy/features/store/presentation/widgets/checkout_success_dialog.dart';
+import 'package:gats_academy/l10n/app_localizations.dart';
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
@@ -575,7 +577,7 @@ class _LiveQrPanel extends StatelessWidget {
             child: Image.network(
               payment.qrUrl,
               fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const Center(
+              errorBuilder: (_, _, _) => const Center(
                 child: Icon(Icons.qr_code_2, size: 64),
               ),
             ),
@@ -1050,6 +1052,7 @@ class _PayBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
+    final l10n = AppLocalizations.of(context);
     final isApplePay = method == PaymentMethodId.applePay;
 
     return Container(
@@ -1107,6 +1110,62 @@ class _PayBar extends StatelessWidget {
                       ),
                     ),
             ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                l10n.paymentLegalPrefix,
+                style: TextStyle(fontSize: 11, color: gats.textSecondary),
+              ),
+              GestureDetector(
+                onTap: () => LegalUrls.open(context, LegalUrls.terms),
+                child: Text(
+                  l10n.legalTerms,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: gats.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                ', ',
+                style: TextStyle(fontSize: 11, color: gats.textSecondary),
+              ),
+              GestureDetector(
+                onTap: () => LegalUrls.open(context, LegalUrls.payment),
+                child: Text(
+                  l10n.legalPayment,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: gats.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                ' ${l10n.authLegalSignUpMiddle.trim()} ',
+                style: TextStyle(fontSize: 11, color: gats.textSecondary),
+              ),
+              GestureDetector(
+                onTap: () => LegalUrls.open(context, LegalUrls.refund),
+                child: Text(
+                  l10n.legalRefund,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: gats.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Text(
+                '.',
+                style: TextStyle(fontSize: 11, color: gats.textSecondary),
+              ),
+            ],
           ),
         ],
       ),

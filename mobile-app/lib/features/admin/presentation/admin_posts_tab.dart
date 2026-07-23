@@ -5,7 +5,7 @@ import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/data/mock/mock_accounts.dart';
-import 'package:gats_academy/data/mock/mock_post_store.dart';
+import 'package:gats_academy/data/post_store.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/post/presentation/post_compose_screen.dart';
 import 'package:gats_academy/features/post/presentation/post_detail_screen.dart';
@@ -21,8 +21,8 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
   @override
   void initState() {
     super.initState();
-    MockPostStore.instance.addListener(_onChanged);
-    MockPostStore.instance.syncFromApi();
+    PostStore.instance.addListener(_onChanged);
+    PostStore.instance.syncFromApi();
   }
 
   void _onChanged() {
@@ -31,7 +31,7 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
 
   @override
   void dispose() {
-    MockPostStore.instance.removeListener(_onChanged);
+    PostStore.instance.removeListener(_onChanged);
     super.dispose();
   }
 
@@ -50,7 +50,7 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final posts = MockPostStore.instance.allPosts.toList()
+    final posts = PostStore.instance.allPosts.toList()
       ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
 
     return GatsThemedScaffold(
@@ -78,7 +78,7 @@ class _AdminPostsTabState extends State<AdminPostsTab> {
                     ),
                     trailing: Switch(
                       value: post.isPublished,
-                      onChanged: (_) => MockPostStore.instance.togglePublish(post.id),
+                      onChanged: (_) => PostStore.instance.togglePublish(post.id),
                     ),
                     onTap: () => GatsMainNavigator.push(
                       context,

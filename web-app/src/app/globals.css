@@ -11,9 +11,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-heading: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Helvetica Neue", Helvetica, Arial, ui-sans-serif, system-ui, -apple-system, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -43,6 +43,9 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-divider: var(--divider);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -75,36 +78,42 @@
 }
 
 :root {
-  /* Mobile-inspired calm light theme: tinted canvas + layered soft surfaces. */
-  --background: #F2F5FA;
+  /* Source of truth: mobile-app/docs/design-system.md (light mode). */
+  --background: #F9F9FE;
   --foreground: #101828;
-  --card: #FBFCFE;
+  --card: #FFFFFF;
   --card-foreground: #101828;
-  --popover: #FCFDFE;
+  --popover: #FFFFFF;
   --popover-foreground: #101828;
-  --primary: #0070EB;
+  /* shadcn primary is the filled CTA; blue remains navigation/link. */
+  --primary: #FF7622;
   --primary-foreground: #FFFFFF;
-  --secondary: #FF7622;
+  --secondary: #0070EB;
   --secondary-foreground: #FFFFFF;
-  --muted: #E9EEF6;
+  --brand-primary: #0070EB;
+  --brand-accent: #FF7622;
+  --muted: #F1F4F9;
   --muted-foreground: #667085;
-  --accent: #E6F0FC;
-  --accent-foreground: #123B66;
+  --accent: #EAF3FE;
+  --accent-foreground: #0070EB;
   --destructive: #ef4444;
-  --border: #D9E1EC;
-  --input: #D5DFEB;
+  --divider: #E5E7F0;
+  --border: #E5E7F0;
+  --input: #E5E7F0;
   --ring: #0070EB;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: #EEF3F9;
+  --radius: 0.75rem;
+  --shadow-card: 0 4px 16px rgb(0 112 235 / 0.08);
+  --shadow-elevated: 0 8px 24px rgb(0 112 235 / 0.12);
+  --sidebar: #FFFFFF;
   --sidebar-foreground: #101828;
-  --sidebar-primary: #0070EB;
+  --sidebar-primary: #FF7622;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #E4ECF6;
+  --sidebar-accent: #EAF3FE;
   --sidebar-accent-foreground: #101828;
   --sidebar-border: #D7E0EC;
   --sidebar-ring: #0070EB;
@@ -117,9 +126,9 @@
   --card-foreground: #F9FAFB;
   --popover: #1f2a37;
   --popover-foreground: #F9FAFB;
-  --primary: #5750F1;
+  --primary: #FF7622;
   --primary-foreground: #FFFFFF;
-  --secondary: #FF7622;
+  --secondary: #0070EB;
   --secondary-foreground: #FFFFFF;
   --muted: #374151;
   --muted-foreground: #9ca3af;
@@ -128,7 +137,7 @@
   --destructive: #7f1d1d;
   --border: #374151;
   --input: #374151;
-  --ring: #5750F1;
+  --ring: #0070EB;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -136,12 +145,12 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: #111928;
   --sidebar-foreground: #F9FAFB;
-  --sidebar-primary: #5750F1;
+  --sidebar-primary: #FF7622;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #374151;
   --sidebar-accent-foreground: #F9FAFB;
   --sidebar-border: #374151;
-  --sidebar-ring: #5750F1;
+  --sidebar-ring: #0070EB;
 }
 
 @layer base {
@@ -151,17 +160,20 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-    background-image:
-      radial-gradient(circle at 12% 0%, rgb(0 112 235 / 0.055), transparent 30rem),
-      radial-gradient(circle at 88% 8%, rgb(142 151 253 / 0.045), transparent 26rem);
-    background-attachment: fixed;
-  }
-
-  .dark body {
-    background-image: none;
   }
 
   html {
     @apply font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

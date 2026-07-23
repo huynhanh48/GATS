@@ -35,16 +35,15 @@ export default function SignIn() {
             />
           </Link>
           <p className="mb-3 text-xl font-medium text-slate-800 dark:text-white">
-            Sign in to your account
+            Khu vực vận hành & giảng dạy
           </p>
 
           <h1 className="mb-4 text-2xl font-bold text-slate-950 dark:text-white sm:text-heading-3">
-            Welcome Back!
+            Chào mừng trở lại GATS!
           </h1>
 
           <p className="w-full max-w-[375px] font-medium text-slate-600 dark:text-slate-400">
-            Please sign in to your account by completing the necessary fields
-            below
+            Quản lý nội dung khóa học, học viên và trao đổi cùng lớp học của bạn.
           </p>
 
           <div className="mt-31">

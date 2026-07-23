@@ -26,12 +26,15 @@ export type CreateCourseState = {
   course?: CoursePublic;
 };
 
-function parseTags(raw: string | null): string[] | undefined {
-  if (!raw?.trim()) return undefined;
-  return raw
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+function parseTagIds(raw: string | null): string[] | undefined {
+  if (raw === null) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    return [...new Set(parsed.map(String).map((id) => id.trim()).filter(Boolean))];
+  } catch {
+    return undefined;
+  }
 }
 
 function parseLearningOutcomes(
@@ -58,16 +61,12 @@ function parseIncludes(
     if (!Array.isArray(parsed)) return undefined;
     return parsed
       .map((item) => {
-        const rawValue = item?.value;
-        const value =
-          rawValue === null || rawValue === undefined || rawValue === ""
-            ? null
-            : Number(rawValue);
+        const value = item?.value ? String(item.value).trim() : null;
         const unit = item?.unit ? String(item.unit).trim() : null;
         return {
           key: String(item?.key ?? "").trim(),
           label: String(item?.label ?? "").trim(),
-          value: value !== null && Number.isNaN(value) ? null : value,
+          value: value && value.length > 0 ? value : null,
           unit: unit && unit.length > 0 ? unit : null,
         };
       })
@@ -88,7 +87,7 @@ function buildCourseBody(formData: FormData): Record<string, unknown> {
   const status = formData.get("status")?.toString().trim();
   const category = formData.get("category")?.toString().trim();
   const categoryIdField = formData.get("category_id");
-  const tags = parseTags(formData.get("tags")?.toString() ?? null);
+  const tagIds = parseTagIds(formData.get("tag_ids")?.toString() ?? null);
   const learningOutcomes = parseLearningOutcomes(
     formData.get("learning_outcomes")?.toString(),
   );
@@ -109,7 +108,7 @@ function buildCourseBody(formData: FormData): Record<string, unknown> {
   } else if (category) {
     body.category = category;
   }
-  if (tags?.length) body.tags = tags;
+  if (tagIds !== undefined) body.tag_ids = tagIds;
   if (learningOutcomes !== undefined) body.learning_outcomes = learningOutcomes;
   if (includes !== undefined) body.includes = includes;
 
@@ -122,6 +121,15 @@ function mapActionError(
 ): string {
   if (result.status === 401) return "Phiên đăng nhập đã hết hạn";
   if (result.status === 403) return "Bạn không có quyền thực hiện thao tác này";
+  if (result.error === "One or more tag IDs are invalid") {
+    return "Một hoặc nhiều tag không còn tồn tại. Vui lòng chọn lại.";
+  }
+  if (result.error === "Inactive tags cannot be assigned") {
+    return "Một hoặc nhiều tag đã bị vô hiệu hóa. Vui lòng chọn lại.";
+  }
+  if (result.error === "Tag cannot be used for this entity") {
+    return "Tag đã chọn không dành cho khóa học.";
+  }
   return result.error ?? fallback;
 }
 
@@ -139,7 +147,7 @@ export async function fetchCourses(
   }
 
   const result = await beFetch<CourseListResponse>(
-    `/courses?${params.toString()}`,
+    `/course-management/courses?${params.toString()}`,
   );
 
   if (!result.ok || !result.data) {
@@ -169,7 +177,9 @@ export async function fetchTrashCourses(
 export async function getCourseDetail(
   id: string,
 ): Promise<CourseDetail | null> {
-  const basic = await beFetch<{ course: CoursePublic }>(`/courses/${id}`);
+  const basic = await beFetch<{ course: CoursePublic }>(
+    `/course-management/courses/${id}`,
+  );
   if (!basic.ok || !basic.data?.course) return null;
 
   const detail = await beFetch<{ course: CourseDetail }>(
@@ -393,9 +403,7 @@ export async function permanentlyDeleteCourses(
   }
 
   const results = await Promise.all(
-    ids.map((id) =>
-      beFetch(`/courses/${id}?mode=hard`, { method: "DELETE" }),
-    ),
+    ids.map((id) => beFetch(`/courses/${id}?mode=hard`, { method: "DELETE" })),
   );
   const failed = results.filter((r) => !r.ok).length;
 
@@ -512,10 +520,13 @@ export async function gradeAssignmentSubmission(
   submissionId: string,
   input: GradeAssignmentSubmissionInput,
 ): Promise<{ ok: boolean; message: string }> {
-  const result = await beFetch(`/assignment-submissions/${submissionId}/grade`, {
-    method: "PATCH",
-    body: JSON.stringify(input),
-  });
+  const result = await beFetch(
+    `/assignment-submissions/${submissionId}/grade`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    },
+  );
 
   if (!result.ok) {
     return {

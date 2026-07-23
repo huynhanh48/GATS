@@ -8,6 +8,43 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CategorySelect } from "@/app/(dashboard)/category/_components/category-select";
 import { createCourse, updateCourse, type CreateCourseState } from "../actions";
+import { CourseTagSelect } from "./course-tag-select";
+import {
+  Award,
+  BadgeCheck,
+  BookOpen,
+  Brain,
+  CalendarDays,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  ClipboardCheck,
+  Clock,
+  Code2,
+  Download,
+  FileQuestion,
+  FileText,
+  FolderDown,
+  GraduationCap,
+  Headphones,
+  Infinity,
+  Laptop,
+  Library,
+  Lightbulb,
+  MessageCircle,
+  Monitor,
+  PenTool,
+  PlayCircle,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+  Target,
+  Timer,
+  Users,
+  Video,
+  Wifi,
+  type LucideIcon,
+} from "lucide-react";
 
 const initialState: CreateCourseState = {
   ok: false,
@@ -22,21 +59,49 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-const INCLUDE_ICON_OPTIONS = [
-  { value: "Video", label: "Video theo yêu cầu" },
-  { value: "Clock", label: "Thời lượng" },
-  { value: "FileText", label: "Tài liệu" },
-  { value: "Download", label: "Tài nguyên tải về" },
-  { value: "Monitor", label: "Truy cập trên TV/PC" },
-  { value: "Smartphone", label: "Truy cập trên di động" },
-  { value: "Award", label: "Chứng chỉ hoàn thành" },
-  { value: "Infinity", label: "Truy cập trọn đời" },
+type IncludeIconOption = {
+  value: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+const INCLUDE_ICON_OPTIONS: IncludeIconOption[] = [
+  { value: "Video", label: "Video bài học", icon: Video },
+  { value: "PlayCircle", label: "Nội dung phát lại", icon: PlayCircle },
+  { value: "Clock", label: "Thời lượng", icon: Clock },
+  { value: "Timer", label: "Thời gian học", icon: Timer },
+  { value: "FileText", label: "Tài liệu", icon: FileText },
+  { value: "Download", label: "Tải xuống", icon: Download },
+  { value: "FolderDown", label: "Bộ tài nguyên", icon: FolderDown },
+  { value: "BookOpen", label: "Giáo trình", icon: BookOpen },
+  { value: "Library", label: "Thư viện", icon: Library },
+  { value: "Monitor", label: "Học trên máy tính", icon: Monitor },
+  { value: "Laptop", label: "Thực hành trực tuyến", icon: Laptop },
+  { value: "Smartphone", label: "Học trên di động", icon: Smartphone },
+  { value: "Wifi", label: "Truy cập trực tuyến", icon: Wifi },
+  { value: "Award", label: "Chứng chỉ", icon: Award },
+  { value: "BadgeCheck", label: "Đã xác nhận", icon: BadgeCheck },
+  { value: "GraduationCap", label: "Hoàn thành khóa học", icon: GraduationCap },
+  { value: "Infinity", label: "Truy cập trọn đời", icon: Infinity },
+  { value: "Users", label: "Nhóm học tập", icon: Users },
+  { value: "MessageCircle", label: "Trao đổi với mentor", icon: MessageCircle },
+  { value: "Headphones", label: "Hỗ trợ học viên", icon: Headphones },
+  { value: "CalendarDays", label: "Lịch học", icon: CalendarDays },
+  { value: "ClipboardCheck", label: "Bài tập", icon: ClipboardCheck },
+  { value: "FileQuestion", label: "Bài kiểm tra", icon: FileQuestion },
+  { value: "PenTool", label: "Thực hành", icon: PenTool },
+  { value: "Code2", label: "Bài tập lập trình", icon: Code2 },
+  { value: "Brain", label: "Kiến thức chuyên sâu", icon: Brain },
+  { value: "Lightbulb", label: "Kỹ năng mới", icon: Lightbulb },
+  { value: "Target", label: "Mục tiêu học tập", icon: Target },
+  { value: "ShieldCheck", label: "Cam kết chất lượng", icon: ShieldCheck },
+  { value: "Sparkles", label: "Nội dung nổi bật", icon: Sparkles },
 ];
 
 type IncludeRow = {
   key: string;
   label: string;
-  value: number | null;
+  value: string | null;
   unit: string | null;
 };
 
@@ -56,6 +121,9 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
 
   const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [openIncludeIconIndex, setOpenIncludeIconIndex] = useState<
+    number | null
+  >(null);
   const [outcomes, setOutcomes] = useState<string[]>(
     course?.learningOutcomes?.map((item) => item.content) ?? [],
   );
@@ -95,7 +163,12 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
   function addInclude() {
     setIncludes((prev) => [
       ...prev,
-      { key: INCLUDE_ICON_OPTIONS[0].value, label: "", value: null, unit: null },
+      {
+        key: INCLUDE_ICON_OPTIONS[0].value,
+        label: "",
+        value: null,
+        unit: null,
+      },
     ]);
   }
 
@@ -188,7 +261,9 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
                       );
                       if (input) {
                         input.value = src;
-                        input.dispatchEvent(new Event("input", { bubbles: true }));
+                        input.dispatchEvent(
+                          new Event("input", { bubbles: true }),
+                        );
                       }
                     }}
                     className="relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-stroke transition hover:border-primary dark:border-dark-3"
@@ -197,7 +272,7 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
                     <img
                       src={src}
                       alt=""
-                      className="h-full w-full object-cover"
+                      className="h-full w-full bg-slate-100 object-contain p-1 dark:bg-slate-900"
                     />
                   </button>
                 ))}
@@ -297,19 +372,13 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
             disabled={isPending}
           />
 
-          <InputGroup
-            type="text"
-            name="tags"
-            label="Tags"
-            placeholder="ai, python, machine-learning (phân cách bằng dấu phẩy)"
-            defaultValue={course?.tags?.map((t) => t.name).join(", ") ?? ""}
-            handleChange={() => {}}
+          <CourseTagSelect
+            defaultValue={course?.tags}
             disabled={isPending}
           />
         </div>
 
         <div className={cn("space-y-4", activeTab !== "outcomes" && "hidden")}>
-
           {outcomes.length === 0 && (
             <p className="rounded-lg border border-dashed border-stroke px-4 py-6 text-center text-sm text-dark-4 dark:border-dark-3 dark:text-dark-6">
               Chưa có mục nào. Bấm &quot;Thêm mục&quot; để bắt đầu.
@@ -351,7 +420,6 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
         </div>
 
         <div className={cn("space-y-4", activeTab !== "includes" && "hidden")}>
-
           {includes.length === 0 && (
             <p className="rounded-lg border border-dashed border-stroke px-4 py-6 text-center text-sm text-dark-4 dark:border-dark-3 dark:text-dark-6">
               Chưa có mục nào. Bấm &quot;Thêm mục&quot; để bắt đầu.
@@ -363,22 +431,92 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
               key={index}
               className="grid grid-cols-1 gap-3 rounded-lg border border-stroke p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_100px_100px_auto] sm:items-end dark:border-dark-3"
             >
-              <div>
+              <div className="relative">
                 <label className="mb-1.5 block text-xs text-dark-4 dark:text-dark-6">
                   Biểu tượng
                 </label>
-                <select
-                  value={item.key}
-                  onChange={(e) => updateInclude(index, { key: e.target.value })}
+                <button
+                  type="button"
+                  aria-expanded={openIncludeIconIndex === index}
+                  aria-haspopup="listbox"
+                  onClick={() =>
+                    setOpenIncludeIconIndex((current) =>
+                      current === index ? null : index,
+                    )
+                  }
                   disabled={isPending}
-                  className={inputClass}
+                  className={cn(
+                    inputClass,
+                    "flex min-h-11 items-center justify-between gap-3 text-left",
+                  )}
                 >
-                  {INCLUDE_ICON_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  {(() => {
+                    const selected =
+                      INCLUDE_ICON_OPTIONS.find(
+                        (option) => option.value === item.key,
+                      ) ?? null;
+                    const SelectedIcon = selected?.icon ?? CircleHelp;
+
+                    return (
+                      <>
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <SelectedIcon aria-hidden="true" className="h-4.5 w-4.5" />
+                          </span>
+                          <span className="truncate text-sm">
+                            {selected?.label ?? item.key}
+                          </span>
+                        </span>
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-transform",
+                            openIncludeIconIndex === index && "rotate-180",
+                          )}
+                        />
+                      </>
+                    );
+                  })()}
+                </button>
+
+                {openIncludeIconIndex === index && (
+                  <div
+                    role="listbox"
+                    aria-label="Chọn biểu tượng khóa học"
+                    className="absolute left-0 top-full z-30 mt-2 grid max-h-80 w-[min(560px,calc(100vw-3rem))] grid-cols-1 gap-1 overflow-y-auto rounded-xl border border-stroke bg-white p-2 shadow-lg sm:grid-cols-2 dark:border-dark-3 dark:bg-dark-2"
+                  >
+                    {INCLUDE_ICON_OPTIONS.map((option) => {
+                      const Icon = option.icon;
+                      const selected = option.value === item.key;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          onClick={() => {
+                            updateInclude(index, { key: option.value });
+                            setOpenIncludeIconIndex(null);
+                          }}
+                          className={cn(
+                            "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-gray-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary dark:hover:bg-dark-3",
+                            selected &&
+                              "bg-primary/10 font-medium text-primary dark:bg-primary/15",
+                          )}
+                        >
+                          <Icon aria-hidden="true" className="h-5 w-5 shrink-0" />
+                          <span className="min-w-0 flex-1 truncate">
+                            {option.label}
+                          </span>
+                          {selected && (
+                            <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -402,15 +540,15 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
                   Giá trị
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   value={item.value ?? ""}
                   onChange={(e) =>
                     updateInclude(index, {
-                      value:
-                        e.target.value === "" ? null : Number(e.target.value),
+                      value: e.target.value === "" ? null : e.target.value,
                     })
                   }
-                  placeholder="12"
+                  placeholder="Ví dụ: 12, Trọn đời"
+                  maxLength={100}
                   disabled={isPending}
                   className={inputClass}
                 />
@@ -429,6 +567,7 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
                     })
                   }
                   placeholder="giờ"
+                  maxLength={50}
                   disabled={isPending}
                   className={inputClass}
                 />

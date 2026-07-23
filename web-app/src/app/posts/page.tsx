@@ -3,7 +3,6 @@ import { Metadata } from 'next';
 import { PostsClient } from './PostsClient';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { ParticlesBackground } from '@/components/common/ParticlesBackground';
 
 export const metadata: Metadata = {
   title: 'Bài viết mới nhất | GATS Academy',
@@ -13,7 +12,6 @@ export const metadata: Metadata = {
 export default function PostsPage() {
   return (
     <main className="min-h-screen bg-background selection:bg-primary/30 relative">
-      <ParticlesBackground id="posts-particles" />
       <Header />
       <PostsClient />
       <Footer />

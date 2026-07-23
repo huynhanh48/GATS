@@ -30,6 +30,7 @@ import { HlsVideoPlayer } from "@/components/common/HlsVideoPlayer";
 import { LearnQuizPanel } from "@/components/learning/LearnQuizPanel";
 import { LearnAssignmentPanel } from "@/components/learning/LearnAssignmentPanel";
 import { LearnExtrasPanel } from "@/components/learning/LearnExtrasPanel";
+import { CourseChatPanel } from "@/components/learning/CourseChatPanel";
 import { resolveMediaUrl } from "@/lib/media/url";
 import {
   fetchCourseBySlug,
@@ -82,7 +83,7 @@ type Props = {
 
 export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   const router = useRouter();
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const { resolvedTheme, setTheme } = useTheme();
 
   const [course, setCourse] = useState<any>(null);
@@ -176,7 +177,10 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
             e.courseId === courseData.id &&
             (e.status === "active" || e.status === "completed" || !e.status),
         );
-        if (!enrolled) {
+        const canMentorCourse =
+          Number(courseData?.author?.id) === Number(user?.id) ||
+          Boolean(user?.roles?.includes("admin"));
+        if (!enrolled && !canMentorCourse) {
           toast.error("Bạn chưa đăng ký khóa học này");
           router.push(`/courses/${slug}`);
           return;
@@ -708,6 +712,10 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
 
             {course?.id && activeLessonId ? (
               <LearnExtrasPanel courseId={course.id} lessonId={activeLessonId} />
+            ) : null}
+
+            {course?.id && user?.id ? (
+              <CourseChatPanel courseId={course.id} currentUserId={user.id} />
             ) : null}
           </div>
         </main>

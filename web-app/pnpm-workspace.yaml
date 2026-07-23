@@ -1,8 +1,0 @@
-allowBuilds:
-  '@parcel/watcher': true
-  '@tsparticles/engine': true
-  sharp: true
-  unrs-resolver: false
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver

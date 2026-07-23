@@ -4,6 +4,11 @@ import { notFound } from "next/navigation";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
 import { fetchUserDetail } from "../actions";
 import { UserSecurityActions } from "../user-security-actions";
+import { UserRoleEditor } from "../user-role-editor";
+import { getAdminSession } from "@/lib/api/server";
+import type { AccountRole } from "../actions";
+import { MentorCourseEditor } from "../mentor-course-editor";
+import { fetchCourses } from "../../course/actions";
 
 export const metadata: Metadata = {
   title: "Chi tiết người dùng",
@@ -47,9 +52,17 @@ export default async function UserDetailPage({ params }: PageProps) {
 
   const detail = await fetchUserDetail(id);
   if (!detail) notFound();
+  const session = await getAdminSession();
+  const courseList = await fetchCourses(1, 100);
 
-  const { user, recentOrders, enrollmentsSummary, enrollments, auditLogs } =
-    detail;
+  const {
+    user,
+    managedCourses,
+    recentOrders,
+    enrollmentsSummary,
+    enrollments,
+    auditLogs,
+  } = detail;
 
   return (
     <div className="space-y-4">
@@ -203,6 +216,30 @@ export default async function UserDetailPage({ params }: PageProps) {
         </div>
 
         <div className="space-y-4">
+          <AdminPanel title="Phân quyền" bodyClassName="p-4">
+            <UserRoleEditor
+              userId={user.id}
+              currentRole={
+                (["admin", "user"].find((role) =>
+                  user.globalRoles.includes(role),
+                ) ?? "user") as AccountRole
+              }
+              isSelf={session?.user.id === user.id}
+            />
+          </AdminPanel>
+
+          <AdminPanel title="Phân công mentor" bodyClassName="p-4">
+            <MentorCourseEditor
+              userId={user.id}
+              courses={courseList.data.map((course) => ({
+                id: course.id,
+                title: course.title,
+                status: course.status,
+              }))}
+              managedCourses={managedCourses}
+            />
+          </AdminPanel>
+
           <AdminPanel title="Bảo mật" bodyClassName="p-4">
             <UserSecurityActions
               userId={user.id}

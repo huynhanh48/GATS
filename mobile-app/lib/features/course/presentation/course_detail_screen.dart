@@ -328,7 +328,7 @@ class _CourseLearningViewState extends State<_CourseLearningView>
         ),
         widget.canAccessChat
             ? GroupChatPanel(
-                groupChatId: course.groupChatId,
+                courseId: course.id,
                 currentUser: widget.user,
                 canPin: widget.isMentor,
               )

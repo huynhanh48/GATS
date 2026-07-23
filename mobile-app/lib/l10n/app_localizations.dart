@@ -2096,6 +2096,54 @@ abstract class AppLocalizations {
   /// **'About App'**
   String get settingsAbout;
 
+  /// No description provided for @settingsLegal.
+  ///
+  /// In en, this message translates to:
+  /// **'Legal and privacy'**
+  String get settingsLegal;
+
+  /// No description provided for @legalTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get legalTerms;
+
+  /// No description provided for @legalPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get legalPrivacy;
+
+  /// No description provided for @legalRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund Policy'**
+  String get legalRefund;
+
+  /// No description provided for @legalPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Policy'**
+  String get legalPayment;
+
+  /// No description provided for @legalDataRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'Request data access or deletion'**
+  String get legalDataRequest;
+
+  /// No description provided for @legalOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to open the policy page. Please try again.'**
+  String get legalOpenFailed;
+
+  /// No description provided for @paymentLegalPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'By paying, you agree to the '**
+  String get paymentLegalPrefix;
+
   /// No description provided for @settingsReplayOnboarding.
   ///
   /// In en, this message translates to:

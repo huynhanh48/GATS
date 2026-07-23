@@ -1,20 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/network/api_exception.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
-import 'package:gats_academy/data/mock/mock_group_chat_store.dart';
+import 'package:gats_academy/data/api/course_chat_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
-import 'package:gats_academy/features/auth/models/user_role.dart';
 
 class GroupChatPanel extends StatefulWidget {
   const GroupChatPanel({
     super.key,
-    required this.groupChatId,
+    required this.courseId,
     required this.currentUser,
     this.canPin = false,
   });
 
-  final String groupChatId;
+  final String courseId;
   final AuthUser? currentUser;
   final bool canPin;
 
@@ -25,15 +28,64 @@ class GroupChatPanel extends StatefulWidget {
 class _GroupChatPanelState extends State<GroupChatPanel> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  List<GroupChatMessage> _messages = const [];
+  Timer? _pollTimer;
+  bool _loading = true;
+  bool _sending = false;
+  bool _accessClosed = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    MockGroupChatStore.instance.addListener(_onMessagesChanged);
+    unawaited(_load());
+    _pollTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => unawaited(_load(silent: true)),
+    );
   }
 
-  void _onMessagesChanged() {
-    if (mounted) setState(() {});
+  Future<void> _load({bool silent = false}) async {
+    if (_accessClosed) return;
+    final token = await AuthPrefs.accessToken();
+    if (token == null) return;
+    try {
+      final messages = await CourseChatApiService.list(
+        courseId: widget.courseId,
+        token: token,
+      );
+      if (!mounted) return;
+      final changed = messages.length != _messages.length ||
+          (messages.isNotEmpty &&
+              (_messages.isEmpty || messages.last.id != _messages.last.id));
+      setState(() {
+        _messages = messages;
+        _loading = false;
+        _error = null;
+      });
+      if (changed) _scrollToBottom();
+    } catch (error) {
+      if (!mounted) return;
+      final closed = error is ApiException &&
+          (error.statusCode == 410 || error.statusCode == 403);
+      if (!closed && silent) return;
+      _handleError(error);
+    }
+  }
+
+  void _handleError(Object error) {
+    if (!mounted) return;
+    final closed = error is ApiException &&
+        (error.statusCode == 410 || error.statusCode == 403);
+    if (closed) _pollTimer?.cancel();
+    setState(() {
+      _loading = false;
+      _accessClosed = closed;
+      _error = error is ApiException ? error.message : error.toString();
+    });
+  }
+
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -47,53 +99,86 @@ class _GroupChatPanelState extends State<GroupChatPanel> {
 
   @override
   void dispose() {
-    MockGroupChatStore.instance.removeListener(_onMessagesChanged);
+    _pollTimer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _send() {
+  Future<void> _send() async {
     final user = widget.currentUser;
-    if (user == null) return;
-    final text = _controller.text;
+    final token = await AuthPrefs.accessToken();
+    if (user == null || token == null || _sending) return;
+    final text = _controller.text.trim();
     if (text.trim().isEmpty) return;
-    MockGroupChatStore.instance.sendMessage(
-      groupChatId: widget.groupChatId,
-      senderId: user.id,
-      senderName: user.displayName,
-      text: text,
-      isMentor: user.role == UserRole.mentor,
-    );
-    _controller.clear();
+    setState(() => _sending = true);
+    try {
+      await CourseChatApiService.send(
+        courseId: widget.courseId,
+        token: token,
+        content: text,
+      );
+      _controller.clear();
+      await _load();
+    } catch (error) {
+      _handleError(error);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _togglePin(GroupChatMessage message) async {
+    final token = await AuthPrefs.accessToken();
+    if (token == null) return;
+    try {
+      await CourseChatApiService.setPinned(
+        courseId: widget.courseId,
+        messageId: message.id,
+        token: token,
+        isPinned: !message.isPinned,
+      );
+      await _load();
+    } catch (error) {
+      _handleError(error);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final messages = MockGroupChatStore.instance.messagesFor(widget.groupChatId);
     final user = widget.currentUser;
 
     return Column(
       children: [
+        if (_error != null)
+          MaterialBanner(
+            content: Text(_error!),
+            actions: _accessClosed
+                ? const [SizedBox.shrink()]
+                : [
+                    TextButton(
+                      onPressed: () => unawaited(_load()),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+          ),
         Expanded(
-          child: messages.isEmpty
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _messages.isEmpty
               ? Center(child: Text(AppStrings.groupChatEmpty))
               : ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  itemCount: messages.length,
+                  itemCount: _messages.length,
                   itemBuilder: (context, index) => _MessageBubble(
-                    message: messages[index],
-                    isMine: user != null && messages[index].senderId == user.id,
+                    message: _messages[index],
+                    isMine: user != null && _messages[index].senderId == user.id,
                     canPin: widget.canPin,
-                    onPin: () => MockGroupChatStore.instance.pinMessage(
-                      widget.groupChatId,
-                      messages[index].id,
-                    ),
+                    onPin: () => _togglePin(_messages[index]),
                   ),
                 ),
         ),
-        if (user != null)
+        if (user != null && !_accessClosed)
           SafeArea(
             top: false,
             child: Padding(
@@ -117,13 +202,19 @@ class _GroupChatPanelState extends State<GroupChatPanel> {
                         ),
                       ),
                       textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _send(),
+                      enabled: !_sending,
+                      onSubmitted: (_) => unawaited(_send()),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   IconButton.filled(
-                    onPressed: _send,
-                    icon: const Icon(Icons.send_rounded),
+                    onPressed: _sending ? null : () => unawaited(_send()),
+                    icon: _sending
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send_rounded),
                   ),
                 ],
               ),
