@@ -66,6 +66,8 @@ async function proxyRequest(
   }
 
   const setCookieHeaders = backendResponse.headers.getSetCookie?.() ?? [];
+  const authCookieDomain =
+    process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
   for (const cookieHeader of setCookieHeaders) {
     const cookieName = cookieHeader.split("=")[0]?.trim();
     if (cookieName === ACCESS_TOKEN_COOKIE) {
@@ -73,16 +75,25 @@ async function proxyRequest(
       if (match?.[1]) {
         response.cookies.set(ACCESS_TOKEN_COOKIE, match[1], {
           httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
           path: "/",
           maxAge: 7 * 24 * 60 * 60,
+          domain: authCookieDomain,
         });
       }
     }
   }
 
   if (request.method === "POST" && path.join("/") === "user/logout") {
-    response.cookies.delete(ACCESS_TOKEN_COOKIE);
+    response.cookies.set(ACCESS_TOKEN_COOKIE, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+      domain: authCookieDomain,
+    });
   }
 
   return response;

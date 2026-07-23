@@ -383,6 +383,7 @@ async function logout(userId: number, token?: string) {
  */
 function getCookieOptions(req?: Request): CookieOptions {
   const isProd = EnvVars.NodeEnv === NodeEnvs.PRODUCTION;
+  const configuredDomain = EnvVars.AuthCookieDomain?.trim();
   const forwardedProto = req?.headers?.['x-forwarded-proto'];
   const proto = Array.isArray(forwardedProto)
     ? forwardedProto[0]
@@ -398,12 +399,15 @@ function getCookieOptions(req?: Request): CookieOptions {
     sameSite: 'lax',
     path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
+    ...(isProd && configuredDomain
+      ? { domain: configuredDomain }
+      : {}),
   };
 }
 
 function getClearCookieOptions(req?: Request): CookieOptions {
-  const { httpOnly, secure, sameSite, path } = getCookieOptions(req);
-  return { httpOnly, secure, sameSite, path };
+  const { httpOnly, secure, sameSite, path, domain } = getCookieOptions(req);
+  return { httpOnly, secure, sameSite, path, domain };
 }
 
 export default {

@@ -30,6 +30,7 @@ x-backend-env: &backend-env
   REDIS_PORT: "6379"
   JWT_SECRET: dev-secret-change-me-please-min-32-characters
   JWT_EXPIRES_IN: 7d
+  AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
   EMAIL_USER: noreply@gats.dev
   EMAIL_PASSWORD: changeme
   APP_URL: ${APP_URL:-https://api.gats.vn}

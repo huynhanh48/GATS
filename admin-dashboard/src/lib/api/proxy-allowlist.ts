@@ -1,5 +1,6 @@
 const ALLOWED_PREFIXES = [
   "user/login",
+  "user/auth/google",
   "user/register",
   "user/logout",
   "user/me",

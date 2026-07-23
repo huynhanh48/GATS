@@ -55,6 +55,8 @@ const EnvVars = jetEnv({
   DatabaseUrl: str,
   JwtSecret: str,
   JwtExpiresIn: str,
+  /** Parent domain for Web/Admin SSO cookies in production, e.g. `.gats.vn`. */
+  AuthCookieDomain: optionalStr,
   EmailUser: str,
   EmailPassword: str,
   FrontendUrl: str,

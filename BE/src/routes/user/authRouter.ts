@@ -22,6 +22,25 @@ import AuthService from '@src/services/AuthService';
 
 const APP_NAME = 'GATS Academy';
 
+function setAccessTokenCookie(
+  req: Request,
+  res: Response,
+  token: string,
+): void {
+  const options = AuthService.getCookieOptions(req);
+
+  // Remove the old api.gats.vn host-only cookie before switching to the
+  // shared parent-domain cookie. Otherwise browsers may send two cookies with
+  // the same name and authentication becomes order-dependent.
+  if (options.domain) {
+    const { domain: _domain, ...legacyHostOptions } =
+      AuthService.getClearCookieOptions(req);
+    res.clearCookie(ACCESS_TOKEN_COOKIE, legacyHostOptions);
+  }
+
+  res.cookie(ACCESS_TOKEN_COOKIE, token, options);
+}
+
 function renderVerifyEmailResultPage(input: {
   title: string;
   message: string;
@@ -47,11 +66,7 @@ async function register(req: Request, res: Response) {
 async function login(req: Request, res: Response) {
   const input = parseLoginInput(req.body);
   const result = await AuthService.login(input);
-  res.cookie(
-    ACCESS_TOKEN_COOKIE,
-    result.token,
-    AuthService.getCookieOptions(req),
-  );
+  setAccessTokenCookie(req, res, result.token);
   // Cookie for web (admin/web-app); `token` in body for mobile Bearer clients.
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in.',
@@ -67,11 +82,7 @@ async function googleLogin(req: Request, res: Response) {
   }
 
   const result = await AuthService.googleLogin(idToken);
-  res.cookie(
-    ACCESS_TOKEN_COOKIE,
-    result.token,
-    AuthService.getCookieOptions(req),
-  );
+  setAccessTokenCookie(req, res, result.token);
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in with Google.',
     token: result.token,
@@ -89,6 +100,11 @@ async function logout(req: Request, res: Response) {
     ACCESS_TOKEN_COOKIE,
     AuthService.getClearCookieOptions(req),
   );
+  const { domain, ...legacyHostOptions } =
+    AuthService.getClearCookieOptions(req);
+  if (domain) {
+    res.clearCookie(ACCESS_TOKEN_COOKIE, legacyHostOptions);
+  }
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
