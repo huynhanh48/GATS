@@ -33,11 +33,13 @@ async function proxyRequest(
   if (accessToken) {
     headers.set("Cookie", `${ACCESS_TOKEN_COOKIE}=${accessToken}`);
   }
-  // The BE runs a CSRF origin guard that rejects mutating requests whose
-  // Origin is missing (in prod) or not allowlisted. The BE always trusts its
-  // own origin, so present it as the request origin for this server-to-server
-  // call. The browser's cross-origin Origin (:9000) is intentionally dropped.
-  headers.set("Origin", BE_API_URL);
+  // Preserve the browser's real Origin so the BE can validate it against
+  // FRONTEND_URL. Server-to-server calls may legitimately have no Origin;
+  // in that case omit the header instead of pretending to be localhost.
+  const requestOrigin = request.headers.get("origin");
+  if (requestOrigin) {
+    headers.set("Origin", requestOrigin);
+  }
 
   const init: RequestInit = {
     method: request.method,

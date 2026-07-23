@@ -23,7 +23,6 @@ import type {
   VideoRecord,
 } from "@/lib/api/types";
 import { VideoUploader } from "../../course/[id]/_components/video-uploader";
-import { AllVideosTable } from "./all-videos-table";
 import {
   Combobox,
   ComboboxInput,
@@ -49,7 +48,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { AdminPanel } from "@/components/Layouts/admin-surface";
-import { MoreHorizontal, Trash2 } from "lucide-react";
+import {
+  AlertCircle,
+  BookOpen,
+  LoaderCircle,
+  MoreHorizontal,
+  Trash2,
+} from "lucide-react";
 
 type VideoLesson = CourseDetailLesson & { sectionTitle: string };
 
@@ -77,6 +82,7 @@ const PAGE_SIZE = 10;
 export function VideoManager() {
   const [courses, setCourses] = useState<CoursePublic[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
 
   const [selectedCourse, setSelectedCourse] = useState<CoursePublic | null>(null);
   const [sections, setSections] = useState<CourseCurriculumSection[]>([]);
@@ -101,17 +107,63 @@ export function VideoManager() {
     async function fetchCourses() {
       try {
         setLoadingCourses(true);
+        setCoursesError(null);
         const res = await coursesClient.list({ take: 100 });
-        if (res.data) setCourses(res.data.data);
-        else if (res.error) toast.error(res.error.message);
+        if (res.data) {
+          const manageableCourses = res.data.data;
+          setCourses(manageableCourses);
+          setSelectedCourse((current) => {
+            if (current) {
+              return (
+                manageableCourses.find((course) => course.id === current.id) ??
+                null
+              );
+            }
+
+            const requestedCourseId =
+              typeof window === "undefined"
+                ? null
+                : new URLSearchParams(window.location.search).get("courseId");
+
+            const nextCourse =
+              manageableCourses.find(
+                (course) => course.id === requestedCourseId,
+              ) ??
+              manageableCourses[0] ??
+              null;
+
+            if (nextCourse && typeof window !== "undefined") {
+              const url = new URL(window.location.href);
+              url.searchParams.set("courseId", nextCourse.id);
+              window.history.replaceState(window.history.state, "", url);
+            }
+
+            return nextCourse;
+          });
+        } else if (res.error) {
+          setCoursesError(res.error.message);
+        }
       } catch {
-        toast.error("Lỗi khi tải danh sách khóa học");
+        setCoursesError("Không thể tải danh sách khóa học được phân công.");
       } finally {
         setLoadingCourses(false);
       }
     }
     fetchCourses();
   }, []);
+
+  function selectCourse(course: CoursePublic | null) {
+    setSelectedCourse(course);
+
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (course) {
+      url.searchParams.set("courseId", course.id);
+    } else {
+      url.searchParams.delete("courseId");
+    }
+    window.history.replaceState(window.history.state, "", url);
+  }
 
   // 2. Load curriculum when course changes
   useEffect(() => {
@@ -274,13 +326,23 @@ export function VideoManager() {
           <Combobox
             items={courses}
             value={selectedCourse}
-            onValueChange={(val) => setSelectedCourse(val as CoursePublic | null)}
+            onValueChange={(val) =>
+              selectCourse(val as CoursePublic | null)
+            }
             itemToStringLabel={(c: CoursePublic) => c.title}
             isItemEqualToValue={(a: CoursePublic, b: CoursePublic) => a.id === b.id}
-            disabled={loadingCourses}
+            disabled={loadingCourses || Boolean(coursesError)}
           >
             <ComboboxInput
-              placeholder={loadingCourses ? "Đang tải..." : "Tìm khóa học..."}
+              placeholder={
+                loadingCourses
+                  ? "Đang tải khóa học..."
+                  : coursesError
+                    ? "Không tải được khóa học"
+                    : courses.length === 0
+                      ? "Chưa có khóa học được phân công"
+                      : "Tìm khóa học..."
+              }
             />
             <ComboboxContent>
               <ComboboxEmpty>Không tìm thấy khóa học nào.</ComboboxEmpty>
@@ -295,6 +357,74 @@ export function VideoManager() {
           </Combobox>
         </div>
       </AdminPanel>
+
+      {loadingCourses && (
+        <AdminPanel bodyClassName="py-14">
+          <div className="flex flex-col items-center justify-center gap-3 text-center">
+            <LoaderCircle
+              aria-hidden="true"
+              className="h-7 w-7 animate-spin text-primary"
+            />
+            <div>
+              <p className="font-medium text-dark dark:text-white">
+                Đang tải workspace video
+              </p>
+              <p className="mt-1 text-sm text-dark-4 dark:text-dark-6">
+                Hệ thống đang lấy các khóa học bạn được phép quản lý.
+              </p>
+            </div>
+          </div>
+        </AdminPanel>
+      )}
+
+      {!loadingCourses && coursesError && (
+        <AdminPanel bodyClassName="py-12">
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+              <AlertCircle aria-hidden="true" className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-semibold text-dark dark:text-white">
+                Không tải được khóa học
+              </p>
+              <p className="mt-1 max-w-lg text-sm text-dark-4 dark:text-dark-6">
+                {coursesError}
+              </p>
+            </div>
+            <Button type="button" onClick={() => window.location.reload()}>
+              Thử tải lại
+            </Button>
+          </div>
+        </AdminPanel>
+      )}
+
+      {!loadingCourses && !coursesError && courses.length === 0 && (
+        <AdminPanel bodyClassName="py-12">
+          <div className="flex flex-col items-center justify-center gap-4 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <BookOpen aria-hidden="true" className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-semibold text-dark dark:text-white">
+                Chưa có khóa học để quản lý video
+              </p>
+              <p className="mt-1 max-w-lg text-sm text-dark-4 dark:text-dark-6">
+                Admin cần tạo khóa học hoặc phân công khóa học cho giảng viên
+                trước khi thêm video vào bài học.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                window.location.href = "/course";
+              }}
+            >
+              Đi tới danh sách khóa học
+            </Button>
+          </div>
+        </AdminPanel>
+      )}
 
       {/* Tabs: only show after course is selected */}
       {selectedCourse && (
@@ -540,10 +670,6 @@ export function VideoManager() {
             </TabsContent>
           </Tabs>
         </AdminPanel>
-      )}
-
-      {!selectedCourse && (
-        <AllVideosTable />
       )}
 
       {/* Delete Video Confirmation Dialog */}

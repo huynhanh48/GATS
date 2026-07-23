@@ -4,6 +4,7 @@ const ALLOWED_PREFIXES = [
   "user/logout",
   "user/me",
   "courses",
+  "course-management",
   "cart",
   "orders",
   "payment",
