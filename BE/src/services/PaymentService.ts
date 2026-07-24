@@ -430,7 +430,7 @@ async function checkSepayPayment(txnRef: string) {
     expiredPending != null ||
     (order != null && isOrderPaymentExpired(order.createdAt));
 
-  if (isSepayPgConfigured()) {
+  if (EnvVars.SepayPgEnabled && isSepayPgConfigured()) {
     const detail = await fetchSepayPgOrderDetail(transaction.txnRef);
     if (!detail || !isSepayPgOrderPaid(detail.order_status)) {
       return {

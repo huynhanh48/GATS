@@ -38,7 +38,27 @@ import { mailService } from '@src/common/utils/mail';
 import logger from 'jet-logger';
 
 function frontendOrigin(): string {
-  return EnvVars.FrontendUrl.split(',')[0]?.trim().replace(/\/$/, '') || '';
+  const parts = EnvVars.FrontendUrl.split(',')
+    .map((s) =>
+      s
+        .trim()
+        .replace(/^https\/\//i, 'https://')
+        .replace(/^http\/\//i, 'http://')
+        .replace(/\/$/, ''),
+    )
+    .filter(Boolean);
+
+  // Prefer public learner site (not admin, not localhost) for payment callbacks.
+  const publicWeb = parts.find(
+    (u) =>
+      /^https:\/\//i.test(u) &&
+      !/localhost|127\.0\.0\.1/i.test(u) &&
+      !/\/\/admin\./i.test(u),
+  );
+  const anyPublicHttps = parts.find(
+    (u) => /^https:\/\//i.test(u) && !/localhost|127\.0\.0\.1/i.test(u),
+  );
+  return publicWeb || anyPublicHttps || parts[0] || '';
 }
 
 async function sendOrderLifecycleEmail(
@@ -309,9 +329,15 @@ async function createOrder(userId: number, input: CreateOrderInput) {
       })),
     });
 
-    // SePay Payment Gateway (merchant_id + secret_key) — redirect checkout
-    if (isSepayPgConfigured()) {
-      const frontend = EnvVars.FrontendUrl.replace(/\/$/, '');
+    // SePay Payment Gateway — only when explicitly enabled (default = VietQR + webhook).
+    if (EnvVars.SepayPgEnabled && isSepayPgConfigured()) {
+      const frontend = frontendOrigin();
+      if (!frontend) {
+        throw new RouteError(
+          HttpStatusCodes.SERVICE_UNAVAILABLE,
+          'FRONTEND_URL is not configured for SePay callback',
+        );
+      }
       const successUrl = `${frontend}/checkout/result?status=paid&orderId=${order.id}&txnRef=${encodeURIComponent(txnRef)}`;
       const errorUrl = `${frontend}/checkout/result?status=failed&orderId=${order.id}&txnRef=${encodeURIComponent(txnRef)}`;
       const cancelUrl = `${frontend}/checkout/result?status=cancelled&orderId=${order.id}&txnRef=${encodeURIComponent(txnRef)}`;
@@ -345,7 +371,7 @@ async function createOrder(userId: number, input: CreateOrderInput) {
       };
     }
 
-    // Legacy: VietQR image + SEVQR content (requires bank account + optional SEPAY_API_KEY)
+    // Default: VietQR + SEVQR content + SePay bank webhook / poll
     const bank = await BankAccountService.resolvePaymentBankAccount();
     const transferContent = toSepayTransferContent(txnRef);
     return {
