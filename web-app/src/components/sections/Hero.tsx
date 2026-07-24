@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
   Bell,
   BookOpen,
   Clock3,
@@ -73,10 +72,7 @@ export function Hero() {
             className="mb-12 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
           >
             <Button size="lg" asChild className="h-12 rounded-full px-8">
-              <Link href="/courses">
-                Bắt đầu ngay
-                <ArrowRight aria-hidden="true" />
-              </Link>
+              <Link href="/courses">Bắt đầu ngay</Link>
             </Button>
             <Button
               size="lg"

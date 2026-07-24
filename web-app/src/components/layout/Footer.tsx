@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import { BrainCircuit } from "lucide-react";
 
 const footerColumns: Array<{
   title: string;
@@ -44,11 +43,8 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           <div className="lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-6">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <BrainCircuit className="w-5 h-5 text-primary" />
-              </div>
-              <span className="font-bold text-xl tracking-tight">GATS Academy</span>
+            <Link href="/" className="mb-6 inline-block">
+              <span className="text-xl font-bold tracking-tight">GATS Academy</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed mb-8 pr-4">
               GATS Academy đồng hành cùng bạn ứng dụng AI để học tập, triển khai

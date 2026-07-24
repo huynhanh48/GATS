@@ -330,7 +330,7 @@ export function CTASection() {
             đang muốn giải quyết.
           </p>
 
-          <div className="mx-auto flex max-w-xl flex-col items-stretch gap-4 rounded-3xl border border-primary/25 bg-linear-to-br from-primary/10 via-card to-brand-primary/10 p-5 shadow-[0_12px_40px_rgba(255,118,34,0.12)] sm:flex-row sm:items-center sm:justify-center sm:p-6">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button
               asChild
               size="lg"
