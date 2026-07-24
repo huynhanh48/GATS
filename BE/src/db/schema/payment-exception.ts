@@ -48,6 +48,7 @@ export const paymentExceptionsTable = pgTable(
     index('idx_payment_exceptions_resolved').on(table.resolved),
     index('idx_payment_exceptions_order').on(table.orderId),
     index('idx_payment_exceptions_created_at').on(table.createdAt),
+    // Enforced in SQL migration (partial unique): one open row per txnRef+type
   ],
 );
 

@@ -19,6 +19,7 @@ import { PathApi } from "@/constants/PathApi";
 import Link from "next/link";
 import { Course } from "@/types/course";
 import { toast } from "sonner";
+import { resolveMediaUrl } from "@/lib/media/url";
 
 const VN_TZ = "Asia/Ho_Chi_Minh";
 
@@ -343,7 +344,7 @@ export default function ProfilePage() {
                   <div className="flex flex-col sm:flex-row gap-6 items-center">
                     <div className="relative w-full sm:w-64 aspect-video rounded-2xl overflow-hidden bg-muted shrink-0 shadow-md">
                       <Image 
-                        src={enrollments[0]?.course?.thumbnail || "/auth-bg.jpg"} 
+                        src={resolveMediaUrl(enrollments[0]?.course?.thumbnail)} 
                         alt="Course"
                         fill
                         className="bg-muted p-2 object-contain"
@@ -513,7 +514,7 @@ export default function ProfilePage() {
                       <div key={enr.id} className="border border-border rounded-3xl overflow-hidden bg-card hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group">
                         <div className="relative aspect-video w-full bg-muted overflow-hidden">
                           <Image 
-                            src={c.thumbnail || "/auth-bg.jpg"} 
+                            src={resolveMediaUrl(c.thumbnail)} 
                             alt={c.title} 
                             fill 
                             className="bg-muted p-2 object-contain"

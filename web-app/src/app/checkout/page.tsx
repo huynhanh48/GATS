@@ -337,9 +337,26 @@ export default function CheckoutPage() {
           stopPolling();
           writePendingPayment(null);
           setQrData(null);
-          toast.error(
-            "Số tiền chuyển khoản không khớp đơn. Vui lòng liên hệ hỗ trợ hoặc tạo đơn mới.",
-          );
+          const expected = Number(res?.amount) || 0;
+          const actual = Number(res?.actualAmount) || 0;
+          const kind = String(res?.mismatchKind || "");
+          const fmt = (n: number) => n.toLocaleString("vi-VN");
+          if (kind === "underpayment" || (actual > 0 && expected > 0 && actual < expected)) {
+            toast.error(
+              `Bạn chuyển thiếu: ${fmt(actual)}đ / cần ${fmt(expected)}đ. Đơn chưa kích hoạt — chuyển đủ hoặc liên hệ hỗ trợ.`,
+            );
+          } else if (
+            kind === "overpayment" ||
+            (actual > 0 && expected > 0 && actual > expected)
+          ) {
+            toast.error(
+              `Bạn chuyển thừa: ${fmt(actual)}đ / cần ${fmt(expected)}đ. Đơn chưa kích hoạt — liên hệ hỗ trợ để đối soát/hoàn phần thừa.`,
+            );
+          } else {
+            toast.error(
+              "Số tiền chuyển khoản không khớp đơn. Vui lòng liên hệ hỗ trợ hoặc tạo đơn mới.",
+            );
+          }
           return "stopped";
         }
         return "pending";

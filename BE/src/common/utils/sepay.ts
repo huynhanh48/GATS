@@ -9,15 +9,21 @@ export function toSepayTransferContent(txnRef: string): string {
 }
 
 /**
+ * Our txnRef shape: ORD + unix ms digits + 6 hex (from randomBytes(3)).
+ * Banks often append extra alnum after the memo — do not swallow that into the ref.
+ */
+const ORD_TXN_REF_IN_CONTENT = /SEVQR(ORD\d+[A-F0-9]{6})/;
+
+/**
  * Extract cleaned txnRef from bank/Sepay content.
- * Expects pattern SEVQR{txnRefClean} anywhere in the text.
+ * Expects pattern SEVQR{ORD…} anywhere in the text.
  */
 export function extractTxnRefFromContent(
   content: string | undefined | null,
 ): string | null {
   if (!content) return null;
   const clean = cleanAlnum(content);
-  const match = clean.match(/SEVQR([A-Z0-9]+)/);
+  const match = clean.match(ORD_TXN_REF_IN_CONTENT);
   return match?.[1] ?? null;
 }
 

@@ -16,12 +16,18 @@ function toSepayTransferContent(txnRef: string): string {
   return `SEVQR${cleanAlnum(txnRef)}`;
 }
 
+/**
+ * Our txnRef shape: ORD + unix ms digits + 6 hex (from randomBytes(3)).
+ * Banks often append extra alnum after the memo — do not swallow that into the ref.
+ */
+const ORD_TXN_REF_IN_CONTENT = /SEVQR(ORD\d+[A-F0-9]{6})/;
+
 function extractTxnRefFromContent(
   content: string | undefined | null,
 ): string | null {
   if (!content) return null;
   const clean = cleanAlnum(content);
-  const match = clean.match(/SEVQR([A-Z0-9]+)/);
+  const match = clean.match(ORD_TXN_REF_IN_CONTENT);
   return match?.[1] ?? null;
 }
 
@@ -66,10 +72,16 @@ function amountsMatch(expected: number, paid?: number): boolean {
 
 describe('SePay content matching', () => {
   it('builds and extracts SEVQR txn refs', () => {
-    const txnRef = 'ORD1710000000ABC123';
+    const txnRef = 'ORD1710000000000ABC123';
     const content = `CK ${toSepayTransferContent(txnRef)}`;
     expect(extractTxnRefFromContent(content)).toBe(cleanAlnum(txnRef));
     expect(contentMatchesTxnRef(content, txnRef)).toBe(true);
+  });
+
+  it('ignores bank suffix after ORD txn ref', () => {
+    const txnRef = 'ORD1784878607530DFA564';
+    const polluted = `SEVQR${txnRef}CTTU10193BANKEXTRA`;
+    expect(extractTxnRefFromContent(polluted)).toBe(txnRef);
   });
 
   it('ignores content without SEVQR', () => {

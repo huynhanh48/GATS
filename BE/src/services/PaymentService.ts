@@ -57,7 +57,7 @@ type SepayApiTransaction = {
   bank_brand_name?: string;
 };
 
-/** Fire-and-forget exception log — never throws to callers. Dedupes unresolved by txnRef+type. */
+/** Fire-and-forget exception log — never throws to callers. Upserts unresolved by txnRef+type. */
 async function logException(input: {
   type: PaymentExceptionType;
   orderId?: string | null;
@@ -67,14 +67,7 @@ async function logException(input: {
   rawPayload?: unknown;
 }) {
   try {
-    if (input.txnRef) {
-      const existing = await PaymentExceptionRepo.findUnresolvedByTxnRefAndType(
-        input.txnRef,
-        input.type,
-      );
-      if (existing) return;
-    }
-    await PaymentExceptionRepo.create({
+    await PaymentExceptionRepo.upsertUnresolved({
       type: input.type,
       orderId: input.orderId ?? null,
       txnRef: input.txnRef ?? null,
@@ -88,6 +81,15 @@ async function logException(input: {
   } catch (err) {
     console.error('PaymentException write failed', err);
   }
+}
+
+function amountMismatchKind(
+  expected: number,
+  actual: number,
+): 'underpayment' | 'overpayment' | 'mismatch' {
+  if (actual < expected) return 'underpayment';
+  if (actual > expected) return 'overpayment';
+  return 'mismatch';
 }
 
 function assertWebhookAuth(apiKey: string | undefined) {
@@ -208,13 +210,18 @@ async function confirmPayment(
     actual > 0 &&
     actual !== transaction.amount
   ) {
-    void logException({
+    const kind = amountMismatchKind(transaction.amount, actual);
+    // Under/over: never auto-complete. Upsert one open exception (no spam).
+    await logException({
       type: 'amount_mismatch',
       orderId: transaction.orderId,
       txnRef: transaction.txnRef,
       expectedAmount: transaction.amount,
       actualAmount: actual,
-      rawPayload: gatewayResponse,
+      rawPayload: {
+        kind,
+        gatewayResponse,
+      },
     });
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.AMOUNT_MISMATCH);
   }
@@ -561,14 +568,20 @@ async function checkSepayPayment(txnRef: string) {
     } catch (err) {
       if (err instanceof RouteError && err.status === HttpStatusCodes.BAD_REQUEST) {
         if (err.message === Errors.AMOUNT_MISMATCH) {
+          const expectedAmt = transaction.amount;
+          const kind =
+            paidAmount > 0
+              ? amountMismatchKind(expectedAmt, paidAmount)
+              : 'mismatch';
           return {
             success: false,
             status: 'AMOUNT_MISMATCH' as const,
             txnRef: transaction.txnRef,
             orderId: transaction.orderId,
-            amount: transaction.amount,
+            amount: expectedAmt,
             paidAt: null,
             actualAmount: paidAmount,
+            mismatchKind: kind,
             message: Errors.AMOUNT_MISMATCH,
           };
         }
@@ -638,14 +651,20 @@ async function checkSepayPayment(txnRef: string) {
   } catch (err) {
     if (err instanceof RouteError && err.status === HttpStatusCodes.BAD_REQUEST) {
       if (err.message === Errors.AMOUNT_MISMATCH) {
+        const expectedAmt = transaction.amount;
+        const kind =
+          paidAmount > 0
+            ? amountMismatchKind(expectedAmt, paidAmount)
+            : 'mismatch';
         return {
           success: false,
           status: 'AMOUNT_MISMATCH' as const,
           txnRef: transaction.txnRef,
           orderId: transaction.orderId,
-          amount: transaction.amount,
+          amount: expectedAmt,
           paidAt: null,
           actualAmount: paidAmount,
+          mismatchKind: kind,
           message: Errors.AMOUNT_MISMATCH,
         };
       }

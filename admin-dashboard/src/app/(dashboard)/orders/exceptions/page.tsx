@@ -48,6 +48,24 @@ function formatMoney(amount: number | null) {
   return `${amount.toLocaleString("vi-VN")} đ`;
 }
 
+function typeLabelForRow(row: {
+  type: PaymentExceptionType;
+  expectedAmount: number | null;
+  actualAmount: number | null;
+  orderTotalAmount: number | null;
+}) {
+  if (row.type !== "amount_mismatch") return TYPE_LABELS[row.type];
+  const expected = row.expectedAmount ?? row.orderTotalAmount;
+  const actual = row.actualAmount;
+  if (expected != null && actual != null && actual < expected) {
+    return "Chuyển thiếu";
+  }
+  if (expected != null && actual != null && actual > expected) {
+    return "Chuyển thừa";
+  }
+  return TYPE_LABELS.amount_mismatch;
+}
+
 function parseType(raw?: string): TypeFilter {
   if (
     raw === "amount_mismatch" ||
@@ -207,7 +225,7 @@ export default async function OrderExceptionsPage({
                     </td>
                     <td className="px-4 py-3">
                       <span className="inline-flex rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 ring-1 ring-inset ring-rose-600/20 dark:bg-rose-500/10 dark:text-rose-300">
-                        {TYPE_LABELS[row.type]}
+                        {typeLabelForRow(row)}
                       </span>
                     </td>
                     <td className="px-4 py-3">

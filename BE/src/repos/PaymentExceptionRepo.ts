@@ -44,6 +44,72 @@ export async function create(
   return rows[0];
 }
 
+/**
+ * One unresolved row per (txnRef, type). Concurrent webhook/poll updates the
+ * same row instead of inserting duplicates.
+ */
+export async function upsertUnresolved(
+  data: Omit<NewPaymentException, 'id' | 'createdAt' | 'resolved'>,
+): Promise<PaymentException> {
+  if (!data.txnRef) {
+    return create(data);
+  }
+
+  try {
+    return await db.transaction(async (tx) => {
+      const existing = await tx
+        .select()
+        .from(paymentExceptionsTable)
+        .where(
+          and(
+            eq(paymentExceptionsTable.txnRef, data.txnRef!),
+            eq(paymentExceptionsTable.type, data.type),
+            eq(paymentExceptionsTable.resolved, false),
+          ),
+        )
+        .for('update')
+        .limit(1);
+
+      if (existing[0]) {
+        const rows = await tx
+          .update(paymentExceptionsTable)
+          .set({
+            orderId: data.orderId ?? existing[0].orderId,
+            expectedAmount: data.expectedAmount ?? existing[0].expectedAmount,
+            actualAmount: data.actualAmount ?? existing[0].actualAmount,
+            rawPayload: data.rawPayload ?? existing[0].rawPayload,
+          })
+          .where(eq(paymentExceptionsTable.id, existing[0].id))
+          .returning();
+        return rows[0];
+      }
+
+      const rows = await tx
+        .insert(paymentExceptionsTable)
+        .values(data)
+        .returning();
+      return rows[0];
+    });
+  } catch (err) {
+    // Unique partial index race: other worker inserted first — refresh that row.
+    const raced = await findUnresolvedByTxnRefAndType(data.txnRef, data.type);
+    if (raced) {
+      const rows = await db
+        .update(paymentExceptionsTable)
+        .set({
+          orderId: data.orderId ?? raced.orderId,
+          expectedAmount: data.expectedAmount ?? raced.expectedAmount,
+          actualAmount: data.actualAmount ?? raced.actualAmount,
+          rawPayload: data.rawPayload ?? raced.rawPayload,
+        })
+        .where(eq(paymentExceptionsTable.id, raced.id))
+        .returning();
+      return rows[0];
+    }
+    throw err;
+  }
+}
+
 export async function list(options: {
   skip?: number;
   take?: number;
