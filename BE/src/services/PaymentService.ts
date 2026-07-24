@@ -1,5 +1,6 @@
 import EnvVars from '@src/common/constants/env';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
+import { isOrderPaymentExpired } from '@src/common/constants/order-payment';
 import { RouteError } from '@src/common/utils/route-errors';
 import {
   cleanAlnum,
@@ -7,9 +8,10 @@ import {
   extractTxnRefFromContent,
   toSepayTransferContent,
 } from '@src/common/utils/sepay';
+import type { PaymentExceptionType } from '@src/db/schema/payment-exception';
+import * as OrderRepo from '@src/repos/OrderRepo';
 import * as PaymentExceptionRepo from '@src/repos/PaymentExceptionRepo';
 import * as TransactionRepo from '@src/repos/TransactionRepo';
-import type { PaymentExceptionType } from '@src/db/schema/payment-exception';
 import OrderService from '@src/services/OrderService';
 
 const Errors = {
@@ -96,6 +98,11 @@ async function findTransactionByContentRef(extractedCleanRef: string) {
   );
 }
 
+/**
+ * Confirm SePay payment after amount + content already matched.
+ * Completes the order even after the 30-minute QR window / TTL cancel
+ * (late payment recovery). Amount mismatch still refuses.
+ */
 async function confirmPayment(
   txnRef: string,
   gatewayResponse: unknown,
@@ -111,14 +118,12 @@ async function confirmPayment(
     return {
       ok: true,
       alreadyPaid: true,
+      lateRecovered: false,
       txnRef,
       orderId: transaction.orderId,
       status: 'success' as const,
     };
   }
-
-  // Auto-cancel and refuse confirmation after 30-minute payment window
-  await OrderService.assertPaymentWindowOpen(transaction.orderId);
 
   if (
     paidAmount !== undefined &&
@@ -136,17 +141,49 @@ async function confirmPayment(
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.AMOUNT_MISMATCH);
   }
 
+  const orderBefore = await OrderRepo.findById(transaction.orderId);
+  const pastWindow =
+    orderBefore != null && isOrderPaymentExpired(orderBefore.createdAt);
+  const wasCancelled = orderBefore?.status === 'cancelled';
+
+  // Best-effort: close pending window in DB if expired, then recover via late path.
+  if (orderBefore?.status === 'pending' && pastWindow) {
+    await OrderService.expirePendingOrderIfNeeded(transaction.orderId);
+  }
+
   const result = await OrderService.processSuccessfulPayment(
     transaction.orderId,
     {
       txnRef: transaction.txnRef,
       gatewayResponse,
+      skipExpiryCheck: true,
+      allowLatePayment: true,
     },
   );
+
+  const lateRecovered =
+    Boolean(result.lateRecovered) || pastWindow || wasCancelled;
+
+  if (lateRecovered) {
+    void logException({
+      type: 'late_payment_recovered',
+      orderId: transaction.orderId,
+      txnRef: transaction.txnRef,
+      expectedAmount: transaction.amount,
+      actualAmount: paidAmount ?? transaction.amount,
+      rawPayload: {
+        source: 'sepay_confirm',
+        pastWindow,
+        wasCancelled,
+        gatewayResponse,
+      },
+    });
+  }
 
   return {
     ok: true,
     alreadyPaid: false,
+    lateRecovered,
     txnRef: transaction.txnRef,
     orderId: result.order.id,
     status: result.order.status,
@@ -251,7 +288,8 @@ async function fetchSepayTransactions(): Promise<SepayApiTransaction[]> {
 
 /**
  * Poll Sepay API (same approach as Ecommerce).
- * Confirms payment + enrolls when matching transfer is found.
+ * Confirms payment + enrolls when matching transfer is found —
+ * including after the 30-minute QR window if money already arrived.
  */
 async function checkSepayPayment(txnRef: string) {
   const normalized = cleanAlnum(txnRef);
@@ -275,20 +313,13 @@ async function checkSepayPayment(txnRef: string) {
     };
   }
 
-  const expired = await OrderService.expirePendingOrderIfNeeded(
+  const order = await OrderRepo.findById(transaction.orderId);
+  const expiredPending = await OrderService.expirePendingOrderIfNeeded(
     transaction.orderId,
   );
-  if (expired) {
-    return {
-      success: false,
-      status: 'EXPIRED' as const,
-      txnRef: transaction.txnRef,
-      orderId: transaction.orderId,
-      amount: transaction.amount,
-      paidAt: null,
-      message: 'Payment window expired (30 minutes)',
-    };
-  }
+  const windowExpired =
+    expiredPending != null ||
+    (order != null && isOrderPaymentExpired(order.createdAt));
 
   const remoteList = await fetchSepayTransactions();
   const expected = toSepayTransferContent(transaction.txnRef);
@@ -301,12 +332,14 @@ async function checkSepayPayment(txnRef: string) {
   if (!match) {
     return {
       success: false,
-      status: 'PENDING' as const,
+      status: (windowExpired ? 'EXPIRED' : 'PENDING') as 'EXPIRED' | 'PENDING',
       txnRef: transaction.txnRef,
       orderId: transaction.orderId,
       amount: transaction.amount,
       paidAt: null,
-      message: 'Pending',
+      message: windowExpired
+        ? 'Payment window expired (30 minutes) — no matching bank transfer yet'
+        : 'Pending',
     };
   }
 
@@ -324,8 +357,11 @@ async function checkSepayPayment(txnRef: string) {
     orderId: confirmed.orderId,
     amount: transaction.amount,
     paidAt: new Date().toISOString(),
-    message: 'Payment confirmed',
+    message: confirmed.lateRecovered
+      ? 'Late payment confirmed after QR window'
+      : 'Payment confirmed',
     alreadyPaid: confirmed.alreadyPaid,
+    lateRecovered: confirmed.lateRecovered,
   };
 }
 

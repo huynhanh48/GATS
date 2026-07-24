@@ -535,6 +535,26 @@ export default function CheckoutPage() {
                 nhận khi nhận được chuyển khoản.
               </p>
 
+              <div className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-left text-xs leading-relaxed text-amber-900 dark:text-amber-100">
+                <p className="font-semibold">Lưu ý khi chuyển khoản</p>
+                <ul className="mt-1.5 list-disc space-y-1 pl-4">
+                  <li>
+                    Chuyển <span className="font-semibold">đúng số tiền</span> trên
+                    hóa đơn (không làm tròn / tách khoản).
+                  </li>
+                  <li>
+                    Giữ nguyên{" "}
+                    <span className="font-semibold">nội dung CK</span> (mã{" "}
+                    <span className="font-mono">SEVQR…</span>) — không sửa, thêm
+                    hoặc xóa ký tự.
+                  </li>
+                  <li>
+                    Quét QR là cách an toàn nhất; nếu chuyển tay, copy nội dung CK
+                    bên dưới.
+                  </li>
+                </ul>
+              </div>
+
               <div
                 className={`mb-6 rounded-xl px-4 py-3 text-sm font-semibold ${
                   remainingMs <= 5 * 60 * 1000

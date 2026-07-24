@@ -242,7 +242,8 @@ export type PaymentExceptionType =
   | "amount_mismatch"
   | "txn_ref_not_found"
   | "txn_ref_mismatch"
-  | "txn_not_found";
+  | "txn_not_found"
+  | "late_payment_recovered";
 
 export type PaymentExceptionRow = {
   id: string;

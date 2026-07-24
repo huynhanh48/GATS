@@ -19,7 +19,7 @@ const ACTION_COPY: Record<
   paid: {
     title: "Xác nhận đã thanh toán",
     description:
-      "Học viên sẽ được ghi danh vào các khóa trong đơn. Nhập lý do xác nhận (vd: đã nhận CK).",
+      "Học viên sẽ được ghi danh vào các khóa trong đơn. Nhập lý do xác nhận (vd: đã nhận CK / thanh toán trễ sau khi hết hạn QR).",
     confirmLabel: "Xác nhận đã TT",
     destructive: false,
   },
@@ -57,10 +57,10 @@ export function OrderStatusActions({ orderId, status }: Props) {
     });
   };
 
-  if (status === "cancelled" || status === "refunded") {
+  if (status === "refunded") {
     return (
       <p className="text-sm text-slate-500 dark:text-slate-400">
-        Đơn đã kết thúc — không còn thao tác.
+        Đơn đã hoàn tiền — không còn thao tác.
       </p>
     );
   }
@@ -89,6 +89,16 @@ export function OrderStatusActions({ orderId, status }: Props) {
               Hủy đơn
             </button>
           </>
+        ) : null}
+        {status === "cancelled" ? (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => setAction("paid")}
+            className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+          >
+            Khôi phục — xác nhận đã thanh toán
+          </button>
         ) : null}
         {status === "paid" ? (
           <button

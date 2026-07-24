@@ -352,6 +352,11 @@ async function processSuccessfulPayment(
     gatewayResponse?: unknown;
     /** Admin manual confirm may ignore the 30-minute QR window */
     skipExpiryCheck?: boolean;
+    /**
+     * SePay webhook/poll: allow completing a cancelled order when bank credit
+     * already matched SEVQR + exact amount (late payment after TTL).
+     */
+    allowLatePayment?: boolean;
   } = {},
 ) {
   const order = await OrderRepo.findByIdWithItems(orderId);
@@ -363,17 +368,20 @@ async function processSuccessfulPayment(
     const transaction = data.txnRef
       ? await TransactionRepo.findByTxnRef(data.txnRef)
       : await TransactionRepo.findByOrderId(orderId);
-    return { order, transaction };
+    return { order, transaction, lateRecovered: false as const };
   }
 
-  if (order.status !== 'pending') {
+  const isLateCancelled =
+    order.status === 'cancelled' && Boolean(data.allowLatePayment);
+
+  if (order.status !== 'pending' && !isLateCancelled) {
     throw new RouteError(
       HttpStatusCodes.BAD_REQUEST,
       'Order is not payable',
     );
   }
 
-  if (!data.skipExpiryCheck) {
+  if (order.status === 'pending' && !data.skipExpiryCheck && !data.allowLatePayment) {
     await assertPaymentWindowOpen(orderId);
   }
 
@@ -427,6 +435,7 @@ async function processSuccessfulPayment(
   return {
     order: fresh ?? ({ ...order, ...updatedOrder } as OrderDetail),
     transaction,
+    lateRecovered: isLateCancelled,
   };
 }
 
@@ -736,7 +745,7 @@ async function adminUpdateOrderStatus(
         message: 'Đơn đã thanh toán (idempotent)',
       };
     }
-    if (order.status !== 'pending') {
+    if (order.status !== 'pending' && order.status !== 'cancelled') {
       throw new RouteError(
         HttpStatusCodes.BAD_REQUEST,
         Errors.INVALID_STATUS_TRANSITION,
@@ -745,6 +754,7 @@ async function adminUpdateOrderStatus(
     const result = await processSuccessfulPayment(orderId, {
       gatewayResponse: { source: 'admin_manual_confirm', ...reasonMeta },
       skipExpiryCheck: true,
+      allowLatePayment: order.status === 'cancelled',
     });
     await AuditLogRepo.record({
       actorUserId,

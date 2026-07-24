@@ -19,6 +19,8 @@ export const paymentExceptionTypeEnum = pgEnum('payment_exception_type', [
   'txn_ref_not_found',
   'txn_ref_mismatch',
   'txn_not_found',
+  /** Bank credit matched SEVQR+amount after TTL cancel / past 30m window */
+  'late_payment_recovered',
 ]);
 
 export const paymentExceptionsTable = pgTable(

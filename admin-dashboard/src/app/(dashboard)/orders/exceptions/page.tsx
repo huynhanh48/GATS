@@ -29,6 +29,7 @@ const TYPE_LABELS: Record<TypeFilter, string> = {
   txn_ref_not_found: "Không tìm thấy mã GD",
   txn_ref_mismatch: "Sai mã GD",
   txn_not_found: "Không tìm thấy giao dịch",
+  late_payment_recovered: "Thanh toán trễ (đã tự hoàn thành)",
 };
 
 const RESOLVED_LABELS: Record<ResolvedFilter, string> = {
@@ -58,7 +59,8 @@ function parseType(raw?: string): TypeFilter {
     raw === "amount_mismatch" ||
     raw === "txn_ref_not_found" ||
     raw === "txn_ref_mismatch" ||
-    raw === "txn_not_found"
+    raw === "txn_not_found" ||
+    raw === "late_payment_recovered"
   ) {
     return raw;
   }
@@ -109,6 +111,7 @@ export default async function OrderExceptionsPage({
     "txn_ref_not_found",
     "txn_ref_mismatch",
     "txn_not_found",
+    "late_payment_recovered",
   ];
   const resolvedFilters: ResolvedFilter[] = ["false", "true", "all"];
 
