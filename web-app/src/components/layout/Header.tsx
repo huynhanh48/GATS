@@ -156,6 +156,9 @@ export function Header() {
                   <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
                     <Link href="/profile" className="w-full">Hồ sơ cá nhân</Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
+                    <Link href="/profile?tab=orders" className="w-full">Lịch sử giao dịch</Link>
+                  </DropdownMenuItem>
                   {canTeach ? (
                     <DropdownMenuItem asChild className="rounded-xl px-2.5 py-1.5 text-xs cursor-pointer">
                       <a href={teachingHref} className="w-full">Khu vực giảng dạy</a>
