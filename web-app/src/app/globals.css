@@ -62,7 +62,8 @@
     }
 
     to {
-      transform: translateX(calc(-100% - var(--gap)));
+      /* Two identical halves in LogoTicker → shift by 50% for a seamless loop */
+      transform: translateX(-50%);
     }
   }
 
@@ -164,6 +165,31 @@
 
   html {
     @apply font-sans;
+  }
+}
+
+/* Course filter radios — avoid native accent-color glitches in light mode */
+@layer components {
+  .filter-radio {
+    @apply size-4 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-[#D0D5DD] bg-white;
+    @apply checked:border-primary checked:bg-primary;
+    box-shadow: inset 0 0 0 0 transparent;
+  }
+
+  .filter-radio:checked {
+    box-shadow: inset 0 0 0 3px #ffffff;
+  }
+
+  .filter-radio:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  .dark .filter-radio {
+    @apply border-border bg-card;
+  }
+
+  .dark .filter-radio:checked {
+    box-shadow: inset 0 0 0 3px var(--card);
   }
 }
 

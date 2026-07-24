@@ -111,14 +111,18 @@ export const PostsClient = () => {
           className="max-w-2xl mx-auto w-full flex flex-col items-center justify-center gap-6"
         >
           <div className="w-full relative group">
-            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
-              <Search className="w-5 h-5" />
-            </div>
-            <Input 
-              placeholder="Tìm kiếm bài viết, chủ đề..." 
+            <span
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 flex w-14 items-center justify-center text-primary"
+              aria-hidden
+            >
+              <Search className="size-5 shrink-0" strokeWidth={2.25} />
+            </span>
+            <Input
+              placeholder="Tìm kiếm bài viết, chủ đề..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-14 pr-6 py-7 w-full text-lg rounded-full border-2 border-border/50 bg-background/80 backdrop-blur-md shadow-xl focus-visible:ring-0 focus-visible:border-primary transition-all hover:border-primary/50 text-foreground placeholder:text-muted-foreground"
+              className="h-auto w-full rounded-full border-2 border-border/50 bg-background/80 py-7 pr-6 pl-14 text-lg text-foreground shadow-xl backdrop-blur-md transition-all placeholder:text-muted-foreground hover:border-primary/50 focus-visible:border-primary focus-visible:ring-0"
+              aria-label="Tìm kiếm bài viết"
             />
           </div>
         </motion.div>

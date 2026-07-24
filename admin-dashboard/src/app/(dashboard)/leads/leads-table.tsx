@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatVnDateTime } from "@/lib/datetime";
 import type { LeadListItem, LeadStatus, StaffUserOption } from "./actions";
 import { LeadDetailDrawer } from "./lead-detail-drawer";
 
@@ -23,14 +24,7 @@ const STATUS_BADGE: Record<LeadStatus, string> = {
 };
 
 function formatDate(value: string) {
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 type Props = {

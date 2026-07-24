@@ -330,19 +330,18 @@ export function CTASection() {
             đang muốn giải quyết.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mx-auto flex max-w-xl flex-col items-stretch gap-4 rounded-3xl border border-primary/25 bg-linear-to-br from-primary/10 via-card to-brand-primary/10 p-5 shadow-[0_12px_40px_rgba(255,118,34,0.12)] sm:flex-row sm:items-center sm:justify-center sm:p-6">
             <Button
               asChild
               size="lg"
-              className="rounded-full px-8 w-full sm:w-auto text-base h-12 shadow-[0_0_30px_rgba(0,112,235,0.3)] hover:shadow-[0_0_40px_rgba(0,112,235,0.5)] transition-shadow"
+              className="h-12 w-full rounded-full px-8 text-base shadow-[0_0_30px_rgba(255,118,34,0.35)] transition-shadow hover:shadow-[0_0_40px_rgba(255,118,34,0.5)] sm:w-auto"
             >
               <Link href="/courses">Khám phá khóa học</Link>
             </Button>
             <Button
               ref={triggerRef}
               size="lg"
-              variant="outline"
-              className="rounded-full px-8 w-full sm:w-auto text-base h-12 bg-transparent hover:bg-white/5 border-border/50"
+              className="h-12 w-full rounded-full border-2 border-brand-primary bg-brand-primary px-8 text-base text-white shadow-[0_0_24px_rgba(0,112,235,0.35)] transition-all hover:bg-brand-primary/90 hover:shadow-[0_0_36px_rgba(0,112,235,0.5)] sm:w-auto"
               onClick={() => setOpen(true)}
             >
               Đăng ký tư vấn

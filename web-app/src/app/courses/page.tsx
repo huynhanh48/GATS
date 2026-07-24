@@ -275,7 +275,7 @@ export default function CoursesPage() {
                             setLevelFilter(opt.value);
                             setCurrentPage(1);
                           }}
-                          className="h-4 w-4 accent-primary"
+                          className="filter-radio"
                         />
                         <span>{opt.label}</span>
                       </label>
@@ -321,7 +321,7 @@ export default function CoursesPage() {
                             setProductTypeFilter(opt.slug || opt.id);
                             setCurrentPage(1);
                           }}
-                          className="h-4 w-4 accent-primary"
+                          className="filter-radio"
                         />
                         <span>
                           {opt.name}
@@ -370,7 +370,7 @@ export default function CoursesPage() {
                             setPriceFilter(opt.value);
                             setCurrentPage(1);
                           }}
-                          className="h-4 w-4 accent-primary"
+                          className="filter-radio"
                         />
                         <span>{opt.label}</span>
                       </label>

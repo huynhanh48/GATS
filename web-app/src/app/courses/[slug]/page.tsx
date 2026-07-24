@@ -707,9 +707,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ slug: s
                       onClick={async () => {
                         try {
                           await addToCart(courseData?.id || "");
-                          toast.success("Đã thêm vào giỏ hàng");
-                        } catch (err: any) {
-                          toast.error(err?.message || "Không thêm được vào giỏ");
+                        } catch {
+                          // CartProvider already shows success / error toasts
                         }
                       }}
                       className="w-full font-bold py-3.5 px-4 rounded-2xl transition-all border-2 border-primary text-primary bg-card hover:bg-primary/5 cursor-pointer text-center text-base"

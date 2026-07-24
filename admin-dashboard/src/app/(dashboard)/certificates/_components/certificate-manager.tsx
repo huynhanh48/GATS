@@ -8,6 +8,7 @@ import { PlusCircle, Ban } from "lucide-react";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { AdminPanel, StatusPill } from "@/components/Layouts/admin-surface";
+import { formatVnDateTime } from "@/lib/datetime";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -34,15 +35,7 @@ import {
 } from "../actions";
 
 function formatDate(value: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 type Props = {

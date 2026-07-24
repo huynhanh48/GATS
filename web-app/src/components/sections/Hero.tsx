@@ -42,12 +42,12 @@ export function Hero() {
       </div>
 
       <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
-        <div className="relative z-20 flex w-full max-w-2xl flex-col items-center pt-8 text-center lg:items-start lg:pt-12 lg:text-left">
+        <div className="relative z-20 mx-auto flex w-full max-w-2xl flex-col items-center pt-8 text-center lg:mx-0 lg:items-start lg:pt-12 lg:text-left">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="mb-6 text-5xl leading-[1.1] font-bold tracking-tight text-foreground md:text-6xl lg:text-5xl"
+            className="mb-6 w-full text-balance text-4xl leading-[1.15] font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-5xl"
           >
             Xây dựng Tác Nhân AI{" "}
             <span className="bg-linear-to-r from-brand-primary via-primary to-brand-primary bg-clip-text text-transparent">

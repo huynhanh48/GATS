@@ -13,6 +13,7 @@ import type {
   AssignmentSubmissionAdmin,
   AssignmentSubmissionStatus,
 } from "@/lib/api/types";
+import { formatVnDateTime } from "@/lib/datetime";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -34,15 +35,7 @@ function statusTone(
 }
 
 function formatDate(value: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 type AssignmentSubmissionRowProps = {

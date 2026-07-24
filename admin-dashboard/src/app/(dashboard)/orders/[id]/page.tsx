@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
+import { formatVnDateTime } from "@/lib/datetime";
 import { fetchOrderDetail, type OrderStatus } from "../actions";
 import { OrderEnrollmentsPanel } from "../order-enrollments-panel";
 import { OrderStatusActions } from "../order-status-actions";
@@ -29,15 +30,7 @@ const METHOD_LABELS: Record<string, string> = {
 };
 
 function formatDate(value: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 function formatMoney(amount: number) {

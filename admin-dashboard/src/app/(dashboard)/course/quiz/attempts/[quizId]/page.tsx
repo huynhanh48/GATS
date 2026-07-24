@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminPageHeader, AdminPanel, StatusPill } from "@/components/Layouts/admin-surface";
+import { formatVnDateTime } from "@/lib/datetime";
 import { fetchQuizAttempts } from "../../../actions";
 import { QuizAttemptRowActions } from "./quiz-attempt-row-actions";
 
@@ -26,15 +27,7 @@ function statusTone(status: string): "green" | "orange" | "blue" | "slate" {
 }
 
 function formatDate(value: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 export default async function QuizAttemptsPage({ params }: PageProps) {

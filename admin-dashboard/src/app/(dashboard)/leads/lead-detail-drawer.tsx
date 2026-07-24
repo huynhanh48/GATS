@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { formatVnDateTime } from "@/lib/datetime";
 import {
   fetchLeadActivity,
   updateLead,
@@ -35,14 +36,7 @@ const ACTION_LABEL: Record<string, string> = {
 };
 
 function formatDateTime(value: string) {
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 function describeActivity(

@@ -9,7 +9,7 @@ import { Footer } from "@/components/layout/Footer";
 import { 
   User, Camera, BookOpen, Award, 
   Settings, Clock, PlayCircle, 
-  ShieldCheck, Mail, LogOut, ChevronRight, Activity, TrendingUp, CreditCard
+  ShieldCheck, Mail, LogOut, ChevronRight, Activity, CreditCard
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
 import { changePasswordRequest } from "@/lib/auth/api";
@@ -20,6 +20,30 @@ import Link from "next/link";
 import { Course } from "@/types/course";
 import { toast } from "sonner";
 
+const VN_TZ = "Asia/Ho_Chi_Minh";
+
+type OrderStatusFilter = "all" | "pending" | "paid" | "cancelled" | "refunded";
+
+const ORDER_STATUS_FILTERS: { value: OrderStatusFilter; label: string }[] = [
+  { value: "all", label: "Tất cả" },
+  { value: "pending", label: "Chờ thanh toán" },
+  { value: "paid", label: "Đã thanh toán" },
+  { value: "cancelled", label: "Đã hủy" },
+  { value: "refunded", label: "Hoàn tiền" },
+];
+
+function formatVnDate(value: string) {
+  try {
+    return new Date(value).toLocaleString("vi-VN", {
+      timeZone: VN_TZ,
+      dateStyle: "short",
+      timeStyle: "short",
+    });
+  } catch {
+    return value;
+  }
+}
+
 export default function ProfilePage() {
   const { user, status, logout } = useAuth();
   const router = useRouter();
@@ -28,6 +52,7 @@ export default function ProfilePage() {
   const [certificates, setCertificates] = useState<MyCertificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"overview" | "courses" | "certificates" | "settings" | "orders">("overview");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatusFilter>("all");
   const [userName, setUserName] = useState(user?.userName || "");
   const [isSaving, setIsSaving] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -44,6 +69,15 @@ export default function ProfilePage() {
       const tab = urlParams.get("tab");
       if (tab === "orders") {
         setActiveTab("orders");
+      }
+      const status = urlParams.get("status");
+      if (
+        status === "pending" ||
+        status === "paid" ||
+        status === "cancelled" ||
+        status === "refunded"
+      ) {
+        setOrderStatusFilter(status);
       }
     }
   }, []);
@@ -106,7 +140,31 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const profilePhoto = null; 
-  const coverPhoto = "/auth-bg.jpg"; 
+  const coverPhoto = "/auth-bg.jpg";
+
+  const orderCounts = {
+    all: orders.length,
+    pending: orders.filter((o) => o.status === "pending").length,
+    paid: orders.filter((o) => o.status === "paid").length,
+    cancelled: orders.filter((o) => o.status === "cancelled").length,
+    refunded: orders.filter((o) => o.status === "refunded").length,
+  };
+
+  const filteredOrders =
+    orderStatusFilter === "all"
+      ? orders
+      : orders.filter((o) => o.status === orderStatusFilter);
+
+  const openOrdersTab = (status: OrderStatusFilter = "all") => {
+    setOrderStatusFilter(status);
+    setActiveTab("orders");
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams();
+      params.set("tab", "orders");
+      if (status !== "all") params.set("status", status);
+      window.history.replaceState(null, "", `?${params.toString()}`);
+    }
+  };
 
 
 
@@ -247,13 +305,20 @@ export default function ProfilePage() {
                   <div className="text-3xl font-black text-foreground mb-1">0</div>
                   <div className="text-sm text-muted-foreground font-medium">Bài học hoàn thành</div>
                 </div>
-                <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mb-4">
-                    <TrendingUp className="w-6 h-6" />
+                <button
+                  type="button"
+                  onClick={() => openOrdersTab("all")}
+                  className="bg-card border border-border rounded-3xl p-6 shadow-sm flex flex-col items-center justify-center text-center hover:border-primary/40 hover:shadow-md transition-all text-left"
+                >
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-4">
+                    <CreditCard className="w-6 h-6" />
                   </div>
-                  <div className="text-3xl font-black text-foreground mb-1">0</div>
-                  <div className="text-sm text-muted-foreground font-medium">Chuỗi ngày học liên tiếp</div>
-                </div>
+                  <div className="text-3xl font-black text-foreground mb-1">{orderCounts.all}</div>
+                  <div className="text-sm text-muted-foreground font-medium">Đơn hàng</div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {orderCounts.pending} chờ thanh toán · {orderCounts.paid} đã thanh toán
+                  </div>
+                </button>
               </div>
 
               {enrollments.length > 0 && (
@@ -313,7 +378,33 @@ export default function ProfilePage() {
           {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <h2 className="text-2xl font-bold text-foreground mb-6">Lịch sử giao dịch</h2>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <h2 className="text-2xl font-bold text-foreground">Lịch sử giao dịch</h2>
+                <p className="text-sm text-muted-foreground">
+                  {filteredOrders.length}/{orderCounts.all} đơn
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {ORDER_STATUS_FILTERS.map((filter) => {
+                  const count = orderCounts[filter.value];
+                  const active = orderStatusFilter === filter.value;
+                  return (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      onClick={() => openOrdersTab(filter.value)}
+                      className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                      }`}
+                    >
+                      {filter.label} ({count})
+                    </button>
+                  );
+                })}
+              </div>
               
               {orders.length === 0 ? (
                 <div className="bg-card border border-border rounded-3xl p-12 text-center shadow-sm">
@@ -330,30 +421,46 @@ export default function ProfilePage() {
                     </button>
                   </Link>
                 </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="bg-card border border-border rounded-3xl p-10 text-center shadow-sm">
+                  <h3 className="text-lg font-bold mb-2">Không có đơn ở trạng thái này</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Thử chọn bộ lọc khác để xem toàn bộ lịch sử giao dịch.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openOrdersTab("all")}
+                    className="text-sm font-semibold text-primary hover:underline"
+                  >
+                    Xem tất cả đơn hàng
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-4">
-                  {orders.map((order) => (
+                  {filteredOrders.map((order) => (
                     <div key={order.id} className="bg-card border border-border rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 md:items-center">
                       <div className="flex-1 space-y-2">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-3">
                           <div>
-                            <h4 className="font-bold text-lg text-foreground">Đơn hàng #{order.id.slice(0, 8).toUpperCase()}</h4>
+                            <h4 className="font-bold text-lg text-foreground">
+                              Đơn hàng #{(order.txnRef || order.id).slice(0, 12).toUpperCase()}
+                            </h4>
                             <p className="text-sm text-muted-foreground">
-                              {new Date(order.createdAt).toLocaleDateString("vi-VN")} • {order.paymentMethod === "bank_transfer" ? "Chuyển khoản" : order.paymentMethod}
+                              {formatVnDate(order.paidAt || order.createdAt)} • {order.paymentMethod === "bank_transfer" ? "Chuyển khoản" : order.paymentMethod}
                             </p>
                           </div>
-                          <div>
-                            {order.status === "pending" && <span className="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full border border-amber-200">Đang chờ xử lý</span>}
-                            {order.status === "paid" && <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">Thành công</span>}
+                          <div className="shrink-0">
+                            {order.status === "pending" && <span className="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full border border-amber-200">Chờ thanh toán</span>}
+                            {order.status === "paid" && <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">Đã thanh toán</span>}
                             {order.status === "cancelled" && <span className="bg-destructive/10 text-destructive text-xs font-bold px-3 py-1 rounded-full border border-destructive/20">Đã hủy</span>}
                             {order.status === "refunded" && <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">Đã hoàn tiền</span>}
                           </div>
                         </div>
                         <div className="mt-4 pt-4 border-t border-border">
                           {order.items?.map((item: any) => (
-                            <div key={item.id} className="flex justify-between text-sm py-1">
+                            <div key={item.id} className="flex justify-between text-sm py-1 gap-4">
                               <span className="text-foreground">{item.courseName}</span>
-                              <span className="text-muted-foreground">{item.price.toLocaleString("vi-VN")} đ</span>
+                              <span className="text-muted-foreground shrink-0">{item.price.toLocaleString("vi-VN")} đ</span>
                             </div>
                           ))}
                         </div>

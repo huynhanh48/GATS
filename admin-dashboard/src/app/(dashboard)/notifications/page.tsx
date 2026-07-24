@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
+import { formatVnDateTime } from "@/lib/datetime";
 import { ComposeNotificationForm } from "./compose-notification-form";
 import { fetchNotifications, type NotificationSource } from "./actions";
 
@@ -30,14 +31,7 @@ const SOURCE_LABELS: Record<SourceFilter, string> = {
 };
 
 function formatDate(value: string) {
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 function parseSource(raw?: string): SourceFilter {

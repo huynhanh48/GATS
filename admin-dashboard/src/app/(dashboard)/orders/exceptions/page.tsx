@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminFetchError } from "@/components/Layouts/admin-fetch-error";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
+import { formatVnDateTime } from "@/lib/datetime";
 import {
   fetchPaymentExceptions,
   type PaymentExceptionType,
@@ -39,14 +40,7 @@ const RESOLVED_LABELS: Record<ResolvedFilter, string> = {
 };
 
 function formatDate(value: string) {
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 function formatMoney(amount: number | null) {

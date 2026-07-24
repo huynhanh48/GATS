@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
+import { formatVnDateTime } from "@/lib/datetime";
 import { fetchUserDetail } from "../actions";
 import { UserSecurityActions } from "../user-security-actions";
 import { UserRoleEditor } from "../user-role-editor";
@@ -19,15 +20,7 @@ type PageProps = {
 };
 
 function formatDate(value: string | null) {
-  if (!value) return "—";
-  try {
-    return new Date(value).toLocaleString("vi-VN", {
-      dateStyle: "short",
-      timeStyle: "short",
-    });
-  } catch {
-    return value;
-  }
+  return formatVnDateTime(value);
 }
 
 function formatMoney(amount: number) {
