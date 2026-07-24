@@ -27,14 +27,14 @@ function TedCourseCard({ course }: { course: Course }) {
       href={`/courses/${course.slug}`}
       className="group block h-full rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
     >
-      <Surface className="h-full overflow-hidden transition-[transform,box-shadow] duration-200 group-hover:-translate-y-1 group-hover:shadow-[var(--shadow-elevated)]">
-        <div className="relative aspect-[16/10] overflow-hidden bg-accent/70 p-2">
+      <Surface className="h-full overflow-hidden border-border transition-[transform,box-shadow,border-color] duration-200 group-hover:-translate-y-1 group-hover:border-brand-primary/40 group-hover:shadow-(--shadow-elevated)">
+        <div className="relative aspect-16/10 overflow-hidden bg-accent/70">
           {course.thumbnail ? (
             <img
               src={resolveMediaUrl(course.thumbnail)}
               alt=""
               loading="lazy"
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-brand-primary">
