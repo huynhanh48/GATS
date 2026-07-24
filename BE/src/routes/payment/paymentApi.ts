@@ -14,6 +14,12 @@ paymentRouter.post(
   paymentHandlers.sepayWebhook,
 );
 
+/** SePay Payment Gateway IPN — X-Secret-Key = SEPAY_SECRET_KEY */
+paymentRouter.post(
+  PaymentPaths.Payment.SepayIpn,
+  paymentHandlers.sepayIpn,
+);
+
 paymentRouter.get(
   PaymentPaths.Payment.SepayCheck,
   errorHandle(authMiddleware),

@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
+import EnvVars from '@src/common/constants/env';
 import {
   getOrderPaymentExpiresAt,
   isOrderPaymentExpired,
@@ -8,6 +9,11 @@ import {
 } from '@src/common/constants/order-payment';
 import { RouteError } from '@src/common/utils/route-errors';
 import { toSepayTransferContent } from '@src/common/utils/sepay';
+import {
+  buildSepayCheckoutFields,
+  getSepayCheckoutInitUrl,
+  isSepayPgConfigured,
+} from '@src/common/utils/sepay-pg';
 import type { PaymentBankAccount } from '@src/models/BankAccount.model';
 import type {
   CreateOrderInput,
@@ -28,7 +34,6 @@ import CartService from '@src/services/CartService';
 import CouponService from '@src/services/CouponService';
 import EnrollmentService from '@src/services/EnrollmentService';
 import NotificationService from '@src/services/NotificationService';
-import EnvVars from '@src/common/constants/env';
 import { mailService } from '@src/common/utils/mail';
 import logger from 'jet-logger';
 
@@ -295,8 +300,6 @@ async function createOrder(userId: number, input: CreateOrderInput) {
   }
 
   if (input.paymentMethod === 'bank_transfer') {
-    const bank = await BankAccountService.resolvePaymentBankAccount();
-    const transferContent = toSepayTransferContent(txnRef);
     const expiresAt = getOrderPaymentExpiresAt(order.createdAt);
     void sendOrderLifecycleEmail('created', {
       ...order,
@@ -305,12 +308,54 @@ async function createOrder(userId: number, input: CreateOrderInput) {
         courseName: item.courseName,
       })),
     });
+
+    // SePay Payment Gateway (merchant_id + secret_key) — redirect checkout
+    if (isSepayPgConfigured()) {
+      const frontend = EnvVars.FrontendUrl.replace(/\/$/, '');
+      const successUrl = `${frontend}/checkout/result?status=paid&orderId=${order.id}&txnRef=${encodeURIComponent(txnRef)}`;
+      const errorUrl = `${frontend}/checkout/result?status=failed&orderId=${order.id}&txnRef=${encodeURIComponent(txnRef)}`;
+      const cancelUrl = `${frontend}/checkout/result?status=cancelled&orderId=${order.id}&txnRef=${encodeURIComponent(txnRef)}`;
+      const courseLabel =
+        prepared.map((p) => p.courseName).join(', ').slice(0, 200) ||
+        'GATS Academy';
+      const checkoutFields = buildSepayCheckoutFields({
+        invoiceNumber: txnRef,
+        amount: totalAmount,
+        description: `Thanh toan ${courseLabel}`,
+        customerId: String(userId),
+        successUrl,
+        errorUrl,
+        cancelUrl,
+        paymentMethod: 'BANK_TRANSFER',
+      });
+
+      return {
+        order,
+        transaction,
+        payment: {
+          method: 'bank_transfer' as const,
+          status: 'pending' as const,
+          provider: 'sepay_pg' as const,
+          txnRef,
+          amount: totalAmount,
+          checkoutUrl: getSepayCheckoutInitUrl(),
+          checkoutFields,
+          expiresAt: expiresAt.toISOString(),
+          expiresInMs: ORDER_PAYMENT_TTL_MS,
+        },
+      };
+    }
+
+    // Legacy: VietQR image + SEVQR content (requires bank account + optional SEPAY_API_KEY)
+    const bank = await BankAccountService.resolvePaymentBankAccount();
+    const transferContent = toSepayTransferContent(txnRef);
     return {
       order,
       transaction,
       payment: {
         method: 'bank_transfer' as const,
         status: 'pending' as const,
+        provider: 'sepay_qr' as const,
         txnRef,
         amount: totalAmount,
         qrUrl: buildSepayQrUrl(totalAmount, txnRef, bank),

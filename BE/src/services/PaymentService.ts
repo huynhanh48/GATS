@@ -8,6 +8,14 @@ import {
   extractTxnRefFromContent,
   toSepayTransferContent,
 } from '@src/common/utils/sepay';
+import {
+  buildSepayBasicAuthHeader,
+  getSepayPgApiBase,
+  getSepaySecretKey,
+  isSepayPgConfigured,
+  isSepayPgOrderPaid,
+  type SepayPgOrderDetail,
+} from '@src/common/utils/sepay-pg';
 import type { PaymentExceptionType } from '@src/db/schema/payment-exception';
 import * as OrderRepo from '@src/repos/OrderRepo';
 import * as PaymentExceptionRepo from '@src/repos/PaymentExceptionRepo';
@@ -19,6 +27,7 @@ const Errors = {
   TXN_NOT_FOUND: 'Transaction not found',
   AMOUNT_MISMATCH: 'Payment amount mismatch',
   SEPAY_API_KEY_MISSING: 'SEPAY_API_KEY is not configured',
+  SEPAY_PG_MISSING: 'SEPAY_MERCHANT_ID / SEPAY_SECRET_KEY are not configured',
   SEPAY_API_FAILED: 'Failed to query Sepay transactions',
 } as const;
 
@@ -128,7 +137,7 @@ async function confirmPayment(
   if (
     paidAmount !== undefined &&
     paidAmount > 0 &&
-    paidAmount !== transaction.amount
+    Math.round(paidAmount) !== transaction.amount
   ) {
     void logException({
       type: 'amount_mismatch',
@@ -286,10 +295,110 @@ async function fetchSepayTransactions(): Promise<SepayApiTransaction[]> {
   return data.transactions ?? [];
 }
 
+async function fetchSepayPgOrderDetail(
+  invoiceNumber: string,
+): Promise<SepayPgOrderDetail | null> {
+  if (!isSepayPgConfigured()) {
+    throw new RouteError(
+      HttpStatusCodes.SERVICE_UNAVAILABLE,
+      Errors.SEPAY_PG_MISSING,
+    );
+  }
+
+  const response = await fetch(
+    `${getSepayPgApiBase()}/order/detail/${encodeURIComponent(invoiceNumber)}`,
+    {
+      headers: {
+        Authorization: buildSepayBasicAuthHeader(),
+        Accept: 'application/json',
+      },
+    },
+  );
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    console.error('SePay PG order detail failed', response.status, body.slice(0, 300));
+    throw new RouteError(HttpStatusCodes.BAD_GATEWAY, Errors.SEPAY_API_FAILED);
+  }
+
+  const payload = (await response.json()) as {
+    data?: SepayPgOrderDetail;
+  } & SepayPgOrderDetail;
+  return payload.data ?? payload;
+}
+
 /**
- * Poll Sepay API (same approach as Ecommerce).
- * Confirms payment + enrolls when matching transfer is found —
- * including after the 30-minute QR window if money already arrived.
+ * SePay Payment Gateway IPN — auth via X-Secret-Key = SEPAY_SECRET_KEY.
+ * invoice = our txnRef (order_invoice_number).
+ */
+async function handleSepayIpn(
+  payload: {
+    notification_type?: string;
+    order?: {
+      order_invoice_number?: string;
+      order_status?: string;
+      order_amount?: string | number;
+    };
+    transaction?: {
+      transaction_amount?: string | number;
+      transaction_status?: string;
+    };
+  },
+  secretHeader?: string,
+) {
+  const expected = getSepaySecretKey();
+  if (!expected) {
+    throw new RouteError(
+      HttpStatusCodes.SERVICE_UNAVAILABLE,
+      Errors.SEPAY_PG_MISSING,
+    );
+  }
+  if (!secretHeader || secretHeader !== expected) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, Errors.UNAUTHORIZED);
+  }
+
+  if (payload.notification_type && payload.notification_type !== 'ORDER_PAID') {
+    return {
+      success: true,
+      ignored: true,
+      reason: 'unsupported_notification_type',
+      notificationType: payload.notification_type,
+    };
+  }
+
+  const invoice =
+    payload.order?.order_invoice_number?.trim() ||
+    (typeof payload.order === 'object' &&
+      payload.order &&
+      'order_invoice_number' in payload.order
+      ? String(payload.order.order_invoice_number)
+      : '');
+  if (!invoice) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Missing order_invoice_number');
+  }
+
+  const paidAmount = Number(
+    payload.transaction?.transaction_amount ??
+      payload.order?.order_amount ??
+      0,
+  );
+
+  const result = await confirmPayment(invoice, payload, paidAmount);
+
+  return {
+    success: true,
+    message: 'IPN processed',
+    ...result,
+  };
+}
+
+/**
+ * Poll payment status: prefer SePay PG order detail (merchant/secret).
+ * Falls back to legacy my.sepay.vn transaction list when only SEPAY_API_KEY is set.
  */
 async function checkSepayPayment(txnRef: string) {
   const normalized = cleanAlnum(txnRef);
@@ -320,6 +429,45 @@ async function checkSepayPayment(txnRef: string) {
   const windowExpired =
     expiredPending != null ||
     (order != null && isOrderPaymentExpired(order.createdAt));
+
+  if (isSepayPgConfigured()) {
+    const detail = await fetchSepayPgOrderDetail(transaction.txnRef);
+    if (!detail || !isSepayPgOrderPaid(detail.order_status)) {
+      return {
+        success: false,
+        status: (windowExpired ? 'EXPIRED' : 'PENDING') as 'EXPIRED' | 'PENDING',
+        txnRef: transaction.txnRef,
+        orderId: transaction.orderId,
+        amount: transaction.amount,
+        paidAt: null,
+        message: windowExpired
+          ? 'Payment window expired — SePay PG order not paid yet'
+          : 'Pending',
+        gatewayStatus: detail?.order_status ?? null,
+      };
+    }
+
+    const paidAmount = Number(detail.order_amount ?? transaction.amount);
+    const confirmed = await confirmPayment(
+      transaction.txnRef,
+      detail,
+      paidAmount > 0 ? paidAmount : transaction.amount,
+    );
+
+    return {
+      success: true,
+      status: 'PAID' as const,
+      txnRef: confirmed.txnRef,
+      orderId: confirmed.orderId,
+      amount: transaction.amount,
+      paidAt: new Date().toISOString(),
+      message: confirmed.lateRecovered
+        ? 'Late payment confirmed after QR window'
+        : 'Payment confirmed via SePay PG',
+      alreadyPaid: confirmed.alreadyPaid,
+      lateRecovered: confirmed.lateRecovered,
+    };
+  }
 
   const remoteList = await fetchSepayTransactions();
   const expected = toSepayTransferContent(transaction.txnRef);
@@ -382,6 +530,7 @@ async function handleMomoReturn(_query: Record<string, string>) {
 export default {
   Errors,
   handleSepayWebhook,
+  handleSepayIpn,
   checkSepayPayment,
   handleVnpayReturn,
   handleMomoReturn,

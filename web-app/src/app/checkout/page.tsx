@@ -24,9 +24,32 @@ type QrPaymentState = {
   bankName?: string;
   bankAccountNumber?: string;
   bankAccountName?: string;
+  /** SePay Payment Gateway hosted checkout */
+  checkoutUrl?: string;
+  checkoutFields?: Record<string, string>;
 };
 
 const QR_PAYMENT_TTL_MS = 30 * 60 * 1000;
+
+function submitSepayCheckout(
+  checkoutUrl: string,
+  checkoutFields: Record<string, string>,
+) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = checkoutUrl;
+  form.style.display = "none";
+  for (const [name, value] of Object.entries(checkoutFields)) {
+    if (value == null || value === "") continue;
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = String(value);
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
 
 function formatCountdown(ms: number) {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
@@ -422,6 +445,21 @@ export default function CheckoutPage() {
       await clearCart().catch(() => undefined);
 
       const payment = res?.payment;
+      if (
+        payment?.method === "bank_transfer" &&
+        payment?.txnRef &&
+        payment?.checkoutUrl &&
+        payment?.checkoutFields &&
+        typeof payment.checkoutFields === "object"
+      ) {
+        toast.success("Đang chuyển tới cổng thanh toán SePay…");
+        submitSepayCheckout(
+          payment.checkoutUrl,
+          payment.checkoutFields as Record<string, string>,
+        );
+        return;
+      }
+
       const hasBankFallback = Boolean(
         payment?.txnRef &&
           (payment?.bankAccountNumber ||

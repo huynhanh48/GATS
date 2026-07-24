@@ -18,6 +18,14 @@ async function sepayWebhook(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function sepayIpn(req: Request, res: Response) {
+  const secret =
+    (req.headers['x-secret-key'] as string | undefined) ??
+    (req.headers['X-Secret-Key'] as string | undefined);
+  const result = await PaymentService.handleSepayIpn(req.body, secret);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function sepayCheck(req: Request, res: Response) {
   const txnRef = req.query.txnRef;
   if (typeof txnRef !== 'string' || !txnRef.trim()) {
@@ -47,6 +55,7 @@ async function momoReturn(req: Request, res: Response) {
 
 export default {
   sepayWebhook: errorHandle(sepayWebhook),
+  sepayIpn: errorHandle(sepayIpn),
   sepayCheck: errorHandle(sepayCheck),
   vnpayReturn: errorHandle(vnpayReturn),
   momoReturn: errorHandle(momoReturn),

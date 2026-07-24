@@ -100,7 +100,14 @@ const EnvVars = jetEnv({
   /** Sepay QR `bank=` query — e.g. VietinBank (name) or BIN */
   BankName: defaultStr('VietinBank'),
   BankAccountName: optionalStr,
+  /** Legacy my.sepay.vn API token (bank webhook poll). Prefer PG merchant creds. */
   SepayApiKey: optionalStr,
+  /** SePay Payment Gateway — merchant_id (e.g. SP-LIVE-…) */
+  SepayMerchantId: optionalStr,
+  /** SePay Payment Gateway — secret_key (e.g. spsk_live_…) */
+  SepaySecretKey: optionalStr,
+  /** production | sandbox */
+  SepayPgEnv: defaultStr('production'),
   /** VNPay */
   VnpTmnCode: optionalStr,
   VnpHashSecret: optionalStr,
@@ -128,7 +135,14 @@ export function assertProductionConfiguration(): void {
     ['EMAIL_PASSWORD', EnvVars.EmailPassword],
     ['FRONTEND_URL', EnvVars.FrontendUrl],
     ['APP_URL', EnvVars.AppUrl],
-    ['SEPAY_API_KEY', EnvVars.SepayApiKey],
+    [
+      'SEPAY_MERCHANT_ID',
+      EnvVars.SepayMerchantId || EnvVars.SepayApiKey,
+    ],
+    [
+      'SEPAY_SECRET_KEY',
+      EnvVars.SepaySecretKey || EnvVars.SepayApiKey,
+    ],
     ['S3_ACCESS_KEY_ID', EnvVars.S3AccessKeyId],
     ['S3_SECRET_ACCESS_KEY', EnvVars.S3SecretAccessKey],
     ['MINIO_ACCESS_KEY', EnvVars.MinioAccessKey],
