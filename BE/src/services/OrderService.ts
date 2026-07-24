@@ -326,7 +326,6 @@ async function createOrder(userId: number, input: CreateOrderInput) {
         successUrl,
         errorUrl,
         cancelUrl,
-        paymentMethod: 'BANK_TRANSFER',
       });
 
       return {

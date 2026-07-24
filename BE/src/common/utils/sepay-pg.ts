@@ -1,36 +1,10 @@
-import { createHmac } from 'crypto';
-
 import EnvVars from '@src/common/constants/env';
-
-/** Field order for HMAC (matches SePay PHP docs / reliable signing). */
-const SIGNED_FIELD_ORDER = [
-  'order_amount',
-  'merchant',
-  'currency',
-  'operation',
-  'order_description',
-  'order_invoice_number',
-  'customer_id',
-  'payment_method',
-  'success_url',
-  'error_url',
-  'cancel_url',
-] as const;
+import { SePayPgClient } from 'sepay-pg-node';
 
 export type SepayPgEnv = 'production' | 'sandbox';
 
-export type SepayCheckoutFields = {
+export type SepayCheckoutFields = Record<string, string> & {
   merchant: string;
-  currency: string;
-  operation: string;
-  order_amount: string;
-  order_invoice_number: string;
-  order_description: string;
-  payment_method: string;
-  customer_id?: string;
-  success_url: string;
-  error_url: string;
-  cancel_url: string;
   signature: string;
 };
 
@@ -51,10 +25,21 @@ export function isSepayPgConfigured(): boolean {
   return Boolean(getSepayMerchantId() && getSepaySecretKey());
 }
 
+function createSepayClient(): SePayPgClient {
+  const merchantId = getSepayMerchantId();
+  const secret = getSepaySecretKey();
+  if (!merchantId || !secret) {
+    throw new Error('SePay merchant credentials are not configured');
+  }
+  return new SePayPgClient({
+    env: getSepayPgEnv(),
+    merchant_id: merchantId,
+    secret_key: secret,
+  });
+}
+
 export function getSepayCheckoutInitUrl(): string {
-  return getSepayPgEnv() === 'sandbox'
-    ? 'https://pay-sandbox.sepay.vn/v1/checkout/init'
-    : 'https://pay.sepay.vn/v1/checkout/init';
+  return createSepayClient().checkout.initCheckoutUrl();
 }
 
 export function getSepayPgApiBase(): string {
@@ -75,19 +60,21 @@ export function buildSepayBasicAuthHeader(): string {
   return `Basic ${token}`;
 }
 
-export function signSepayCheckoutFields(
-  fields: Record<string, string | undefined>,
-  secretKey: string,
-): string {
-  const parts: string[] = [];
-  for (const field of SIGNED_FIELD_ORDER) {
-    const value = fields[field];
-    if (value === undefined || value === '') continue;
-    parts.push(`${field}=${value}`);
-  }
-  return createHmac('sha256', secretKey).update(parts.join(',')).digest('base64');
+/** SePay signs with comma-joined fields — strip commas / control chars. */
+export function sanitizeSepayDescription(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9\s._\-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 200);
 }
 
+/**
+ * Build hosted-checkout fields using official sepay-pg-node signing.
+ * Do not reimplement HMAC — SePay rejects mismatched signature as "invalid request".
+ */
 export function buildSepayCheckoutFields(input: {
   invoiceNumber: string;
   amount: number;
@@ -98,32 +85,38 @@ export function buildSepayCheckoutFields(input: {
   cancelUrl: string;
   paymentMethod?: 'BANK_TRANSFER' | 'CARD' | 'NAPAS_BANK_TRANSFER';
 }): SepayCheckoutFields {
-  const merchantId = getSepayMerchantId();
-  const secret = getSepaySecretKey();
-  if (!merchantId || !secret) {
-    throw new Error('SePay merchant credentials are not configured');
-  }
+  const client = createSepayClient();
+  const description = sanitizeSepayDescription(
+    input.description || 'GATS Academy',
+  );
 
-  const base: Record<string, string> = {
-    order_amount: String(input.amount),
-    merchant: merchantId,
-    currency: 'VND',
+  const fields = client.checkout.initOneTimePaymentFields({
     operation: 'PURCHASE',
-    order_description: input.description.slice(0, 255),
+    // Omit payment_method so SePay shows methods enabled for this merchant.
+    ...(input.paymentMethod
+      ? {
+          payment_method:
+            input.paymentMethod === 'CARD'
+              ? undefined
+              : input.paymentMethod,
+        }
+      : {}),
     order_invoice_number: input.invoiceNumber,
-    payment_method: input.paymentMethod ?? 'BANK_TRANSFER',
+    order_amount: input.amount,
+    currency: 'VND',
+    order_description: description,
+    ...(input.customerId ? { customer_id: String(input.customerId) } : {}),
     success_url: input.successUrl,
     error_url: input.errorUrl,
     cancel_url: input.cancelUrl,
-  };
-  if (input.customerId) {
-    base.customer_id = input.customerId;
-  }
+  });
 
-  return {
-    ...base,
-    signature: signSepayCheckoutFields(base, secret),
-  } as SepayCheckoutFields;
+  const normalized: Record<string, string> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined || value === null) continue;
+    normalized[key] = String(value);
+  }
+  return normalized as SepayCheckoutFields;
 }
 
 export type SepayPgOrderDetail = {
@@ -134,9 +127,6 @@ export type SepayPgOrderDetail = {
   order_id?: string;
 };
 
-/**
- * Paid / captured statuses returned by SePay PG order detail.
- */
 export function isSepayPgOrderPaid(status: string | undefined | null): boolean {
   if (!status) return false;
   const normalized = status.toUpperCase();
