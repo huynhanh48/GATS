@@ -15,6 +15,7 @@ export const orderStatusEnum = pgEnum('order_status', [
   'pending',
   'paid',
   'cancelled',
+  'refund_pending',
   'refunded',
 ]);
 
@@ -42,6 +43,13 @@ export const ordersTable = pgTable('orders', {
   couponCode: varchar('coupon_code', { length: 50 }),
   discountAmount: integer('discount_amount').notNull().default(0),
   paidAt: timestamp('paid_at'),
+  refundReasonCode: varchar('refund_reason_code', { length: 50 }),
+  refundReasonNote: text('refund_reason_note'),
+  refundBankName: varchar('refund_bank_name', { length: 120 }),
+  refundAccountNumber: varchar('refund_account_number', { length: 50 }),
+  refundAccountHolder: varchar('refund_account_holder', { length: 255 }),
+  refundRequestedAt: timestamp('refund_requested_at', { withTimezone: true }),
+  refundCompletedAt: timestamp('refund_completed_at', { withTimezone: true }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

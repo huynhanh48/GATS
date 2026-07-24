@@ -66,7 +66,7 @@ export function FeaturedCourses() {
 
   return (
     <section className="relative z-20 w-full border-y border-border bg-card/80 py-20 backdrop-blur-xl sm:py-24">
-      <div className="pointer-events-none absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" />
+      <div className="pointer-events-none absolute inset-0 dot-noise opacity-60" />
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
         <SectionHeader
           eyebrow="Nổi bật"

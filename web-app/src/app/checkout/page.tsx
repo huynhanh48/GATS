@@ -319,28 +319,48 @@ export default function CheckoutPage() {
   );
 
   const checkOnce = useCallback(
-    async (txnRef: string) => {
-      if (checkingRef.current || paidOnceRef.current) return false;
+    async (txnRef: string): Promise<"paid" | "pending" | "stopped"> => {
+      if (checkingRef.current || paidOnceRef.current) return "pending";
       checkingRef.current = true;
       try {
         const res: any = await orderApi.checkSepay(txnRef);
         const status = String(res?.status || "").toUpperCase();
         if (res?.success === true && status === "PAID") {
           onPaid();
-          return true;
+          return "paid";
         }
         if (status === "EXPIRED") {
           await abandonQrPayment({ reason: "expired" });
+          return "stopped";
         }
-        return false;
-      } catch (err) {
+        if (status === "AMOUNT_MISMATCH") {
+          stopPolling();
+          writePendingPayment(null);
+          setQrData(null);
+          toast.error(
+            "Số tiền chuyển khoản không khớp đơn. Vui lòng liên hệ hỗ trợ hoặc tạo đơn mới.",
+          );
+          return "stopped";
+        }
+        return "pending";
+      } catch (err: any) {
         console.error("Sepay check failed", err);
-        return false;
+        const msg = String(err?.message || err?.error || "");
+        if (/amount mismatch/i.test(msg) || /số tiền/i.test(msg)) {
+          stopPolling();
+          writePendingPayment(null);
+          setQrData(null);
+          toast.error(
+            "Số tiền chuyển khoản không khớp đơn. Vui lòng liên hệ hỗ trợ — có thể đây là đơn 0đ (mã giảm).",
+          );
+          return "stopped";
+        }
+        return "pending";
       } finally {
         checkingRef.current = false;
       }
     },
-    [abandonQrPayment, onPaid],
+    [abandonQrPayment, onPaid, stopPolling],
   );
 
   useEffect(() => {
@@ -445,6 +465,23 @@ export default function CheckoutPage() {
       await clearCart().catch(() => undefined);
 
       const payment = res?.payment;
+      const orderId = res?.order?.id as string | undefined;
+
+      // Coupon brought total to 0đ — already paid + enrolled on BE.
+      if (
+        payment?.status === "success" ||
+        res?.order?.status === "paid"
+      ) {
+        setQrData(null);
+        writePendingPayment(null);
+        toast.success("Áp mã thành công — khóa học đã được kích hoạt.");
+        const params = new URLSearchParams({ status: "paid" });
+        if (orderId) params.set("orderId", orderId);
+        if (payment?.txnRef) params.set("txnRef", String(payment.txnRef));
+        router.push(`/checkout/result?${params.toString()}`);
+        return;
+      }
+
       if (
         payment?.method === "bank_transfer" &&
         payment?.txnRef &&
@@ -520,8 +557,8 @@ export default function CheckoutPage() {
     if (!qrData) return;
     setIsSubmitting(true);
     try {
-      const paid = await checkOnce(qrData.txnRef);
-      if (!paid) {
+      const result = await checkOnce(qrData.txnRef);
+      if (result === "pending") {
         toast.info(
           "Chưa nhận được thanh toán. Hệ thống vẫn đang kiểm tra tự động.",
         );
@@ -891,6 +928,11 @@ export default function CheckoutPage() {
                     đ
                   </span>
                 </div>
+                {couponPreview && couponPreview.finalAmount === 0 ? (
+                  <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                    Áp mã xong sẽ kích hoạt khóa ngay, không cần chuyển khoản.
+                  </p>
+                ) : null}
               </div>
 
               <button
@@ -898,7 +940,11 @@ export default function CheckoutPage() {
                 disabled={isSubmitting}
                 className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Đang xử lý..." : "Hoàn tất thanh toán"}
+                {isSubmitting
+                  ? "Đang xử lý..."
+                  : couponPreview?.finalAmount === 0
+                    ? "Kích hoạt khóa học"
+                    : "Hoàn tất thanh toán"}
               </button>
               <p className="text-center text-xs text-muted-foreground mt-4">
                 Bằng việc hoàn tất thanh toán, bạn đồng ý với{" "}

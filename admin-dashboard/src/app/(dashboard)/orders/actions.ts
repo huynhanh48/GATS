@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { beFetch } from "@/lib/api/server";
 
-export type OrderStatus = "pending" | "paid" | "cancelled" | "refunded";
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "cancelled"
+  | "refund_pending"
+  | "refunded";
 
 export type AdminOrderItem = {
   id: string;
@@ -26,6 +31,13 @@ export type AdminOrderListItem = {
   customerPhone: string | null;
   notes: string | null;
   paidAt: string | null;
+  refundReasonCode?: string | null;
+  refundReasonNote?: string | null;
+  refundBankName?: string | null;
+  refundAccountNumber?: string | null;
+  refundAccountHolder?: string | null;
+  refundRequestedAt?: string | null;
+  refundCompletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   items: AdminOrderItem[];
@@ -42,6 +54,7 @@ export type OrderCounts = {
   pending: number;
   paid: number;
   cancelled: number;
+  refund_pending: number;
   refunded: number;
   expiredPending?: number;
 };
@@ -116,6 +129,7 @@ const emptyList = (
     pending: 0,
     paid: 0,
     cancelled: 0,
+    refund_pending: 0,
     refunded: 0,
     expiredPending: 0,
   },
@@ -174,19 +188,35 @@ export async function fetchOrderDetail(
   return result.data;
 }
 
+export type UpdateOrderStatusInput = {
+  status: "paid" | "cancelled" | "refund_pending" | "refunded";
+  reason?: string;
+  reasonCode?: string;
+  reasonNote?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+};
+
 export async function updateOrderStatus(
   orderId: string,
-  status: "paid" | "cancelled" | "refunded",
-  reason?: string,
+  input: UpdateOrderStatusInput,
 ): Promise<{ ok: boolean; message?: string }> {
+  const body: Record<string, string> = { status: input.status };
+  if (input.reason?.trim()) body.reason = input.reason.trim();
+  if (input.reasonCode) body.reasonCode = input.reasonCode;
+  if (input.reasonNote?.trim()) body.reasonNote = input.reasonNote.trim();
+  if (input.bankName?.trim()) body.bankName = input.bankName.trim();
+  if (input.accountNumber?.trim())
+    body.accountNumber = input.accountNumber.trim();
+  if (input.accountHolder?.trim())
+    body.accountHolder = input.accountHolder.trim();
+
   const result = await beFetch<{ message?: string }>(
     `/orders/admin/${orderId}/status`,
     {
       method: "PATCH",
-      body: JSON.stringify({
-        status,
-        ...(reason?.trim() ? { reason: reason.trim() } : {}),
-      }),
+      body: JSON.stringify(body),
     },
   );
 

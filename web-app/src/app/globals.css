@@ -168,7 +168,7 @@
   }
 }
 
-/* Course filter radios — avoid native accent-color glitches in light mode */
+/* Course filter radios — visible in both light & dark */
 @layer components {
   .filter-radio {
     @apply size-4 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-[#D0D5DD] bg-white;
@@ -184,12 +184,59 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
+  /* Dark: light borders so circles don't disappear on navy bg */
+  :is(.dark) .filter-radio,
   .dark .filter-radio {
-    @apply border-border bg-card;
+    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.04);
   }
 
+  :is(.dark) .filter-radio:hover,
+  .dark .filter-radio:hover {
+    border-color: rgba(255, 255, 255, 0.75);
+  }
+
+  :is(.dark) .filter-radio:checked,
   .dark .filter-radio:checked {
-    box-shadow: inset 0 0 0 3px var(--card);
+    border-color: var(--primary);
+    background-color: var(--primary);
+    box-shadow: inset 0 0 0 3px #111928;
+  }
+
+  /* Dot texture — works in light & dark (replaces missing /noise.png) */
+  .dot-noise {
+    background-image: radial-gradient(
+      rgba(16, 24, 40, 0.18) 0.8px,
+      transparent 0.8px
+    );
+    background-size: 12px 12px;
+  }
+
+  :is(.dark) .dot-noise,
+  .dark .dot-noise {
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.14) 0.8px,
+      transparent 0.8px
+    );
+  }
+  .cta-aurora {
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 80%, rgba(0, 112, 235, 0.55) 0%, transparent 55%),
+      radial-gradient(ellipse 70% 55% at 85% 15%, rgba(255, 118, 34, 0.5) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0, 112, 235, 0.22) 0%, transparent 60%),
+      linear-gradient(135deg, #071525 0%, #0c2744 45%, #1a1a2e 100%);
+    background-size: 200% 200%;
+    animation: cta-aurora-flow 12s ease-in-out infinite;
+  }
+}
+
+@keyframes cta-aurora-flow {
+  0%,
+  100% {
+    background-position: 0% 40%;
+  }
+  50% {
+    background-position: 100% 60%;
   }
 }
 
@@ -201,5 +248,9 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .cta-aurora {
+    animation: none !important;
   }
 }

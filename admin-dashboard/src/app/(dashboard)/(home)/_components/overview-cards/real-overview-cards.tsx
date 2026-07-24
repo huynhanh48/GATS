@@ -24,6 +24,7 @@ export async function RealOverviewCardsGroup() {
           value={formatMoney(metrics.revenue.thisMonth)}
           hint={`Tổng cộng: ${formatMoney(metrics.revenue.total)}`}
           Icon={icons.Profit}
+          href="/analytics"
         />
 
         <StatCard
@@ -31,6 +32,7 @@ export async function RealOverviewCardsGroup() {
           value={compactFormat(metrics.orders.all)}
           hint={`${metrics.orders.pending} chờ thanh toán · ${metrics.orders.paid} đã thanh toán`}
           Icon={icons.Views}
+          href="/orders"
         />
 
         <StatCard
@@ -38,6 +40,7 @@ export async function RealOverviewCardsGroup() {
           value={compactFormat(metrics.leads.all)}
           hint={`${metrics.leads.new} mới · ${metrics.leads.converted} đã chuyển đổi`}
           Icon={icons.Users}
+          href="/leads"
         />
 
         <StatCard
@@ -45,6 +48,7 @@ export async function RealOverviewCardsGroup() {
           value={compactFormat(metrics.enrollments.active)}
           hint={`+${metrics.enrollments.newLast7Days} trong 7 ngày qua`}
           Icon={icons.Product}
+          href="/users"
         />
       </div>
 

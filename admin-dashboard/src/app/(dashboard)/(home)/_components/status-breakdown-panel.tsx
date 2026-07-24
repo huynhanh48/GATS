@@ -36,7 +36,12 @@ export async function StatusBreakdownPanels() {
     { label: "Chờ thanh toán", value: metrics.orders.pending, colorClass: "bg-amber-500" },
     { label: "Đã thanh toán", value: metrics.orders.paid, colorClass: "bg-emerald-500" },
     { label: "Đã hủy", value: metrics.orders.cancelled, colorClass: "bg-slate-400" },
-    { label: "Hoàn tiền", value: metrics.orders.refunded, colorClass: "bg-rose-500" },
+    {
+      label: "Chờ hoàn tiền",
+      value: metrics.orders.refund_pending ?? 0,
+      colorClass: "bg-orange-500",
+    },
+    { label: "Đã hoàn tiền", value: metrics.orders.refunded, colorClass: "bg-rose-500" },
   ];
 
   const leadRows: Row[] = [

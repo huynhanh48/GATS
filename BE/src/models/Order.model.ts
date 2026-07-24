@@ -55,6 +55,13 @@ export const orderRecordSchema = z.object({
   couponCode: z.string().nullable().optional(),
   discountAmount: z.number().int().min(0).default(0),
   paidAt: z.coerce.date().nullable(),
+  refundReasonCode: z.string().nullable().optional(),
+  refundReasonNote: z.string().nullable().optional(),
+  refundBankName: z.string().nullable().optional(),
+  refundAccountNumber: z.string().nullable().optional(),
+  refundAccountHolder: z.string().nullable().optional(),
+  refundRequestedAt: z.coerce.date().nullable().optional(),
+  refundCompletedAt: z.coerce.date().nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -94,10 +101,64 @@ export const adminOrderListQuerySchema = z.object({
     .transform((v) => v === true || v === '1' || v === 'true' || v === 'yes'),
 });
 
-export const adminUpdateOrderStatusSchema = z.object({
-  status: z.enum(['paid', 'cancelled', 'refunded']),
-  reason: z.string().trim().min(3).max(500).optional(),
-});
+export const adminUpdateOrderStatusSchema = z
+  .object({
+    status: z.enum(['paid', 'cancelled', 'refund_pending', 'refunded']),
+    reason: z.string().trim().min(3).max(500).optional(),
+    reasonCode: z
+      .enum([
+        'wrong_course',
+        'duplicate_payment',
+        'content_issue',
+        'within_policy',
+        'other',
+      ])
+      .optional(),
+    reasonNote: z.string().trim().max(1000).optional(),
+    bankName: z.string().trim().min(2).max(120).optional(),
+    accountNumber: z.string().trim().min(4).max(50).optional(),
+    accountHolder: z.string().trim().min(2).max(255).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === 'refund_pending') {
+      if (!data.reasonCode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'reasonCode is required for refund_pending',
+          path: ['reasonCode'],
+        });
+      }
+      if (!data.bankName) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'bankName is required for refund_pending',
+          path: ['bankName'],
+        });
+      }
+      if (!data.accountNumber) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'accountNumber is required for refund_pending',
+          path: ['accountNumber'],
+        });
+      }
+      if (!data.accountHolder) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'accountHolder is required for refund_pending',
+          path: ['accountHolder'],
+        });
+      }
+      const note = data.reasonNote?.trim() ?? '';
+      if (data.reasonCode === 'other' && note.length < 3) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'reasonNote is required when reasonCode is other',
+          path: ['reasonNote'],
+        });
+      }
+    }
+  });
 
 export type AdminOrderListQuery = z.infer<typeof adminOrderListQuerySchema>;
 export type AdminUpdateOrderStatusInput = z.infer<

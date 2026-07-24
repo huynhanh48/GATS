@@ -311,43 +311,98 @@ export function CTASection() {
       : null;
 
   return (
-    <section className="w-full py-32 relative z-20 bg-transparent overflow-hidden border-t border-border/10">
-      <div className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px]" />
+    <section className="relative z-20 w-full overflow-hidden">
+      {/* Full-bleed Aurora mesh (ui-ux-pro-max: Aurora UI + conversion CTA) */}
+      <div className="relative isolate min-h-[28rem] w-full sm:min-h-[30rem]">
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-[#071525]"
+        />
+        <div
+          aria-hidden
+          className="cta-aurora absolute inset-0 opacity-90 motion-reduce:animate-none"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(7,21,37,0.55)_70%,rgba(7,21,37,0.92)_100%)]"
+        />
+        {/* Hairline top — soft section join, not a boxed frame */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent"
+        />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-            Bắt đầu ứng dụng <span className="text-primary">AI</span> vào công
-            việc
-          </h2>
-          <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 text-balance">
-            Chọn khóa học để tự thực hành hoặc trao đổi với GATS về bài toán bạn
-            đang muốn giải quyết.
-          </p>
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-4 py-16 text-center sm:px-6 sm:py-20 lg:py-24">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "-40px" }}
+            className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#FFB380] sm:text-sm"
+          >
+            GATS Academy
+          </motion.p>
 
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <motion.h2
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "-40px" }}
+            className="max-w-3xl text-balance text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.35rem] lg:leading-[1.1]"
+          >
+            Bắt đầu ứng dụng{" "}
+            <span className="bg-linear-to-r from-primary via-[#FF9A4D] to-primary bg-clip-text text-transparent">
+              AI
+            </span>{" "}
+            vào công việc
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "-40px" }}
+            className="mt-5 max-w-xl text-pretty text-base leading-relaxed text-white/75 sm:text-lg"
+          >
+            Học thực chiến trên khóa học, hoặc đăng ký tư vấn để GATS cùng bạn
+            chọn hướng ứng dụng AI phù hợp.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.45, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true, margin: "-40px" }}
+            className="mt-9 flex w-full max-w-md flex-col gap-3 sm:mt-10 sm:max-w-none sm:flex-row sm:justify-center sm:gap-4"
+          >
             <Button
               asChild
               size="lg"
-              className="h-12 w-full rounded-full px-8 text-base shadow-[0_0_30px_rgba(255,118,34,0.35)] transition-shadow hover:shadow-[0_0_40px_rgba(255,118,34,0.5)] sm:w-auto"
+              className="h-12 cursor-pointer rounded-full bg-primary px-8 text-base font-semibold text-white shadow-[0_0_32px_rgba(255,118,34,0.45)] transition-all duration-200 hover:scale-[1.03] hover:bg-primary/90 hover:shadow-[0_0_40px_rgba(255,118,34,0.6)] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#071525] active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:scale-100"
             >
               <Link href="/courses">Khám phá khóa học</Link>
             </Button>
             <Button
               ref={triggerRef}
               size="lg"
-              className="h-12 w-full rounded-full border-2 border-brand-primary bg-brand-primary px-8 text-base text-white shadow-[0_0_24px_rgba(0,112,235,0.35)] transition-all hover:bg-brand-primary/90 hover:shadow-[0_0_36px_rgba(0,112,235,0.5)] sm:w-auto"
+              variant="outline"
+              className="h-12 cursor-pointer rounded-full border-white/30 bg-white/5 px-8 text-base font-semibold text-white backdrop-blur-md transition-all duration-200 hover:scale-[1.03] hover:border-white/50 hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#071525] active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:scale-100"
               onClick={() => setOpen(true)}
             >
               Đăng ký tư vấn
             </Button>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.28 }}
+            viewport={{ once: true }}
+            className="mt-8 text-sm text-white/45"
+          >
+            Tư vấn miễn phí · Không cam kết · Phản hồi trong 24 giờ
+          </motion.p>
+        </div>
       </div>
 
       {modal}

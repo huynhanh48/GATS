@@ -304,6 +304,24 @@ async function createOrder(userId: number, input: CreateOrderInput) {
     status: 'pending',
   });
 
+  // Coupon (or fixed discount) brought total to 0 — skip SePay/QR, enroll immediately.
+  if (totalAmount === 0) {
+    const paid = await processSuccessfulPayment(order.id, {
+      txnRef,
+      gatewayResponse: { source: 'coupon_zero' },
+    });
+    return {
+      order: paid.order,
+      transaction: paid.transaction,
+      payment: {
+        method: input.paymentMethod,
+        status: 'success' as const,
+        amount: 0,
+        txnRef,
+      },
+    };
+  }
+
   if (input.paymentMethod === 'wallet') {
     const paid = await processSuccessfulPayment(order.id, {
       txnRef,
@@ -727,11 +745,30 @@ function buildOrderTimeline(
       label: 'Đã hủy',
     });
   }
-  if (order.status === 'refunded') {
+  if (order.refundRequestedAt) {
+    events.push({
+      type: 'refund_pending',
+      at: order.refundRequestedAt.toISOString(),
+      label: 'Yêu cầu hoàn tiền',
+    });
+  } else if (order.status === 'refund_pending') {
+    events.push({
+      type: 'refund_pending',
+      at: order.updatedAt.toISOString(),
+      label: 'Yêu cầu hoàn tiền',
+    });
+  }
+  if (order.refundCompletedAt) {
+    events.push({
+      type: 'refunded',
+      at: order.refundCompletedAt.toISOString(),
+      label: 'Đã hoàn tiền',
+    });
+  } else if (order.status === 'refunded') {
     events.push({
       type: 'refunded',
       at: order.updatedAt.toISOString(),
-      label: 'Hoàn tiền',
+      label: 'Đã hoàn tiền',
     });
   }
   if (transaction?.paidAt) {
@@ -792,22 +829,113 @@ async function adminGetOrder(orderId: string) {
   };
 }
 
+async function appendTransactionGatewayMeta(
+  orderId: string,
+  patch: Record<string, unknown>,
+) {
+  const transaction = await TransactionRepo.findByOrderId(orderId);
+  if (!transaction) return;
+  await TransactionRepo.updateByTxnRef(transaction.txnRef, {
+    gatewayResponse: {
+      ...(typeof transaction.gatewayResponse === 'object' &&
+      transaction.gatewayResponse
+        ? (transaction.gatewayResponse as Record<string, unknown>)
+        : {}),
+      ...patch,
+    },
+  });
+}
+
+async function revokeOrderEnrollments(order: {
+  userId: number;
+  items: Array<{ courseId: string }>;
+}) {
+  const revoked: string[] = [];
+  for (const item of order.items) {
+    const updated = await EnrollmentRepo.updateByUserAndCourse(
+      order.userId,
+      item.courseId,
+      { status: 'cancelled' },
+    );
+    if (updated) revoked.push(item.courseId);
+  }
+  return revoked;
+}
+
+async function restoreOrderEnrollments(order: {
+  userId: number;
+  items: Array<{ courseId: string }>;
+}) {
+  const restored: string[] = [];
+  for (const item of order.items) {
+    const updated = await EnrollmentRepo.updateByUserAndCourse(
+      order.userId,
+      item.courseId,
+      { status: 'active' },
+    );
+    if (updated) restored.push(item.courseId);
+  }
+  return restored;
+}
+
 async function adminUpdateOrderStatus(
   orderId: string,
-  nextStatus: 'paid' | 'cancelled' | 'refunded',
+  input: {
+    status: 'paid' | 'cancelled' | 'refund_pending' | 'refunded';
+    reason?: string;
+    reasonCode?: string;
+    reasonNote?: string;
+    bankName?: string;
+    accountNumber?: string;
+    accountHolder?: string;
+  },
   actorUserId?: number,
-  reason?: string,
 ) {
   const order = await OrderRepo.findByIdWithItems(orderId);
   if (!order) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.ORDER_NOT_FOUND);
   }
 
-  const reasonMeta = reason?.trim()
-    ? { reason: reason.trim() }
+  const nextStatus = input.status;
+  const reasonMeta = input.reason?.trim()
+    ? { reason: input.reason.trim() }
     : ({} as Record<string, unknown>);
 
   if (nextStatus === 'paid') {
+    // Cancel refund request: restore enrollments
+    if (order.status === 'refund_pending') {
+      const restored = await restoreOrderEnrollments(order);
+      const updated = await OrderRepo.updateStatus(orderId, 'paid', {
+        refundReasonCode: null,
+        refundReasonNote: null,
+        refundBankName: null,
+        refundAccountNumber: null,
+        refundAccountHolder: null,
+        refundRequestedAt: null,
+        refundCompletedAt: null,
+      });
+      if (!updated) {
+        throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.ORDER_NOT_FOUND);
+      }
+      await appendTransactionGatewayMeta(orderId, {
+        refundCancelledAt: new Date().toISOString(),
+        source: 'admin_refund_cancelled',
+        ...reasonMeta,
+      });
+      await AuditLogRepo.record({
+        actorUserId,
+        action: 'order.refund_cancelled',
+        resourceType: 'order',
+        resourceId: orderId,
+        meta: { restoredCourseIds: restored, ...reasonMeta },
+      });
+      return {
+        order: updated,
+        transaction: (await TransactionRepo.findByOrderId(orderId)) ?? null,
+        message: `Đã hủy yêu cầu hoàn tiền và khôi phục quyền học (${restored.length} khóa)`,
+      };
+    }
+
     if (order.status === 'paid') {
       return {
         order,
@@ -882,6 +1010,71 @@ async function adminUpdateOrderStatus(
     };
   }
 
+  if (nextStatus === 'refund_pending') {
+    if (order.status === 'refund_pending') {
+      return {
+        order,
+        transaction: (await TransactionRepo.findByOrderId(orderId)) ?? null,
+        message: 'Đơn đang chờ hoàn tiền (idempotent)',
+      };
+    }
+    if (order.status !== 'paid') {
+      throw new RouteError(
+        HttpStatusCodes.BAD_REQUEST,
+        Errors.INVALID_STATUS_TRANSITION,
+      );
+    }
+
+    const now = new Date();
+    const reasonNote = input.reasonNote?.trim() || null;
+    const updated = await OrderRepo.updateStatus(orderId, 'refund_pending', {
+      refundReasonCode: input.reasonCode ?? null,
+      refundReasonNote: reasonNote,
+      refundBankName: input.bankName ?? null,
+      refundAccountNumber: input.accountNumber ?? null,
+      refundAccountHolder: input.accountHolder ?? null,
+      refundRequestedAt: now,
+      refundCompletedAt: null,
+    });
+    if (!updated) {
+      throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.ORDER_NOT_FOUND);
+    }
+
+    const revoked = await revokeOrderEnrollments(order);
+    await appendTransactionGatewayMeta(orderId, {
+      refundRequestedAt: now.toISOString(),
+      source: 'admin_refund_requested',
+      reasonCode: input.reasonCode,
+      reasonNote,
+      bankName: input.bankName,
+      accountNumber: input.accountNumber,
+      accountHolder: input.accountHolder,
+      ...reasonMeta,
+    });
+    await AuditLogRepo.record({
+      actorUserId,
+      action: 'order.refund_requested',
+      resourceType: 'order',
+      resourceId: orderId,
+      meta: {
+        reasonCode: input.reasonCode,
+        reasonNote,
+        bankName: input.bankName,
+        accountNumber: input.accountNumber,
+        accountHolder: input.accountHolder,
+        revokedCourseIds: revoked,
+        ...reasonMeta,
+      },
+    });
+
+    return {
+      order: updated,
+      transaction: (await TransactionRepo.findByOrderId(orderId)) ?? null,
+      message: `Đã yêu cầu hoàn tiền và thu hồi quyền học (${revoked.length} khóa)`,
+    };
+  }
+
+  // nextStatus === 'refunded'
   if (order.status === 'refunded') {
     return {
       order,
@@ -890,53 +1083,42 @@ async function adminUpdateOrderStatus(
     };
   }
 
-  if (order.status !== 'paid') {
+  if (order.status !== 'refund_pending') {
     throw new RouteError(
       HttpStatusCodes.BAD_REQUEST,
       Errors.INVALID_STATUS_TRANSITION,
     );
   }
-  const refunded = await OrderRepo.updateStatus(orderId, 'refunded');
+
+  const now = new Date();
+  const refunded = await OrderRepo.updateStatus(orderId, 'refunded', {
+    refundCompletedAt: now,
+  });
   if (!refunded) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.ORDER_NOT_FOUND);
   }
-  const transaction = await TransactionRepo.findByOrderId(orderId);
-  if (transaction) {
-    await TransactionRepo.updateByTxnRef(transaction.txnRef, {
-      gatewayResponse: {
-        ...(typeof transaction.gatewayResponse === 'object' &&
-        transaction.gatewayResponse
-          ? (transaction.gatewayResponse as Record<string, unknown>)
-          : {}),
-        refundedAt: new Date().toISOString(),
-        reason: 'admin_refund',
-        ...reasonMeta,
-      },
-    });
-  }
 
-  const revoked: string[] = [];
-  for (const item of order.items) {
-    const updated = await EnrollmentRepo.updateByUserAndCourse(
-      order.userId,
-      item.courseId,
-      { status: 'cancelled' },
-    );
-    if (updated) revoked.push(item.courseId);
-  }
+  await appendTransactionGatewayMeta(orderId, {
+    refundedAt: now.toISOString(),
+    reason: 'admin_refund_confirmed',
+    ...reasonMeta,
+  });
 
   await AuditLogRepo.record({
     actorUserId,
     action: 'order.refunded',
     resourceType: 'order',
     resourceId: orderId,
-    meta: { revokedCourseIds: revoked, ...reasonMeta },
+    meta: {
+      reasonCode: order.refundReasonCode,
+      ...reasonMeta,
+    },
   });
 
   return {
     order: refunded,
     transaction: (await TransactionRepo.findByOrderId(orderId)) ?? null,
-    message: `Đã hoàn tiền và thu hồi quyền học (${revoked.length} khóa)`,
+    message: 'Đã xác nhận chuyển tiền hoàn tất',
   };
 }
 

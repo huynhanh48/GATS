@@ -3,17 +3,24 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ConfirmReasonDialog } from "@/components/Layouts/confirm-reason-dialog";
-import { updateOrderStatus } from "./actions";
+import {
+  updateOrderStatus,
+  type UpdateOrderStatusInput,
+} from "./actions";
+import {
+  RefundRequestDialog,
+  type RefundRequestPayload,
+} from "./refund-request-dialog";
 
 type Props = {
   orderId: string;
-  status: "pending" | "paid" | "cancelled" | "refunded";
+  status: "pending" | "paid" | "cancelled" | "refund_pending" | "refunded";
 };
 
-type PendingAction = "paid" | "cancelled" | "refunded" | null;
+type ReasonAction = "paid" | "cancelled" | "confirm_refund" | "cancel_refund" | null;
 
 const ACTION_COPY: Record<
-  Exclude<PendingAction, null>,
+  Exclude<ReasonAction, null>,
   { title: string; description: string; confirmLabel: string; destructive: boolean }
 > = {
   paid: {
@@ -29,11 +36,18 @@ const ACTION_COPY: Record<
     confirmLabel: "Hủy đơn",
     destructive: true,
   },
-  refunded: {
-    title: "Hoàn tiền & thu hồi quyền",
+  confirm_refund: {
+    title: "Xác nhận đã chuyển tiền",
     description:
-      "Hoàn tiền đơn đã thanh toán và thu hồi enrollment các khóa trong đơn.",
-    confirmLabel: "Hoàn tiền",
+      "Đánh dấu đã chuyển khoản hoàn tiền thủ công ngoài hệ thống. Đơn sẽ chuyển sang «Đã hoàn tiền».",
+    confirmLabel: "Đã chuyển tiền",
+    destructive: false,
+  },
+  cancel_refund: {
+    title: "Hủy yêu cầu hoàn tiền",
+    description:
+      "Hủy yêu cầu hoàn tiền và khôi phục quyền học các khóa trong đơn (nếu còn enrollment).",
+    confirmLabel: "Hủy yêu cầu",
     destructive: true,
   },
 };
@@ -42,18 +56,43 @@ export function OrderStatusActions({ orderId, status }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [action, setAction] = useState<PendingAction>(null);
+  const [action, setAction] = useState<ReasonAction>(null);
+  const [refundOpen, setRefundOpen] = useState(false);
 
-  const run = (next: Exclude<PendingAction, null>, reason: string) => {
+  const runUpdate = (input: UpdateOrderStatusInput) => {
     setError(null);
     startTransition(async () => {
-      const result = await updateOrderStatus(orderId, next, reason);
+      const result = await updateOrderStatus(orderId, input);
       if (!result.ok) {
         setError(result.message ?? "Cập nhật thất bại");
         return;
       }
       setAction(null);
+      setRefundOpen(false);
       router.refresh();
+    });
+  };
+
+  const runReasonAction = (next: Exclude<ReasonAction, null>, reason: string) => {
+    if (next === "confirm_refund") {
+      runUpdate({ status: "refunded", reason });
+      return;
+    }
+    if (next === "cancel_refund") {
+      runUpdate({ status: "paid", reason });
+      return;
+    }
+    runUpdate({ status: next, reason });
+  };
+
+  const runRefundRequest = (payload: RefundRequestPayload) => {
+    runUpdate({
+      status: "refund_pending",
+      reasonCode: payload.reasonCode,
+      reasonNote: payload.reasonNote || undefined,
+      bankName: payload.bankName,
+      accountNumber: payload.accountNumber,
+      accountHolder: payload.accountHolder,
     });
   };
 
@@ -104,11 +143,31 @@ export function OrderStatusActions({ orderId, status }: Props) {
           <button
             type="button"
             disabled={pending}
-            onClick={() => setAction("refunded")}
+            onClick={() => setRefundOpen(true)}
             className="rounded-md border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-300 dark:hover:bg-rose-950/40 disabled:opacity-60"
           >
-            Hoàn tiền & thu hồi quyền
+            Yêu cầu hoàn tiền
           </button>
+        ) : null}
+        {status === "refund_pending" ? (
+          <>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setAction("confirm_refund")}
+              className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-60"
+            >
+              Xác nhận đã chuyển tiền
+            </button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => setAction("cancel_refund")}
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900 disabled:opacity-60"
+            >
+              Hủy yêu cầu hoàn tiền
+            </button>
+          </>
         ) : null}
       </div>
       {pending ? (
@@ -127,9 +186,18 @@ export function OrderStatusActions({ orderId, status }: Props) {
           confirmLabel={copy.confirmLabel}
           destructive={copy.destructive}
           pending={pending}
-          onConfirm={(reason) => run(action, reason)}
+          onConfirm={(reason) => runReasonAction(action, reason)}
         />
       ) : null}
+
+      <RefundRequestDialog
+        open={refundOpen}
+        onOpenChange={(open) => {
+          if (!open && !pending) setRefundOpen(false);
+        }}
+        pending={pending}
+        onConfirm={runRefundRequest}
+      />
     </div>
   );
 }

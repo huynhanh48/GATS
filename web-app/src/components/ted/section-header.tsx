@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 
 type SectionHeaderProps = {
   eyebrow?: string;
@@ -36,10 +35,9 @@ function SectionHeader({
       {href ? (
         <Link
           href={href}
-          className="inline-flex min-h-11 items-center gap-2 self-start rounded-xl px-1 font-semibold text-brand-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/30 sm:self-auto"
+          className="inline-flex min-h-11 items-center self-start rounded-xl px-1 font-semibold text-brand-primary outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/30 sm:self-auto"
         >
           {linkLabel}
-          <ArrowRight className="size-4" aria-hidden="true" />
         </Link>
       ) : null}
     </div>

@@ -6,6 +6,7 @@ export type OrderStatusCounts = {
   pending: number;
   paid: number;
   cancelled: number;
+  refund_pending: number;
   refunded: number;
   all: number;
 };
@@ -39,7 +40,14 @@ export type DashboardMetrics = {
 };
 
 const emptyMetrics: DashboardMetrics = {
-  orders: { pending: 0, paid: 0, cancelled: 0, refunded: 0, all: 0 },
+  orders: {
+    pending: 0,
+    paid: 0,
+    cancelled: 0,
+    refund_pending: 0,
+    refunded: 0,
+    all: 0,
+  },
   revenue: { total: 0, thisMonth: 0 },
   leads: {
     new: 0,

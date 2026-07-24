@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
 import { formatVnDateTime } from "@/lib/datetime";
+import { REFUND_REASON_LABELS, type RefundReasonCode } from "@/lib/refund";
 import { fetchOrderDetail, type OrderStatus } from "../actions";
 import { OrderEnrollmentsPanel } from "../order-enrollments-panel";
 import { OrderStatusActions } from "../order-status-actions";
@@ -19,7 +20,8 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "Chờ thanh toán",
   paid: "Đã thanh toán",
   cancelled: "Đã hủy",
-  refunded: "Hoàn tiền",
+  refund_pending: "Chờ hoàn tiền",
+  refunded: "Đã hoàn tiền",
 };
 
 const METHOD_LABELS: Record<string, string> = {
@@ -83,7 +85,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 ? "green"
                 : order.status === "pending"
                   ? "blue"
-                  : "slate",
+                  : order.status === "refund_pending"
+                    ? "blue"
+                    : "slate",
           },
           {
             label: "Số tiền",
@@ -110,6 +114,33 @@ export default async function OrderDetailPage({ params }: PageProps) {
               <Row label="Ghi chú">{order.notes || "—"}</Row>
             </dl>
           </AdminPanel>
+
+          {order.refundReasonCode ||
+          order.refundBankName ||
+          order.status === "refund_pending" ||
+          order.status === "refunded" ? (
+            <AdminPanel title="Thông tin hoàn tiền" bodyClassName="px-4 py-1">
+              <dl>
+                <Row label="Lý do">
+                  {order.refundReasonCode
+                    ? (REFUND_REASON_LABELS[
+                        order.refundReasonCode as RefundReasonCode
+                      ] ?? order.refundReasonCode)
+                    : "—"}
+                </Row>
+                <Row label="Ghi chú">{order.refundReasonNote || "—"}</Row>
+                <Row label="Ngân hàng">{order.refundBankName || "—"}</Row>
+                <Row label="Số TK">{order.refundAccountNumber || "—"}</Row>
+                <Row label="Chủ TK">{order.refundAccountHolder || "—"}</Row>
+                <Row label="Yêu cầu lúc">
+                  {formatDate(order.refundRequestedAt ?? null)}
+                </Row>
+                <Row label="Hoàn tất lúc">
+                  {formatDate(order.refundCompletedAt ?? null)}
+                </Row>
+              </dl>
+            </AdminPanel>
+          ) : null}
 
           <AdminPanel title="Khóa học trong đơn" bodyClassName="p-0 overflow-x-auto">
             {order.items.length === 0 ? (

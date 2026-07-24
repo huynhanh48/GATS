@@ -22,14 +22,21 @@ import { toast } from "sonner";
 
 const VN_TZ = "Asia/Ho_Chi_Minh";
 
-type OrderStatusFilter = "all" | "pending" | "paid" | "cancelled" | "refunded";
+type OrderStatusFilter =
+  | "all"
+  | "pending"
+  | "paid"
+  | "cancelled"
+  | "refund_pending"
+  | "refunded";
 
 const ORDER_STATUS_FILTERS: { value: OrderStatusFilter; label: string }[] = [
   { value: "all", label: "Tất cả" },
   { value: "pending", label: "Chờ thanh toán" },
   { value: "paid", label: "Đã thanh toán" },
   { value: "cancelled", label: "Đã hủy" },
-  { value: "refunded", label: "Hoàn tiền" },
+  { value: "refund_pending", label: "Đang hoàn tiền" },
+  { value: "refunded", label: "Đã hoàn tiền" },
 ];
 
 function formatVnDate(value: string) {
@@ -75,6 +82,7 @@ export default function ProfilePage() {
         status === "pending" ||
         status === "paid" ||
         status === "cancelled" ||
+        status === "refund_pending" ||
         status === "refunded"
       ) {
         setOrderStatusFilter(status);
@@ -147,6 +155,7 @@ export default function ProfilePage() {
     pending: orders.filter((o) => o.status === "pending").length,
     paid: orders.filter((o) => o.status === "paid").length,
     cancelled: orders.filter((o) => o.status === "cancelled").length,
+    refund_pending: orders.filter((o) => o.status === "refund_pending").length,
     refunded: orders.filter((o) => o.status === "refunded").length,
   };
 
@@ -453,6 +462,7 @@ export default function ProfilePage() {
                             {order.status === "pending" && <span className="bg-amber-100 text-amber-700 text-xs font-bold px-3 py-1 rounded-full border border-amber-200">Chờ thanh toán</span>}
                             {order.status === "paid" && <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">Đã thanh toán</span>}
                             {order.status === "cancelled" && <span className="bg-destructive/10 text-destructive text-xs font-bold px-3 py-1 rounded-full border border-destructive/20">Đã hủy</span>}
+                            {order.status === "refund_pending" && <span className="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full border border-orange-200">Đang hoàn tiền</span>}
                             {order.status === "refunded" && <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-200">Đã hoàn tiền</span>}
                           </div>
                         </div>

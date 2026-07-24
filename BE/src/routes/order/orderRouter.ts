@@ -61,9 +61,8 @@ async function adminUpdateOrderStatus(req: Request, res: Response) {
   const input = parseAdminUpdateOrderStatus(req.body);
   const result = await OrderService.adminUpdateOrderStatus(
     getRouteParam(req.params.orderId),
-    input.status,
+    input,
     authUserId(req),
-    input.reason,
   );
   return res.status(HttpStatusCodes.OK).json(result);
 }

@@ -1,16 +1,17 @@
 import type { LucideIcon } from "lucide-react";
-import { AlertCircle, Inbox } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Surface } from "@/components/ui/surface";
+import { cn } from "@/lib/utils";
 
 type ContentStateProps = {
   title: string;
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
-  icon?: LucideIcon;
+  /** Pass a Lucide icon, or `null` / omit to hide the icon entirely. */
+  icon?: LucideIcon | null;
   tone?: "empty" | "error";
+  className?: string;
 };
 
 function ContentState({
@@ -18,22 +19,28 @@ function ContentState({
   description,
   actionLabel,
   onAction,
-  icon,
+  icon = null,
   tone = "empty",
+  className,
 }: ContentStateProps) {
-  const Icon = icon ?? (tone === "error" ? AlertCircle : Inbox);
+  const Icon = icon;
 
   return (
-    <Surface
-      className="flex min-h-56 flex-col items-center justify-center border-dashed p-8 text-center shadow-none"
+    <div
+      className={cn(
+        "flex w-full min-h-32 flex-col items-start justify-center py-6 text-left",
+        className,
+      )}
       role={tone === "error" ? "alert" : "status"}
     >
-      <span className="mb-4 rounded-full bg-accent p-3 text-brand-primary">
-        <Icon className="size-6" aria-hidden="true" />
-      </span>
-      <h3 className="text-lg font-semibold">{title}</h3>
+      {Icon ? (
+        <span className="mb-3 rounded-full bg-accent p-3 text-brand-primary">
+          <Icon className="size-6" aria-hidden="true" />
+        </span>
+      ) : null}
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
       {description ? (
-        <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+        <p className="mt-2 w-full text-sm leading-6 text-muted-foreground">
           {description}
         </p>
       ) : null}
@@ -42,7 +49,7 @@ function ContentState({
           {actionLabel}
         </Button>
       ) : null}
-    </Surface>
+    </div>
   );
 }
 

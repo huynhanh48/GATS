@@ -57,7 +57,7 @@ type SepayApiTransaction = {
   bank_brand_name?: string;
 };
 
-/** Fire-and-forget exception log — never throws to callers. */
+/** Fire-and-forget exception log — never throws to callers. Dedupes unresolved by txnRef+type. */
 async function logException(input: {
   type: PaymentExceptionType;
   orderId?: string | null;
@@ -67,6 +67,13 @@ async function logException(input: {
   rawPayload?: unknown;
 }) {
   try {
+    if (input.txnRef) {
+      const existing = await PaymentExceptionRepo.findUnresolvedByTxnRefAndType(
+        input.txnRef,
+        input.type,
+      );
+      if (existing) return;
+    }
     await PaymentExceptionRepo.create({
       type: input.type,
       orderId: input.orderId ?? null,
@@ -97,7 +104,7 @@ function assertWebhookAuth(apiKey: string | undefined) {
 }
 
 function resolveAmount(payload: SepayWebhookPayload): number {
-  return Number(payload.amountIn ?? payload.transferAmount ?? 0);
+  return resolvePaidAmount(payload.amountIn ?? payload.transferAmount ?? 0);
 }
 
 async function findTransactionByContentRef(extractedCleanRef: string) {
@@ -108,9 +115,52 @@ async function findTransactionByContentRef(extractedCleanRef: string) {
 }
 
 /**
+ * Normalize SePay / bank amount fields.
+ * Handles number, "500000", "500000.00", and VN thousand dots "500.000".
+ */
+function resolvePaidAmount(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.round(value);
+  }
+  if (typeof value !== 'string') return 0;
+
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+
+  // Vietnamese thousand separators: 2.000 / 1.500.000 (no comma decimals)
+  if (/^\d{1,3}(\.\d{3})+$/.test(trimmed)) {
+    return Math.round(Number(trimmed.replace(/\./g, '')));
+  }
+
+  // US/EU mixed: 1,500,000.50 or 1.500.000,50
+  if (trimmed.includes(',') && trimmed.includes('.')) {
+    const lastComma = trimmed.lastIndexOf(',');
+    const lastDot = trimmed.lastIndexOf('.');
+    if (lastComma > lastDot) {
+      // 1.500.000,50 → decimal comma
+      const normalized = trimmed.replace(/\./g, '').replace(',', '.');
+      const n = Number(normalized);
+      return Number.isFinite(n) ? Math.round(n) : 0;
+    }
+    // 1,500,000.50 → decimal dot
+    const normalized = trimmed.replace(/,/g, '');
+    const n = Number(normalized);
+    return Number.isFinite(n) ? Math.round(n) : 0;
+  }
+
+  if (/^\d{1,3}(,\d{3})+$/.test(trimmed)) {
+    return Math.round(Number(trimmed.replace(/,/g, '')));
+  }
+
+  const cleaned = trimmed.replace(/[^\d.-]/g, '');
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+/**
  * Confirm SePay payment after amount + content already matched.
  * Completes the order even after the 30-minute QR window / TTL cancel
- * (late payment recovery). Amount mismatch still refuses.
+ * (late payment recovery). Amount mismatch still refuses (except 0đ orders).
  */
 async function confirmPayment(
   txnRef: string,
@@ -134,17 +184,36 @@ async function confirmPayment(
     };
   }
 
-  if (
-    paidAmount !== undefined &&
-    paidAmount > 0 &&
-    Math.round(paidAmount) !== transaction.amount
+  const actual =
+    paidAmount !== undefined ? resolvePaidAmount(paidAmount) : undefined;
+
+  // 0đ order (coupon): never require bank credit. If someone still transferred
+  // money, log once as orphan mismatch then complete enrollment.
+  if (transaction.amount === 0) {
+    if (actual !== undefined && actual > 0) {
+      void logException({
+        type: 'amount_mismatch',
+        orderId: transaction.orderId,
+        txnRef: transaction.txnRef,
+        expectedAmount: 0,
+        actualAmount: actual,
+        rawPayload: {
+          note: 'orphan_transfer_on_zero_order',
+          gatewayResponse,
+        },
+      });
+    }
+  } else if (
+    actual !== undefined &&
+    actual > 0 &&
+    actual !== transaction.amount
   ) {
     void logException({
       type: 'amount_mismatch',
       orderId: transaction.orderId,
       txnRef: transaction.txnRef,
       expectedAmount: transaction.amount,
-      actualAmount: paidAmount,
+      actualAmount: actual,
       rawPayload: gatewayResponse,
     });
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.AMOUNT_MISMATCH);
@@ -179,7 +248,7 @@ async function confirmPayment(
       orderId: transaction.orderId,
       txnRef: transaction.txnRef,
       expectedAmount: transaction.amount,
-      actualAmount: paidAmount ?? transaction.amount,
+      actualAmount: actual ?? transaction.amount,
       rawPayload: {
         source: 'sepay_confirm',
         pastWindow,
@@ -422,6 +491,25 @@ async function checkSepayPayment(txnRef: string) {
     };
   }
 
+  // Legacy / race: 0đ order still pending with QR — complete without bank transfer.
+  if (transaction.amount === 0) {
+    const confirmed = await confirmPayment(
+      transaction.txnRef,
+      { source: 'coupon_zero_heal' },
+      0,
+    );
+    return {
+      success: true,
+      status: 'PAID' as const,
+      txnRef: confirmed.txnRef,
+      orderId: confirmed.orderId,
+      amount: 0,
+      paidAt: new Date().toISOString(),
+      message: 'Zero-amount order confirmed without bank transfer',
+      alreadyPaid: confirmed.alreadyPaid,
+    };
+  }
+
   const order = await OrderRepo.findById(transaction.orderId);
   const expiredPending = await OrderService.expirePendingOrderIfNeeded(
     transaction.orderId,
@@ -447,35 +535,70 @@ async function checkSepayPayment(txnRef: string) {
       };
     }
 
-    const paidAmount = Number(detail.order_amount ?? transaction.amount);
-    const confirmed = await confirmPayment(
-      transaction.txnRef,
-      detail,
-      paidAmount > 0 ? paidAmount : transaction.amount,
+    const paidAmount = resolvePaidAmount(
+      detail.order_amount ?? transaction.amount,
     );
+    try {
+      const confirmed = await confirmPayment(
+        transaction.txnRef,
+        detail,
+        paidAmount > 0 ? paidAmount : transaction.amount,
+      );
 
-    return {
-      success: true,
-      status: 'PAID' as const,
-      txnRef: confirmed.txnRef,
-      orderId: confirmed.orderId,
-      amount: transaction.amount,
-      paidAt: new Date().toISOString(),
-      message: confirmed.lateRecovered
-        ? 'Late payment confirmed after QR window'
-        : 'Payment confirmed via SePay PG',
-      alreadyPaid: confirmed.alreadyPaid,
-      lateRecovered: confirmed.lateRecovered,
-    };
+      return {
+        success: true,
+        status: 'PAID' as const,
+        txnRef: confirmed.txnRef,
+        orderId: confirmed.orderId,
+        amount: transaction.amount,
+        paidAt: new Date().toISOString(),
+        message: confirmed.lateRecovered
+          ? 'Late payment confirmed after QR window'
+          : 'Payment confirmed via SePay PG',
+        alreadyPaid: confirmed.alreadyPaid,
+        lateRecovered: confirmed.lateRecovered,
+      };
+    } catch (err) {
+      if (err instanceof RouteError && err.status === HttpStatusCodes.BAD_REQUEST) {
+        if (err.message === Errors.AMOUNT_MISMATCH) {
+          return {
+            success: false,
+            status: 'AMOUNT_MISMATCH' as const,
+            txnRef: transaction.txnRef,
+            orderId: transaction.orderId,
+            amount: transaction.amount,
+            paidAt: null,
+            actualAmount: paidAmount,
+            message: Errors.AMOUNT_MISMATCH,
+          };
+        }
+        return {
+          success: false,
+          status: (windowExpired ? 'EXPIRED' : 'PENDING') as 'EXPIRED' | 'PENDING',
+          txnRef: transaction.txnRef,
+          orderId: transaction.orderId,
+          amount: transaction.amount,
+          paidAt: null,
+          message: err.message,
+        };
+      }
+      throw err;
+    }
   }
 
   const remoteList = await fetchSepayTransactions();
   const expected = toSepayTransferContent(transaction.txnRef);
 
-  const match = remoteList.find((t) => {
+  const matches = remoteList.filter((t) => {
     if (!t.transaction_content) return false;
     return cleanAlnum(t.transaction_content).includes(expected);
   });
+
+  // Prefer exact amount match when multiple bank rows share the same SEVQR content.
+  const exactMatch = matches.find(
+    (t) => resolvePaidAmount(t.amount_in) === transaction.amount,
+  );
+  const match = exactMatch ?? matches[0];
 
   if (!match) {
     return {
@@ -491,26 +614,54 @@ async function checkSepayPayment(txnRef: string) {
     };
   }
 
-  const paidAmount = Number(match.amount_in ?? 0);
-  const confirmed = await confirmPayment(
-    transaction.txnRef,
-    match,
-    paidAmount,
-  );
+  const paidAmount = resolvePaidAmount(match.amount_in);
+  try {
+    const confirmed = await confirmPayment(
+      transaction.txnRef,
+      match,
+      paidAmount,
+    );
 
-  return {
-    success: true,
-    status: 'PAID' as const,
-    txnRef: confirmed.txnRef,
-    orderId: confirmed.orderId,
-    amount: transaction.amount,
-    paidAt: new Date().toISOString(),
-    message: confirmed.lateRecovered
-      ? 'Late payment confirmed after QR window'
-      : 'Payment confirmed',
-    alreadyPaid: confirmed.alreadyPaid,
-    lateRecovered: confirmed.lateRecovered,
-  };
+    return {
+      success: true,
+      status: 'PAID' as const,
+      txnRef: confirmed.txnRef,
+      orderId: confirmed.orderId,
+      amount: transaction.amount,
+      paidAt: new Date().toISOString(),
+      message: confirmed.lateRecovered
+        ? 'Late payment confirmed after QR window'
+        : 'Payment confirmed',
+      alreadyPaid: confirmed.alreadyPaid,
+      lateRecovered: confirmed.lateRecovered,
+    };
+  } catch (err) {
+    if (err instanceof RouteError && err.status === HttpStatusCodes.BAD_REQUEST) {
+      if (err.message === Errors.AMOUNT_MISMATCH) {
+        return {
+          success: false,
+          status: 'AMOUNT_MISMATCH' as const,
+          txnRef: transaction.txnRef,
+          orderId: transaction.orderId,
+          amount: transaction.amount,
+          paidAt: null,
+          actualAmount: paidAmount,
+          message: Errors.AMOUNT_MISMATCH,
+        };
+      }
+      // e.g. Order is not payable — do not 400-spam the poller
+      return {
+        success: false,
+        status: (windowExpired ? 'EXPIRED' : 'PENDING') as 'EXPIRED' | 'PENDING',
+        txnRef: transaction.txnRef,
+        orderId: transaction.orderId,
+        amount: transaction.amount,
+        paidAt: null,
+        message: err.message,
+      };
+    }
+    throw err;
+  }
 }
 
 async function handleVnpayReturn(_query: Record<string, string>) {

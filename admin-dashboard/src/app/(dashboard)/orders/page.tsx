@@ -25,7 +25,8 @@ const STATUS_LABELS: Record<FilterKey, string> = {
   pending: "Chờ thanh toán",
   paid: "Đã thanh toán",
   cancelled: "Đã hủy",
-  refunded: "Hoàn tiền",
+  refund_pending: "Chờ hoàn tiền",
+  refunded: "Đã hoàn tiền",
   expired: "Pending quá hạn",
 };
 
@@ -35,6 +36,8 @@ const STATUS_BADGE: Record<OrderStatus, string> = {
   paid: "bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-300",
   cancelled:
     "bg-slate-100 text-slate-600 ring-slate-500/20 dark:bg-slate-800 dark:text-slate-300",
+  refund_pending:
+    "bg-orange-50 text-orange-700 ring-orange-600/20 dark:bg-orange-500/10 dark:text-orange-300",
   refunded:
     "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-500/10 dark:text-rose-300",
 };
@@ -52,6 +55,7 @@ function parseStatus(raw?: string): FilterKey {
     raw === "pending" ||
     raw === "paid" ||
     raw === "cancelled" ||
+    raw === "refund_pending" ||
     raw === "refunded" ||
     raw === "expired"
   ) {
@@ -100,6 +104,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
     "pending",
     "paid",
     "cancelled",
+    "refund_pending",
     "refunded",
     "expired",
   ];
@@ -152,7 +157,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
                   ? counts.all
                   : key === "expired"
                     ? expiredCount
-                    : counts[key as OrderStatus];
+                    : (counts[key as OrderStatus] ?? 0);
               return (
                 <Link
                   key={key}

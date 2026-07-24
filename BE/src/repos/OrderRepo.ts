@@ -129,6 +129,13 @@ export async function updateStatus(
   extra: Partial<{
     paidAt: Date | null;
     paymentMethod: Order['paymentMethod'];
+    refundReasonCode: string | null;
+    refundReasonNote: string | null;
+    refundBankName: string | null;
+    refundAccountNumber: string | null;
+    refundAccountHolder: string | null;
+    refundRequestedAt: Date | null;
+    refundCompletedAt: Date | null;
   }> = {},
 ): Promise<OrderRecord | undefined> {
   const rows = await db
@@ -139,6 +146,27 @@ export async function updateStatus(
       ...(extra.paidAt !== undefined ? { paidAt: extra.paidAt } : {}),
       ...(extra.paymentMethod !== undefined
         ? { paymentMethod: extra.paymentMethod }
+        : {}),
+      ...(extra.refundReasonCode !== undefined
+        ? { refundReasonCode: extra.refundReasonCode }
+        : {}),
+      ...(extra.refundReasonNote !== undefined
+        ? { refundReasonNote: extra.refundReasonNote }
+        : {}),
+      ...(extra.refundBankName !== undefined
+        ? { refundBankName: extra.refundBankName }
+        : {}),
+      ...(extra.refundAccountNumber !== undefined
+        ? { refundAccountNumber: extra.refundAccountNumber }
+        : {}),
+      ...(extra.refundAccountHolder !== undefined
+        ? { refundAccountHolder: extra.refundAccountHolder }
+        : {}),
+      ...(extra.refundRequestedAt !== undefined
+        ? { refundRequestedAt: extra.refundRequestedAt }
+        : {}),
+      ...(extra.refundCompletedAt !== undefined
+        ? { refundCompletedAt: extra.refundCompletedAt }
         : {}),
     })
     .where(eq(ordersTable.id, id))
@@ -297,6 +325,7 @@ export async function countByStatus(): Promise<
     pending: 0,
     paid: 0,
     cancelled: 0,
+    refund_pending: 0,
     refunded: 0,
     all: 0,
     expiredPending: Number(expiredRow[0]?.value ?? 0),

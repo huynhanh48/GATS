@@ -15,6 +15,25 @@ export type PaymentExceptionRow = PaymentException & {
   orderTotalAmount: number | null;
 };
 
+export async function findUnresolvedByTxnRefAndType(
+  txnRef: string,
+  type: PaymentExceptionType,
+): Promise<PaymentException | undefined> {
+  const rows = await db
+    .select()
+    .from(paymentExceptionsTable)
+    .where(
+      and(
+        eq(paymentExceptionsTable.txnRef, txnRef),
+        eq(paymentExceptionsTable.type, type),
+        eq(paymentExceptionsTable.resolved, false),
+      ),
+    )
+    .orderBy(desc(paymentExceptionsTable.createdAt))
+    .limit(1);
+  return rows[0];
+}
+
 export async function create(
   data: Omit<NewPaymentException, 'id' | 'createdAt' | 'resolved'>,
 ): Promise<PaymentException> {
