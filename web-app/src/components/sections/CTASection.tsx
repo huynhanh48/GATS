@@ -8,6 +8,7 @@ import { leadApi } from "@/lib/leads/api";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { ShinyText } from "@/components/react-bits";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -348,12 +349,10 @@ export function CTASection() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
             viewport={{ once: true, margin: "-40px" }}
-            className="max-w-3xl text-balance text-3xl font-bold tracking-tight text-white sm:text-5xl lg:text-[3.35rem] lg:leading-[1.1]"
+            className="max-w-3xl text-balance font-heading text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-[3.35rem] lg:leading-[1.1]"
           >
             Bắt đầu ứng dụng{" "}
-            <span className="bg-linear-to-r from-primary via-[#FF9A4D] to-primary bg-clip-text text-transparent">
-              AI
-            </span>{" "}
+            <ShinyText text="Trí Tuệ Nhân Tạo AI" speed={4} className="font-extrabold" />{" "}
             vào công việc
           </motion.h2>
 

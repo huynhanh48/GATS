@@ -134,6 +134,8 @@ function videoProgressLabel(payload: VideoProgressPayload): string {
       return "Backend đang transcode";
     case "hls_upload":
       return "Backend đang upload HLS";
+    case "extracting_audio":
+      return "Backend đang tách audio FLAC";
     case "complete":
       return "Video đã sẵn sàng";
     case "failed":
@@ -158,6 +160,7 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
         const res = await videoClient.getVideoStatus(videoId);
         if (res.data?.data) {
           const status = res.data.data.status;
+          const phase = res.data.data.processingPhase;
           if (status === "failed") {
             updateSnapshot(job, {
               status: "error",
@@ -166,10 +169,13 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
             });
             stopPolling();
           } else if (status === "ready") {
+            const hasFlac = Boolean(res.data.data.audioFlacKey);
             updateSnapshot(job, {
               status: "done",
               progressPct: 100,
-              stageLabel: "Video đã sẵn sàng",
+              stageLabel: hasFlac
+                ? "Video HLS + audio FLAC đã sẵn sàng"
+                : "Video đã sẵn sàng",
             });
             toast.success(`Video đã xử lý xong: ${job.snapshot.title}`);
             stopPolling();
@@ -177,6 +183,11 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
               jobs.delete(job.snapshot.id);
               emit();
             }, 4500);
+          } else if (phase === "extracting_audio") {
+            updateSnapshot(job, {
+              status: "processing",
+              stageLabel: "Backend đang tách audio FLAC",
+            });
           }
         }
       } catch (e) {

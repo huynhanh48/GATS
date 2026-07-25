@@ -470,7 +470,10 @@ export type VideoRecord = {
   status: VideoStatus;
   originalKey: string | null;
   hlsKey: string | null;
+  audioFlacKey?: string | null;
+  audioFlacUrl?: string | null;
   mp4Url: string | null;
+  processingPhase?: string | null;
   errorMessage: string | null;
   duration: number | null;
   size: number | null;
@@ -539,6 +542,8 @@ export type VideoPlaybackData = {
   playbackUrl: string;
   playbackType: "hls" | "mp4";
   hlsKey: string | null;
+  audioFlacKey?: string | null;
+  audioFlacUrl?: string | null;
   mp4Url: string | null;
 };
 

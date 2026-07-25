@@ -19,6 +19,7 @@ import {
 } from '@src/libs/s3-storage';
 import {
   build720pPlaylistKey,
+  buildAudioPrefix,
   buildHlsPlaylistKey,
   buildHlsPrefix,
   buildOriginalKey,
@@ -126,6 +127,12 @@ function buildPlaybackUrl(hlsKey: string): string {
     return hlsKey;
   }
   return buildPublicUrl(hlsKey);
+}
+
+function buildAudioFlacUrl(audioFlacKey: string | null): string | null {
+  if (!audioFlacKey) return null;
+  if (/^https?:\/\//i.test(audioFlacKey)) return audioFlacKey;
+  return buildPublicUrl(audioFlacKey);
 }
 
 function resolveStorageProvider() {
@@ -577,6 +584,24 @@ async function getStatus(videoId: string) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
 
+  let processingPhase: string | null = null;
+  if (video.status === 'processing' || video.status === 'uploaded') {
+    try {
+      const job = await deps.getTranscodeJob(video.id);
+      const progress = job?.progress;
+      if (
+        progress &&
+        typeof progress === 'object' &&
+        'phase' in progress &&
+        typeof (progress as { phase?: unknown }).phase === 'string'
+      ) {
+        processingPhase = (progress as { phase: string }).phase;
+      }
+    } catch {
+      processingPhase = null;
+    }
+  }
+
   return {
     data: {
       videoId: video.id,
@@ -585,7 +610,10 @@ async function getStatus(videoId: string) {
       status: video.status,
       originalKey: video.originalKey,
       hlsKey: video.hlsKey,
+      audioFlacKey: video.audioFlacKey,
+      audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),
       mp4Url: video.mp4Url,
+      processingPhase,
       errorMessage: video.errorMessage,
       duration: video.duration,
       size: video.size,
@@ -637,6 +665,8 @@ async function getByLesson(
       status: video.status,
       originalKey: video.originalKey,
       hlsKey: video.hlsKey,
+      audioFlacKey: video.audioFlacKey,
+      audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),
       mp4Url: video.mp4Url,
       errorMessage: video.errorMessage,
       duration: video.duration,
@@ -682,6 +712,17 @@ async function deleteVideo(videoId: string) {
     try {
       await deps.deleteObjectsByPrefix(
         `${buildHlsPrefix(video.courseId, video.id)}/`,
+      );
+    } catch {
+      // Best-effort; continue.
+    }
+  }
+
+  // 3b. Delete extracted FLAC audio folder.
+  if (video.audioFlacKey && !/^https?:\/\//i.test(video.audioFlacKey)) {
+    try {
+      await deps.deleteObjectsByPrefix(
+        `${buildAudioPrefix(video.courseId, video.id)}/`,
       );
     } catch {
       // Best-effort; continue.
@@ -760,6 +801,8 @@ async function getPlayback(
       playbackUrl,
       playbackType,
       hlsKey: video.hlsKey,
+      audioFlacKey: video.audioFlacKey,
+      audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),
       mp4Url: video.mp4Url,
       ...(progress ? { progress } : {}),
     },

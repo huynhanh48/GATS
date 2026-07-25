@@ -92,6 +92,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
     lessonIdProp || null,
   );
   const [playbackUrl, setPlaybackUrl] = useState("");
+  const [audioFlacUrl, setAudioFlacUrl] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [resumeAt, setResumeAt] = useState(0);
   const [resumePrompt, setResumePrompt] = useState<number | null>(null);
@@ -253,6 +254,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
           fetchLessonPlayback(course.id, lesson.id).catch(() => ({
             videoId: null,
             playbackUrl: "",
+            audioFlacUrl: null,
           })),
           fetchLessonProgress(course.id, lesson.id).catch(() => null),
         ]);
@@ -262,8 +264,12 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         const url = playback.playbackUrl
           ? resolveMediaUrl(playback.playbackUrl, "")
           : "";
+        const flac = playback.audioFlacUrl
+          ? resolveMediaUrl(playback.audioFlacUrl, "")
+          : null;
 
         setVideoId(playback.videoId);
+        setAudioFlacUrl(flac || null);
         if (progress?.isCompleted) {
           setCompletedIds((prev) => new Set(prev).add(lesson.id));
         }
@@ -289,6 +295,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         }
       } else {
         setPlaybackUrl("");
+        setAudioFlacUrl(null);
         pendingPlaybackUrlRef.current = "";
         const progress = await fetchLessonProgress(course.id, lesson.id).catch(
           () => null,
@@ -612,6 +619,19 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                 </div>
               ) : null}
             </div>
+            {audioFlacUrl ? (
+              <div className="mt-2 flex w-full max-w-[1180px] justify-end">
+                <a
+                  href={audioFlacUrl}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  Tải audio FLAC
+                </a>
+              </div>
+            ) : null}
             </div>
           ) : null}
 

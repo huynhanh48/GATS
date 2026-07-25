@@ -188,6 +188,7 @@ function buildVideo(overrides: Record<string, unknown> = {}) {
     storageProvider: 's3' as const,
     originalKey: `videos/originals/${courseId}/${videoId}/input.mp4`,
     hlsKey: null,
+    audioFlacKey: null,
     mp4Url: null,
     duration: null,
     size: null,

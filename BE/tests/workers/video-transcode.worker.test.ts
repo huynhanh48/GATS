@@ -14,9 +14,11 @@ function buildVideo(overrides: Record<string, unknown> = {}) {
     storageProvider: 's3' as const,
     originalKey: `videos/originals/${courseId}/${videoId}/input.mp4`,
     hlsKey: null,
+    audioFlacKey: null,
     mp4Url: null,
     duration: null,
     size: null,
+    uploadId: null,
     status: 'pending_upload' as const,
     errorMessage: null,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -28,6 +30,8 @@ function buildVideo(overrides: Record<string, unknown> = {}) {
 const mockResolveHttp = vi.fn();
 const mockResolveFile = vi.fn();
 const mockTranscode = vi.fn();
+const mockExtractFlac = vi.fn();
+const mockUploadFileFromPath = vi.fn();
 const mockUploaderStart = vi.fn();
 const mockUploaderFinalize = vi.fn();
 const mockUploaderAbort = vi.fn();
@@ -43,6 +47,14 @@ vi.mock('@src/workers/helpers/s3-download', () => ({
 
 vi.mock('@src/workers/helpers/ffmpeg-hls', () => ({
   transcodeToHlsRenditions: (...args: unknown[]) => mockTranscode(...args),
+}));
+
+vi.mock('@src/workers/helpers/ffmpeg-audio', () => ({
+  extractFlacAudio: (...args: unknown[]) => mockExtractFlac(...args),
+}));
+
+vi.mock('@src/libs/s3-storage', () => ({
+  uploadFileFromPath: (...args: unknown[]) => mockUploadFileFromPath(...args),
 }));
 
 vi.mock('@src/workers/helpers/s3-upload-folder', () => ({
@@ -97,6 +109,8 @@ describe('video transcode worker', () => {
     mockResolveHttp.mockReset();
     mockResolveFile.mockReset();
     mockTranscode.mockReset();
+    mockExtractFlac.mockReset();
+    mockUploadFileFromPath.mockReset();
     mockUploaderStart.mockReset();
     mockUploaderFinalize.mockReset();
     mockUploaderAbort.mockReset();
@@ -109,6 +123,8 @@ describe('video transcode worker', () => {
       kind: 'http',
       input: 'https://example.com/presigned-original',
     });
+    mockExtractFlac.mockResolvedValue({ status: 'no_audio' });
+    mockUploadFileFromPath.mockResolvedValue(undefined);
     mockUploaderFinalize.mockResolvedValue(undefined);
     mockUploaderAbort.mockResolvedValue(undefined);
     mockFindById.mockResolvedValue(buildVideo({ status: 'uploaded' }));
@@ -140,6 +156,7 @@ describe('video transcode worker', () => {
     );
     expect(mockUpdateAfterTranscode).toHaveBeenCalledWith(videoId, {
       hlsKey: `videos/hls/${courseId}/${videoId}/index.m3u8`,
+      audioFlacKey: null,
       duration: null,
       renditions: [
         {
@@ -159,7 +176,31 @@ describe('video transcode worker', () => {
         },
       ],
     });
+    expect(mockExtractFlac).toHaveBeenCalledOnce();
+    expect(mockUploadFileFromPath).not.toHaveBeenCalled();
     expect(mockMarkFailed).not.toHaveBeenCalled();
+  });
+
+  it('uploads FLAC when extract succeeds', async () => {
+    mockExtractFlac.mockResolvedValue({
+      status: 'ok',
+      outputPath: '/tmp/audio.flac',
+    });
+
+    await processTranscodeJob(buildJob());
+
+    expect(mockUploadFileFromPath).toHaveBeenCalledWith(
+      expect.stringContaining('audio.flac'),
+      `videos/audio/${courseId}/${videoId}/audio.flac`,
+      'audio/flac',
+      'public, max-age=31536000, immutable',
+    );
+    expect(mockUpdateAfterTranscode).toHaveBeenCalledWith(
+      videoId,
+      expect.objectContaining({
+        audioFlacKey: `videos/audio/${courseId}/${videoId}/audio.flac`,
+      }),
+    );
   });
 
   it('falls back to disk and aborts first progressive uploader on HTTP failure', async () => {

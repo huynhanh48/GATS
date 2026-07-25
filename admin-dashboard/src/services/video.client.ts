@@ -145,8 +145,8 @@ export const videoClient = {
   /** GET /admin/videos/:videoId/status */
   getVideoStatus(
     videoId: string,
-  ): Promise<ApiResult<{ data: { status: VideoRecord["status"] } }>> {
-    return apiRequest<{ data: { status: VideoRecord["status"] } }>({
+  ): Promise<ApiResult<{ data: VideoRecord }>> {
+    return apiRequest<{ data: VideoRecord }>({
       url: `/admin/videos/${videoId}/status`,
       method: "GET",
     });

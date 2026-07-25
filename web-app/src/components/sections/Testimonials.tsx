@@ -2,6 +2,8 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { Quote } from "lucide-react";
+import { SpotlightCard, AnimatedContent } from "@/components/react-bits";
 
 const testimonials = [
   {
@@ -10,7 +12,7 @@ const testimonials = [
     author: "Nguyễn Minh Quân",
     role: "Giám đốc Kỹ thuật",
     avatar: "/professional/person-3.jpg",
-    company: "TechCorp",
+    company: "TechCorp Vietnam",
   },
   {
     quote:
@@ -34,7 +36,7 @@ const testimonials = [
     author: "Nguyễn Tuệ Mẫn",
     role: "Content Manager",
     avatar: "/professional/person-4.jpg",
-    company: "MediaPlus",
+    company: "MediaPlus Studio",
   },
 ];
 
@@ -44,120 +46,109 @@ export function Testimonials() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % testimonials.length);
-    }, 5000);
+    }, 6000);
     return () => clearInterval(timer);
   }, []);
 
   return (
-    <section className="relative z-20 flex min-h-[600px] w-full items-center justify-center overflow-hidden bg-card/40 py-24 sm:py-32">
+    <section className="relative z-20 flex min-h-[560px] w-full items-center justify-center overflow-hidden bg-card/40 py-24 sm:py-32 border-y border-border">
       <div className="pointer-events-none absolute inset-0 z-0 flex items-center justify-center">
         <div
-          className="absolute h-[600px] w-[800px] bg-[linear-gradient(to_right,rgb(0_112_235_/0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgb(0_112_235_/0.06)_1px,transparent_1px)] bg-size-[40px_40px]"
+          className="absolute h-[600px] w-[800px] bg-[linear-gradient(to_right,rgb(0_112_235_/0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgb(0_112_235_/0.05)_1px,transparent_1px)] bg-size-[40px_40px]"
           style={{
             maskImage:
               "radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%)",
             WebkitMaskImage:
               "radial-gradient(ellipse at center, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 70%)",
           }}
-        >
-          <div className="absolute top-[80px] left-[120px] size-10 bg-brand-primary/5" />
-          <div className="absolute top-[160px] left-[80px] size-10 bg-brand-primary/[0.07]" />
-          <div className="absolute top-[280px] left-[40px] size-10 bg-brand-primary/5" />
-          <div className="absolute top-[120px] right-[240px] size-10 bg-primary/5" />
-          <div className="absolute right-[120px] bottom-[200px] size-10 bg-primary/[0.07]" />
-        </div>
+        />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl px-4 sm:px-6">
-        <div className="relative h-[250px]">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: -10, filter: "blur(4px)" }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="absolute inset-0"
-            >
-              <div className="flex items-start gap-6 md:items-center">
-                <div className="relative mt-2 size-16 shrink-0 overflow-hidden rounded-xl border border-border shadow-[var(--shadow-card)] md:mt-0 md:h-28 md:w-24">
-                  <img
-                    src={testimonials[currentIndex].avatar}
-                    alt={testimonials[currentIndex].author}
-                    className="size-full object-cover object-top"
-                  />
-                </div>
-                <h3 className="text-balance text-2xl leading-snug font-medium tracking-tight text-foreground md:text-4xl md:leading-normal">
+      <AnimatedContent distance={30} className="relative z-10 mx-auto w-full max-w-4xl px-4 sm:px-6">
+        <div className="mb-8 flex justify-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-accent px-4 py-1.5 text-xs font-bold text-brand-primary">
+            <Quote className="size-3.5 fill-brand-primary" aria-hidden="true" />
+            <span>ĐÁNH GIÁ TỪ HỌC VIÊN & DOANH NGHIỆP</span>
+          </div>
+        </div>
+
+        <SpotlightCard className="p-8 sm:p-12">
+          <div className="relative min-h-[180px] sm:min-h-[160px]">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={currentIndex}
+                initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+                className="absolute inset-0 flex flex-col justify-center"
+              >
+                <h3 className="text-balance text-xl font-heading font-medium leading-relaxed tracking-tight text-foreground sm:text-2xl md:text-3xl">
                   &quot;{testimonials[currentIndex].quote}&quot;
                 </h3>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="mt-8 flex flex-col justify-between gap-6 border-t border-border pt-6 sm:flex-row sm:items-center">
+            <div className="flex items-center gap-4">
+              <div className="relative size-14 shrink-0 overflow-hidden rounded-full border-2 border-brand-primary/20 bg-muted shadow-sm">
+                <img
+                  src={testimonials[currentIndex].avatar}
+                  alt={testimonials[currentIndex].author}
+                  className="size-full object-cover object-top"
+                />
               </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        <div className="mt-12 flex flex-col justify-between gap-6 border-t border-divider pt-8 sm:flex-row sm:items-end">
-          <div className="flex items-center gap-12">
-            <div className="text-xl font-bold tracking-tighter text-brand-primary">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.span
-                  key={currentIndex}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                >
-                  {testimonials[currentIndex].company}
-                </motion.span>
-              </AnimatePresence>
+              <div className="flex flex-col">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={currentIndex}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                  >
+                    <div className="text-base font-bold font-heading text-foreground">
+                      {testimonials[currentIndex].author}
+                    </div>
+                    <div className="text-xs font-medium text-brand-primary">
+                      {testimonials[currentIndex].role} ·{" "}
+                      <span className="text-muted-foreground">{testimonials[currentIndex].company}</span>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
 
-            <div className="flex flex-col">
-              <AnimatePresence mode="wait" initial={false}>
+            <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
+              {testimonials.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setCurrentIndex(i)}
+                  className={`px-1.5 py-1 transition-all ${
+                    i === currentIndex
+                      ? "font-bold text-primary scale-110"
+                      : "hover:text-foreground"
+                  }`}
+                >
+                  0{i + 1}
+                </button>
+              ))}
+              <div className="relative ml-2 h-1 w-20 overflow-hidden rounded-full bg-border">
                 <motion.div
-                  key={currentIndex}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10 }}
-                >
-                  <div className="text-sm font-semibold text-foreground">
-                    {testimonials[currentIndex].author}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {testimonials[currentIndex].role}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
+                  className="absolute top-0 left-0 h-full bg-primary"
+                  initial={false}
+                  animate={{
+                    left: `${(currentIndex / testimonials.length) * 100}%`,
+                    width: `${100 / testimonials.length}%`,
+                  }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+              </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-3 font-mono text-xs text-muted-foreground">
-            {testimonials.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setCurrentIndex(i)}
-                className={`transition-colors ${
-                  i === currentIndex
-                    ? "font-bold text-primary"
-                    : "hover:text-foreground"
-                }`}
-              >
-                0{i + 1}
-              </button>
-            ))}
-            <div className="relative ml-2 h-0.5 w-16 bg-border">
-              <motion.div
-                className="absolute top-0 left-0 h-full bg-primary"
-                initial={false}
-                animate={{
-                  left: `${(currentIndex / testimonials.length) * 100}%`,
-                  width: `${100 / testimonials.length}%`,
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+        </SpotlightCard>
+      </AnimatedContent>
     </section>
   );
 }

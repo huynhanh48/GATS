@@ -46,6 +46,8 @@ export const videosTable = pgTable(
       .default('s3'),
     originalKey: varchar('original_key', { length: 512 }),
     hlsKey: varchar('hls_key', { length: 512 }),
+    /** Lossless audio extract (FLAC) from the same original; optional. */
+    audioFlacKey: varchar('audio_flac_key', { length: 512 }),
     mp4Url: varchar('mp4_url', { length: 512 }),
     duration: integer('duration'),
     size: bigint('size', { mode: 'number' }),

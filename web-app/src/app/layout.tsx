@@ -8,10 +8,20 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "@/components/providers/CartProvider";
 
-/**
- * Fonts are CSS stacks (no next/font/google) so CI/build does not depend on
- * fetching Google Fonts at build time. Brand faces can be self-hosted later.
- */
+import { Outfit, Inter } from "next/font/google";
+
+const outfit = Outfit({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-heading",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "GATS Academy - Nền tảng đào tạo AI doanh nghiệp",
   description: "Giải pháp toàn diện của bạn để làm chủ công nghệ tương lai.",
@@ -26,7 +36,7 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={cn("h-full antialiased font-sans")}
+      className={cn("h-full antialiased font-sans", outfit.variable, inter.variable)}
     >
       <body className="min-h-full flex flex-col bg-background font-sans" suppressHydrationWarning>
         <ThemeProvider

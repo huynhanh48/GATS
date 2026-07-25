@@ -84,7 +84,11 @@ export async function fetchLessonPlayback(courseId: string, lessonId: string) {
   );
   const videoId = lessonVideoRes?.data?.videoId as string | undefined;
   if (!videoId) {
-    return { videoId: null as string | null, playbackUrl: "" };
+    return {
+      videoId: null as string | null,
+      playbackUrl: "",
+      audioFlacUrl: null as string | null,
+    };
   }
   const playbackRes: any = await apiClient.get(
     PathApi.video.playback(courseId, videoId),
@@ -92,6 +96,7 @@ export async function fetchLessonPlayback(courseId: string, lessonId: string) {
   return {
     videoId,
     playbackUrl: (playbackRes?.data?.playbackUrl as string) || "",
+    audioFlacUrl: (playbackRes?.data?.audioFlacUrl as string) || null,
   };
 }
 

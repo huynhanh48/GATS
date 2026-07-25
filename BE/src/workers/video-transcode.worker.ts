@@ -9,6 +9,7 @@ import { getQueueConnectionOptions } from '@src/libs/redis.client';
 import {
   buildHlsPlaylistKey,
   buildHlsPrefix,
+  buildAudioFlacKey,
   buildRenditionPlaylistKey,
 } from '@src/models/Video.model';
 import {
@@ -17,12 +18,14 @@ import {
   VIDEO_TRANSCODE_QUEUE,
 } from '@src/queues/video.queue';
 import * as VideoRepo from '@src/repos/VideoRepo';
+import { extractFlacAudio } from '@src/workers/helpers/ffmpeg-audio';
 import { transcodeToHlsRenditions } from '@src/workers/helpers/ffmpeg-hls';
 import {
   resolveOriginalInputFile,
   resolveOriginalInputHttp,
 } from '@src/workers/helpers/s3-download';
 import { createHlsProgressiveUploader } from '@src/workers/helpers/s3-upload-folder';
+import { uploadFileFromPath } from '@src/libs/s3-storage';
 
 function sanitizeErrorMessage(error: unknown): string {
   const err = error as {
@@ -126,16 +129,18 @@ export async function processTranscodeJob(
     await mkdir(hlsRoot, { recursive: true });
 
     let inputKind: 'http' | 'disk-fallback' = 'http';
+    let ffmpegInput = '';
     let abrResult: Awaited<ReturnType<typeof transcodeToHlsRenditions>>;
 
     const encodeStartedAt = Date.now();
     try {
       const httpInput = await resolveOriginalInputHttp(originalKey);
+      ffmpegInput = httpInput.input;
       logger.info(
         `Video ${videoId}: FFmpeg ABR input=http (presigned URL), progressive upload on`,
       );
       abrResult = await encodeAndUpload(
-        httpInput.input,
+        ffmpegInput,
         hlsRoot,
         storagePrefix,
       );
@@ -153,11 +158,12 @@ export async function processTranscodeJob(
       await mkdir(hlsRoot, { recursive: true });
       const downloadStartedAt = Date.now();
       const fileInput = await resolveOriginalInputFile(originalKey, inputPath);
+      ffmpegInput = fileInput.input;
       logger.info(
         `Video ${videoId}: disk-fallback download done in ${elapsedMs(downloadStartedAt)}ms, starting FFmpeg`,
       );
       abrResult = await encodeAndUpload(
-        fileInput.input,
+        ffmpegInput,
         hlsRoot,
         storagePrefix,
       );
@@ -167,9 +173,39 @@ export async function processTranscodeJob(
       `Video ${videoId}: FFmpeg ABR + HLS upload finished (input=${inputKind}) in ${elapsedMs(encodeStartedAt)}ms`,
     );
 
+    // Dual-output: extract FLAC after HLS. Failure/skip must not block ready.
+    let audioFlacKey: string | null = null;
+    const flacStartedAt = Date.now();
+    const flacPath = path.join(tempRoot, 'audio.flac');
+    try {
+      await job.updateProgress({ phase: 'extracting_audio' });
+    } catch {
+      // Progress is best-effort (older BullMQ / missing listeners).
+    }
+    const flacResult = await extractFlacAudio(ffmpegInput, flacPath);
+    if (flacResult.status === 'ok') {
+      audioFlacKey = buildAudioFlacKey(courseId, videoId);
+      await uploadFileFromPath(
+        flacPath,
+        audioFlacKey,
+        'audio/flac',
+        'public, max-age=31536000, immutable',
+      );
+      logger.info(
+        `Video ${videoId}: FLAC uploaded key=${audioFlacKey} in ${elapsedMs(flacStartedAt)}ms`,
+      );
+    } else if (flacResult.status === 'no_audio') {
+      logger.info(`Video ${videoId}: FLAC skipped (no audio stream)`);
+    } else {
+      logger.err(
+        `Video ${videoId}: FLAC extract failed (HLS still ready): ${flacResult.message}`,
+      );
+    }
+
     const hlsKey = buildHlsPlaylistKey(courseId, videoId);
     await VideoRepo.updateAfterTranscode(videoId, {
       hlsKey,
+      audioFlacKey,
       duration: video.duration,
       renditions: abrResult.renditions.map(({ rendition }) => ({
         resolution: rendition.resolution,
@@ -183,7 +219,7 @@ export async function processTranscodeJob(
     });
 
     logger.info(
-      `Video ${videoId} transcoded successfully (input=${inputKind}, totalMs=${elapsedMs(jobStartedAt)})`,
+      `Video ${videoId} transcoded successfully (input=${inputKind}, flac=${audioFlacKey ? 'yes' : 'no'}, totalMs=${elapsedMs(jobStartedAt)})`,
     );
   } catch (error) {
     logger.err(

@@ -47,7 +47,7 @@ const POLL_INTERVAL_MS = 3000;
 const STATUS_LABELS: Record<VideoStatus, string> = {
   pending_upload: "Đang chờ upload",
   uploaded: "Đã upload, chờ xử lý",
-  processing: "Đang xử lý (transcode)",
+  processing: "Đang xử lý (HLS + FLAC)",
   ready: "Sẵn sàng",
   failed: "Lỗi",
 };
@@ -370,9 +370,25 @@ export function VideoUploader({
 
           {(video.status === "uploaded" || video.status === "processing") && (
             <p className="mt-2 text-xs text-dark-4 dark:text-dark-6">
-              Đang chờ hệ thống xử lý (transcode) video, tự động cập nhật...
+              {video.processingPhase === "extracting_audio"
+                ? "Đang tách audio FLAC sau HLS, tự động cập nhật..."
+                : "Đang chờ hệ thống xử lý (HLS + FLAC), tự động cập nhật..."}
             </p>
           )}
+
+          {video.status === "ready" && video.audioFlacUrl ? (
+            <p className="mt-2 text-xs text-dark-4 dark:text-dark-6">
+              Audio FLAC:{" "}
+              <a
+                href={video.audioFlacUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-primary hover:underline"
+              >
+                Tải xuống
+              </a>
+            </p>
+          ) : null}
 
           <dl className="mt-3 text-xs text-dark-4 dark:text-dark-6">
             <div className="flex gap-1.5">

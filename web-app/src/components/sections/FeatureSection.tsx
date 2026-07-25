@@ -1,55 +1,78 @@
-import { Bot, BrainCircuit, Network, Search } from "lucide-react";
+"use client";
 
+import { Bot, BrainCircuit, Network, Sparkles } from "lucide-react";
 import { SectionHeader } from "@/components/ted/section-header";
-import { Surface } from "@/components/ui/surface";
+import { SpotlightCard, AnimatedContent } from "@/components/react-bits";
 
 const features = [
   {
     icon: BrainCircuit,
-    title: "AI Productivity",
+    title: "AI Productivity & Prompting",
+    tagline: "Tăng 3x tốc độ công việc",
     description:
-      "Sử dụng AI để tăng hiệu suất cá nhân qua Prompt Engineering và trợ lý chuyên biệt.",
+      "Làm chủ nghệ thuật viết Prompt nâng cao và làm việc cùng trợ lý AI chuyên biệt theo từng ngành nghề.",
+    accent: "border-brand-primary/20 text-brand-primary bg-accent/60",
   },
   {
     icon: Network,
     title: "Workflow Automation",
+    tagline: "Tự động hóa 80% tác vụ",
     description:
-      "Kết nối n8n, Make và API để giảm thao tác thủ công trong quy trình vận hành.",
-  },
-  {
-    icon: Search,
-    title: "AI Agent Development",
-    description:
-      "Thiết kế AI Agent có khả năng tìm kiếm, lập kế hoạch và xử lý tác vụ đa hệ thống.",
+      "Kết nối n8n, Make và API để cắt giảm triệt để các thao tác thủ công lặp đi lặp lại trong doanh nghiệp.",
+    accent: "border-primary/20 text-primary bg-primary/10",
   },
   {
     icon: Bot,
-    title: "Business Transformation",
+    title: "AI Agent Development",
+    tagline: "Tác nhân tự chủ thông minh",
     description:
-      "Xây dựng chiến lược AI từ đào tạo nhân sự đến triển khai theo từng phòng ban.",
+      "Thiết kế AI Agent có khả năng tự lập kế hoạch, truy vấn dữ liệu nội bộ và ra quyết định độc lập.",
+    accent: "border-brand-primary/20 text-brand-primary bg-accent/60",
+  },
+  {
+    icon: Sparkles,
+    title: "Business Transformation",
+    tagline: "Chuẩn hóa cho phòng ban",
+    description:
+      "Xây dựng lộ trình ứng dụng AI từ cấp quản lý đến nhân sự, đo lường ROI chuyển đổi số rõ ràng.",
+    accent: "border-primary/20 text-primary bg-primary/10",
   },
 ];
 
 export function FeatureSection() {
   return (
-    <section className="w-full bg-background py-20 sm:py-24">
+    <section className="relative w-full bg-background py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <SectionHeader
-          eyebrow="Học để ứng dụng"
-          title="Lý do chọn GATS Academy"
-          description="Hệ sinh thái đào tạo AI tập trung vào năng lực thực hành, hiệu quả vận hành và sự đồng hành của chuyên gia."
-        />
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {features.map((feature) => {
+        <AnimatedContent distance={30}>
+          <SectionHeader
+            eyebrow="Học để ứng dụng"
+            title="Lý do chọn GATS Academy"
+            description="Hệ sinh thái đào tạo AI tập trung vào năng lực thực hành, hiệu quả vận hành và sự đồng hành của chuyên gia."
+          />
+        </AnimatedContent>
+
+        <div className="mt-12 grid gap-6 md:grid-cols-2">
+          {features.map((feature, idx) => {
             const Icon = feature.icon;
             return (
-              <Surface key={feature.title} className="p-6 sm:p-8">
-                <span className="inline-flex rounded-xl bg-accent p-3 text-brand-primary">
-                  <Icon className="size-6" aria-hidden="true" />
-                </span>
-                <h3 className="mt-6 text-xl font-semibold">{feature.title}</h3>
-                <p className="mt-3 leading-7 text-muted-foreground">{feature.description}</p>
-              </Surface>
+              <AnimatedContent key={feature.title} distance={30} delay={idx * 0.1}>
+                <SpotlightCard className="p-6 sm:p-8">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex rounded-2xl bg-accent p-3.5 text-brand-primary">
+                      <Icon className="size-6" aria-hidden="true" />
+                    </span>
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${feature.accent}`}>
+                      {feature.tagline}
+                    </span>
+                  </div>
+                  <h3 className="mt-6 text-2xl font-bold font-heading text-foreground">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-3 leading-relaxed text-muted-foreground font-sans">
+                    {feature.description}
+                  </p>
+                </SpotlightCard>
+              </AnimatedContent>
             );
           })}
         </div>

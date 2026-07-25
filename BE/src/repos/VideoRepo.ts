@@ -63,6 +63,7 @@ export async function updateStatus(
 
 export type TranscodeSuccessData = {
   hlsKey: string;
+  audioFlacKey?: string | null;
   duration?: number | null;
   renditions: Array<{
     resolution: string;
@@ -81,6 +82,7 @@ export async function updateAfterTranscode(
       .set({
         status: 'ready',
         hlsKey: data.hlsKey,
+        audioFlacKey: data.audioFlacKey ?? null,
         duration: data.duration ?? null,
         errorMessage: null,
         updatedAt: new Date(),

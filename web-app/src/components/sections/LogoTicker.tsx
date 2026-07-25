@@ -11,16 +11,17 @@ import {
   Aperture,
   Zap,
 } from "lucide-react";
+import { AnimatedContent } from "@/components/react-bits";
 
 const aiModels = [
-  { name: "OpenAI", Icon: BrainCircuit },
-  { name: "Gemini", Icon: Sparkles },
-  { name: "Claude", Icon: Bot },
-  { name: "Kimi", Icon: Cpu },
-  { name: "Llama", Icon: Network },
-  { name: "Midjourney", Icon: Palette },
-  { name: "Stable Diffusion", Icon: Aperture },
-  { name: "Grok", Icon: Zap },
+  { name: "OpenAI GPT-4o", Icon: BrainCircuit },
+  { name: "Google Gemini 1.5", Icon: Sparkles },
+  { name: "Anthropic Claude 3.5", Icon: Bot },
+  { name: "Kimi AI", Icon: Cpu },
+  { name: "Meta Llama 3", Icon: Network },
+  { name: "Midjourney v6", Icon: Palette },
+  { name: "Stable Diffusion 3", Icon: Aperture },
+  { name: "xAI Grok 2", Icon: Zap },
 ];
 
 function ModelChip({
@@ -31,10 +32,10 @@ function ModelChip({
   Icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="relative group h-14 w-48 shrink-0 rounded-xl border border-border bg-background/50 backdrop-blur-sm flex items-center justify-center transition-all duration-300 hover:border-primary/50 hover:bg-primary/5 hover:shadow-[0_0_15px_rgba(0,112,235,0.1)]">
-      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
-        <Icon className="h-5 w-5 text-primary transition-transform duration-300 group-hover:scale-110" />
-        {name}
+    <div className="group relative flex h-13 w-52 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-card/60 px-4 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-primary/40 hover:bg-accent/50 hover:shadow-[0_4px_16px_rgba(0,112,235,0.08)]">
+      <div className="flex items-center gap-2.5 text-xs font-semibold tracking-tight text-muted-foreground transition-colors group-hover:text-foreground">
+        <Icon className="size-4 text-brand-primary transition-transform duration-300 group-hover:scale-110" />
+        <span>{name}</span>
       </div>
     </div>
   );
@@ -44,24 +45,24 @@ export function LogoTicker() {
   const loop = [...aiModels, ...aiModels];
 
   return (
-    <section className="relative z-20 flex w-full flex-col items-center justify-center overflow-hidden border-t border-border/50 bg-transparent py-12">
+    <section className="relative z-20 flex w-full flex-col items-center justify-center overflow-hidden border-t border-border/60 bg-card/30 py-12">
       <div className="relative z-10 w-full">
-        <div className="mb-10 flex w-full justify-center px-8">
-          <div className="inline-flex items-center rounded-full border border-primary/30 bg-primary/15 px-5 py-2 text-xs font-bold uppercase tracking-[0.14em] text-primary shadow-sm sm:text-sm">
-            Tích hợp các mô hình AI hàng đầu
+        <AnimatedContent distance={20} className="mb-8 flex w-full justify-center px-4">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-background/80 px-4 py-1.5 text-xs font-semibold tracking-wide text-brand-primary shadow-xs">
+            <span className="size-2 rounded-full bg-brand-primary animate-pulse" />
+            <span>TÍCH HỢP CÁC MÔ HÌNH AI & TÁC NHÂN HÀNG ĐẦU</span>
           </div>
-        </div>
+        </AnimatedContent>
 
-        {/* Manual scroll on touch / overflow; CSS marquee for continuous motion */}
         <div className="relative">
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[12%] bg-linear-to-r from-background to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[12%] bg-linear-to-l from-background to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-linear-to-r from-background to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-linear-to-l from-background to-transparent" />
 
           <div
-            className="overflow-x-auto overflow-y-hidden scroll-smooth px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="overflow-x-auto overflow-y-hidden scroll-smooth px-4 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <div className="flex w-max gap-8 motion-safe:animate-[marquee_40s_linear_infinite] hover:[animation-play-state:paused]">
+            <div className="flex w-max gap-6 motion-safe:animate-[marquee_40s_linear_infinite] hover:[animation-play-state:paused]">
               {loop.map((model, i) => (
                 <ModelChip key={`${model.name}-${i}`} name={model.name} Icon={model.Icon} />
               ))}

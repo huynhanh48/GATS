@@ -62,6 +62,7 @@ export const videoRecordSchema = z.object({
   storageProvider: videoStorageProviderSchema,
   originalKey: z.string().nullable(),
   hlsKey: z.string().nullable(),
+  audioFlacKey: z.string().nullable(),
   mp4Url: z.string().nullable(),
   duration: z.number().int().nullable(),
   size: z.number().int().nullable(),
@@ -179,7 +180,11 @@ export const videoStatusResponseSchema = z.object({
     status: videoStatusSchema,
     originalKey: z.string().nullable(),
     hlsKey: z.string().nullable(),
+    audioFlacKey: z.string().nullable(),
+    audioFlacUrl: z.string().url().nullable(),
     mp4Url: z.string().nullable(),
+    /** BullMQ progress phase while status=processing, e.g. extracting_audio */
+    processingPhase: z.string().nullable(),
     errorMessage: z.string().nullable(),
     duration: z.number().int().nullable(),
     size: z.number().int().nullable(),
@@ -195,6 +200,8 @@ export const playbackResponseSchema = z.object({
     playbackUrl: z.string().url(),
     playbackType: z.enum(['hls', 'mp4']),
     hlsKey: z.string().nullable(),
+    audioFlacKey: z.string().nullable(),
+    audioFlacUrl: z.string().url().nullable(),
     mp4Url: z.string().nullable(),
   }),
 });
@@ -283,6 +290,14 @@ export function buildHlsPrefix(courseId: string, videoId: string): string {
 
 export function buildHlsPlaylistKey(courseId: string, videoId: string): string {
   return `${buildHlsPrefix(courseId, videoId)}/index.m3u8`;
+}
+
+export function buildAudioPrefix(courseId: string, videoId: string): string {
+  return `videos/audio/${courseId}/${videoId}`;
+}
+
+export function buildAudioFlacKey(courseId: string, videoId: string): string {
+  return `${buildAudioPrefix(courseId, videoId)}/audio.flac`;
 }
 
 export function buildRenditionPlaylistKey(

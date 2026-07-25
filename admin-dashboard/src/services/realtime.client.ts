@@ -8,6 +8,7 @@ export type VideoProgressPhase =
   | "download"
   | "transcode"
   | "hls_upload"
+  | "extracting_audio"
   | "complete"
   | "failed";
 
