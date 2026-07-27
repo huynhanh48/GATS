@@ -173,6 +173,13 @@ async function syncPostTags(postId: string, tagSlugs?: string[]): Promise<TagPub
   }
 
   const tagIds = await resolveTagIdsBySlugs(tagSlugs, 'post');
+  return syncPostTagIds(postId, tagIds);
+}
+
+async function syncPostTagIds(
+  postId: string,
+  tagIds: string[],
+): Promise<TagPublic[]> {
   await PostTagRepo.syncForPost(postId, tagIds);
   const map = await PostTagRepo.findByPostIds([postId]);
   return map.get(postId) ?? [];
@@ -241,6 +248,7 @@ export default {
   resolveTagIdsBySlugs,
   resolveTagIdsByIds,
   syncPostTags,
+  syncPostTagIds,
   syncCourseTags,
   syncCourseTagIds,
   attachTagsToPosts,

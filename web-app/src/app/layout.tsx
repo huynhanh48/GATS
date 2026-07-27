@@ -8,18 +8,20 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "@/components/providers/CartProvider";
 
-import { Outfit, Inter } from "next/font/google";
+import localFont from "next/font/local";
 
-const outfit = Outfit({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-heading",
+const outfit = localFont({
+  src: "../fonts/Outfit-Variable.ttf",
+  variable: "--font-outfit",
   display: "swap",
+  weight: "100 900",
 });
 
-const inter = Inter({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-sans",
+const inter = localFont({
+  src: "../fonts/Inter-Variable.ttf",
+  variable: "--font-inter",
   display: "swap",
+  weight: "100 900",
 });
 
 export const metadata: Metadata = {

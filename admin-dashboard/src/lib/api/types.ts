@@ -248,6 +248,7 @@ export type CreateCourseInput = {
   category?: string;
   category_id?: string;
   tags?: string[];
+  tag_ids?: string[];
   learning_outcomes?: LearningOutcomeInput[];
   includes?: CourseIncludeInput[];
 };
@@ -264,6 +265,7 @@ export type UpdateCourseInput = {
   category?: string | null;
   category_id?: string | null;
   tags?: string[];
+  tag_ids?: string[];
   learning_outcomes?: LearningOutcomeInput[];
   includes?: CourseIncludeInput[];
 };
@@ -592,6 +594,7 @@ export type CreatePostInput = {
   category?: string;
   category_id?: string;
   tags?: string[];
+  tag_ids?: string[];
 };
 
 export type UpdatePostInput = {
@@ -605,6 +608,7 @@ export type UpdatePostInput = {
   category?: string | null;
   category_id?: string | null;
   tags?: string[];
+  tag_ids?: string[];
 };
 
 export type PostPagination = {

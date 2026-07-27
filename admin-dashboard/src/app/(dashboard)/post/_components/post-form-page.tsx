@@ -18,6 +18,7 @@ import type {
   UpdatePostInput,
 } from "@/lib/api/types";
 import { CategorySelect } from "@/app/(dashboard)/category/_components/category-select";
+import { TagSelect } from "@/components/tags/tag-select";
 import { createPost, updatePost } from "../actions";
 
 const SimpleEditor = dynamic(
@@ -50,6 +51,24 @@ const STATUS_OPTIONS: { value: PostStatus; label: string }[] = [
 const selectClass =
   "h-10 w-full rounded-lg border border-stroke bg-transparent px-3 text-sm text-dark outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary";
 
+function parseTagIds(raw: string | null): string[] | undefined {
+  if (raw === null) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return undefined;
+    return [
+      ...new Set(
+        parsed
+          .map(String)
+          .map((id) => id.trim())
+          .filter(Boolean),
+      ),
+    ];
+  } catch {
+    return undefined;
+  }
+}
+
 export type PostFormPageProps = {
   mode: "create" | "edit";
   post?: PostDetail;
@@ -69,7 +88,7 @@ export function PostFormPage({ mode, post }: PostFormPageProps) {
     const excerpt = form.get("excerpt")?.toString().trim();
     const thumbnail = form.get("thumbnail")?.toString().trim();
     const categoryId = form.get("category_id")?.toString().trim();
-    const tagsRaw = form.get("tags")?.toString().trim();
+    const tagIds = parseTagIds(form.get("tag_ids")?.toString() ?? null);
     const visibility = form.get("visibility")?.toString() as
       | PostVisibility
       | undefined;
@@ -86,13 +105,6 @@ export function PostFormPage({ mode, post }: PostFormPageProps) {
       return;
     }
 
-    const tags = tagsRaw
-      ? tagsRaw
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean)
-      : undefined;
-
     setLoading(true);
 
     if (mode === "create") {
@@ -103,7 +115,7 @@ export function PostFormPage({ mode, post }: PostFormPageProps) {
         ...(excerpt ? { excerpt } : {}),
         ...(thumbnail ? { thumbnail } : {}),
         ...(categoryId ? { category_id: categoryId } : {}),
-        ...(tags?.length ? { tags } : {}),
+        ...(tagIds !== undefined ? { tag_ids: tagIds } : {}),
         ...(visibility ? { visibility } : {}),
       };
 
@@ -139,7 +151,7 @@ export function PostFormPage({ mode, post }: PostFormPageProps) {
       thumbnail: thumbnail || null,
       category_id: categoryId || null,
       ...(slug ? { slug } : {}),
-      ...(tags ? { tags } : {}),
+      ...(tagIds !== undefined ? { tag_ids: tagIds } : {}),
       ...(visibility ? { visibility } : {}),
       ...(status ? { status } : {}),
     };
@@ -227,15 +239,11 @@ export function PostFormPage({ mode, post }: PostFormPageProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags (cách nhau bằng dấu phẩy)</Label>
-            <Input
-              id="tags"
-              name="tags"
-              placeholder="nextjs, react, tips"
-              defaultValue={post?.tags?.map((t) => t.name).join(", ") ?? ""}
-            />
-          </div>
+          <TagSelect
+            type="post"
+            defaultValue={post?.tags}
+            disabled={loading}
+          />
 
           <div className="space-y-2">
             <Label htmlFor="visibility">Hiển thị</Label>

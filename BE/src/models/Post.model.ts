@@ -64,17 +64,22 @@ export const postDetailSchema = postRecordSchema
     tags: z.array(tagPublicSchema).default([]),
   });
 
-export const createPostSchema = z.object({
-  title: z.string().min(1).max(255),
-  slug: z.string().min(1).max(255).optional(),
-  excerpt: z.string().optional(),
-  content: z.string().min(1),
-  thumbnail: z.string().max(512).optional(),
-  visibility: postVisibilitySchema.default('public'),
-  category_id: z.string().uuid().optional(),
-  category: z.string().min(1).max(100).optional(),
-  tags: z.array(z.string().min(1).max(100)).optional(),
-});
+export const createPostSchema = z
+  .object({
+    title: z.string().min(1).max(255),
+    slug: z.string().min(1).max(255).optional(),
+    excerpt: z.string().optional(),
+    content: z.string().min(1),
+    thumbnail: z.string().max(512).optional(),
+    visibility: postVisibilitySchema.default('public'),
+    category_id: z.string().uuid().optional(),
+    category: z.string().min(1).max(100).optional(),
+    tags: z.array(z.string().min(1).max(100)).optional(),
+    tag_ids: z.array(z.string().uuid()).optional(),
+  })
+  .refine((data) => data.tags === undefined || data.tag_ids === undefined, {
+    message: 'Use either tags or tag_ids, not both',
+  });
 
 export const updatePostSchema = z
   .object({
@@ -88,6 +93,10 @@ export const updatePostSchema = z
     category_id: z.string().uuid().nullable().optional(),
     category: z.string().min(1).max(100).nullable().optional(),
     tags: z.array(z.string().min(1).max(100)).optional(),
+    tag_ids: z.array(z.string().uuid()).optional(),
+  })
+  .refine((data) => data.tags === undefined || data.tag_ids === undefined, {
+    message: 'Use either tags or tag_ids, not both',
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field is required',

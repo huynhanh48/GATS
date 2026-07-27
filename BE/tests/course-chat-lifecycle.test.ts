@@ -8,6 +8,7 @@ const chatRepo = vi.hoisted(() => ({
   findById: vi.fn(),
   remove: vi.fn(),
 }));
+const userRepo = vi.hoisted(() => ({ findById: vi.fn() }));
 const courseAccess = vi.hoisted(() => ({
   canManageCourse: vi.fn(),
   isEnrolled: vi.fn(),
@@ -15,6 +16,7 @@ const courseAccess = vi.hoisted(() => ({
 
 vi.mock('@src/repos/CourseRepo', () => courseRepo);
 vi.mock('@src/repos/CourseChatRepo', () => chatRepo);
+vi.mock('@src/repos/UserRepo', () => userRepo);
 vi.mock('@src/services/CourseAccessService', () => ({
   default: courseAccess,
 }));

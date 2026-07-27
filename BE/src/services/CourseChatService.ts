@@ -6,6 +6,7 @@ import type {
 } from '@src/models/CourseChat.model';
 import * as CourseRepo from '@src/repos/CourseRepo';
 import * as CourseChatRepo from '@src/repos/CourseChatRepo';
+import * as UserRepo from '@src/repos/UserRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 
 const Errors = {
@@ -26,9 +27,11 @@ async function assertMember(userId: number, courseId: string) {
   }
 
   const canManage = await CourseAccessService.canManageCourse(userId, courseId);
-  if (canManage) return { canManage: true };
+  if (canManage) {
+    return { canManage: true, instructorId: course.instructorId };
+  }
   if (await CourseAccessService.isEnrolled(userId, courseId)) {
-    return { canManage: false };
+    return { canManage: false, instructorId: course.instructorId };
   }
   throw new RouteError(HttpStatusCodes.FORBIDDEN, Errors.FORBIDDEN);
 }
@@ -36,24 +39,31 @@ async function assertMember(userId: number, courseId: string) {
 async function list(userId: number, courseId: string) {
   const membership = await assertMember(userId, courseId);
   const messages = await CourseChatRepo.listByCourse(courseId);
-  return { data: messages, meta: membership };
+  return {
+    data: messages,
+    meta: { canManage: membership.canManage },
+  };
 }
 
 async function send(
   userId: number,
-  userName: string,
   courseId: string,
   input: CreateCourseChatMessageInput,
 ) {
   const membership = await assertMember(userId, courseId);
+  const sender = await UserRepo.findById(userId);
   const message = await CourseChatRepo.create({
     courseId,
     senderId: userId,
     content: input.content,
   });
   return {
-    data: { ...message, senderName: userName },
-    meta: membership,
+    data: {
+      ...message,
+      senderName: sender?.userName ?? 'Thành viên',
+      isMentor: membership.instructorId === userId,
+    },
+    meta: { canManage: membership.canManage },
   };
 }
 

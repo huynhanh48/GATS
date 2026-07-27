@@ -21,7 +21,6 @@ async function sendMessage(req: Request, res: Response) {
   const input = parseCreateCourseChatMessage(req.body);
   const result = await CourseChatService.send(
     req.authUser!.id,
-    req.authUser!.email,
     getRouteParam(req.params.courseId),
     input,
   );

@@ -1,121 +1,157 @@
 # GATS ACADEMY
 
-## Ports
+## Ports & Services
 
-| Dịch vụ | Port | Ghi chú |
+| Dịch vụ | Port (Host) | Ghi chú |
 | --- | --- | --- |
-| Backend API | `3000` | |
-| Web App | `3005` | |
-| Admin Dashboard | `9000` (local) / `9100` (Docker) | |
-| PostgreSQL | `5432` | Docker |
-| Redis | `6379` | Docker |
-| MinIO S3 | `9010` | Docker |
+| Backend API | `3000` | Node.js Express API |
+| Web App | `3005` | Next.js Frontend |
+| Admin Dashboard | `9000` (Local) / `9100` (Docker) | Next.js Admin Panel |
+| PostgreSQL | `5432` | Docker (Database) |
+| Redis | `6379` | Docker (Queue & Cache) |
+| MinIO S3 API | `9010` | Docker (File/Video Storage) |
 | MinIO Console | `9011` | `minioadmin` / `minioadmin` |
-| Video Worker | — | Docker (profile `dev`) hoặc `npm run dev:worker` |
+| Nginx Reverse Proxy | `80` / `443` | Docker Production Overlay |
+| Video Worker | — | Docker (profile `dev`) hoặc PM2 |
 
-Admin mặc định (Docker seed): `admin@gmail.com` / `admin12345`
+> **Admin mặc định (Docker seed)**: `admin@gmail.com` / `admin12345`
 
 ---
 
-## Cách chạy nhanh (khuyến nghị)
+## Các Lệnh Docker Compose Chi Tiết
 
-### 1. Hạ tầng + video worker (Docker)
+### 1. Môi Trường Local Dev (Khuyên Dùng)
 
-Từ thư mục gốc repo:
+Chạy hạ tầng (Postgres, Redis, MinIO) + Video Worker trong Docker; chạy BE, Web, Admin trên máy local để dev nhanh.
 
+**Khởi tạo hạ tầng & worker:**
 ```powershell
 docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
 ```
 
-Lần đầu (hoặc sau khi đổi code worker):
-
+**Build lại Video Worker khi sửa code BE:**
 ```powershell
 docker compose -p gats-academy --profile dev up -d --build worker
 ```
 
-Tắt worker / stack:
-
+**Xem log của Video Worker:**
 ```powershell
-docker compose -p gats-academy --profile dev stop worker
-docker compose -p gats-academy down
+docker compose -p gats-academy --profile dev logs -f worker
 ```
 
-### 2. API + frontend (máy local)
+**Tắt stack hạ tầng dev:**
+```powershell
+docker compose -p gats-academy --profile dev down
+```
 
-Mở **3 terminal** riêng:
+---
+
+### 2. Chạy ứng dụng Local (BE + Frontend trên host)
+
+Mở **3 terminal** riêng tại thư mục gốc dự án:
 
 ```powershell
+# Terminal 1: Backend API
 cd BE
 npm run dev
 ```
 
 ```powershell
+# Terminal 2: Web App Frontend
 cd web-app
 npm run dev
 ```
 
 ```powershell
+# Terminal 3: Admin Dashboard
 cd admin-dashboard
 npm run dev
 ```
 
-Không cần `npm run dev:worker` — worker đã chạy trong Docker.
-
-### URL
-
-- Web: http://localhost:3005  
-- Admin: http://localhost:9000  
-- API: http://localhost:3000  
-- MinIO: http://localhost:9011  
+> **URL truy cập local:**
+> - Web App: http://localhost:3005
+> - Admin Dashboard: http://localhost:9000
+> - Backend API: http://localhost:3000
+> - MinIO Console: http://localhost:9011
 
 ---
 
-## Full stack trong Docker (API + worker + web + admin)
+### 3. Full Stack trong Docker Local (API + Worker + Web + Admin)
 
+Dùng khi muốn kiểm thử toàn bộ ứng dụng trong container mà không cần chạy `npm run dev` thủ công.
+
+**Khởi chạy toàn bộ stack:**
 ```powershell
 docker compose -p gats-academy up --build -d
 ```
 
-- Web: http://localhost:3005  
-- Admin: http://localhost:9100  
-- API: http://localhost:3000  
+**Xem log toàn bộ ứng dụng hoặc service chỉ định:**
+```powershell
+docker compose -p gats-academy logs -f
+docker compose -p gats-academy logs -f app
+```
 
-**Không** chạy cùng lúc service `worker` (profile `dev`) và container `app` — sẽ trùng 2 worker.
+**Tắt Full Stack:**
+```powershell
+docker compose -p gats-academy down
+```
+
+> ⚠️ **Lưu ý**: Không chạy đồng thời service `worker` (profile `dev`) và container `app` cùng lúc để tránh trùng lặp 2 worker xử lý video.
 
 ---
 
-## Deploy VPS (`gats.vn` / `api.gats.vn` / `admin.gats.vn`)
+### 4. Deploy Production VPS (`gats.vn` / `api.gats.vn` / `admin.gats.vn`)
 
-Trong file `.env` **trên VPS** (không dùng `localhost` cho API public):
+Trên VPS, copy file cấu hình mẫu `.env.vps.example` thành `.env` và cập nhật các biến bảo mật:
 
+```bash
+cp .env.vps.example .env
+```
+
+**Cấu hình biến môi trường chính trong `.env`:**
 ```env
 NEXT_PUBLIC_API_URL=https://api.gats.vn
 APP_URL=https://api.gats.vn
 FRONTEND_URL=https://gats.vn,https://www.gats.vn,https://admin.gats.vn,http://localhost:3005,http://localhost:9100
 ```
 
-Rồi rebuild (bắt buộc — `NEXT_PUBLIC_*` chỉ có hiệu lực lúc build):
-
+**Khởi chạy Production với Nginx Overlay (`docker-compose.prod.yml`):**
 ```bash
-docker compose -p gats-academy up --build -d
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 ```
 
-Kiểm tra nhanh: mở DevTools trên https://gats.vn → Network → request API phải tới `https://api.gats.vn`, không phải IP `:3000`.
+**Tự động gia hạn SSL Let's Encrypt (Certbot):**
+```bash
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml --profile cert-renew up -d certbot
+```
 
-File mẫu VPS: copy `.env.vps.example` → `.env` trên server trước khi rebuild.
+**Dừng Production Stack:**
+```bash
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml down
+```
 
 ---
 
-## Lỗi cổng đang bị chiếm (Windows)
+## Cheat Sheet Lệnh Docker Thông Dụng
 
+| Tác vụ | Lệnh Docker Compose |
+| --- | --- |
+| Kiểm tra trạng thái các container | `docker compose -p gats-academy ps` |
+| Rebuild duy nhất 1 service (ví dụ `app`) | `docker compose -p gats-academy up --build -d app` |
+| Restart lại 1 service | `docker compose -p gats-academy restart app` |
+| Xem 100 dòng log mới nhất | `docker compose -p gats-academy logs --tail=100 -f` |
+| Xóa hoàn toàn container và volumes dữ liệu | `docker compose -p gats-academy down -v` |
+
+---
+
+## Xử Lý Lỗi Thường Gặp
+
+### Lỗi Cổng Đang Bị Chiếm (Windows)
 ```powershell
 Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force
 Stop-Process -Id (Get-NetTCPConnection -LocalPort 3005).OwningProcess -Force
 Stop-Process -Id (Get-NetTCPConnection -LocalPort 9000).OwningProcess -Force
 ```
 
----
-
-## CORS
-
-Truy cập Web App bằng `http://localhost:3005` (không dùng IP LAN) để khớp `FRONTEND_URL` trong `BE/config/.env.development`.
+### CORS Warning
+Luôn truy cập Web App bằng `http://localhost:3005` (tránh dùng IP LAN) để khớp cấu hình `FRONTEND_URL` trong `BE/config/.env.development`.

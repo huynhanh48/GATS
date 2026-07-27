@@ -1,14 +1,28 @@
-import "@/css/satoshi.css";
 import "@/css/style.css";
 
 import "flatpickr/dist/flatpickr.min.css";
 import "jsvectormap/dist/jsvectormap.css";
 
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import NextTopLoader from "nextjs-toploader";
 import type { PropsWithChildren } from "react";
 import { Toaster } from "sonner";
 import { Providers } from "./providers";
+
+const inter = localFont({
+  src: "../fonts/Inter-Variable.ttf",
+  variable: "--font-inter",
+  display: "swap",
+  weight: "100 900",
+});
+
+const outfit = localFont({
+  src: "../fonts/Outfit-Variable.ttf",
+  variable: "--font-outfit",
+  display: "swap",
+  weight: "100 900",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -21,7 +35,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: PropsWithChildren) {
   return (
-    <html lang="vi" suppressHydrationWarning className="font-sans">
+    <html
+      lang="vi"
+      suppressHydrationWarning
+      className={`${inter.variable} ${outfit.variable} font-sans antialiased`}
+    >
       <body suppressHydrationWarning className="font-sans">
         <Providers>
           <NextTopLoader color="#5750F1" showSpinner={false} />

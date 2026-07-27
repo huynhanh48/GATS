@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Typography chuẩn app — Helvetica Neue (fallback Helvetica / Arial).
+/// Typography dùng chung với Web và Admin.
 abstract final class AppTypography {
-  static const family = 'Helvetica Neue';
-  static const fallbacks = <String>['Helvetica', 'Arial', 'sans-serif'];
+  static const family = 'Inter';
+  static const headingFamily = 'Outfit';
+  static const fallbacks = <String>['Roboto', 'Arial', 'sans-serif'];
 
   static TextStyle style({
     double? fontSize,
@@ -28,21 +29,58 @@ abstract final class AppTypography {
     );
   }
 
+  /// Chỉ dùng cho heading thương hiệu/marketing, không dùng cho form hoặc
+  /// nội dung học tập dài.
+  static TextStyle headingStyle({
+    double? fontSize,
+    FontWeight fontWeight = FontWeight.w700,
+    Color? color,
+    double? height,
+    double? letterSpacing,
+  }) {
+    return TextStyle(
+      fontFamily: headingFamily,
+      fontFamilyFallback: const <String>[family, ...fallbacks],
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height,
+      letterSpacing: letterSpacing,
+      decoration: TextDecoration.none,
+      decorationColor: Colors.transparent,
+    );
+  }
+
   static TextTheme materialTextTheme({Color? bodyColor, Color? displayColor}) {
     final base = Typography.material2021().black.apply(
       fontFamily: family,
       bodyColor: bodyColor,
       displayColor: displayColor,
     );
-    return withoutUnderline(base);
+    TextStyle? heading(TextStyle? style) => style?.copyWith(
+      fontFamily: headingFamily,
+      fontFamilyFallback: const <String>[family, ...fallbacks],
+    );
+
+    return withoutUnderline(
+      base.copyWith(
+        displayLarge: heading(base.displayLarge),
+        displayMedium: heading(base.displayMedium),
+        displaySmall: heading(base.displaySmall),
+        headlineLarge: heading(base.headlineLarge),
+        headlineMedium: heading(base.headlineMedium),
+        headlineSmall: heading(base.headlineSmall),
+        titleLarge: heading(base.titleLarge),
+      ),
+    );
   }
 
   /// Material 3 + TextButton có thể gây gạch chân kép — strip toàn bộ theme.
   static TextTheme withoutUnderline(TextTheme theme) {
     TextStyle? strip(TextStyle? style) => style?.copyWith(
-          decoration: TextDecoration.none,
-          decorationColor: Colors.transparent,
-        );
+      decoration: TextDecoration.none,
+      decorationColor: Colors.transparent,
+    );
 
     return theme.copyWith(
       displayLarge: strip(theme.displayLarge),

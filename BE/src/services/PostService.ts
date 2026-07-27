@@ -317,10 +317,21 @@ async function create(input: CreatePostInput, authorId: number) {
       input.category_id,
       input.category,
     )) ?? null;
+  const resolvedTagIds =
+    input.tag_ids !== undefined
+      ? await TagService.resolveTagIdsByIds(input.tag_ids, 'post')
+      : input.tags !== undefined
+        ? await TagService.resolveTagIdsBySlugs(input.tags, 'post')
+        : undefined;
+
   const post = await PostRepo.create(
     mapCreateInput(input, slug, authorId, categoryId),
   );
-  const tags = await TagService.syncPostTags(post.id, input.tags);
+
+  const tags =
+    resolvedTagIds !== undefined
+      ? await TagService.syncPostTagIds(post.id, resolvedTagIds)
+      : await TagService.syncPostTags(post.id);
   const categoryMap = await CategoryRepo.findByPostIds([post.id]);
 
   void NotificationService.notify({
@@ -381,9 +392,16 @@ async function update(id: string, input: UpdatePostInput) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
 
+  const resolvedTagIds =
+    input.tag_ids !== undefined
+      ? await TagService.resolveTagIdsByIds(input.tag_ids, 'post')
+      : input.tags !== undefined
+        ? await TagService.resolveTagIdsBySlugs(input.tags, 'post')
+        : undefined;
+
   const tags =
-    input.tags !== undefined
-      ? await TagService.syncPostTags(id, input.tags)
+    resolvedTagIds !== undefined
+      ? await TagService.syncPostTagIds(id, resolvedTagIds)
       : await TagService.syncPostTags(id);
 
   const categoryMap = await CategoryRepo.findByPostIds([id]);

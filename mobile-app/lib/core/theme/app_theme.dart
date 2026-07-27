@@ -62,25 +62,31 @@ abstract final class AppTheme {
       fontFamilyFallback: AppTypography.fallbacks,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      textTheme: AppTypography.withoutUnderline(baseText.copyWith(
-        headlineSmall: baseText.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimary,
+      textTheme: AppTypography.withoutUnderline(
+        baseText.copyWith(
+          headlineSmall: baseText.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+          titleMedium: baseText.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+          bodyMedium: baseText.bodyMedium?.copyWith(
+            color: AppColors.textPrimary,
+          ),
+          bodySmall: baseText.bodySmall?.copyWith(
+            color: AppColors.textSecondary,
+          ),
         ),
-        titleMedium: baseText.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-        bodyMedium: baseText.bodyMedium?.copyWith(color: AppColors.textPrimary),
-        bodySmall: baseText.bodySmall?.copyWith(color: AppColors.textSecondary),
-      )),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: AppTypography.style(
+        titleTextStyle: AppTypography.headingStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -117,7 +123,9 @@ abstract final class AppTheme {
           backgroundColor: AppColors.accent,
           foregroundColor: Colors.white,
           textStyle: AppTypography.style(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),
@@ -131,7 +139,7 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       dialogTheme: DialogThemeData(
-        titleTextStyle: AppTypography.style(
+        titleTextStyle: AppTypography.headingStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
@@ -185,25 +193,31 @@ abstract final class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.nightSkyBottom,
       canvasColor: AppColors.nightSkyBottom,
-      textTheme: AppTypography.withoutUnderline(baseText.copyWith(
-        headlineSmall: baseText.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFFF4F6FF),
+      textTheme: AppTypography.withoutUnderline(
+        baseText.copyWith(
+          headlineSmall: baseText.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFFF4F6FF),
+          ),
+          titleMedium: baseText.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFFF4F6FF),
+          ),
+          bodyMedium: baseText.bodyMedium?.copyWith(
+            color: const Color(0xFFF4F6FF),
+          ),
+          bodySmall: baseText.bodySmall?.copyWith(
+            color: const Color(0xFF9AA3C7),
+          ),
         ),
-        titleMedium: baseText.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFFF4F6FF),
-        ),
-        bodyMedium: baseText.bodyMedium?.copyWith(color: const Color(0xFFF4F6FF)),
-        bodySmall: baseText.bodySmall?.copyWith(color: const Color(0xFF9AA3C7)),
-      )),
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: const Color(0xFFF4F6FF),
         elevation: 0,
         centerTitle: false,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: AppTypography.style(
+        titleTextStyle: AppTypography.headingStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: const Color(0xFFF4F6FF),
@@ -225,7 +239,9 @@ abstract final class AppTheme {
           backgroundColor: AppColors.nightLavender,
           foregroundColor: AppColors.nightSkyBottom,
           textStyle: AppTypography.style(fontWeight: FontWeight.w700),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       ),
@@ -239,7 +255,7 @@ abstract final class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       dialogTheme: DialogThemeData(
-        titleTextStyle: AppTypography.style(
+        titleTextStyle: AppTypography.headingStyle(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           color: const Color(0xFFF4F6FF),

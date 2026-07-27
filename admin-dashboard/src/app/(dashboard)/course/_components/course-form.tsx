@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CategorySelect } from "@/app/(dashboard)/category/_components/category-select";
+import { TagSelect } from "@/components/tags/tag-select";
 import { createCourse, updateCourse, type CreateCourseState } from "../actions";
-import { CourseTagSelect } from "./course-tag-select";
 import {
   Award,
   BadgeCheck,
@@ -372,7 +372,8 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
             disabled={isPending}
           />
 
-          <CourseTagSelect
+          <TagSelect
+            type="course"
             defaultValue={course?.tags}
             disabled={isPending}
           />
