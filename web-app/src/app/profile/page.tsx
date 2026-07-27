@@ -12,9 +12,9 @@ import {
   ShieldCheck, Mail, LogOut, ChevronRight, Activity, CreditCard
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
-import { changePasswordRequest } from "@/lib/auth/api";
-import { orderApi } from "@/lib/cart/api";
-import { fetchMyCertificates, type MyCertificate } from "@/lib/certificates/api";
+import { changePasswordRequest } from "@/services/auth.service";
+import { orderApi } from "@/services/cart.service";
+import { fetchMyCertificates, type MyCertificate } from "@/services/certificates.service";
 import { PathApi } from "@/constants/PathApi";
 import Link from "next/link";
 import { Course } from "@/types/course";
@@ -149,7 +149,7 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const profilePhoto = null; 
-  const coverPhoto = "/auth-bg.jpg";
+  const coverPhoto = "https://placehold.co/800x800";
 
   const orderCounts = {
     all: orders.length,

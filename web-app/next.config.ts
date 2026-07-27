@@ -44,6 +44,14 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "https://api.gats.vn/api/:path*", // Proxy to Backend
+      },
+    ];
+  },
 };
 
 export default nextConfig;

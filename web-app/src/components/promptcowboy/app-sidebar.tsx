@@ -36,7 +36,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Expanded state */}
         <div className="flex items-center gap-2 font-semibold text-sm group-data-[collapsible=icon]:hidden">
           <div className="w-6 h-6 rounded-full bg-[#0070EB]/10 flex items-center justify-center overflow-hidden p-0.5 shrink-0">
-            <img src="/Group.svg" alt="GATS logo" className="w-full h-full object-contain" />
+            <img src="/logo.svg" alt="GATS logo" className="w-full h-full object-contain" />
           </div>
           <span className="whitespace-nowrap text-slate-800">Cao bồi nhanh</span>
         </div>
@@ -45,7 +45,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Collapsed state with hover transition to SidebarTrigger */}
         <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center w-full h-full relative group/header-btn">
           <div className="w-6 h-6 rounded-full bg-[#0070EB]/10 flex items-center justify-center overflow-hidden p-0.5 shrink-0 group-hover/header-btn:scale-0 group-hover/header-btn:opacity-0 transition-all duration-200">
-            <img src="/Group.svg" alt="GATS logo" className="w-full h-full object-contain" />
+            <img src="/logo.svg" alt="GATS logo" className="w-full h-full object-contain" />
           </div>
           <div className="absolute inset-0 flex items-center justify-center scale-0 opacity-0 group-hover/header-btn:scale-100 group-hover/header-btn:opacity-100 transition-all duration-200">
             <SidebarTrigger className="text-slate-400 hover:text-slate-600 w-8 h-8 rounded-lg hover:bg-slate-100" />

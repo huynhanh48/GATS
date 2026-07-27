@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { QrCode, CheckCircle2, Copy, Tag, X } from "lucide-react";
-import { orderApi, couponApi, type CouponPreview } from "@/lib/cart/api";
+import { orderApi, couponApi, type CouponPreview } from "@/services/cart.service";
 import { resolveMediaUrl } from "@/lib/media/url";
 import { toast } from "sonner";
 
@@ -852,7 +852,7 @@ export default function CheckoutPage() {
                         alt={item.courseName}
                         className="absolute inset-0 h-full w-full bg-muted p-1 object-contain"
                         onError={(e) => {
-                          e.currentTarget.src = "/auth-bg.jpg";
+                          e.currentTarget.src = "https://placehold.co/800x800";
                         }}
                       />
                     </div>

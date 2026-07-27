@@ -45,7 +45,7 @@ export default function CartPage() {
                       alt={item.courseName}
                       className="absolute inset-0 h-full w-full bg-muted p-1 object-contain"
                       onError={(e) => {
-                        e.currentTarget.src = "/auth-bg.jpg";
+                        e.currentTarget.src = "https://placehold.co/800x800";
                       }}
                     />
                   </div>

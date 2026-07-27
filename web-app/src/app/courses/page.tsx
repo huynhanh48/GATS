@@ -12,10 +12,18 @@ import {
   ChevronUp,
   SlidersHorizontal,
   Sparkles,
+  Clock,
+  Users,
+  BarChart,
+  FileText,
+  Search,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { Container } from "@/components/layout/Container";
 import { PathApi } from "@/constants/PathApi";
 import apiClient from "@/lib/apiClient";
 import { resolveMediaUrl } from "@/lib/media/url";
@@ -56,7 +64,8 @@ const ALL_CATEGORY: CourseCategory = {
   type: "course",
 };
 
-function formatPrice(value: number) {
+function formatPrice(value: number | null | undefined) {
+  if (value == null) return "0đ";
   return `${value.toLocaleString("vi-VN")}đ`;
 }
 
@@ -89,6 +98,10 @@ export default function CoursesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [openAccordion, setOpenAccordion] = useState<Record<string, boolean>>({
     level: true,
@@ -121,6 +134,7 @@ export default function CoursesPage() {
   useEffect(() => {
     let active = true;
     setIsLoading(true);
+    setErrorMsg("");
 
     const params = new URLSearchParams({
       page: String(currentPage),
@@ -132,18 +146,27 @@ export default function CoursesPage() {
     if (productTypeFilter !== "all") params.append("category", productTypeFilter);
     if (priceFilter === "free") params.append("maxPrice", "0");
     if (priceFilter === "paid") params.append("minPrice", "1");
+    if (searchQuery) params.append("keyword", searchQuery);
+
+    // MOCK: sort logic can be handled by API if supported, or client side. 
+    // Usually we append `sortBy` to params if API supports it.
     if (sortBy === "priceAsc") params.append("sort", "price_asc");
     if (sortBy === "priceDesc") params.append("sort", "price_desc");
 
     apiClient
       .get(`${PathApi.courses.list}?${params.toString()}`)
       .then((response) => {
-        if (!active) return;
         const payload = response as unknown as CoursesListPayload;
+        if (!payload.data) {
+          setErrorMsg("API returned success but no data field: " + JSON.stringify(payload).substring(0, 100));
+        }
         setCourses(payload.data ?? []);
         setPagination(payload.pagination ?? null);
       })
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err);
+        setErrorMsg(err.message || String(err));
+      })
       .finally(() => {
         if (active) setIsLoading(false);
       });
@@ -151,257 +174,92 @@ export default function CoursesPage() {
     return () => {
       active = false;
     };
-  }, [levelFilter, productTypeFilter, priceFilter, sortBy, currentPage]);
+  }, [levelFilter, productTypeFilter, priceFilter, sortBy, currentPage, searchQuery]);
 
   return (
-    <main className="relative flex min-h-screen flex-col justify-between overflow-hidden bg-background selection:bg-primary/30">
+    <main className="relative flex min-h-screen flex-col justify-between bg-white overflow-hidden">
       <Header />
 
-      <div className="z-20 mx-auto w-full max-w-7xl flex-1 px-4 pb-24 pt-32 sm:px-6">
-        {/* Hero */}
-        <div className="relative mb-12 overflow-hidden rounded-3xl border border-border/10 bg-[#0A0A0B] shadow-2xl">
-          <div className="absolute inset-0 z-0 overflow-hidden">
-            <div className="absolute right-0 top-0 h-[800px] w-[800px] translate-x-1/3 -translate-y-1/2 rounded-full bg-brand-primary/25 blur-[120px]" />
-            <div className="absolute bottom-0 left-0 h-[600px] w-[600px] -translate-x-1/4 translate-y-1/3 rounded-full bg-primary/15 blur-[100px]" />
-            <div className="absolute left-1/2 top-1/2 h-[300px] w-[1000px] -translate-x-1/2 -translate-y-1/2 rotate-12 bg-brand-primary/15 blur-[120px]" />
+      {/* Breadcrumb Area */}
+      <div className="w-full bg-[#f8f9fa] py-4 mt-[7.2rem] border-b border-border/10">
+        <Container size="xl">
+          <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2">
+            <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
+            <span>›</span>
+            <span className="text-slate-800">Tất cả khóa học</span>
           </div>
+        </Container>
+      </div>
 
-          <div className="relative z-10 flex flex-col items-center gap-12 p-8 sm:p-12 lg:flex-row lg:p-16">
-            <div className="flex-1 space-y-6 text-left">
-              <h1 className="text-4xl font-bold leading-[1.15] tracking-tight text-white sm:text-5xl lg:text-4xl xl:text-5xl">
-                Tối Ưu Năng Suất <br className="hidden sm:block" /> Quản Trị Vận Hành
-              </h1>
-              <p className="max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">
-                Nâng cấp kỹ năng cá nhân và dẫn dắt doanh nghiệp ứng dụng AI hiệu quả với bộ đôi khóa học mới nhất.
-              </p>
+      <Container size="xl" className="flex-1 pb-24 pt-10">
+        {/* Header row: Title + Search & View Toggle */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
+          <h1 className="text-[2.8rem] md:text-[3.2rem] font-bold text-[#111827] font-heading">
+            Tất cả khóa học
+          </h1>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setSearchQuery(searchInput);
+                    setCurrentPage(1);
+                  }
+                }}
+                className="w-full md:w-[260px] h-[4rem] rounded-full border border-slate-200 bg-white px-5 pr-12 text-[1.4rem] text-slate-700 outline-none focus:border-primary/50 transition-colors"
+              />
+              <button 
+                onClick={() => {
+                  setSearchQuery(searchInput);
+                  setCurrentPage(1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-primary transition-colors"
+              >
+                <Search className="w-[1.8rem] h-[1.8rem]" />
+              </button>
             </div>
-
-            <div className="flex w-full max-w-xl flex-1 flex-col gap-4 sm:gap-5 lg:max-w-none">
-              {latestCourses.map((course, idx) => {
-                const badgeColor =
-                  idx % 2 === 0 ? "bg-brand-primary" : "bg-primary";
-
-                return (
-                  <Link
-                    key={course.id}
-                    href={`/courses/${course.slug}`}
-                    className="group relative flex cursor-pointer items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition-all duration-300 hover:bg-white/10 sm:gap-5"
-                  >
-                    <div
-                      className={`absolute right-0 top-0 z-10 rounded-bl-lg px-2.5 py-1 text-[10px] font-bold text-white shadow-sm sm:text-xs ${badgeColor}`}
-                    >
-                      Khóa học mới
-                    </div>
-
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/5 bg-[#111] sm:h-28 sm:w-28">
-                      {course.thumbnail ? (
-                        <img
-                          src={resolveMediaUrl(course.thumbnail)}
-                          alt={course.title}
-                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        />
-                      ) : null}
-                    </div>
-
-                    <div className="flex flex-1 flex-col justify-center pr-2">
-                      <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-white transition-colors group-hover:text-brand-primary sm:text-base">
-                        {course.title}
-                      </h3>
-                      <div className="mt-2 flex flex-wrap items-baseline gap-2 sm:mt-3">
-                        {course.salePrice != null && course.price > course.salePrice ? (
-                          <>
-                            <span className="text-base font-bold text-white sm:text-xl">
-                              {formatPrice(course.salePrice)}
-                            </span>
-                            <span className="text-xs text-slate-400 line-through sm:text-sm">
-                              {formatPrice(course.price)}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-base font-bold text-white sm:text-xl">
-                            {formatPrice(course.price)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setViewMode("grid")}
+                className={`w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
+              >
+                <LayoutGrid className="w-[1.8rem] h-[1.8rem]" />
+              </button>
+              <button 
+                onClick={() => setViewMode("list")}
+                className={`w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
+              >
+                <List className="w-[1.8rem] h-[1.8rem]" />
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-          {/* Filters */}
-          <div className="space-y-6 lg:col-span-1">
-            <div className="flex items-center gap-2 border-b border-border/40 pb-4">
-              <SlidersHorizontal className="h-5 w-5 text-primary" aria-hidden="true" />
-              <h2 className="text-lg font-bold text-foreground">Bộ lọc</h2>
-            </div>
-
-            <div className="border-b border-border/40 pb-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion("level")}
-                className="flex w-full cursor-pointer items-center justify-between py-2 font-semibold text-foreground transition-colors hover:text-primary"
-              >
-                <span>Cấp độ</span>
-                {openAccordion.level ? (
-                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                )}
-              </button>
-
-              <AnimatePresence initial={false}>
-                {openAccordion.level ? (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-2 space-y-2 overflow-hidden"
-                  >
-                    {LEVEL_OPTIONS.map((opt) => (
-                      <label
-                        key={opt.value}
-                        className="flex cursor-pointer items-center gap-2.5 py-1 text-sm text-muted-foreground hover:text-foreground"
-                      >
-                        <input
-                          type="radio"
-                          name="level"
-                          checked={levelFilter === opt.value}
-                          onChange={() => {
-                            setLevelFilter(opt.value);
-                            setCurrentPage(1);
-                          }}
-                          className="filter-radio"
-                        />
-                        <span>{opt.label}</span>
-                      </label>
-                    ))}
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-
-            <div className="border-b border-border/40 pb-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion("productType")}
-                className="flex w-full cursor-pointer items-center justify-between py-2 font-semibold text-foreground transition-colors hover:text-primary"
-              >
-                <span>Loại sản phẩm</span>
-                {openAccordion.productType ? (
-                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                )}
-              </button>
-
-              <AnimatePresence initial={false}>
-                {openAccordion.productType ? (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-2 space-y-2 overflow-hidden"
-                  >
-                    {[ALL_CATEGORY, ...categories].map((opt) => (
-                      <label
-                        key={opt.id}
-                        className="flex cursor-pointer items-center gap-2.5 py-1 text-sm text-muted-foreground hover:text-foreground"
-                      >
-                        <input
-                          type="radio"
-                          name="productType"
-                          checked={productTypeFilter === (opt.slug || opt.id)}
-                          onChange={() => {
-                            setProductTypeFilter(opt.slug || opt.id);
-                            setCurrentPage(1);
-                          }}
-                          className="filter-radio"
-                        />
-                        <span>
-                          {opt.name}
-                          {opt.courseCount !== undefined ? ` (${opt.courseCount})` : ""}
-                        </span>
-                      </label>
-                    ))}
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-
-            <div className="border-b border-border/40 pb-4">
-              <button
-                type="button"
-                onClick={() => toggleAccordion("price")}
-                className="flex w-full cursor-pointer items-center justify-between py-2 font-semibold text-foreground transition-colors hover:text-primary"
-              >
-                <span>Học phí</span>
-                {openAccordion.price ? (
-                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                )}
-              </button>
-
-              <AnimatePresence initial={false}>
-                {openAccordion.price ? (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-2 space-y-2 overflow-hidden"
-                  >
-                    {PRICE_OPTIONS.map((opt) => (
-                      <label
-                        key={opt.value}
-                        className="flex cursor-pointer items-center gap-2.5 py-1 text-sm text-muted-foreground hover:text-foreground"
-                      >
-                        <input
-                          type="radio"
-                          name="price"
-                          checked={priceFilter === opt.value}
-                          onChange={() => {
-                            setPriceFilter(opt.value);
-                            setCurrentPage(1);
-                          }}
-                          className="filter-radio"
-                        />
-                        <span>{opt.label}</span>
-                      </label>
-                    ))}
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Grid */}
-          <div className="space-y-6 lg:col-span-3">
-            <div className="flex flex-col justify-between gap-4 border-b border-border/40 pb-4 sm:flex-row sm:items-center">
-              <div className="text-sm font-medium text-muted-foreground">
+        <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+          {/* Main Course List (Left) */}
+          <div className="flex-1 space-y-8 min-w-0">
+            <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center">
+              <div className="text-[1.5rem] font-medium text-slate-500">
                 Tìm thấy{" "}
-                <span className="font-semibold text-foreground">
+                <span className="font-bold text-slate-800">
                   {pagination?.total ?? 0}
                 </span>{" "}
-                sản phẩm phù hợp
+                khóa học
               </div>
 
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <ArrowUpDown className="h-4 w-4 text-primary" aria-hidden="true" />
-                <span className="text-sm font-semibold text-foreground">Sắp xếp theo:</span>
+              <div className="flex items-center gap-3 self-end sm:self-auto">
+                <span className="text-[1.4rem] font-medium text-slate-500">Sắp xếp:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => {
                     setSortBy(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground outline-none focus:border-primary/60"
+                  className="cursor-pointer bg-transparent text-[1.5rem] font-bold text-slate-800 outline-none"
                 >
                   <option value="newest">Mới nhất</option>
                   <option value="priceAsc">Giá: Thấp đến Cao</option>
@@ -410,9 +268,14 @@ export default function CoursesPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className={viewMode === "list" ? "flex flex-col gap-8" : "grid grid-cols-1 md:grid-cols-2 gap-8"}>
+              {errorMsg && (
+                <div className="bg-red-50 text-red-500 p-4 rounded-md col-span-full">
+                  <strong>Error: </strong> {errorMsg}
+                </div>
+              )}
               {isLoading ? (
-                <div className="col-span-full py-20 text-center text-muted-foreground">
+                <div className="py-20 text-center text-[1.6rem] text-slate-500 col-span-full">
                   Đang tải dữ liệu...
                 </div>
               ) : (
@@ -422,81 +285,88 @@ export default function CoursesPage() {
                     <Link
                       href={`/courses/${course.slug}`}
                       key={course.id}
-                      className="group/link block cursor-pointer"
+                      className="group block h-full"
                     >
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: idx * 0.05 }}
-                        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/40 bg-card shadow-lg backdrop-blur-md transition-all duration-300 hover:border-primary/50"
-                        style={{
-                          boxShadow: `0 0 30px -10px ${ui.glowColor}`,
-                        }}
+                        className={
+                          viewMode === "list"
+                            ? "flex flex-col md:flex-row items-stretch bg-white border border-slate-200 rounded-[2rem] overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] group-hover:border-transparent h-full"
+                            : "flex flex-col bg-white border border-slate-200 rounded-[2rem] overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] group-hover:border-transparent h-full"
+                        }
                       >
-                        <div className="relative flex aspect-square w-full flex-col justify-between overflow-hidden border-b border-border/40 bg-[#0A0A0B] p-6">
+                        {/* Thumbnail */}
+                        <div className={
+                          viewMode === "list"
+                            ? "relative w-full md:w-[260px] lg:w-[280px] shrink-0 aspect-[4/3] md:aspect-auto bg-slate-100 overflow-hidden"
+                            : "relative w-full aspect-[4/3] shrink-0 bg-slate-100 overflow-hidden"
+                        }>
+                          <div className="absolute top-4 left-4 z-10 bg-[#111827] text-white text-[1.2rem] font-bold px-3 py-1 rounded">
+                            {course.category?.name || "Khóa học"}
+                          </div>
                           {course.thumbnail ? (
                             <img
                               src={resolveMediaUrl(course.thumbnail)}
                               alt={course.title}
-                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
                           ) : null}
-
-                          <div className="relative z-10 flex w-full items-center justify-between">
-                            {course.salePrice != null && course.price > course.salePrice ? (
-                              <div className="rounded bg-primary px-2.5 py-1 text-[11px] font-bold uppercase text-primary-foreground shadow-md">
-                                Giảm đến {formatPrice(course.price - course.salePrice)}
-                              </div>
-                            ) : (
-                              <div />
-                            )}
-                          </div>
-
-                          <div className="relative z-10 mt-auto flex flex-wrap gap-1.5">
-                            <span className="rounded border border-white/10 bg-black/40 px-2 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm">
-                              {ui.levelLabel}
-                            </span>
-                          </div>
                         </div>
 
-                        <div className="flex flex-1 flex-col justify-between bg-card p-5 text-card-foreground">
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-1.5">
-                              <BookOpen
-                                className="h-3.5 w-3.5 text-brand-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-primary">
-                                {ui.levelLabel} • {course.category?.name || "Khóa học"}
-                              </span>
-                            </div>
+                        {/* Content */}
+                        <div className="p-6 md:p-8 flex flex-col flex-1">
+                          <p className="text-[1.3rem] text-slate-500 mb-2">
+                            bởi <span className="font-bold text-[#111827]">GATS Academy</span>
+                          </p>
+                          <h3 className="text-[2rem] md:text-[2.2rem] font-bold text-[#111827] font-heading leading-snug group-hover:text-[#ff782d] transition-colors mb-3 line-clamp-2">
+                            {course.title}
+                          </h3>
 
-                            <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
-                              {course.title}
-                            </h3>
+                          {/* Meta stats mock */}
+                          <div className="flex flex-wrap items-center gap-4 text-[1.3rem] text-slate-500 mb-4">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="w-4 h-4 text-[#ff782d]" />
+                              <span className="font-medium">4 Tuần</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Users className="w-4 h-4 text-[#ff782d]" />
+                              <span className="font-medium">156 Học viên</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <BarChart className="w-4 h-4 text-[#ff782d]" />
+                              <span className="font-medium">{ui.levelLabel}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <FileText className="w-4 h-4 text-[#ff782d]" />
+                              <span className="font-medium">20 Bài học</span>
+                            </div>
                           </div>
 
-                          <div className="mt-4 flex items-center justify-between gap-4 border-t border-border/40 pt-4">
-                            <div className="flex flex-col">
-                              {course.salePrice != null && course.price > course.salePrice ? (
-                                <>
-                                  <span className="text-[10px] text-muted-foreground line-through">
-                                    {formatPrice(course.price)}
+                          <div className="mt-auto">
+                            <hr className="border-slate-100 mb-4" />
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-baseline gap-2">
+                                {course.salePrice != null && course.price > course.salePrice ? (
+                                  <>
+                                    <span className="text-[1.3rem] text-slate-400 line-through">
+                                      {formatPrice(course.price)}
+                                    </span>
+                                    <span className="text-[2rem] font-bold text-[#10b981]">
+                                      {formatPrice(course.salePrice)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span className="text-[2rem] font-bold text-[#10b981]">
+                                    {course.price === 0 ? "Miễn phí" : formatPrice(course.price)}
                                   </span>
-                                  <span className="text-lg font-black text-primary">
-                                    {formatPrice(course.salePrice)}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="text-lg font-black text-primary">
-                                  {formatPrice(course.price)}
-                                </span>
-                              )}
+                                )}
+                              </div>
+                              <span className="text-[1.4rem] font-bold text-[#111827] group-hover:text-[#ff782d] transition-colors">
+                                Xem chi tiết
+                              </span>
                             </div>
-
-                            <span className="inline-flex h-8 cursor-pointer items-center rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground shadow shadow-primary/25 transition-all hover:bg-primary/90">
-                              Đăng ký
-                            </span>
                           </div>
                         </div>
                       </motion.div>
@@ -507,21 +377,31 @@ export default function CoursesPage() {
             </div>
 
             {pagination && pagination.totalPages > 1 ? (
-              <div className="mt-12 flex justify-center">
-                <div className="flex select-none items-center gap-6 rounded-full border border-border/40 bg-card px-6 py-2 shadow-md backdrop-blur-md">
+              <div className="mt-16 flex justify-center">
+                <div className="flex select-none items-center gap-4">
                   <button
                     type="button"
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-                    aria-label="Trang trước"
+                    className="flex h-[4.8rem] w-[4.8rem] items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-all hover:border-[#ff782d] hover:bg-[#ff782d] hover:text-white disabled:pointer-events-none disabled:opacity-30"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="w-6 h-6" />
                   </button>
-
-                  <span className="text-sm font-semibold text-foreground">
-                    {currentPage} / {pagination.totalPages}
-                  </span>
+                  
+                  {[...Array(pagination.totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`flex h-[4.8rem] w-[4.8rem] items-center justify-center rounded-full text-[1.6rem] font-bold transition-all ${
+                        currentPage === i + 1
+                          ? "bg-[#111827] text-white"
+                          : "bg-slate-100 text-[#111827] hover:bg-slate-200"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
 
                   <button
                     type="button"
@@ -529,27 +409,200 @@ export default function CoursesPage() {
                       setCurrentPage((prev) => Math.min(prev + 1, pagination.totalPages))
                     }
                     disabled={currentPage === pagination.totalPages}
-                    className="cursor-pointer text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-                    aria-label="Trang sau"
+                    className="flex h-[4.8rem] w-[4.8rem] items-center justify-center rounded-full border border-slate-200 text-slate-500 transition-all hover:border-[#ff782d] hover:bg-[#ff782d] hover:text-white disabled:pointer-events-none disabled:opacity-30"
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="w-6 h-6" />
                   </button>
                 </div>
               </div>
             ) : null}
 
             {!isLoading && courses.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border/40 bg-card/50 py-20 text-center">
-                <Sparkles className="mx-auto mb-4 h-8 w-8 text-muted-foreground" aria-hidden="true" />
-                <h3 className="mb-1 text-lg font-semibold text-foreground">
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 py-24 text-center">
+                <Sparkles className="mx-auto mb-4 h-10 w-10 text-slate-400" aria-hidden="true" />
+                <h3 className="mb-2 text-[2rem] font-bold text-[#111827] font-heading">
                   Không tìm thấy khóa học nào
                 </h3>
-                <p className="text-sm text-muted-foreground">Vui lòng thử chọn bộ lọc khác.</p>
+                <p className="text-[1.6rem] text-slate-500">Vui lòng thử chọn bộ lọc khác.</p>
               </div>
             ) : null}
           </div>
+
+          {/* Sidebar Filters (Right) */}
+          <div className="w-full md:w-[240px] lg:w-[280px] shrink-0 space-y-8">
+            {/* Category Filter */}
+            <div>
+              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+                Course Category
+              </h3>
+              <div className="space-y-4">
+                {[ALL_CATEGORY, ...categories].map((opt) => (
+                  <label
+                    key={opt.id}
+                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                        <input
+                          type="checkbox"
+                          checked={productTypeFilter === (opt.slug || opt.id)}
+                          onChange={() => {
+                            setProductTypeFilter(opt.slug || opt.id);
+                            setCurrentPage(1);
+                          }}
+                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        />
+                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span>{opt.name === "Tất cả" ? "All" : opt.name}</span>
+                    </div>
+                    <span className="text-[1.4rem] text-slate-400">{opt.courseCount ?? 15}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Instructors Filter */}
+            <div className="pt-8 border-t border-slate-200">
+              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+                Instructors
+              </h3>
+              <div className="space-y-4">
+                {["Kenny White", "John Doe"].map((instructor) => (
+                  <label
+                    key={instructor}
+                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                        <input
+                          type="checkbox"
+                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        />
+                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span>{instructor}</span>
+                    </div>
+                    <span className="text-[1.4rem] text-slate-400">15</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Price Filter */}
+            <div className="pt-8 border-t border-slate-200">
+              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+                Price
+              </h3>
+              <div className="space-y-4">
+                {PRICE_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                        <input
+                          type="checkbox"
+                          checked={priceFilter === opt.value}
+                          onChange={() => {
+                            setPriceFilter(opt.value);
+                            setCurrentPage(1);
+                          }}
+                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        />
+                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span>{opt.label === "Tất cả" ? "All" : opt.label === "Miễn phí" ? "Free" : "Paid"}</span>
+                    </div>
+                    <span className="text-[1.4rem] text-slate-400">15</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Review Filter */}
+            <div className="pt-8 border-t border-slate-200">
+              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+                Review
+              </h3>
+              <div className="space-y-4">
+                {[5, 4, 3, 2, 1].map((stars) => (
+                  <label
+                    key={stars}
+                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                        <input
+                          type="checkbox"
+                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        />
+                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div className="flex gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <svg key={i} className={`w-4 h-4 ${i < stars ? "text-amber-400" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                    <span className="text-[1.4rem] text-slate-400">(1,025)</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Level Filter */}
+            <div className="pt-8 border-t border-slate-200">
+              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+                Level
+              </h3>
+              <div className="space-y-4">
+                {LEVEL_OPTIONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                        <input
+                          type="checkbox"
+                          checked={levelFilter === opt.value}
+                          onChange={() => {
+                            setLevelFilter(opt.value);
+                            setCurrentPage(1);
+                          }}
+                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        />
+                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span>{opt.label === "Tất cả" ? "All levels" : opt.label === "Cơ bản" ? "Beginner" : opt.label === "Trung cấp" ? "Intermidiate" : "Expert"}</span>
+                    </div>
+                    <span className="text-[1.4rem] text-slate-400">15</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </Container>
 
       <Footer />
     </main>

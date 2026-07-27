@@ -40,7 +40,7 @@ import {
   fetchMyEnrollments,
   upsertLessonProgress,
   type CourseProgress,
-} from "@/lib/learning/api";
+} from "@/services/learning.service";
 
 type LessonRow = {
   id: string;

@@ -25,7 +25,7 @@ import {
   fetchMyEnrollments,
   type CourseProgress,
   type EnrollmentWithCourse,
-} from "@/lib/learning/api";
+} from "@/services/learning.service";
 
 type LearningCard = EnrollmentWithCourse & {
   progress: CourseProgress;

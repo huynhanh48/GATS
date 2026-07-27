@@ -9,7 +9,7 @@ import {
   sendCourseChatMessage,
   setCourseChatMessagePinned,
   type CourseChatMessage,
-} from "@/lib/course-chat/api";
+} from "@/services/course-chat.service";
 
 type Props = {
   courseId: string;

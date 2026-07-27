@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchCourseBySlug, fetchMyEnrollments } from "@/lib/learning/api";
+import { fetchCourseBySlug, fetchMyEnrollments } from "@/services/learning.service";
 
 /**
  * `/learn/[slug]` — resolve bài đầu tiên rồi redirect.
