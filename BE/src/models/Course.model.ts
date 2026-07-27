@@ -118,7 +118,13 @@ const listCoursesQueryBaseSchema = z.object({
   level: courseLevelQuerySchema.optional(),
   category: z.string().min(1).optional(),
   tag: z.string().min(1).optional(),
-  keyword: z.string().optional(),
+  /** Case-insensitive search across title / slug / description. Combines with status, page, etc. */
+  keyword: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined)),
   /** Soft-delete visibility. `only`/`with` require auth (admin trash). Default: without */
   deleted: softDeleteVisibilitySchema.optional(),
   page: z.coerce.number().int().min(1).optional(),

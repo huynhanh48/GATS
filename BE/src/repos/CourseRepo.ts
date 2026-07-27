@@ -1,4 +1,14 @@
-import { and, count, desc, eq, ilike, inArray, ne, type SQL } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  ne,
+  or,
+  type SQL,
+} from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -14,6 +24,11 @@ import { type CourseRecord, parseCourseRecord } from '@src/models/Course.model';
 
 function parseRow(row: unknown): CourseRecord {
   return parseCourseRecord(row);
+}
+
+/** Escape `%` / `_` so user input is treated as literal text in ILIKE. */
+function escapeLikePattern(raw: string): string {
+  return raw.replace(/[\\%_]/g, '\\$&');
 }
 
 function withSoftDelete(
@@ -125,7 +140,14 @@ export async function findMany(options: {
     conditions.push(inArray(coursesTable.id, options.courseIds));
   }
   if (options.keyword) {
-    conditions.push(ilike(coursesTable.title, `%${options.keyword}%`));
+    const pattern = `%${escapeLikePattern(options.keyword.trim())}%`;
+    conditions.push(
+      or(
+        ilike(coursesTable.title, pattern),
+        ilike(coursesTable.slug, pattern),
+        ilike(coursesTable.description, pattern),
+      )!,
+    );
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
