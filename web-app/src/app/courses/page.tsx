@@ -181,9 +181,9 @@ export default function CoursesPage() {
       <Header />
 
       {/* Breadcrumb Area */}
-      <div className="w-full bg-[#f8f9fa] py-8 mt-[70px]">
+      <div className="w-full bg-[#f8f9fa] py-4 mt-[7.2rem] border-b border-border/10">
         <Container size="xl">
-          <div className="text-[1.4rem] font-medium text-slate-500 flex items-center gap-2">
+          <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2">
             <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
             <span>›</span>
             <span className="text-slate-800">Tất cả khóa học</span>
@@ -191,7 +191,7 @@ export default function CoursesPage() {
         </Container>
       </div>
 
-      <Container size="xl" className="flex-1 pb-24 pt-16">
+      <Container size="xl" className="flex-1 pb-24 pt-10">
         {/* Header row: Title + Search & View Toggle */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
           <h1 className="text-[2.8rem] md:text-[3.2rem] font-bold text-[#111827] font-heading">
