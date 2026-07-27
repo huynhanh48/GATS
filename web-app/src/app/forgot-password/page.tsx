@@ -5,7 +5,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { forgotPasswordRequest } from "@/lib/auth/api";
+import { forgotPasswordRequest } from "@/services/auth.service";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

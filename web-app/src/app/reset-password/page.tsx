@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { resetPasswordRequest } from "@/lib/auth/api";
+import { resetPasswordRequest } from "@/services/auth.service";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();

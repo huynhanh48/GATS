@@ -1,4 +1,4 @@
-import { and, count, desc, eq, inArray, ne, type SQL } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, inArray, ne, type SQL } from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -99,6 +99,7 @@ export async function findMany(options: {
   categoryId?: string;
   instructorId?: number;
   courseIds?: string[];
+  keyword?: string;
   skip: number;
   take: number;
   deleted?: SoftDeleteVisibility;
@@ -122,6 +123,9 @@ export async function findMany(options: {
   }
   if (options.courseIds) {
     conditions.push(inArray(coursesTable.id, options.courseIds));
+  }
+  if (options.keyword) {
+    conditions.push(ilike(coursesTable.title, `%${options.keyword}%`));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

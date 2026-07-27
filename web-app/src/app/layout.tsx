@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "./globals.css";
+import "@/styles/global.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { AuthProvider } from "@/components/providers/AuthProvider";
@@ -8,20 +8,30 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "@/components/providers/CartProvider";
 
-import localFont from "next/font/local";
+import { Exo, Open_Sans, Be_Vietnam_Pro } from "next/font/google";
 
-const outfit = localFont({
-  src: "../fonts/Outfit-Variable.ttf",
-  variable: "--font-outfit",
+/** Font body chính — dùng cho paragraph, label, button text */
+const exo = Exo({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-exo",
   display: "swap",
-  weight: "100 900",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const inter = localFont({
-  src: "../fonts/Inter-Variable.ttf",
-  variable: "--font-inter",
+/** Font secondary — dùng cho caption, small text, description */
+const openSans = Open_Sans({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-open-sans",
   display: "swap",
-  weight: "100 900",
+  weight: ["300", "400", "600", "700"],
+});
+
+/** Font heading — dùng cho H1, H2, H3, title nổi bật */
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  variable: "--font-be-vietnam-pro",
+  display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -38,7 +48,7 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={cn("h-full antialiased font-sans", outfit.variable, inter.variable)}
+      className={cn("h-full antialiased font-sans", exo.variable, openSans.variable, beVietnamPro.variable)}
     >
       <body className="min-h-full flex flex-col bg-background font-sans" suppressHydrationWarning>
         <ThemeProvider

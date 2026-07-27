@@ -145,7 +145,7 @@ export function AuthModal({
               <div className="hidden md:flex w-[45%] relative bg-black p-4">
                 <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,112,235,0.15)] bg-black">
                   <Image
-                    src="/auth-bg.jpg"
+                    src="https://placehold.co/800x800"
                     alt="AI Artwork"
                     fill
                     className="object-cover opacity-90 mix-blend-screen"

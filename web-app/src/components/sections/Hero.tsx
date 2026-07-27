@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Surface } from "@/components/ui/surface";
 import { LightRays, ShinyText, BlurText, AnimatedContent } from "@/components/react-bits";
+import { Container } from "@/components/layout/Container";
 
 const brand = "#0070EB";
 
@@ -36,12 +37,12 @@ const activeCourses = [
 
 export function Hero() {
   return (
-    <section className="relative flex min-h-[92vh] flex-col items-center justify-center overflow-hidden bg-background px-4 pb-20 pt-32 transition-colors">
+    <section className="relative  flex min-h-[92vh] flex-col items-center justify-center overflow-hidden bg-background px-4 pb-20 pt-32 transition-colors">
       {/* React Bits Ambient Atmosphere Background */}
       <LightRays className="z-0 opacity-80" color1="0, 112, 235" color2="255, 118, 34" speed={1.2} />
 
       {/* Editorial First Viewport */}
-      <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+      <Container size="lg" className="relative z-10 flex flex-col items-center text-center">
         {/* Brand Signal Badge with ShinyText */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
@@ -129,7 +130,7 @@ export function Hero() {
             <span><strong className="font-semibold text-foreground">98%</strong> Đánh giá tích cực</span>
           </div>
         </motion.div>
-      </div>
+      </Container>
 
       {/* Integrated Workspace Showcase (Sub-Hero Section) */}
       <AnimatedContent

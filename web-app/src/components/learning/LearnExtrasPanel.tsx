@@ -16,7 +16,7 @@ import {
   type LessonBookmark,
   type LessonNote,
   type LessonQuestion,
-} from "@/lib/learning/api";
+} from "@/services/learning.service";
 
 type TabKey = "notes" | "bookmarks" | "qna";
 

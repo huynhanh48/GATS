@@ -15,7 +15,7 @@ import {
   logoutRequest,
   registerRequest,
   verifyEmailRequest,
-} from "@/lib/auth/api";
+} from "@/services/auth.service";
 import { setUnauthorizedSessionHandler } from "@/lib/apiClient";
 import type { AuthStatus, AuthUser, RegisterInput } from "@/types/auth";
 import { AuthContext, type AuthContextValue } from "./auth-context";

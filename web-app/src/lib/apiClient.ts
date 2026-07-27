@@ -22,6 +22,10 @@ export const PUBLIC_API_URL = "https://api.gats.vn";
 function resolveApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
+    // Always use relative URL in local development to utilize Next.js rewrites
+    if (host === "localhost" || host === "127.0.0.1") {
+      return "";
+    }
     if (
       host === "gats.vn" ||
       host === "www.gats.vn" ||

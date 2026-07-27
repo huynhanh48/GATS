@@ -9,7 +9,7 @@ const INTERNAL_HOST_RE =
  */
 export function resolveMediaUrl(
   url: string | null | undefined,
-  fallback = "/auth-bg.jpg",
+  fallback = "https://placehold.co/800x800",
 ): string {
   if (!url || !url.trim()) return fallback;
   const raw = url.trim();

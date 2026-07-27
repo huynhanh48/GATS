@@ -7,7 +7,7 @@ import { ArrowRight, CheckCircle2, Users, Lightbulb, Target, Sparkles, BookOpen,
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { CapabilitiesSection } from "@/components/sections/CapabilitiesSection";
+import { CapabilitiesSection } from "./components/CapabilitiesSection";
 
 const stats = [
   { value: "5000+", label: "Học viên toàn cầu", icon: Users },
@@ -146,7 +146,7 @@ export default function AboutPage() {
             className="bg-card border border-border/50 rounded-3xl overflow-hidden relative group min-h-[400px]"
           >
             <Image
-              src="/auth-bg.jpg"
+              src="https://placehold.co/800x800"
               alt="GATS Vision"
               fill
               className="object-cover group-hover:scale-110 transition-transform duration-700"

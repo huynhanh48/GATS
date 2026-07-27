@@ -118,6 +118,7 @@ const listCoursesQueryBaseSchema = z.object({
   level: courseLevelQuerySchema.optional(),
   category: z.string().min(1).optional(),
   tag: z.string().min(1).optional(),
+  keyword: z.string().optional(),
   /** Soft-delete visibility. `only`/`with` require auth (admin trash). Default: without */
   deleted: softDeleteVisibilitySchema.optional(),
   page: z.coerce.number().int().min(1).optional(),
@@ -129,7 +130,7 @@ const listCoursesQueryBaseSchema = z.object({
 export const listCoursesQuerySchema = listCoursesQueryBaseSchema.transform(
   (data) => {
     if (data.take !== undefined) {
-      return {
+      const res: any = {
         status: data.status,
         level: data.level,
         category: data.category,
@@ -139,12 +140,14 @@ export const listCoursesQuerySchema = listCoursesQueryBaseSchema.transform(
         take: data.take,
         mode: 'offset' as const,
       };
+      if (data.keyword) res.keyword = data.keyword;
+      return res;
     }
 
     const limit = data.limit ?? 20;
     const page = data.page ?? 1;
 
-    return {
+    const res: any = {
       status: data.status,
       level: data.level,
       category: data.category,
@@ -156,6 +159,8 @@ export const listCoursesQuerySchema = listCoursesQueryBaseSchema.transform(
       take: limit,
       mode: 'page' as const,
     };
+    if (data.keyword) res.keyword = data.keyword;
+    return res;
   },
 );
 

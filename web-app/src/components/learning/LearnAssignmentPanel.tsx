@@ -7,7 +7,7 @@ import {
   fetchLessonAssignment,
   submitLessonAssignment,
   type AssignmentPayload,
-} from "@/lib/learning/api";
+} from "@/services/learning.service";
 
 type Props = {
   courseId: string;

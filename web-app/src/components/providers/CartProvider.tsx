@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { cartApi } from "@/lib/cart/api";
+import { cartApi } from "@/services/cart.service";
 import { toast } from "sonner";
 import { useAuthModal } from "@/hooks/useAuth";
 import { resolveMediaUrl } from "@/lib/media/url";
