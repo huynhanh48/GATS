@@ -41,9 +41,18 @@ async function update(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function adminExportLeadsCsv(req: Request, res: Response) {
+  const query = parseLeadListQuery(req.query);
+  const { csv, filename } = await LeadService.adminExportLeadsCsv(query);
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.status(HttpStatusCodes.OK).send(csv);
+}
+
 export default {
   create: errorHandle(create),
   list: errorHandle(list),
   getById: errorHandle(getById),
   update: errorHandle(update),
+  adminExportLeadsCsv: errorHandle(adminExportLeadsCsv),
 };

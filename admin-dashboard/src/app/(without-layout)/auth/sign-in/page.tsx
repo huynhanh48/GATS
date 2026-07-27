@@ -18,21 +18,17 @@ export default function SignIn() {
 
       <div className="hidden w-full p-6 xl:block xl:w-1/2">
         <div className="bg-gradient-to-br from-[#eef] to-[#fff8fc] dark:from-[#1a222c] dark:to-[#1a222c] overflow-hidden rounded-2xl px-15 pt-12.5 border border-transparent dark:border-slate-800">
-          <Link className="mb-10 inline-block" href="/">
+          <Link className="mb-10 inline-flex items-center gap-2.5" href="/">
             <Image
-              className="hidden dark:block"
-              src={"/images/logo/logo.svg"}
-              alt="Logo"
-              width={176}
-              height={32}
+              src="/Group.svg"
+              alt="GATS"
+              width={36}
+              height={36}
+              className="size-9 object-contain"
             />
-            <Image
-              className="dark:hidden"
-              src={"/images/logo/logo-dark.svg"}
-              alt="Logo"
-              width={176}
-              height={32}
-            />
+            <span className="text-xl font-bold tracking-tight text-slate-950 dark:text-white">
+              GATS Academy
+            </span>
           </Link>
           <p className="mb-3 text-xl font-medium text-slate-800 dark:text-white">
             Khu vực vận hành & giảng dạy

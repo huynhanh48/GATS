@@ -526,6 +526,7 @@ async function update(id: string, input: UpdateCourseInput, actor?: AuthUser) {
   }
 
   if (input.status === 'published' && existing.status !== 'published') {
+    await assertPublishReady(id);
     Object.assign(payload, { publishedAt: new Date() });
   }
 
@@ -642,7 +643,21 @@ async function getPublishReadiness(id: string) {
   return { data: { ready, checks } };
 }
 
+async function assertPublishReady(id: string): Promise<void> {
+  const { data } = await getPublishReadiness(id);
+  if (data.ready) return;
+
+  const failed = data.checks
+    .filter((check) => !check.passed)
+    .map((check) => check.detail ?? check.label);
+  throw new RouteError(
+    HttpStatusCodes.BAD_REQUEST,
+    `Course is not ready to publish: ${failed.join('; ')}`,
+  );
+}
+
 async function publish(id: string) {
+  await assertPublishReady(id);
   return update(id, { status: 'published' });
 }
 

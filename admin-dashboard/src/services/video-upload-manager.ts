@@ -76,6 +76,8 @@ type InternalJob = {
   abortController: AbortController;
   runPromise: Promise<void> | null;
   realtimeUnsubscribe: (() => void) | null;
+  /** Ensures completion toast fires once across poll + socket paths. */
+  completionToasted: boolean;
 };
 
 type Listener = (jobs: UploadJobSnapshot[]) => void;
@@ -145,19 +147,56 @@ function videoProgressLabel(payload: VideoProgressPayload): string {
   }
 }
 
+function toastCompletionOnce(job: InternalJob): void {
+  if (job.completionToasted) return;
+  job.completionToasted = true;
+  toast.success(`Video đã xử lý xong: ${job.snapshot.title}`);
+}
+
+function markJobDoneAndCleanup(
+  job: InternalJob,
+  patch: Partial<UploadJobSnapshot>,
+  stopPolling: () => void,
+): void {
+  updateSnapshot(job, patch);
+  toastCompletionOnce(job);
+  stopPolling();
+  job.realtimeUnsubscribe?.();
+  job.realtimeUnsubscribe = null;
+  setTimeout(() => {
+    jobs.delete(job.snapshot.id);
+    emit();
+  }, 4500);
+}
+
 function bindVideoRealtime(job: InternalJob, videoId: string): void {
   if (job.realtimeUnsubscribe) return;
 
   let pollInterval: ReturnType<typeof setInterval> | null = null;
   let isPolling = false;
 
+  const stopPolling = () => {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  };
+
   const startPolling = () => {
     if (pollInterval) return;
     pollInterval = setInterval(async () => {
       if (isPolling) return;
+      if (job.snapshot.status === "done" || job.snapshot.status === "error") {
+        stopPolling();
+        return;
+      }
       isPolling = true;
       try {
         const res = await videoClient.getVideoStatus(videoId);
+        if (res.error?.status === 404) {
+          stopPolling();
+          return;
+        }
         if (res.data?.data) {
           const status = res.data.data.status;
           const phase = res.data.data.processingPhase;
@@ -170,19 +209,17 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
             stopPolling();
           } else if (status === "ready") {
             const hasFlac = Boolean(res.data.data.audioFlacKey);
-            updateSnapshot(job, {
-              status: "done",
-              progressPct: 100,
-              stageLabel: hasFlac
-                ? "Video HLS + audio FLAC đã sẵn sàng"
-                : "Video đã sẵn sàng",
-            });
-            toast.success(`Video đã xử lý xong: ${job.snapshot.title}`);
-            stopPolling();
-            setTimeout(() => {
-              jobs.delete(job.snapshot.id);
-              emit();
-            }, 4500);
+            markJobDoneAndCleanup(
+              job,
+              {
+                status: "done",
+                progressPct: 100,
+                stageLabel: hasFlac
+                  ? "Video HLS + audio FLAC đã sẵn sàng"
+                  : "Video đã sẵn sàng",
+              },
+              stopPolling,
+            );
           } else if (phase === "extracting_audio") {
             updateSnapshot(job, {
               status: "processing",
@@ -196,13 +233,6 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
         isPolling = false;
       }
     }, 3000);
-  };
-
-  const stopPolling = () => {
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
   };
 
   // Start polling immediately as fallback for socket
@@ -223,21 +253,17 @@ function bindVideoRealtime(job: InternalJob, videoId: string): void {
     }
 
     if (payload.phase === "complete") {
-      updateSnapshot(job, {
-        status: "done",
-        progressPct: 100,
-        stageLabel: videoProgressLabel(payload),
-        stageLoadedBytes: payload.loadedBytes ?? null,
-        stageTotalBytes: payload.totalBytes ?? null,
-      });
-      toast.success(`Video đã xử lý xong: ${job.snapshot.title}`);
-      job.realtimeUnsubscribe?.();
-      job.realtimeUnsubscribe = null;
-      stopPolling();
-      setTimeout(() => {
-        jobs.delete(job.snapshot.id);
-        emit();
-      }, 4500);
+      markJobDoneAndCleanup(
+        job,
+        {
+          status: "done",
+          progressPct: 100,
+          stageLabel: videoProgressLabel(payload),
+          stageLoadedBytes: payload.loadedBytes ?? null,
+          stageTotalBytes: payload.totalBytes ?? null,
+        },
+        stopPolling,
+      );
       return;
     }
 
@@ -533,6 +559,7 @@ export async function startUpload(input: StartUploadInput): Promise<string> {
     abortController: new AbortController(),
     runPromise: null,
     realtimeUnsubscribe: null,
+    completionToasted: false,
     snapshot: {
       id,
       courseId: input.courseId,
@@ -657,6 +684,7 @@ export async function bootstrapResumableUploads(): Promise<void> {
       abortController: new AbortController(),
       runPromise: null,
       realtimeUnsubscribe: null,
+      completionToasted: false,
       snapshot: {
         id: row.id,
         courseId: row.courseId,

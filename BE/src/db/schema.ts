@@ -50,3 +50,4 @@ export * from './schema/lesson-answer';
 export * from './schema/lesson-note';
 export * from './schema/lesson-bookmark';
 export * from './schema/course-chat-message';
+export * from './schema/banned-word';

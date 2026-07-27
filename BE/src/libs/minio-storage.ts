@@ -41,6 +41,8 @@ export async function uploadFileFromPath(
       Key: normalizeKey(key),
       Body: createReadStream(tempPath),
       ContentType: contentType,
+      // Open in browser tab (PDF/images) instead of forcing download.
+      ContentDisposition: 'inline',
     },
   });
 
@@ -59,6 +61,7 @@ export async function uploadBuffer(
       Key: normalizeKey(key),
       Body: body,
       ContentType: contentType,
+      ContentDisposition: 'inline',
       ...(cacheControl ? { CacheControl: cacheControl } : {}),
     }),
   );

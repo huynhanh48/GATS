@@ -4,6 +4,7 @@ const LeadPaths = {
     _: '/leads',
     Create: '/',
     List: '/',
+    ExportCsv: '/admin/export.csv',
     Get: '/:id',
     Update: '/:id',
   },

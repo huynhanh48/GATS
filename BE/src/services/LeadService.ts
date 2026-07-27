@@ -12,9 +12,22 @@ import * as LeadRepo from '@src/repos/LeadRepo';
 import NotificationService from '@src/services/NotificationService';
 
 async function create(input: CreateLeadInput) {
+  const phone = input.phone.trim();
+  const duplicate = await LeadRepo.findRecentByPhone(phone);
+  if (duplicate) {
+    return {
+      lead: {
+        id: duplicate.id,
+        createdAt: duplicate.createdAt,
+      },
+      message: 'Đã ghi nhận đăng ký tư vấn (trùng SĐT gần đây)',
+      deduplicated: true,
+    };
+  }
+
   const lead = await LeadRepo.create({
     name: input.name.trim(),
-    phone: input.phone.trim(),
+    phone,
     email: input.email?.trim() ? input.email.trim() : null,
     message: input.message?.trim() ? input.message.trim() : null,
     source: input.source?.trim() || 'homepage_cta',
@@ -56,6 +69,7 @@ async function create(input: CreateLeadInput) {
       createdAt: lead.createdAt,
     },
     message: 'Đã gửi đăng ký tư vấn',
+    deduplicated: false,
   };
 }
 
@@ -187,9 +201,65 @@ async function update(
   };
 }
 
+function csvEscape(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value);
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+async function adminExportLeadsCsv(query: LeadListQuery) {
+  const rows = await LeadRepo.listForExport({
+    q: query.q,
+    status: query.status,
+    createdFrom: query.createdFrom,
+    createdTo: query.createdTo,
+  });
+
+  const header = [
+    'ID',
+    'Thời gian',
+    'Tên',
+    'SĐT',
+    'Email',
+    'Trạng thái',
+    'Người phụ trách',
+    'Nguồn',
+    'Nội dung',
+    'Ghi chú',
+  ];
+  const lines = [header.map(csvEscape).join(',')];
+  for (const row of rows) {
+    lines.push(
+      [
+        row.id,
+        row.createdAt.toISOString(),
+        row.name,
+        row.phone,
+        row.email,
+        row.status,
+        row.assigneeName,
+        row.source,
+        row.message,
+        row.notes,
+      ]
+        .map(csvEscape)
+        .join(','),
+    );
+  }
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  return {
+    csv: `\uFEFF${lines.join('\n')}`,
+    filename: `leads-${stamp}.csv`,
+  };
+}
+
 export default {
   create,
   list,
   getById,
   update,
+  adminExportLeadsCsv,
 };

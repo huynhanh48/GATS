@@ -18,21 +18,17 @@ export default function SignUp() {
 
       <div className="hidden w-full p-6 xl:block xl:w-1/2">
         <div className="custom-gradient-1 overflow-hidden rounded-2xl px-15 pt-12.5 dark:bg-dark-2! dark:bg-none">
-          <Link className="mb-10 inline-block" href="/">
+          <Link className="mb-10 inline-flex items-center gap-2.5" href="/">
             <Image
-              className="hidden dark:block"
-              src={"/images/logo/logo.svg"}
-              alt="Logo"
-              width={176}
-              height={32}
+              src="/Group.svg"
+              alt="GATS"
+              width={36}
+              height={36}
+              className="size-9 object-contain"
             />
-            <Image
-              className="dark:hidden"
-              src={"/images/logo/logo-dark.svg"}
-              alt="Logo"
-              width={176}
-              height={32}
-            />
+            <span className="text-xl font-bold tracking-tight text-dark dark:text-white">
+              GATS Academy
+            </span>
           </Link>
           <p className="mb-3 text-xl font-medium text-dark dark:text-white">
             Create your account

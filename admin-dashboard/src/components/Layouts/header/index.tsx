@@ -16,7 +16,9 @@ const PAGE_TITLES: Array<[string, string]> = [
   ["/video", "Video"],
   ["/thumbnail", "Thumbnail"],
   ["/file", "Files"],
-  ["/calendar", "Calendar"],
+  ["/orders", "Đơn hàng"],
+  ["/bank-accounts", "Tài khoản ngân hàng"],
+  ["/leads", "Đăng ký tư vấn"],
   ["/profile", "Profile"],
   ["/pages/settings", "Cài đặt"],
 ];
@@ -41,11 +43,11 @@ export function Header() {
       {isMobile && (
         <Link href="/" className="2xsm:ml-4 ml-2 max-[430px]:hidden">
           <Image
-            src="/images/logo/logo-icon.svg"
+            src="/Group.svg"
             width={32}
             height={32}
-            alt=""
-            role="presentation"
+            alt="GATS"
+            className="size-8 object-contain"
           />
         </Link>
       )}

@@ -39,6 +39,7 @@ describe('parseFfprobeAudioResult', () => {
       codecName: 'aac',
       copySafe: true,
       timedOut: false,
+      error: null,
     });
   });
 
@@ -48,6 +49,7 @@ describe('parseFfprobeAudioResult', () => {
       codecName: null,
       copySafe: false,
       timedOut: false,
+      error: null,
     });
   });
 });
@@ -135,6 +137,7 @@ describe('shouldFallbackFromHttpProbe', () => {
         codecName: null,
         copySafe: false,
         timedOut: true,
+        error: null,
       }),
     ).toBe(true);
     expect(
@@ -143,6 +146,7 @@ describe('shouldFallbackFromHttpProbe', () => {
         codecName: null,
         copySafe: false,
         timedOut: true,
+        error: null,
       }),
     ).toBe(false);
     expect(
@@ -151,6 +155,7 @@ describe('shouldFallbackFromHttpProbe', () => {
         codecName: 'aac',
         copySafe: true,
         timedOut: false,
+        error: null,
       }),
     ).toBe(false);
   });

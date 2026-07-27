@@ -15,7 +15,7 @@ export default function FilePage() {
         description="Tải lên và quản lý tài liệu dùng trong khóa học, bài viết và tài nguyên học tập."
         metrics={[
           { label: "Loại", value: "File", tone: "blue" },
-          { label: "Định dạng", value: "PDF, DOC, TXT", tone: "green" },
+          { label: "Định dạng", value: "PDF, DOC, Ảnh", tone: "green" },
           { label: "Tối đa", value: "50MB", tone: "orange" },
         ]}
       />

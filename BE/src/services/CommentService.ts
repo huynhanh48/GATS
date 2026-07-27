@@ -9,6 +9,7 @@ import type {
 } from '@src/models/Comment.model';
 import * as CommentLikeRepo from '@src/repos/CommentLikeRepo';
 import * as CommentRepo from '@src/repos/CommentRepo';
+import { maskBannedWords } from '@src/services/BannedWordService';
 import PostService from '@src/services/PostService';
 
 const Errors = {
@@ -93,10 +94,11 @@ async function create(
 ): Promise<CommentRecord> {
   await PostService.assertPostReadableById(postId, userId, isAuthenticated);
 
+  const content = await maskBannedWords(input.content);
   return CommentRepo.create({
     postId,
     userId,
-    content: input.content,
+    content,
     parentId: null,
   });
 }
@@ -120,10 +122,11 @@ async function reply(
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_REPLY);
   }
 
+  const content = await maskBannedWords(input.content);
   return CommentRepo.create({
     postId,
     userId,
-    content: input.content,
+    content,
     parentId,
   });
 }
@@ -163,7 +166,7 @@ async function update(
   } = {};
 
   if (input.content !== undefined) {
-    payload.content = input.content;
+    payload.content = await maskBannedWords(input.content);
   }
 
   if (input.status !== undefined) {

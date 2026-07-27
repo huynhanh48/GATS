@@ -38,6 +38,14 @@ type UploadedMulterFile = {
 const IMAGE_MIME_SET = new Set<string>(ALLOWED_IMAGE_CONTENT_TYPES);
 const FILE_MIME_SET = new Set<string>(ALLOWED_FILE_CONTENT_TYPES);
 
+/** Rebuild public URL from storageKey so MINIO_PUBLIC_BASE_URL changes apply to old rows. */
+function withFreshUrl(media: MediaRecord): MediaRecord {
+  return {
+    ...media,
+    url: buildMinioPublicUrl(media.storageKey),
+  };
+}
+
 async function uploadMedia(
   kind: MediaKind,
   file: UploadedMulterFile | undefined,
@@ -109,7 +117,11 @@ async function uploadFile(
 async function list(
   query: ListMediaQuery,
 ): Promise<{ data: MediaRecord[]; total: number }> {
-  return MediaRepo.list(query);
+  const result = await MediaRepo.list(query);
+  return {
+    data: result.data.map(withFreshUrl),
+    total: result.total,
+  };
 }
 
 async function getById(id: string): Promise<MediaRecord> {
@@ -117,7 +129,7 @@ async function getById(id: string): Promise<MediaRecord> {
   if (!media) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
-  return media;
+  return withFreshUrl(media);
 }
 
 async function getLink(id: string): Promise<{ id: string; url: string }> {

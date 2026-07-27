@@ -3,6 +3,7 @@
 #
 # Local dev (BE on host, infra + worker in Docker):
 #   docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
+# Worker reads S3 (LongVan) from BE/config/.env.development — same bucket as host API.
 #
 # Full production stack:
 #   docker compose -p gats-academy up --build -d
@@ -75,6 +76,25 @@ x-backend-env: &backend-env
   HLS_UPLOAD_CONCURRENCY: "16"
   FFMPEG_X264_PRESET: veryfast
 
+# Dev worker: Docker network URLs only. S3/JWT/MinIO keys come from env_file so the
+# worker uses the same LongVan bucket as BE running on the host (not in-cluster MinIO).
+x-worker-dev-env: &worker-dev-env
+  NODE_ENV: development
+  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+  REDIS_URL: redis://redis:6379
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: postgres
+  VIDEO_WORKER_CONCURRENCY: "1"
+  HLS_UPLOAD_CONCURRENCY: "16"
+  FFMPEG_X264_PRESET: veryfast
+  # MinIO for docs/thumbnails — in-cluster; host BE uses localhost:9010 via env_file.
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_SECRET_KEY: minioadmin
+
 services:
   db:
     image: postgres:16-alpine
@@ -134,6 +154,7 @@ services:
         done;
         mc mb -p local/s3-video-gats || true;
         mc mb -p local/files-gats || true;
+        mc anonymous set download local/files-gats || true;
         echo 'buckets ready';
 
   # Video transcode worker (BullMQ + ffmpeg). Use for local dev when API runs on host.
@@ -147,15 +168,19 @@ services:
     image: gats-academy-worker
     container_name: gats-academy-worker
     restart: unless-stopped
+    # Docker Desktop DNS can intermittently fail for public S3 hosts.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file:
+      - ./BE/config/.env.development
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
     environment:
-      <<: *backend-env
+      <<: *worker-dev-env
 
   app:
     build:

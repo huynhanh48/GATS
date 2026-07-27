@@ -103,6 +103,24 @@ server {
 
     client_max_body_size 500M;
 
+    # Public media from MinIO (path-style): /files-gats/files/... /files-gats/thumbnails/...
+    location /files-gats/ {
+        proxy_pass http://minio:9000;
+        proxy_http_version 1.1;
+        proxy_set_header Host minio:9000;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_connect_timeout 60s;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
+        # View in browser instead of forced download.
+        proxy_hide_header Content-Disposition;
+        add_header Content-Disposition "inline" always;
+    }
+
     location / {
         proxy_pass http://app:3000;
         proxy_http_version 1.1;

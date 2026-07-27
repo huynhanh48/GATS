@@ -48,6 +48,14 @@ function buildHref(opts: { page?: number; status?: FilterKey; q?: string }) {
   return qs ? `/leads?${qs}` : "/leads";
 }
 
+function buildCsvHref(status: FilterKey, q: string) {
+  const params = new URLSearchParams();
+  if (status !== "all") params.set("status", status);
+  if (q.trim()) params.set("q", q.trim());
+  const qs = params.toString();
+  return `/api/be/leads/admin/export.csv${qs ? `?${qs}` : ""}`;
+}
+
 export default async function LeadsPage({ searchParams }: LeadsPageProps) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? "1") || 1);
@@ -76,12 +84,20 @@ export default async function LeadsPage({ searchParams }: LeadsPageProps) {
       <AdminPageHeader
         eyebrow="CRM"
         title="Đăng ký tư vấn"
-        description="Theo dõi và chăm sóc lead từ form tư vấn trên website."
+        description="Theo dõi và chăm sóc lead từ form tư vấn trên website. SĐT trùng trong 7 ngày gần đây được gộp (không tạo lead mới)."
         metrics={[
           { label: "Tổng", value: counts?.all ?? pagination.total, tone: "slate" },
           { label: "Mới", value: counts?.new ?? 0, tone: "blue" },
           { label: "Đang hiển thị", value: data.length, tone: "green" },
         ]}
+        actions={
+          <a
+            href={buildCsvHref(status, q)}
+            className="inline-flex rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Export CSV
+          </a>
+        }
       />
 
       {error ? <AdminFetchError message={error} retryHref={retryHref} /> : null}

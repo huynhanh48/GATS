@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, ilike, lte, or } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, lte, or, sql } from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -90,6 +90,81 @@ export async function list(options: {
     data,
     total: Number(totalRow[0]?.value ?? 0),
   };
+}
+
+export async function findRecentByPhone(
+  phone: string,
+  withinHours = 24 * 7,
+): Promise<Lead | undefined> {
+  const normalized = phone.replace(/\s+/g, '').trim();
+  if (!normalized) return undefined;
+
+  const since = new Date(Date.now() - withinHours * 60 * 60 * 1000);
+  const rows = await db
+    .select()
+    .from(leadsTable)
+    .where(
+      and(
+        gte(leadsTable.createdAt, since),
+        sql`regexp_replace(${leadsTable.phone}, '\\s+', '', 'g') = ${normalized}`,
+      ),
+    )
+    .orderBy(desc(leadsTable.createdAt))
+    .limit(1);
+  return rows[0];
+}
+
+export async function listForExport(options: {
+  q?: string;
+  status?: LeadStatus;
+  createdFrom?: Date;
+  createdTo?: Date;
+  limit?: number;
+}): Promise<LeadListRow[]> {
+  const take = Math.min(5000, Math.max(1, options.limit ?? 5000));
+  const q = options.q?.trim();
+  const conditions = [];
+  if (options.status) {
+    conditions.push(eq(leadsTable.status, options.status));
+  }
+  if (options.createdFrom) {
+    conditions.push(gte(leadsTable.createdAt, options.createdFrom));
+  }
+  if (options.createdTo) {
+    conditions.push(lte(leadsTable.createdAt, options.createdTo));
+  }
+  if (q) {
+    const term = `%${q}%`;
+    conditions.push(
+      or(
+        ilike(leadsTable.name, term),
+        ilike(leadsTable.phone, term),
+        ilike(leadsTable.email, term),
+      ),
+    );
+  }
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  return db
+    .select({
+      id: leadsTable.id,
+      name: leadsTable.name,
+      phone: leadsTable.phone,
+      email: leadsTable.email,
+      message: leadsTable.message,
+      source: leadsTable.source,
+      status: leadsTable.status,
+      assigneeUserId: leadsTable.assigneeUserId,
+      notes: leadsTable.notes,
+      createdAt: leadsTable.createdAt,
+      updatedAt: leadsTable.updatedAt,
+      assigneeName: usersTable.userName,
+    })
+    .from(leadsTable)
+    .leftJoin(usersTable, eq(leadsTable.assigneeUserId, usersTable.id))
+    .where(where)
+    .orderBy(desc(leadsTable.createdAt))
+    .limit(take);
 }
 
 export async function update(

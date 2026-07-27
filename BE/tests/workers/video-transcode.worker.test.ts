@@ -123,6 +123,10 @@ describe('video transcode worker', () => {
       kind: 'http',
       input: 'https://example.com/presigned-original',
     });
+    mockResolveFile.mockResolvedValue({
+      kind: 'file',
+      input: '/tmp/video-input-for-flac',
+    });
     mockExtractFlac.mockResolvedValue({ status: 'no_audio' });
     mockUploadFileFromPath.mockResolvedValue(undefined);
     mockUploaderFinalize.mockResolvedValue(undefined);
@@ -146,13 +150,21 @@ describe('video transcode worker', () => {
     expect(mockResolveHttp).toHaveBeenCalledWith(
       `videos/originals/${courseId}/${videoId}/input.mp4`,
     );
-    expect(mockResolveFile).not.toHaveBeenCalled();
+    // FLAC always downloads to disk after HTTP HLS success
+    expect(mockResolveFile).toHaveBeenCalledWith(
+      `videos/originals/${courseId}/${videoId}/input.mp4`,
+      expect.any(String),
+    );
     expect(mockUploaderStart).toHaveBeenCalledOnce();
     expect(mockUploaderFinalize).toHaveBeenCalledOnce();
     expect(mockUploaderAbort).not.toHaveBeenCalled();
     expect(mockTranscode).toHaveBeenCalledWith(
       'https://example.com/presigned-original',
       expect.any(String),
+    );
+    expect(mockExtractFlac).toHaveBeenCalledWith(
+      '/tmp/video-input-for-flac',
+      expect.stringContaining('audio.flac'),
     );
     expect(mockUpdateAfterTranscode).toHaveBeenCalledWith(videoId, {
       hlsKey: `videos/hls/${courseId}/${videoId}/index.m3u8`,
@@ -189,6 +201,11 @@ describe('video transcode worker', () => {
 
     await processTranscodeJob(buildJob());
 
+    expect(mockResolveFile).toHaveBeenCalledOnce();
+    expect(mockExtractFlac).toHaveBeenCalledWith(
+      '/tmp/video-input-for-flac',
+      expect.stringContaining('audio.flac'),
+    );
     expect(mockUploadFileFromPath).toHaveBeenCalledWith(
       expect.stringContaining('audio.flac'),
       `videos/audio/${courseId}/${videoId}/audio.flac`,
@@ -201,6 +218,25 @@ describe('video transcode worker', () => {
         audioFlacKey: `videos/audio/${courseId}/${videoId}/audio.flac`,
       }),
     );
+  });
+
+  it('keeps HLS ready when FLAC upload fails', async () => {
+    mockExtractFlac.mockResolvedValue({
+      status: 'ok',
+      outputPath: '/tmp/audio.flac',
+    });
+    mockUploadFileFromPath.mockRejectedValue(new Error('PutObject failed'));
+
+    await processTranscodeJob(buildJob());
+
+    expect(mockUpdateAfterTranscode).toHaveBeenCalledWith(
+      videoId,
+      expect.objectContaining({
+        audioFlacKey: null,
+        hlsKey: `videos/hls/${courseId}/${videoId}/index.m3u8`,
+      }),
+    );
+    expect(mockMarkFailed).not.toHaveBeenCalled();
   });
 
   it('falls back to disk and aborts first progressive uploader on HTTP failure', async () => {

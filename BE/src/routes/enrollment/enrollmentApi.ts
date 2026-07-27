@@ -20,6 +20,11 @@ enrollmentRouter.get(
   enrollmentHandlers.listByCourse,
 );
 enrollmentRouter.get(
+  EnrollmentPaths.Enrollment.LearnersExportCsv,
+  errorHandle(authMiddleware),
+  enrollmentHandlers.exportLearnersCsv,
+);
+enrollmentRouter.get(
   EnrollmentPaths.Enrollment.Learners,
   errorHandle(authMiddleware),
   enrollmentHandlers.listLearners,

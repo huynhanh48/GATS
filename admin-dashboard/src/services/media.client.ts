@@ -43,7 +43,7 @@ export const mediaClient = {
     });
   },
 
-  /** POST /media/files – multipart field: file (pdf/docx/doc/md/txt) */
+  /** POST /media/files – multipart field: file (pdf/docx/doc/md/txt/jpeg/png/webp/gif) */
   uploadFile(
     file: File,
     options?: MediaUploadOptions,

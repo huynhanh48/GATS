@@ -155,6 +155,54 @@ async function listLearners(courseId: string, actorUserId: number) {
   return { data, totalLessons };
 }
 
+function csvEscape(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value);
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+async function exportLearnersCsv(courseId: string, actorUserId: number) {
+  const { data, totalLessons } = await listLearners(courseId, actorUserId);
+  const header = [
+    'User ID',
+    'Tên',
+    'Email',
+    'Trạng thái',
+    'Nguồn',
+    'Bài hoàn thành',
+    'Tổng bài',
+    'Tiến độ %',
+    'Hoạt động gần nhất',
+    'Đăng ký lúc',
+  ];
+  const lines = [header.map(csvEscape).join(',')];
+  for (const row of data) {
+    lines.push(
+      [
+        row.userId,
+        row.userName,
+        row.email,
+        row.status,
+        row.source,
+        row.completedLessons,
+        totalLessons,
+        row.percent,
+        row.lastActivityAt?.toISOString?.() ?? row.lastActivityAt,
+        row.enrolledAt?.toISOString?.() ?? row.enrolledAt,
+      ]
+        .map(csvEscape)
+        .join(','),
+    );
+  }
+  const stamp = new Date().toISOString().slice(0, 10);
+  return {
+    csv: `\uFEFF${lines.join('\n')}`,
+    filename: `learners-${courseId.slice(0, 8)}-${stamp}.csv`,
+  };
+}
+
 async function listMine(userId: number) {
   const data = await EnrollmentRepo.listByUser(userId);
   const result = [];
@@ -237,6 +285,7 @@ export default {
   selfEnrollFree,
   listByCourse,
   listLearners,
+  exportLearnersCsv,
   listMine,
   revoke,
   updateEnrollment,

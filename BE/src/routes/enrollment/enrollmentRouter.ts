@@ -36,6 +36,17 @@ async function listLearners(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function exportLearnersCsv(req: Request, res: Response) {
+  const courseId = getRouteParam(req.params.courseId);
+  const { csv, filename } = await EnrollmentService.exportLearnersCsv(
+    courseId,
+    req.authUser!.id,
+  );
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.status(HttpStatusCodes.OK).send(csv);
+}
+
 async function listMine(req: Request, res: Response) {
   const result = await EnrollmentService.listMine(req.authUser!.id);
   return res.status(HttpStatusCodes.OK).json(result);
@@ -69,6 +80,7 @@ export default {
   enroll: errorHandle(enroll),
   listByCourse: errorHandle(listByCourse),
   listLearners: errorHandle(listLearners),
+  exportLearnersCsv: errorHandle(exportLearnersCsv),
   listMine: errorHandle(listMine),
   revoke: errorHandle(revoke),
   update: errorHandle(update),

@@ -62,6 +62,14 @@ export default async function CourseLearnersPage({ params }: PageProps) {
             tone: "slate",
           },
         ]}
+        actions={
+          <a
+            href={`/api/be/courses/${id}/enrollments/learners/export.csv`}
+            className="inline-flex rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Export CSV
+          </a>
+        }
       />
 
       <AdminPanel title="Danh sách học viên" bodyClassName="p-0 overflow-x-auto">

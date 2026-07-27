@@ -174,6 +174,8 @@ export async function processTranscodeJob(
     );
 
     // Dual-output: extract FLAC after HLS. Failure/skip must not block ready.
+    // Prefer a local original file — reusing the LongVan HTTP URL after ABR often
+    // fails ffprobe and was mislabeled as "no audio".
     let audioFlacKey: string | null = null;
     const flacStartedAt = Date.now();
     const flacPath = path.join(tempRoot, 'audio.flac');
@@ -182,18 +184,36 @@ export async function processTranscodeJob(
     } catch {
       // Progress is best-effort (older BullMQ / missing listeners).
     }
-    const flacResult = await extractFlacAudio(ffmpegInput, flacPath);
-    if (flacResult.status === 'ok') {
-      audioFlacKey = buildAudioFlacKey(courseId, videoId);
-      await uploadFileFromPath(
-        flacPath,
-        audioFlacKey,
-        'audio/flac',
-        'public, max-age=31536000, immutable',
-      );
+
+    let flacInput = ffmpegInput;
+    if (inputKind === 'http') {
+      const downloadStartedAt = Date.now();
+      const fileInput = await resolveOriginalInputFile(originalKey, inputPath);
+      flacInput = fileInput.input;
       logger.info(
-        `Video ${videoId}: FLAC uploaded key=${audioFlacKey} in ${elapsedMs(flacStartedAt)}ms`,
+        `Video ${videoId}: FLAC input=disk (downloaded in ${elapsedMs(downloadStartedAt)}ms)`,
       );
+    }
+
+    const flacResult = await extractFlacAudio(flacInput, flacPath);
+    if (flacResult.status === 'ok') {
+      const key = buildAudioFlacKey(courseId, videoId);
+      try {
+        await uploadFileFromPath(
+          flacPath,
+          key,
+          'audio/flac',
+          'public, max-age=31536000, immutable',
+        );
+        audioFlacKey = key;
+        logger.info(
+          `Video ${videoId}: FLAC uploaded key=${audioFlacKey} in ${elapsedMs(flacStartedAt)}ms`,
+        );
+      } catch (uploadError) {
+        logger.err(
+          `Video ${videoId}: FLAC upload failed (HLS still ready): ${sanitizeErrorMessage(uploadError)}`,
+        );
+      }
     } else if (flacResult.status === 'no_audio') {
       logger.info(`Video ${videoId}: FLAC skipped (no audio stream)`);
     } else {

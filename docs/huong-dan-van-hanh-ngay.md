@@ -28,6 +28,7 @@ Các lệnh dưới đây chạy từ repo root trừ khi ghi rõ `cd BE` / `cd 
 | 6 | UAT Mobile checkout / coupon / progress | Mobile + BE | Checklist §6 tick hết |
 | 7 | Admin bank account / reconciliation | Admin | Có UI hoặc quy trình thủ công ghi nhận |
 | 8 | Dọn mock/template production | Web/Admin/Mobile | Không lộ demo route / mock learner |
+| 12 | Admin UAT staging (commerce + instructor) | Admin + Ops | Checklist [`admin-uat-checklist.md`](./admin-uat-checklist.md) tick hết |
 | 9 | Security gate: CORS/origin/webhook | BE + Ops | Chỉ allowlist domain thật; webhook chống replay/dedup |
 | 10 | CI/release/rollback gate | Tech lead + Ops | Build/check/test pass; có image tag, backup và rollback đã thử |
 | 11 | Legal/store readiness | Product + Mobile | Privacy, terms, account deletion, Data Safety/TestFlight hoàn tất |
@@ -478,16 +479,18 @@ Apple: **giữ ẩn production** đến khi BE có `/auth/apple`.
 
 ## 7. Admin — bank account & reconciliation (P1)
 
-Hiện BE có entity bank account; Admin UI đầy đủ có thể chưa có.
+Hiện BE có entity `bank_accounts` + Admin UI tại `/bank-accounts` (CRUD + đặt mặc định + export CSV).
 
-Tạm thời quy trình thủ công:
+### Quy trình tay hàng ngày (đủ trước launch nếu UI chưa dùng)
 
-1. Cấu hình tài khoản nhận tiền qua env / DB `bank_accounts`.
-2. Mỗi ngày: đối chiếu SePay giao dịch ↔ `orders` / `transactions`.
-3. Xử lý mismatch trong Admin **Payment exceptions**.
-4. Ghi audit khi resolve.
+1. Xác nhận tài khoản nhận tiền: Admin **Thanh toán → Tài khoản ngân hàng**, hoặc env `BANK_*` / seed `BankAccountService.seedFromEnvIfEmpty`.
+2. Mỗi ngày: xuất giao dịch SePay (dashboard) và đối chiếu với Admin **Đơn hàng** (filter paid theo ngày) hoặc CSV orders.
+3. Mismatch amount / not-found → **Ngoại lệ thanh toán** → Resolve + audit.
+4. Ghi chú ngày đối chiếu (sheet nội bộ hoặc ticket).
 
-Khi implement UI: CRUD bank account + export CSV giao dịch ngày.
+Khi cần thêm: export CSV bank accounts từ Admin; không cần import bank statement tự động trước public.
+
+UAT đầy đủ: [`admin-uat-checklist.md`](./admin-uat-checklist.md) mục D.
 
 ---
 
@@ -496,7 +499,7 @@ Khi implement UI: CRUD bank account + export CSV giao dịch ngày.
 | Surface | Việc |
 |---|---|
 | Web | Ẩn/xoá route demo (`/promptcowboy`, `/simple`, …) hoặc feature-flag |
-| Admin | Ẩn navigation NextAdmin mẫu (charts/forms/tables demo) |
+| Admin | Ẩn/xoá route demo (`/charts`, `/forms`, `/tables`, `/calendar`, `/ui-elements`) — đã gỡ khỏi app |
 | Mobile | Feature-flag hoặc bỏ Hub XP/badge/leaderboard mock, AI coach mock, group chat mock, Admin/Mentor shell khỏi **release** build (`kReleaseMode`) |
 
 Ưu tiên: learner path release không còn phụ thuộc `MockData` cho chứng chỉ/commerce (đã chuyển API).
@@ -584,7 +587,9 @@ npm run type-check
 
 # Infra local
 cd ..
-docker compose -p gats-academy up -d db redis minio minio-init
+docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
+# Worker S3: cùng BE/config/.env.development (LongVan). API chạy host + worker Docker
+# phải trỏ cùng bucket — không dùng MinIO in-cluster cho video transcode.
 
 # Mobile smoke
 cd mobile-app

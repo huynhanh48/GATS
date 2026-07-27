@@ -48,11 +48,13 @@ const emptyOverview: AnalyticsOverview = {
   revenueByDay: [],
 };
 
-export async function fetchAnalyticsOverview(): Promise<{
+export async function fetchAnalyticsOverview(days = 14): Promise<{
   data: AnalyticsOverview;
   error?: string | null;
 }> {
-  const result = await beFetch<{ data: AnalyticsOverview }>("/analytics/overview");
+  const result = await beFetch<{ data: AnalyticsOverview }>(
+    `/analytics/overview?days=${days}`,
+  );
   if (!result.ok || !result.data?.data) {
     return { data: emptyOverview, error: result.error ?? "Không tải được dữ liệu phân tích" };
   }

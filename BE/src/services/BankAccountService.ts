@@ -174,6 +174,54 @@ async function remove(id: string) {
   return { message: 'Bank account deleted' };
 }
 
+function csvEscape(value: unknown): string {
+  const str = value === null || value === undefined ? '' : String(value);
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+async function exportCsv() {
+  const { data } = await list();
+  const header = [
+    'ID',
+    'Nhãn',
+    'Ngân hàng',
+    'Mã NH',
+    'Số TK',
+    'Chủ TK',
+    'Chi nhánh',
+    'Mặc định',
+    'Đang dùng',
+    'Cập nhật',
+  ];
+  const lines = [header.map(csvEscape).join(',')];
+  for (const row of data) {
+    lines.push(
+      [
+        row.id,
+        row.label,
+        row.bankName,
+        row.bankCode,
+        row.accountNumber,
+        row.accountHolder,
+        row.bankBranch,
+        row.isDefault ? 'yes' : 'no',
+        row.isActive ? 'yes' : 'no',
+        row.updatedAt.toISOString(),
+      ]
+        .map(csvEscape)
+        .join(','),
+    );
+  }
+  const stamp = new Date().toISOString().slice(0, 10);
+  return {
+    csv: `\uFEFF${lines.join('\n')}`,
+    filename: `bank-accounts-${stamp}.csv`,
+  };
+}
+
 /**
  * Seed one default account from env if none exists (dev convenience).
  */
@@ -209,5 +257,6 @@ export default {
   update,
   setDefault,
   remove,
+  exportCsv,
   seedFromEnvIfEmpty,
 };

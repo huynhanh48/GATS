@@ -16,5 +16,12 @@ analyticsRouter.get(
   analyticsHandlers.getOverview,
 );
 
+analyticsRouter.get(
+  AnalyticsPaths.Analytics.ExportCsv,
+  errorHandle(authMiddleware),
+  errorHandle(requireStaff),
+  analyticsHandlers.exportCsv,
+);
+
 apiRouter.use(AnalyticsPaths.Analytics._, analyticsRouter);
 export default apiRouter;

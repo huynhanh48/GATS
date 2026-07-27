@@ -513,6 +513,41 @@ export function VideoManager() {
                                       Xem video
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
+                                      onClick={async () => {
+                                        if (!rec || !selectedCourse) return;
+                                        try {
+                                          if (rec.audioFlacUrl) {
+                                            window.open(
+                                              rec.audioFlacUrl,
+                                              "_blank",
+                                              "noopener,noreferrer",
+                                            );
+                                            return;
+                                          }
+                                          const toastId = toast.loading("Đang lấy link audio...");
+                                          const res = await videoClient.getPlayback(
+                                            selectedCourse.id,
+                                            rec.videoId,
+                                          );
+                                          toast.dismiss(toastId);
+                                          const url = res.data?.data?.audioFlacUrl;
+                                          if (res.error || !url) {
+                                            toast.error(
+                                              res.error?.message ||
+                                                "Video này chưa có file audio FLAC",
+                                            );
+                                            return;
+                                          }
+                                          window.open(url, "_blank", "noopener,noreferrer");
+                                        } catch {
+                                          toast.error("Lỗi khi lấy link audio");
+                                        }
+                                      }}
+                                      disabled={!rec || rec.status !== "ready"}
+                                    >
+                                      Xem audio
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
                                       onClick={() => {
                                         setSelectedLesson(les);
                                         setActiveTab("upload");
