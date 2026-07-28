@@ -65,6 +65,7 @@ async function list(query: {
   limit?: number;
   unreadOnly?: boolean;
   source?: 'system' | 'admin';
+  userId?: number;
 }) {
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(100, Math.max(1, query.limit ?? 20));
@@ -74,12 +75,14 @@ async function list(query: {
     take: limit,
     unreadOnly: query.unreadOnly,
     source: query.source,
+    userId: query.userId,
   });
   const totalPages = Math.max(1, Math.ceil(total / limit) || 1);
 
   return {
     data: data.map((row) => ({
       id: row.id,
+      userId: row.userId,
       type: row.type,
       title: row.title,
       body: row.body,
@@ -102,14 +105,52 @@ async function list(query: {
   };
 }
 
-async function markRead(ids?: string[]) {
-  const updated = await NotificationRepo.markRead(ids);
+async function markRead(ids?: string[], userId?: number) {
+  const updated = await NotificationRepo.markRead(ids, userId);
   return { updated, message: 'Đã đánh dấu đã đọc' };
+}
+
+async function markOne(id: string, userId: number) {
+  const ok = await NotificationRepo.markOneRead(id, userId);
+  return { updated: ok ? 1 : 0, message: ok ? 'Đã đọc' : 'Không tìm thấy' };
+}
+
+async function notifyUser(
+  userId: number,
+  input: NotifyInput & { dedupeKey?: string },
+) {
+  try {
+    const created = await NotificationRepo.create({
+      userId,
+      type: input.type,
+      title: input.title,
+      body: input.body ?? null,
+      href: input.href ?? null,
+      entityId: input.entityId ?? null,
+      isRead: false,
+      source: 'system',
+    });
+    const DeviceService = (await import('@src/services/DeviceService')).default;
+    await DeviceService.enqueuePush({
+      userId,
+      title: input.title,
+      body: input.body,
+      deepLink: input.href,
+      notificationId: created.id,
+      dedupeKey: input.dedupeKey ?? null,
+    });
+    return created;
+  } catch (err) {
+    console.error('notifyUser failed', err);
+    return null;
+  }
 }
 
 export default {
   notify,
+  notifyUser,
   compose,
   list,
   markRead,
+  markOne,
 };

@@ -46,6 +46,16 @@ courseRouter.get(
   errorHandle(optionalAuthMiddleware),
   courseHandlers.list,
 );
+courseRouter.post(
+  CoursePaths.Course.Recommendations,
+  errorHandle(optionalAuthMiddleware),
+  courseHandlers.recommendations,
+);
+courseRouter.post(
+  CoursePaths.Course.RecommendationEvents,
+  errorHandle(optionalAuthMiddleware),
+  courseHandlers.recommendationEvent,
+);
 courseRouter.get(
   CoursePaths.Course.Categories.List,
   errorHandle(optionalAuthMiddleware),

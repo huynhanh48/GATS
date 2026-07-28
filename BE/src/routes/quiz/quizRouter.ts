@@ -13,7 +13,9 @@ import {
   parseUpdateQuizInput,
   parseUpdateQuizQuestionInput,
 } from '@src/models/Quiz.model';
+import { parseGenerateQuizAiFields } from '@src/models/QuizAi.model';
 import CourseAccessService from '@src/services/CourseAccessService';
+import QuizAiService from '@src/services/QuizAiService';
 import QuizAttemptService from '@src/services/QuizAttemptService';
 import QuizService from '@src/services/QuizService';
 
@@ -66,6 +68,23 @@ async function addQuestion(req: Request, res: Response) {
     input,
   );
   return res.status(HttpStatusCodes.CREATED).json(result);
+}
+
+async function aiGenerate(req: Request, res: Response) {
+  const fields = parseGenerateQuizAiFields(req.body ?? {});
+  const uploaded = req.file
+    ? {
+        path: req.file.path,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+      }
+    : undefined;
+  const result = await QuizAiService.generateForQuiz(
+    getRouteParam(req.params.quizId),
+    fields,
+    uploaded,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function listQuestions(req: Request, res: Response) {
@@ -192,6 +211,7 @@ export default {
   getAdminQuiz,
   getMemberQuiz,
   addQuestion,
+  aiGenerate,
   listQuestions,
   getQuestion,
   updateQuestion,

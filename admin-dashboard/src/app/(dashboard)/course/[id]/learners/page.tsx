@@ -86,6 +86,7 @@ export default async function CourseLearnersPage({ params }: PageProps) {
                 <th className="px-4 py-3">Tiến độ</th>
                 <th className="px-4 py-3">Hoạt động gần nhất</th>
                 <th className="px-4 py-3">Đăng ký lúc</th>
+                <th className="px-4 py-3">Làm bài</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -129,6 +130,14 @@ export default async function CourseLearnersPage({ params }: PageProps) {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">
                     {formatDate(learner.enrolledAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/course/${id}/learners/${learner.userId}`}
+                      className="text-sm font-medium text-[#0070EB] hover:underline"
+                    >
+                      Lịch sử & AI coach
+                    </Link>
                   </td>
                 </tr>
               ))}

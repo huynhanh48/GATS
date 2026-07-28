@@ -1,6 +1,7 @@
 import {
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   timestamp,
@@ -26,6 +27,8 @@ export const usersTable = pgTable('users', {
   accessToken: varchar('access_token', { length: 512 }),
   tokenExpiresAt: timestamp('token_expires_at'),
   isLocked: boolean('is_locked').notNull().default(false),
+  onboardingAnswers: jsonb('onboarding_answers'),
+  onboardingCompletedAt: timestamp('onboarding_completed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

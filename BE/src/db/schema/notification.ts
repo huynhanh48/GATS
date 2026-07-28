@@ -30,6 +30,9 @@ export const notificationsTable = pgTable(
   'notifications',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    userId: integer('user_id').references(() => usersTable.id, {
+      onDelete: 'cascade',
+    }),
     type: varchar('type', { length: 50 }).notNull(),
     title: varchar('title', { length: 255 }).notNull(),
     body: text('body'),
@@ -49,6 +52,7 @@ export const notificationsTable = pgTable(
     index('idx_notifications_is_read').on(table.isRead),
     index('idx_notifications_type').on(table.type),
     index('idx_notifications_source').on(table.source),
+    index('idx_notifications_user_id').on(table.userId, table.createdAt),
   ],
 );
 

@@ -3,6 +3,7 @@ import EnvVars, { NodeEnvs } from '@src/common/constants/env';
 import { mailService } from '@src/common/utils/mail';
 import { RouteError } from '@src/common/utils/route-errors';
 import * as AuditLogRepo from '@src/repos/AuditLogRepo';
+import * as AuthSessionRepo from '@src/repos/AuthSessionRepo';
 import * as CourseRepo from '@src/repos/CourseRepo';
 import * as EnrollmentRepo from '@src/repos/EnrollmentRepo';
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
@@ -364,6 +365,7 @@ async function revokeSessions(
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.USER_NOT_FOUND);
   }
   await clearSession(userId);
+  await AuthSessionRepo.revokeAllForUser(userId);
   await AuditLogRepo.record({
     actorUserId,
     action: 'user.revoke_sessions',

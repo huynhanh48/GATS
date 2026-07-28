@@ -3,6 +3,7 @@ import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/data/api/progress_api_service.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/course/course_module.dart';
+import 'package:gats_academy/features/course/data/progress_outbox.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Tiến độ từng bài giảng — BE là source of truth; prefs chỉ cache offline.
@@ -92,6 +93,7 @@ class LectureProgressStore extends ChangeNotifier {
           userId,
           remote.fraction,
         );
+        await ProgressOutbox.flush();
       } else {
         await _hydrateFromCache(
           userId: userId,
@@ -155,21 +157,29 @@ class LectureProgressStore extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await ProgressApiService.markLessonComplete(
-        courseId: courseId,
-        lessonId: lectureId,
-        token: token,
-        durationSeconds: durationSeconds,
-      );
-      if (result.isCompleted || result.percent >= 90) {
-        _completed.add(lectureId);
-      } else {
-        // BE chưa đánh complete (hiếm) — vẫn tin client intent sau PUT.
-        _completed.add(lectureId);
-      }
+      // Optimistic local complete + outbox for offline-safe sync.
+      _completed.add(lectureId);
       await _persistCache();
       _syncCourseProgress();
-      // Làm mới % khóa từ BE nếu có.
+
+      await ProgressOutbox.enqueueCompleted(
+        courseId: courseId,
+        lessonId: lectureId,
+        positionSeconds: durationSeconds,
+      );
+
+      // Also keep legacy PUT path when online for immediate web parity.
+      try {
+        await ProgressApiService.markLessonComplete(
+          courseId: courseId,
+          lessonId: lectureId,
+          token: token,
+          durationSeconds: durationSeconds,
+        );
+      } catch (e) {
+        debugPrint('LectureProgressStore: PUT fallback deferred — $e');
+      }
+
       try {
         final remote = await ProgressApiService.getCourseProgress(
           courseId: courseId,
@@ -185,8 +195,8 @@ class LectureProgressStore extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('LectureProgressStore: markComplete failed — $e');
-      _syncError = 'Không lưu được tiến độ. Thử lại.';
-      rethrow;
+      _syncError = 'Không lưu được tiến độ. Thử lại khi có mạng.';
+      // Keep optimistic complete in outbox — do not rethrow hard fail.
     } finally {
       _marking = false;
       notifyListeners();

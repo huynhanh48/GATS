@@ -10,11 +10,24 @@ import 'package:gats_academy/features/auth/presentation/login_screen.dart';
 import 'package:gats_academy/features/auth/services/auth_service.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/onboarding/presentation/splash_screen.dart';
+import 'package:gats_academy/features/onboarding/data/onboarding_sync_service.dart';
 import 'package:gats_academy/features/onboarding/presentation/entry_screen.dart';
 import 'package:gats_academy/features/onboarding/presentation/language_picker_screen.dart';
+import 'package:gats_academy/features/onboarding/presentation/onboarding_loading_screen.dart';
+import 'package:gats_academy/features/onboarding/presentation/onboarding_screen.dart';
+import 'package:gats_academy/features/onboarding/presentation/rate_us_screen.dart';
 import 'package:gats_academy/shell/role_shell.dart';
 
-enum _BootstrapPhase { checking, language, entry, auth, main }
+enum _BootstrapPhase {
+  checking,
+  language,
+  entry,
+  onboarding,
+  rateUs,
+  loading,
+  auth,
+  main,
+}
 
 bool _shouldResetFlowForDebug() {
   // Chỉ reset flow trên web dev — tránh xóa session MoMo mỗi lần chạy trên máy thật.
@@ -31,6 +44,7 @@ class AppBootstrap extends StatefulWidget {
 class _AppBootstrapState extends State<AppBootstrap> {
   _BootstrapPhase _phase = _BootstrapPhase.checking;
   AuthGate _authGate = AuthGate.entry;
+  List<String> _recommendedCourseIds = const [];
 
   @override
   void initState() {
@@ -92,10 +106,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
   void _onEntryContinue() {
     if (!mounted) return;
-    setState(() {
-      _authGate = AuthGate.entry;
-      _phase = _BootstrapPhase.auth;
-    });
+    setState(() => _phase = _BootstrapPhase.onboarding);
   }
 
   void _onEntrySignIn() {
@@ -106,11 +117,39 @@ class _AppBootstrapState extends State<AppBootstrap> {
     });
   }
 
+  void _onRecommendationsReady(List<String> courseIds) {
+    if (!mounted) return;
+    setState(() {
+      _recommendedCourseIds = List.unmodifiable(courseIds);
+      _phase = _BootstrapPhase.rateUs;
+    });
+  }
+
+  void _onRateUsComplete({required bool didRequestReview}) {
+    if (!mounted) return;
+    setState(() => _phase = _BootstrapPhase.loading);
+  }
+
+  void _onOnboardingLoaded() {
+    if (!mounted) return;
+    setState(() {
+      _authGate = AuthGate.postOnboarding;
+      _phase = _BootstrapPhase.auth;
+    });
+  }
+
   Future<void> _onAuthSuccess() async {
     if (!mounted) return;
 
     await CourseModule.init();
     await CartController.instance.syncFromApi();
+    final user = await AuthPrefs.currentUser();
+    if (user != null) {
+      await OnboardingSyncService.syncAfterAuth(
+        userId: user.id,
+        recommendedCourseIds: const [],
+      );
+    }
     if (!mounted) return;
     setState(() => _phase = _BootstrapPhase.main);
   }
@@ -124,16 +163,31 @@ class _AppBootstrapState extends State<AppBootstrap> {
   Widget build(BuildContext context) {
     final phase = switch (_phase) {
       _BootstrapPhase.checking => const SplashScreen(),
-      _BootstrapPhase.language => LanguagePickerScreen(onContinue: _onLanguageChosen),
+      _BootstrapPhase.language => LanguagePickerScreen(
+        onContinue: _onLanguageChosen,
+      ),
       _BootstrapPhase.entry => EntryScreen(
-          onContinue: _onEntryContinue,
-          onSignIn: _onEntrySignIn,
-        ),
+        onContinue: _onEntryContinue,
+        onSignIn: _onEntrySignIn,
+      ),
+      _BootstrapPhase.onboarding => OnboardingScreen(
+        onReadyForRateUs: _onRecommendationsReady,
+        onBackToEntry: () => setState(() => _phase = _BootstrapPhase.entry),
+      ),
+      _BootstrapPhase.rateUs => RateUsScreen(
+        recommendedCourseIds: _recommendedCourseIds,
+        onSkip: () => setState(() => _phase = _BootstrapPhase.loading),
+        onContinue: _onRateUsComplete,
+      ),
+      _BootstrapPhase.loading => OnboardingLoadingScreen(
+        recommendedCourseIds: _recommendedCourseIds,
+        onComplete: _onOnboardingLoaded,
+      ),
       _BootstrapPhase.auth => LoginScreen(
-          gate: _authGate,
-          onAuthenticated: _onAuthSuccess,
-          onBack: _onAuthBack,
-        ),
+        gate: _authGate,
+        onAuthenticated: _onAuthSuccess,
+        onBack: _onAuthBack,
+      ),
       _BootstrapPhase.main => const RoleShell(),
     };
 

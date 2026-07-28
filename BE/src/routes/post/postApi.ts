@@ -6,6 +6,7 @@ import authMiddleware from '@src/middleware/authMiddleware';
 import optionalAuthMiddleware from '@src/middleware/optionalAuthMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import postHandlers from './postRouter';
 
 const apiRouter = Router();
@@ -105,6 +106,7 @@ postRouter.get(
 postRouter.post(
   PostPaths.Post.Comments.Create,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('comment.create')),
   postHandlers.createComment,
 );
 
@@ -117,6 +119,7 @@ postRouter.get(
 postRouter.post(
   PostPaths.Post.Comments.Replies,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('comment.reply')),
   postHandlers.replyComment,
 );
 

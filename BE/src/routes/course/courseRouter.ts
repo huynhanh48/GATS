@@ -27,12 +27,15 @@ import {
   parseAttachLessonMediaInput,
   parseLessonAttachmentIdParam,
 } from '@src/models/LessonAttachment.model';
+import { parseOnboardingAnswers } from '@src/models/Onboarding.model';
 import CategoryService from '@src/services/CategoryService';
 import CourseSectionService from '@src/services/CourseSectionService';
 import CourseService from '@src/services/CourseService';
 import CurriculumService from '@src/services/CurriculumService';
 import LessonAttachmentService from '@src/services/LessonAttachmentService';
 import LessonService from '@src/services/LessonService';
+import OnboardingRecommendationService from '@src/services/OnboardingRecommendationService';
+import RecommendationAnalyticsService from '@src/services/RecommendationAnalyticsService';
 
 function isAuthenticated(req: Request): boolean {
   return req.authUser !== undefined;
@@ -78,6 +81,23 @@ async function removeCategory(req: Request, res: Response) {
 async function list(req: Request, res: Response) {
   const query = parseListCoursesQuery(req.query);
   const result = await CourseService.listPublic(query);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function recommendations(req: Request, res: Response) {
+  const answers = parseOnboardingAnswers(req.body);
+  const result = await OnboardingRecommendationService.recommend(
+    answers,
+    req.authUser?.id,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function recommendationEvent(req: Request, res: Response) {
+  const result = await RecommendationAnalyticsService.track(
+    req.authUser?.id,
+    req.body,
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
@@ -269,6 +289,8 @@ async function removeLessonAttachment(req: Request, res: Response) {
 
 export default {
   list: errorHandle(list),
+  recommendations: errorHandle(recommendations),
+  recommendationEvent: errorHandle(recommendationEvent),
   listManaged: errorHandle(listManaged),
   listCategories: errorHandle(listCategories),
   createCategory: errorHandle(createCategory),

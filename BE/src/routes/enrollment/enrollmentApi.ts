@@ -3,6 +3,7 @@ import { Router } from 'express';
 import EnrollmentPaths from '@src/common/paths/enrollment';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import enrollmentHandlers from './enrollmentRouter';
 
 const apiRouter = Router();
@@ -12,6 +13,7 @@ const meRouter = Router();
 enrollmentRouter.post(
   EnrollmentPaths.Enrollment.Create,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('enrollment.create')),
   enrollmentHandlers.enroll,
 );
 enrollmentRouter.get(
@@ -28,6 +30,16 @@ enrollmentRouter.get(
   EnrollmentPaths.Enrollment.Learners,
   errorHandle(authMiddleware),
   enrollmentHandlers.listLearners,
+);
+enrollmentRouter.get(
+  EnrollmentPaths.Enrollment.LearnerExerciseHistory,
+  errorHandle(authMiddleware),
+  enrollmentHandlers.exerciseHistory,
+);
+enrollmentRouter.post(
+  EnrollmentPaths.Enrollment.LearnerAiCoach,
+  errorHandle(authMiddleware),
+  enrollmentHandlers.aiCoach,
 );
 enrollmentRouter.delete(
   EnrollmentPaths.Enrollment.Revoke,

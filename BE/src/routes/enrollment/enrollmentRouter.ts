@@ -9,6 +9,8 @@ import {
 import { getRouteParam } from '@src/common/utils/route-params';
 import { errorHandle } from '@src/middleware/errorHandle';
 import EnrollmentService from '@src/services/EnrollmentService';
+import LearningCoachService from '@src/services/LearningCoachService';
+import LearningHistoryService from '@src/services/LearningHistoryService';
 
 async function enroll(req: Request, res: Response) {
   const courseId = getRouteParam(req.params.courseId);
@@ -76,6 +78,28 @@ async function update(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function exerciseHistory(req: Request, res: Response) {
+  const courseId = getRouteParam(req.params.courseId);
+  const targetUserId = parseUserIdParam(getRouteParam(req.params.userId));
+  const data = await LearningHistoryService.getCourseUserHistory(
+    courseId,
+    targetUserId,
+    req.authUser!.id,
+  );
+  return res.status(HttpStatusCodes.OK).json({ data });
+}
+
+async function aiCoach(req: Request, res: Response) {
+  const courseId = getRouteParam(req.params.courseId);
+  const targetUserId = parseUserIdParam(getRouteParam(req.params.userId));
+  const result = await LearningCoachService.generateCoachReport(
+    courseId,
+    targetUserId,
+    req.authUser!.id,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   enroll: errorHandle(enroll),
   listByCourse: errorHandle(listByCourse),
@@ -84,4 +108,6 @@ export default {
   listMine: errorHandle(listMine),
   revoke: errorHandle(revoke),
   update: errorHandle(update),
+  exerciseHistory: errorHandle(exerciseHistory),
+  aiCoach: errorHandle(aiCoach),
 } as const;

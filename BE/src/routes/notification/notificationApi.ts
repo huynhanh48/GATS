@@ -16,12 +16,23 @@ notificationRouter.get(
 );
 
 notificationRouter.post(
+  NotificationPaths.Notification.MarkAllRead,
+  errorHandle(authMiddleware),
+  handlers.markAllRead,
+);
+
+notificationRouter.post(
   NotificationPaths.Notification.MarkRead,
   errorHandle(authMiddleware),
   handlers.markRead,
 );
 
-/** Registered before nothing conflicting — literal path, no params. */
+notificationRouter.post(
+  NotificationPaths.Notification.MarkOneRead,
+  errorHandle(authMiddleware),
+  handlers.markOneRead,
+);
+
 notificationRouter.post(
   NotificationPaths.Notification.Compose,
   errorHandle(authMiddleware),

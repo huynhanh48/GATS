@@ -16,6 +16,8 @@ const forgotPasswordLimit = simpleRateLimit({
 authRouter.post(AuthPaths.User.Register, authHandlers.register);
 authRouter.post(AuthPaths.User.Login, authHandlers.login);
 authRouter.post(AuthPaths.User.GoogleLogin, authHandlers.googleLogin);
+authRouter.post(AuthPaths.User.AppleLogin, authHandlers.appleLogin);
+authRouter.post(AuthPaths.User.Refresh, authHandlers.refresh);
 authRouter.post(AuthPaths.User.VerifyEmail, authHandlers.verifyEmail);
 authRouter.get(AuthPaths.User.VerifyEmail, authHandlers.verifyEmailByLink);
 authRouter.post(
@@ -35,6 +37,66 @@ authRouter.post(
   AuthPaths.User.ChangePassword,
   errorHandle(authMiddleware),
   authHandlers.changePassword,
+);
+authRouter.get(
+  AuthPaths.User.Sessions,
+  errorHandle(authMiddleware),
+  authHandlers.listSessions,
+);
+authRouter.delete(
+  AuthPaths.User.SessionsOthers,
+  errorHandle(authMiddleware),
+  authHandlers.revokeOtherSessions,
+);
+authRouter.delete(
+  AuthPaths.User.SessionById,
+  errorHandle(authMiddleware),
+  authHandlers.revokeSession,
+);
+authRouter.post(
+  AuthPaths.User.Devices,
+  errorHandle(authMiddleware),
+  authHandlers.registerDevice,
+);
+authRouter.patch(
+  AuthPaths.User.DeviceById,
+  errorHandle(authMiddleware),
+  authHandlers.updateDevice,
+);
+authRouter.delete(
+  AuthPaths.User.DeviceById,
+  errorHandle(authMiddleware),
+  authHandlers.removeDevice,
+);
+authRouter.get(
+  AuthPaths.User.NotificationPreferences,
+  errorHandle(authMiddleware),
+  authHandlers.getNotificationPreferences,
+);
+authRouter.put(
+  AuthPaths.User.NotificationPreferences,
+  errorHandle(authMiddleware),
+  authHandlers.putNotificationPreferences,
+);
+authRouter.get(
+  AuthPaths.User.DailyCheckin,
+  errorHandle(authMiddleware),
+  authHandlers.dailyCheckinGet,
+);
+authRouter.post(
+  AuthPaths.User.DailyCheckin,
+  errorHandle(authMiddleware),
+  authHandlers.dailyCheckinClaim,
+);
+authRouter.get(
+  AuthPaths.User.Onboarding,
+  errorHandle(authMiddleware),
+  authHandlers.getOnboarding,
+);
+authRouter.put(
+  AuthPaths.User.Onboarding,
+  errorHandle(authMiddleware),
+  authHandlers.putOnboarding,
 );
 
 apiRouter.use(AuthPaths.User._, authRouter);

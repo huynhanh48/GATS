@@ -4,4 +4,7 @@ abstract final class ProgressApiPaths {
 
   static String lesson(String courseId, String lessonId) =>
       '/api/courses/$courseId/lessons/$lessonId/progress';
+
+  static const sync = '/api/progress/sync';
+  static const changes = '/api/progress/changes';
 }

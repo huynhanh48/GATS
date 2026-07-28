@@ -3,6 +3,8 @@ const CoursePaths = {
   Course: {
     _: '/courses',
     List: '/',
+    Recommendations: '/recommendations',
+    RecommendationEvents: '/recommendations/events',
     Create: '/',
     GetBySlug: '/slug/:slug',
     Categories: {

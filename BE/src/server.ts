@@ -35,6 +35,7 @@ import AnalyticsApi from '@src/routes/analytics/analyticsApi';
 import LearnExtrasApi from '@src/routes/learn-extras/learnExtrasApi';
 import CourseChatApi from '@src/routes/course-chat/courseChatApi';
 import HealthApi from '@src/routes/health/healthApi';
+import MobileApi from '@src/routes/mobile/mobileApi';
 import CourseChatPaths from '@src/common/paths/course-chat';
 import EnvVars, {
   assertProductionConfiguration,
@@ -45,6 +46,7 @@ import originGuard from './middleware/originGuard';
 import { errorHandle } from './middleware/errorHandle';
 import { getAllowedOrigins } from './common/utils/cors';
 import requestContext from './middleware/requestContext';
+import responseMeta from './middleware/responseMeta';
 /******************************************************************************
                                 Setup
 ******************************************************************************/
@@ -61,6 +63,7 @@ if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
 
 // Basic middleware
 app.use(requestContext);
+app.use(responseMeta);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -115,10 +118,11 @@ app.use(Paths._, CouponApi);
 app.use(Paths._, CertificateApi);
 app.use(Paths._, AnalyticsApi);
 app.use(Paths._, LearnExtrasApi);
+app.use(Paths._, MobileApi);
 app.use(CourseChatPaths._, CourseChatApi);
 
 // Add error handler
-app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (EnvVars.NodeEnv !== NodeEnvs.TEST.valueOf()) {
     if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
       console.error(
@@ -135,22 +139,56 @@ app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  if (isHttpException(err)) {
-    const body: { error: string; issues?: unknown } = { error: err.message };
-    if (err.issues !== undefined) {
-      body.issues = err.issues;
-    }
-    return res.status(err.status).json(body);
+  const retryAfter =
+    res.statusCode === 429 || res.statusCode === 503 ? '5' : undefined;
+  if (retryAfter) {
+    res.setHeader('Retry-After', retryAfter);
   }
 
-  // Zod parse outside errorHandle → still return 422, not 500
+  if (isHttpException(err)) {
+    const retryable =
+      err.retryable ||
+      err.status === 429 ||
+      err.status === 503 ||
+      err.status >= 500;
+    if (retryable && (err.status === 429 || err.status === 503)) {
+      res.setHeader('Retry-After', '5');
+    }
+    return res.status(err.status).json({
+      error: {
+        code: err.code ?? `HTTP_${err.status}`,
+        message: err.message,
+        details: err.details ?? err.issues ?? {},
+        retryable,
+      },
+      // Backward-compatible string field for older clients
+      message: err.message,
+      meta: {
+        requestId: res.locals.requestId,
+        serverTime: new Date().toISOString(),
+      },
+    });
+  }
+
   if (err instanceof ZodError) {
     const issues = err.issues;
     const first = issues[0];
     const message = first
       ? `Validation Error (${(first.path ?? []).join('.')}): ${first.message ?? 'Invalid'}`
       : 'Unprocessable Entity';
-    return res.status(422).json({ error: message, issues });
+    return res.status(422).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message,
+        details: { issues },
+        retryable: false,
+      },
+      message,
+      meta: {
+        requestId: res.locals.requestId,
+        serverTime: new Date().toISOString(),
+      },
+    });
   }
 
   return next(err);

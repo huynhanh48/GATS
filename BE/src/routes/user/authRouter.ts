@@ -65,13 +65,19 @@ async function register(req: Request, res: Response) {
 
 async function login(req: Request, res: Response) {
   const input = parseLoginInput(req.body);
-  const result = await AuthService.login(input);
+  const device = {
+    deviceId: req.body?.deviceId,
+    platform: req.body?.platform,
+    appVersion: req.body?.appVersion,
+  };
+  const result = await AuthService.login(input, device, req);
   setAccessTokenCookie(req, res, result.token);
-  // Cookie for web (admin/web-app); `token` in body for mobile Bearer clients.
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in.',
     token: result.token,
+    refreshToken: result.refreshToken,
     expiresAt: result.expiresAt,
+    sessionId: result.sessionId,
   });
 }
 
@@ -81,13 +87,102 @@ async function googleLogin(req: Request, res: Response) {
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'idToken is required');
   }
 
-  const result = await AuthService.googleLogin(idToken);
+  const device = {
+    deviceId: req.body?.deviceId,
+    platform: req.body?.platform,
+    appVersion: req.body?.appVersion,
+  };
+  const result = await AuthService.googleLogin(idToken, device, req);
   setAccessTokenCookie(req, res, result.token);
   return res.status(HttpStatusCodes.OK).json({
     message: 'Logged in with Google.',
     token: result.token,
+    refreshToken: result.refreshToken,
     expiresAt: result.expiresAt,
+    sessionId: result.sessionId,
   });
+}
+
+async function appleLogin(req: Request, res: Response) {
+  const identityToken =
+    typeof req.body?.identityToken === 'string'
+      ? req.body.identityToken
+      : typeof req.body?.idToken === 'string'
+        ? req.body.idToken
+        : null;
+  if (!identityToken) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      'identityToken is required',
+    );
+  }
+  const device = {
+    deviceId: req.body?.deviceId,
+    platform: req.body?.platform,
+    appVersion: req.body?.appVersion,
+  };
+  const result = await AuthService.appleLogin(identityToken, device, req);
+  setAccessTokenCookie(req, res, result.token);
+  return res.status(HttpStatusCodes.OK).json({
+    message: 'Logged in with Apple.',
+    token: result.token,
+    refreshToken: result.refreshToken,
+    expiresAt: result.expiresAt,
+    sessionId: result.sessionId,
+  });
+}
+
+async function refresh(req: Request, res: Response) {
+  const refreshToken =
+    typeof req.body?.refreshToken === 'string' ? req.body.refreshToken : null;
+  if (!refreshToken) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      'refreshToken is required',
+    );
+  }
+  const device = {
+    deviceId: req.body?.deviceId,
+    platform: req.body?.platform,
+    appVersion: req.body?.appVersion,
+  };
+  const result = await AuthService.refresh(refreshToken, device, req);
+  setAccessTokenCookie(req, res, result.token);
+  return res.status(HttpStatusCodes.OK).json({
+    message: 'Token refreshed.',
+    token: result.token,
+    refreshToken: result.refreshToken,
+    expiresAt: result.expiresAt,
+    sessionId: result.sessionId,
+  });
+}
+
+async function listSessions(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const result = await AuthService.listSessions(req.authUser.id);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function revokeSession(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const sessionId = String(req.params.sessionId ?? '');
+  const result = await AuthService.revokeSession(req.authUser.id, sessionId);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function revokeOtherSessions(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const result = await AuthService.revokeOtherSessions(
+    req.authUser.id,
+    req.authUser.sessionId,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function logout(req: Request, res: Response) {
@@ -95,7 +190,11 @@ async function logout(req: Request, res: Response) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
   }
   const token = req.cookies?.[ACCESS_TOKEN_COOKIE] as string | undefined;
-  const result = await AuthService.logout(req.authUser.id, token);
+  const result = await AuthService.logout(
+    req.authUser.id,
+    token,
+    req.authUser.sessionId,
+  );
   res.clearCookie(
     ACCESS_TOKEN_COOKIE,
     AuthService.getClearCookieOptions(req),
@@ -188,10 +287,102 @@ async function resetPassword(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function registerDevice(req: Request, res: Response) {
+  const DeviceService = (await import('@src/services/DeviceService')).default;
+  const result = await DeviceService.registerDevice(
+    req.authUser!.id,
+    req.body,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function updateDevice(req: Request, res: Response) {
+  const DeviceService = (await import('@src/services/DeviceService')).default;
+  const result = await DeviceService.updateDevice(
+    req.authUser!.id,
+    String(req.params.deviceId),
+    req.body,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function removeDevice(req: Request, res: Response) {
+  const DeviceService = (await import('@src/services/DeviceService')).default;
+  const result = await DeviceService.removeDevice(
+    req.authUser!.id,
+    String(req.params.deviceId),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function getNotificationPreferences(req: Request, res: Response) {
+  const DeviceService = (await import('@src/services/DeviceService')).default;
+  const result = await DeviceService.getPreferences(req.authUser!.id);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function putNotificationPreferences(req: Request, res: Response) {
+  const DeviceService = (await import('@src/services/DeviceService')).default;
+  const result = await DeviceService.updatePreferences(
+    req.authUser!.id,
+    req.body,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function dailyCheckinGet(req: Request, res: Response) {
+  const DailyCheckinService = (await import('@src/services/DailyCheckinService'))
+    .default;
+  const result = await DailyCheckinService.getStatus(
+    req.authUser!.id,
+    req.get('x-timezone') ?? undefined,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function dailyCheckinClaim(req: Request, res: Response) {
+  const DailyCheckinService = (await import('@src/services/DailyCheckinService'))
+    .default;
+  const result = await DailyCheckinService.claim(
+    req.authUser!.id,
+    req.get('x-timezone') ?? undefined,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function getOnboarding(req: Request, res: Response) {
+  const { findById } = await import('@src/repos/UserRepo');
+  const user = await findById(req.authUser!.id);
+  return res.status(HttpStatusCodes.OK).json({
+    data: {
+      answers: user?.onboardingAnswers ?? null,
+      completedAt: user?.onboardingCompletedAt ?? null,
+    },
+  });
+}
+
+async function putOnboarding(req: Request, res: Response) {
+  const { saveOnboarding } = await import('@src/repos/UserRepo');
+  const answers =
+    req.body?.answers && typeof req.body.answers === 'object'
+      ? req.body.answers
+      : req.body;
+  await saveOnboarding(req.authUser!.id, answers as Record<string, unknown>);
+  return res.status(HttpStatusCodes.OK).json({
+    message: 'Onboarding saved',
+    data: { answers },
+  });
+}
+
 export default {
   register: errorHandle(register),
   login: errorHandle(login),
   googleLogin: errorHandle(googleLogin),
+  appleLogin: errorHandle(appleLogin),
+  refresh: errorHandle(refresh),
+  listSessions: errorHandle(listSessions),
+  revokeSession: errorHandle(revokeSession),
+  revokeOtherSessions: errorHandle(revokeOtherSessions),
   logout: errorHandle(logout),
   me: errorHandle(me),
   updateMe: errorHandle(updateMe),
@@ -200,4 +391,13 @@ export default {
   changePassword: errorHandle(changePassword),
   forgotPassword: errorHandle(forgotPassword),
   resetPassword: errorHandle(resetPassword),
+  registerDevice: errorHandle(registerDevice),
+  updateDevice: errorHandle(updateDevice),
+  removeDevice: errorHandle(removeDevice),
+  getNotificationPreferences: errorHandle(getNotificationPreferences),
+  putNotificationPreferences: errorHandle(putNotificationPreferences),
+  dailyCheckinGet: errorHandle(dailyCheckinGet),
+  dailyCheckinClaim: errorHandle(dailyCheckinClaim),
+  getOnboarding: errorHandle(getOnboarding),
+  putOnboarding: errorHandle(putOnboarding),
 } as const;

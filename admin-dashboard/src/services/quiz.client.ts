@@ -1,6 +1,6 @@
 "use client";
 
-import { apiRequest, type ApiResult } from "@/lib/api/client";
+import { apiClient, apiRequest, normalizeApiError, type ApiResult } from "@/lib/api/client";
 import type {
   CreateQuizInput,
   UpdateQuizInput,
@@ -113,5 +113,35 @@ export const quizClient = {
       method: "PATCH",
       data: { question_ids: questionIds },
     });
+  },
+
+  /**
+   * POST /quizzes/:quizId/ai-generate — multipart (text | file_url | file)
+   * Calls Viava course gen, maps exercises → GATS quiz questions, optionally persists.
+   */
+  async aiGenerate(
+    quizId: string,
+    form: FormData,
+  ): Promise<
+    ApiResult<{
+      message?: string;
+      data?: {
+        questions?: QuizQuestion[];
+        skipped_count?: number;
+        question_count?: number;
+        applied?: boolean;
+      };
+    }>
+  > {
+    try {
+      const response = await apiClient.post(
+        `/quizzes/${quizId}/ai-generate`,
+        form,
+        { timeout: 180_000 },
+      );
+      return { data: response.data, error: null };
+    } catch (error) {
+      return { data: null, error: normalizeApiError(error) };
+    }
   },
 };

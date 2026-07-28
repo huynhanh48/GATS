@@ -4,7 +4,12 @@ import QuizPaths from '@src/common/paths/quiz';
 import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
+import {
+  handleQuizAiUploadError,
+  quizAiUploadMiddleware,
+} from '@src/middleware/quizAiUploadMiddleware';
 
 import quizHandlers from './quizRouter';
 
@@ -48,6 +53,15 @@ apiRouter.post(
   errorHandle(authMiddleware),
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
   errorHandle(quizHandlers.addQuestion),
+);
+
+apiRouter.post(
+  QuizPaths.Quiz.Questions.AiGenerate,
+  errorHandle(authMiddleware),
+  errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
+  quizAiUploadMiddleware,
+  handleQuizAiUploadError,
+  errorHandle(quizHandlers.aiGenerate),
 );
 
 apiRouter.get(
@@ -101,6 +115,7 @@ apiRouter.get(
 apiRouter.post(
   QuizPaths.Quiz.Submit,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('quiz.submit')),
   errorHandle(quizHandlers.submitQuiz),
 );
 
@@ -140,6 +155,7 @@ apiRouter.put(
 apiRouter.post(
   QuizPaths.Attempt.Submit,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('quiz.attempt.submit')),
   errorHandle(quizHandlers.submitAttempt),
 );
 

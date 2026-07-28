@@ -54,7 +54,11 @@ abstract final class AuthService {
   }
 
   static Future<void> persistSession(AuthSession session) {
-    return AuthPrefs.saveSession(session.user, token: session.token);
+    return AuthPrefs.saveSession(
+      session.user,
+      token: session.token,
+      refreshToken: session.refreshToken,
+    );
   }
 
   static Future<void> signOut() async {
@@ -70,10 +74,23 @@ abstract final class AuthService {
     if (token == null || token.isEmpty) return null;
 
     try {
-      return AuthApiService.getMe(token: token);
+      return await AuthApiService.getMe(token: token);
     } on AuthException catch (e) {
       if (e.code == AuthErrorCode.unauthorized) {
-        await AuthPrefs.signOut();
+        final refresh = await AuthPrefs.refreshToken();
+        if (refresh != null && refresh.isNotEmpty) {
+          try {
+            final renewed = await AuthApiService.refresh(refreshToken: refresh);
+            await persistSession(renewed);
+            return renewed;
+          } catch (_) {
+            await AuthPrefs.signOut();
+            return null;
+          }
+        } else {
+          await AuthPrefs.signOut();
+          return null;
+        }
       }
       rethrow;
     }

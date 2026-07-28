@@ -772,6 +772,76 @@ export type CourseLearnersResponse = {
   totalLessons: number;
 };
 
+export type QuizAttemptHistoryItem = {
+  kind: "quiz";
+  lessonId: string;
+  lessonTitle: string | null;
+  quizId: string;
+  quizTitle: string | null;
+  attemptId: string;
+  attemptNumber: number;
+  status: string;
+  score: number | null;
+  maxScore: number | null;
+  percentage: number | null;
+  passed: boolean | null;
+  submittedAt: string | null;
+  wrongQuestions: Array<{
+    questionId: string;
+    question: string;
+    score: number | null;
+  }>;
+};
+
+export type AssignmentHistoryItem = {
+  kind: "assignment";
+  lessonId: string;
+  lessonTitle: string | null;
+  assignmentId: string;
+  assignmentTitle: string | null;
+  submissionId: string;
+  submissionNumber: number;
+  status: string;
+  score: number | null;
+  maxScore: number;
+  percentage: number | null;
+  passed: boolean | null;
+  feedback: string | null;
+  submittedAt: string | null;
+  gradedAt: string | null;
+};
+
+export type CourseExerciseHistory = {
+  course: { id: string; title: string };
+  user: { id: number; name: string | null; email: string | null };
+  summary: {
+    quizAttempts: number;
+    assignmentSubmissions: number;
+    avgQuizPercentage: number | null;
+    weakLessons: string[];
+  };
+  items: Array<QuizAttemptHistoryItem | AssignmentHistoryItem>;
+};
+
+export type LearningCoachFile = {
+  storageKey: string;
+  url: string;
+  filename: string;
+};
+
+export type LearningCoachResponse = {
+  message: string;
+  data: {
+    history: CourseExerciseHistory;
+    reportMarkdown: string;
+    usedAi: boolean;
+    files: {
+      markdown: LearningCoachFile;
+      historyJson: LearningCoachFile;
+    };
+  };
+};
+
 // ─── Publish readiness checklist (admin) ─────────────────────────────────────
 
 export type PublishReadinessCheck = {

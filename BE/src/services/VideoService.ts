@@ -794,12 +794,15 @@ async function getPlayback(
       (await LessonProgressRepo.findByUserAndLesson(userId, lesson.id)) ?? null;
   }
 
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+
   return {
     data: {
       videoId: video.id,
       courseId: video.courseId,
       playbackUrl,
       playbackType,
+      expiresAt,
       hlsKey: video.hlsKey,
       audioFlacKey: video.audioFlacKey,
       audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),

@@ -23,6 +23,7 @@ import type {
   UpdateQuizQuestionInput,
 } from "@/lib/api/types";
 import { quizClient } from "@/services/quiz.client";
+import { QuizAiGeneratePanel } from "./quiz-ai-generate-panel";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -627,6 +628,14 @@ export function QuizBuilder({
       </h5>
 
       <QuizSettingsForm quizId={quiz.id} initial={quiz} />
+
+      <QuizAiGeneratePanel
+        quizId={quiz.id}
+        onGenerated={(created) => {
+          if (created.length === 0) return;
+          setQuestions((qs) => [...qs, ...created]);
+        }}
+      />
 
       {/* Question list */}
       <div className="mb-3 space-y-3">

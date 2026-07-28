@@ -117,6 +117,17 @@ const EnvVars = jetEnv({
   VnpTmnCode: optionalStr,
   VnpHashSecret: optionalStr,
   GoogleClientId: optionalStr,
+  /** Apple Sign In — Services ID / Bundle ID used as JWT audience */
+  AppleClientId: optionalStr,
+  /**
+   * Viava course/exercise generation API base URL.
+   * Example: https://ai.example.com  → POST {base}/api/v1/course/generate
+   */
+  ViavaCourseGenUrl: optionalStr,
+  /** Optional bearer/API key for Viava (Authorization: Bearer …). */
+  ViavaApiKey: optionalStr,
+  /** Override path if provider differs from /api/v1/course/generate */
+  ViavaCourseGenPath: defaultStr('/api/v1/course/generate'),
 });
 
 const INSECURE_PRODUCTION_VALUES = new Set([

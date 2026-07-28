@@ -3,6 +3,7 @@ import { Router } from 'express';
 import OrderPaths from '@src/common/paths/order';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import requireAdmin from '@src/middleware/requireAdmin';
 import orderHandlers from './orderRouter';
 
@@ -12,6 +13,7 @@ const orderRouter = Router();
 orderRouter.post(
   OrderPaths.Order.Create,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('order.create')),
   orderHandlers.createOrder,
 );
 

@@ -1,24 +1,19 @@
-import { ParseError } from 'jet-validators/utils';
-
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { HttpException } from '@src/exceptions/root';
+import { ParseError } from 'jet-validators/utils';
 
-/******************************************************************************
-                                 Classes
-******************************************************************************/
-
-/**
- * Error with status code and message.
- */
 export class RouteError extends HttpException {
-  public constructor(status: HttpStatusCodes, message: string) {
-    super(status, message);
+  public constructor(
+    status: HttpStatusCodes,
+    message: string,
+    code?: string,
+    retryable = false,
+    details?: unknown,
+  ) {
+    super(status, message, details, code, retryable);
   }
 }
 
-/**
- * Handle "parseObj" errors.
- */
 export class ValidationError extends RouteError {
   public static MESSAGE =
     'The parseObj() function discovered one or ' + 'more errors.';
@@ -28,6 +23,6 @@ export class ValidationError extends RouteError {
       message: ValidationError.MESSAGE,
       errors,
     });
-    super(HttpStatusCodes.BAD_REQUEST, msg);
+    super(HttpStatusCodes.BAD_REQUEST, msg, 'VALIDATION_ERROR');
   }
 }

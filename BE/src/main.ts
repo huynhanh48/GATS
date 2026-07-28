@@ -4,6 +4,7 @@ import 'dotenv/config';
 import '@src/db';
 import EnvVars from './common/constants/env';
 import BootstrapService from './services/BootstrapService';
+import DeviceService from './services/DeviceService';
 import server from './server';
 
 /******************************************************************************
@@ -30,6 +31,10 @@ async function startServer(): Promise<void> {
       logger.err(listenErr.message);
     } else {
       logger.info(SERVER_START_MESSAGE);
+      // MVP push outbox drain (FCM stub marks sent)
+      setInterval(() => {
+        void DeviceService.processOutboxBatch().catch(() => undefined);
+      }, 30_000);
     }
   });
 }

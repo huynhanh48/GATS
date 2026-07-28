@@ -6,6 +6,7 @@ import EnvVars from '@src/common/constants/env';
 export const jwtPayloadSchema = z.object({
   userId: z.number().int().positive(),
   email: z.string().email(),
+  sid: z.string().uuid().optional(),
 });
 
 export type JwtPayload = z.infer<typeof jwtPayloadSchema>;

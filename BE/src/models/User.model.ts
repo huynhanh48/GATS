@@ -1,8 +1,9 @@
+import { z } from 'zod';
+
 import {
   loginPasswordSchema,
   passwordSchema,
 } from '@src/common/utils/password';
-import { z } from 'zod';
 
 export const authTypeSchema = z.enum([
   'facebook',
@@ -23,6 +24,8 @@ export const userRecordSchema = z.object({
   accessToken: z.string().nullable(),
   tokenExpiresAt: z.coerce.date().nullable(),
   isLocked: z.boolean().default(false),
+  onboardingAnswers: z.unknown().nullable(),
+  onboardingCompletedAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -80,9 +83,7 @@ function resolveLoginIdentity(data: {
 
   if (data.email) {
     const isEmail = z.string().email().safeParse(data.email).success;
-    return isEmail
-      ? { email: data.email }
-      : { user_name: data.email };
+    return isEmail ? { email: data.email } : { user_name: data.email };
   }
 
   return {};

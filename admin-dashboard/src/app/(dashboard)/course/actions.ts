@@ -4,6 +4,7 @@ import { beFetch } from "@/lib/api/server";
 import type {
   AssignmentSubmissionsResponse,
   CourseDetail,
+  CourseExerciseHistory,
   CourseIncludeInput,
   CourseLearnersResponse,
   CourseListResponse,
@@ -457,6 +458,18 @@ export async function fetchCourseLearners(
   }
 
   return result.data;
+}
+
+export async function fetchLearnerExerciseHistory(
+  courseId: string,
+  userId: number,
+): Promise<CourseExerciseHistory | null> {
+  const result = await beFetch<{ data: CourseExerciseHistory }>(
+    `/courses/${courseId}/enrollments/learners/${userId}/exercise-history`,
+  );
+
+  if (!result.ok || !result.data) return null;
+  return result.data.data;
 }
 
 export async function fetchPublishReadiness(

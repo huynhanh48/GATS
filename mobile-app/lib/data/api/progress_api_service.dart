@@ -155,4 +155,75 @@ abstract final class ProgressApiService {
       videoId: videoId,
     );
   }
+
+  /// Batch sync offline outbox → `POST /api/progress/sync`.
+  static Future<ProgressSyncResult> syncEvents({
+    required String token,
+    required String deviceId,
+    required List<Map<String, dynamic>> events,
+  }) async {
+    final json = await ApiClient.post(
+      ProgressApiPaths.sync,
+      token: token,
+      body: {
+        'deviceId': deviceId,
+        'events': events,
+      },
+      headers: {
+        'Idempotency-Key': events.isNotEmpty
+            ? 'sync-${events.first['eventId']}-${events.length}'
+            : 'sync-empty',
+      },
+    );
+    final data = json['data'];
+    if (data is Map) {
+      return ProgressSyncResult.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const ProgressSyncResult(results: [], checkpoint: null);
+  }
+}
+
+class ProgressSyncResult {
+  const ProgressSyncResult({
+    required this.results,
+    this.checkpoint,
+  });
+
+  final List<ProgressSyncItemResult> results;
+  final String? checkpoint;
+
+  factory ProgressSyncResult.fromJson(Map<String, dynamic> json) {
+    final raw = json['results'];
+    final items = <ProgressSyncItemResult>[];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is Map) {
+          items.add(
+            ProgressSyncItemResult.fromJson(Map<String, dynamic>.from(e)),
+          );
+        }
+      }
+    }
+    return ProgressSyncResult(
+      results: items,
+      checkpoint: json['checkpoint']?.toString(),
+    );
+  }
+}
+
+class ProgressSyncItemResult {
+  const ProgressSyncItemResult({
+    required this.eventId,
+    required this.status,
+  });
+
+  final String eventId;
+  final String status;
+
+  factory ProgressSyncItemResult.fromJson(Map<String, dynamic> json) {
+    return ProgressSyncItemResult(
+      eventId: json['eventId']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'unknown',
+    );
+  }
 }
