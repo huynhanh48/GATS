@@ -28,32 +28,51 @@ const composeSchema = z.object({
 
 async function list(req: Request, res: Response) {
   const query = listQuerySchema.parse(req.query);
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
   const result = await NotificationService.list({
     ...query,
     userId: req.authUser!.id,
+    isStaff,
   });
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function markRead(req: Request, res: Response) {
   const body = markReadSchema.parse(req.body ?? {});
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
   const result = await NotificationService.markRead(
     body.ids,
     req.authUser!.id,
+    isStaff,
   );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function markOneRead(req: Request, res: Response) {
   const id = String(req.params.id ?? '');
-  const result = await NotificationService.markOne(id, req.authUser!.id);
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
+  const result = await NotificationService.markOne(
+    id,
+    req.authUser!.id,
+    isStaff,
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function markAllRead(req: Request, res: Response) {
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
   const result = await NotificationService.markRead(
     undefined,
     req.authUser!.id,
+    isStaff,
   );
   return res.status(HttpStatusCodes.OK).json(result);
 }

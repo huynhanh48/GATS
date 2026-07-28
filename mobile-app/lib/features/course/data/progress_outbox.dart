@@ -10,19 +10,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Local outbox for offline progress events → `POST /api/progress/sync`.
 abstract final class ProgressOutbox {
   static const _prefsKey = 'progress_outbox_v1';
+  static const _cursorKey = 'progress_changes_cursor_v1';
+  static const _lastPositionAtKey = 'progress_last_position_at_v1';
   static bool _flushing = false;
 
-  static Future<void> enqueueCompleted({
+  static Future<void> enqueue({
+    required String type,
     required String courseId,
     required String lessonId,
-    required int positionSeconds,
+    int? positionSeconds,
   }) async {
     final event = {
       'eventId': _uuidV4(),
       'lessonId': lessonId,
       'courseId': courseId,
-      'type': 'completed',
-      'positionSeconds': positionSeconds,
+      'type': type,
+      if (positionSeconds != null) 'positionSeconds': positionSeconds,
       'occurredAt': DateTime.now().toUtc().toIso8601String(),
       'clientSequence': DateTime.now().millisecondsSinceEpoch,
     };
@@ -31,6 +34,47 @@ abstract final class ProgressOutbox {
     list.add(jsonEncode(event));
     await prefs.setStringList(_prefsKey, list);
     await flush();
+  }
+
+  static Future<void> enqueueCompleted({
+    required String courseId,
+    required String lessonId,
+    required int positionSeconds,
+  }) {
+    return enqueue(
+      type: 'completed',
+      courseId: courseId,
+      lessonId: lessonId,
+      positionSeconds: positionSeconds,
+    );
+  }
+
+  static Future<void> enqueueStarted({
+    required String courseId,
+    required String lessonId,
+  }) {
+    return enqueue(type: 'started', courseId: courseId, lessonId: lessonId);
+  }
+
+  /// Throttle position/heartbeat to ~12s between enqueues per lesson.
+  static Future<void> enqueuePositionThrottled({
+    required String courseId,
+    required String lessonId,
+    required int positionSeconds,
+    String type = 'position',
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final mapKey = '$_lastPositionAtKey:$lessonId';
+    final last = prefs.getInt(mapKey) ?? 0;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - last < 12_000 && type != 'completed') return;
+    await prefs.setInt(mapKey, now);
+    await enqueue(
+      type: type,
+      courseId: courseId,
+      lessonId: lessonId,
+      positionSeconds: positionSeconds,
+    );
   }
 
   static Future<void> flush() async {
@@ -42,57 +86,67 @@ abstract final class ProgressOutbox {
 
       final prefs = await SharedPreferences.getInstance();
       final list = prefs.getStringList(_prefsKey) ?? <String>[];
-      if (list.isEmpty) return;
-
-      final events = <Map<String, dynamic>>[];
-      for (final raw in list) {
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map) {
-            events.add(Map<String, dynamic>.from(decoded));
+      if (list.isNotEmpty) {
+        final events = <Map<String, dynamic>>[];
+        for (final raw in list) {
+          try {
+            final decoded = jsonDecode(raw);
+            if (decoded is Map) {
+              events.add(Map<String, dynamic>.from(decoded));
+            }
+          } catch (_) {}
+        }
+        if (events.isNotEmpty) {
+          final deviceId = await ApiClient.deviceId();
+          final result = await ProgressApiService.syncEvents(
+            token: token,
+            deviceId: deviceId,
+            events: events,
+          );
+          final applied = <String>{};
+          for (final item in result.results) {
+            if (item.status == 'applied' || item.status == 'duplicate') {
+              applied.add(item.eventId);
+            }
           }
-        } catch (_) {
-          // skip corrupt
+          final remaining = list.where((raw) {
+            try {
+              final decoded = jsonDecode(raw);
+              if (decoded is Map && decoded['eventId'] != null) {
+                return !applied.contains(decoded['eventId'].toString());
+              }
+            } catch (_) {}
+            return false;
+          }).toList();
+          if (remaining.isEmpty) {
+            await prefs.remove(_prefsKey);
+          } else {
+            await prefs.setStringList(_prefsKey, remaining);
+          }
         }
       }
-      if (events.isEmpty) {
-        await prefs.remove(_prefsKey);
-        return;
-      }
 
-      final deviceId = await ApiClient.deviceId();
-      final result = await ProgressApiService.syncEvents(
-        token: token,
-        deviceId: deviceId,
-        events: events,
-      );
-
-      final applied = <String>{};
-      for (final item in result.results) {
-        if (item.status == 'applied' || item.status == 'duplicate') {
-          applied.add(item.eventId);
-        }
-      }
-
-      final remaining = list.where((raw) {
-        try {
-          final decoded = jsonDecode(raw);
-          if (decoded is Map && decoded['eventId'] != null) {
-            return !applied.contains(decoded['eventId'].toString());
-          }
-        } catch (_) {}
-        return false;
-      }).toList();
-
-      if (remaining.isEmpty) {
-        await prefs.remove(_prefsKey);
-      } else {
-        await prefs.setStringList(_prefsKey, remaining);
-      }
+      await pullChanges(token: token);
     } catch (e) {
       debugPrint('ProgressOutbox: flush failed — $e');
     } finally {
       _flushing = false;
+    }
+  }
+
+  static Future<void> pullChanges({required String token}) async {
+    final prefs = await SharedPreferences.getInstance();
+    var cursor = prefs.getString(_cursorKey);
+    try {
+      final page = await ProgressApiService.pullChanges(
+        token: token,
+        cursor: cursor,
+      );
+      if (page.nextCursor != null && page.nextCursor!.isNotEmpty) {
+        await prefs.setString(_cursorKey, page.nextCursor!);
+      }
+    } catch (e) {
+      debugPrint('ProgressOutbox: pullChanges failed — $e');
     }
   }
 

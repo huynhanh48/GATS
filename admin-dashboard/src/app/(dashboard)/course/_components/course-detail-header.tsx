@@ -80,6 +80,12 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
             Học viên
           </Link>
           <Link
+            href={`/course/${course.id}/flashcards`}
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
+          >
+            Flashcard
+          </Link>
+          <Link
             href={`/course/${course.id}/preview`}
             target="_blank"
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"

@@ -181,6 +181,44 @@ abstract final class ProgressApiService {
     }
     return const ProgressSyncResult(results: [], checkpoint: null);
   }
+
+  static Future<ProgressChangesPage> pullChanges({
+    required String token,
+    String? cursor,
+  }) async {
+    final json = await ApiClient.get(
+      ProgressApiPaths.changes,
+      token: token,
+      query: cursor != null && cursor.isNotEmpty ? {'cursor': cursor} : null,
+    );
+    final meta = json['meta'] is Map
+        ? Map<String, dynamic>.from(json['meta'] as Map)
+        : <String, dynamic>{};
+    final data = json['data'];
+    final rows = <Map<String, dynamic>>[];
+    if (data is List) {
+      for (final e in data) {
+        if (e is Map) rows.add(Map<String, dynamic>.from(e));
+      }
+    }
+    return ProgressChangesPage(
+      events: rows,
+      nextCursor: meta['nextCursor']?.toString(),
+      hasMore: meta['hasMore'] == true,
+    );
+  }
+}
+
+class ProgressChangesPage {
+  const ProgressChangesPage({
+    required this.events,
+    this.nextCursor,
+    this.hasMore = false,
+  });
+
+  final List<Map<String, dynamic>> events;
+  final String? nextCursor;
+  final bool hasMore;
 }
 
 class ProgressSyncResult {

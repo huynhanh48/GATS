@@ -136,12 +136,20 @@ class FlashcardItem {
     required this.front,
     required this.back,
     this.hint,
+    this.deckId,
+    this.deckTitle,
+    this.courseId,
+    this.courseTitle,
   });
 
   final String id;
   final String front;
   final String back;
   final String? hint;
+  final String? deckId;
+  final String? deckTitle;
+  final String? courseId;
+  final String? courseTitle;
 }
 
 class FlashcardDeck {
@@ -151,6 +159,8 @@ class FlashcardDeck {
     required this.moduleName,
     required this.cards,
     required this.dueToday,
+    this.courseId,
+    this.courseTitle,
   });
 
   final String id;
@@ -158,6 +168,8 @@ class FlashcardDeck {
   final String moduleName;
   final List<FlashcardItem> cards;
   final int dueToday;
+  final String? courseId;
+  final String? courseTitle;
 }
 
 class LeaderboardEntry {

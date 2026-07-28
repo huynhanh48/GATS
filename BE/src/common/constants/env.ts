@@ -128,6 +128,14 @@ const EnvVars = jetEnv({
   ViavaApiKey: optionalStr,
   /** Override path if provider differs from /api/v1/course/generate */
   ViavaCourseGenPath: defaultStr('/api/v1/course/generate'),
+  /** JSON object of mobile feature flags, e.g. {"flashcards":true} */
+  MobileFeatureFlags: optionalStr,
+  MobileMinAndroidVersion: defaultStr('1.0.0'),
+  MobileMinIosVersion: defaultStr('1.0.0'),
+  /** FCM HTTP v1 — raw service account JSON string */
+  FcmServiceAccountJson: optionalStr,
+  /** FCM project id (optional if present in service account JSON) */
+  FcmProjectId: optionalStr,
 });
 
 const INSECURE_PRODUCTION_VALUES = new Set([

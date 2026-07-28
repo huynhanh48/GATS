@@ -6,7 +6,8 @@ import app from '@src/server';
 describe('production HTTP security contracts', () => {
   it('serves liveness without dependencies', async () => {
     const response = await supertest(app).get('/health/live').expect(200);
-    expect(response.body).toEqual({ status: 'ok' });
+    expect(response.body.status).toBe('ok');
+    expect(response.body.meta?.requestId).toBeTruthy();
     expect(response.headers['x-request-id']).toBeTruthy();
   });
 

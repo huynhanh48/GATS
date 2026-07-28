@@ -10,6 +10,7 @@ const MobilePaths = {
     ReviewsSync: '/reviews/sync',
     Stats: '/stats',
   },
+  CourseFlashcardDecks: '/courses/:courseId/flashcard-decks',
 } as const;
 
 export default MobilePaths;

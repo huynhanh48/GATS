@@ -13,6 +13,7 @@ import requirePermission from '@src/middleware/requirePermission';
 import requireStaff from '@src/middleware/requireStaff';
 
 import courseHandlers from './courseRouter';
+import flashcardAdminHandlers from '../flashcard/flashcardAdminRouter';
 
 const apiRouter = Router();
 const courseRouter = Router();
@@ -220,6 +221,16 @@ courseManagementRouter.get(
 courseManagementRouter.get(
   CoursePaths.Management.Get,
   courseHandlers.getManagedById,
+);
+courseManagementRouter.get(
+  CoursePaths.Management.FlashcardDecks,
+  errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(flashcardAdminHandlers.listDecks),
+);
+courseManagementRouter.post(
+  CoursePaths.Management.FlashcardDecks,
+  errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(flashcardAdminHandlers.createDeck),
 );
 
 apiRouter.use(CoursePaths.Course._, courseRouter);

@@ -377,8 +377,12 @@ async function getBySlug(
       id: item.id,
       key: item.key,
       label: item.label,
-      value: item.value,
-      unit: item.unit,
+      // DB column is varchar; coerce so numeric mocks/legacy rows still parse.
+      value:
+        item.value === null || item.value === undefined
+          ? null
+          : String(item.value),
+      unit: item.unit === null || item.unit === undefined ? null : String(item.unit),
       order: item.order,
     })),
     sections: detailSections,

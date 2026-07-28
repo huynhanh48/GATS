@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/navigation/notification_deep_link.dart';
 import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/core/services/daily_reminder_prefs.dart';
 import 'package:gats_academy/core/widgets/gats_notification_banner.dart';
@@ -97,6 +98,7 @@ abstract final class GatsNotificationService {
 
   static void _onNotificationTap(NotificationResponse response) {
     debugPrint('Notification tap: ${response.payload}');
+    NotificationDeepLink.open(response.payload);
   }
 
   static void _bindLifecycleObserver() {

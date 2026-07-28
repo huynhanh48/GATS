@@ -122,6 +122,10 @@ abstract final class AssignmentApiService {
       AssignmentApiPaths.submit(assignmentId),
       token: token,
       body: body,
+      headers: {
+        'Idempotency-Key':
+            'assignment-submit-$assignmentId-${textContent?.hashCode ?? 0}-${url?.hashCode ?? 0}',
+      },
     );
     final data = _asMap(json['data']);
     if (data == null) {

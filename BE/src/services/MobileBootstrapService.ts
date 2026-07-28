@@ -1,11 +1,11 @@
-import { and, count, desc, eq, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 
 import db from '@src/db';
-import { cartItemsTable, cartsTable } from '@src/db/schema/cart';
 import { courseEnrollmentsTable } from '@src/db/schema/enrollment';
 import { lessonProgressTable } from '@src/db/schema/lesson-progress';
-import { notificationsTable } from '@src/db/schema/notification';
+import * as NotificationRepo from '@src/repos/NotificationRepo';
 import AuthService from '@src/services/AuthService';
+import CartService from '@src/services/CartService';
 import DailyCheckinService from '@src/services/DailyCheckinService';
 import EnvVars from '@src/common/constants/env';
 
@@ -48,40 +48,59 @@ async function getContinueLearning(userId: number) {
 }
 
 async function unreadCount(userId: number) {
-  const [result] = await db
-    .select({ total: count() })
-    .from(notificationsTable)
-    .where(
-      and(
-        eq(notificationsTable.isRead, false),
-        or(
-          eq(notificationsTable.userId, userId),
-          isNull(notificationsTable.userId),
-        ),
-      ),
-    );
-  return Number(result?.total ?? 0);
+  return NotificationRepo.countUnreadForUser(userId, true);
 }
 
 async function cartSummary(userId: number) {
-  const cart = await db
-    .select()
-    .from(cartsTable)
-    .where(eq(cartsTable.userId, userId))
-    .limit(1);
-  if (!cart[0]) return { itemCount: 0, total: 0 };
-  const items = await db
-    .select()
-    .from(cartItemsTable)
-    .where(eq(cartItemsTable.cartId, cart[0].id));
+  const cart = await CartService.getCart(userId);
   return {
-    itemCount: items.length,
-    total: 0,
+    itemCount: cart.itemCount,
+    total: cart.totalAmount,
   };
 }
 
+/** Sum watched seconds today (user timezone) → minutes. */
+async function completedMinutesToday(userId: number, timezone?: string) {
+  const tz = timezone && timezone.length > 0 ? timezone : 'Asia/Ho_Chi_Minh';
+  const [row] = await db
+    .select({
+      seconds: sql<number>`coalesce(sum(${lessonProgressTable.watchedSeconds}), 0)`,
+    })
+    .from(lessonProgressTable)
+    .where(
+      and(
+        eq(lessonProgressTable.userId, userId),
+        gte(
+          lessonProgressTable.lastWatchedAt,
+          sql`(date_trunc('day', now() AT TIME ZONE ${tz}) AT TIME ZONE ${tz})`,
+        ),
+      ),
+    );
+  return Math.floor(Number(row?.seconds ?? 0) / 60);
+}
+
+function parseFlags(): Record<string, boolean> {
+  const raw = EnvVars.MobileFeatureFlags;
+  const defaults: Record<string, boolean> = {
+    progressSync: true,
+    pushNotifications: true,
+    flashcards: true,
+    appleLogin: Boolean(EnvVars.AppleClientId),
+  };
+  if (!raw) return defaults;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    for (const [k, v] of Object.entries(parsed)) {
+      if (typeof v === 'boolean') defaults[k] = v;
+    }
+  } catch {
+    // keep defaults
+  }
+  return defaults;
+}
+
 async function bootstrap(userId: number, timezone?: string) {
-  const [user, continueLearning, daily, notifications, cart] =
+  const [user, continueLearning, daily, notifications, cart, completedMinutes] =
     await Promise.all([
       AuthService.me(userId).catch(() => null),
       getContinueLearning(userId).catch(() => null),
@@ -90,6 +109,7 @@ async function bootstrap(userId: number, timezone?: string) {
         .catch(() => null),
       unreadCount(userId).catch(() => 0),
       cartSummary(userId).catch(() => ({ itemCount: 0, total: 0 })),
+      completedMinutesToday(userId, timezone).catch(() => 0),
     ]);
 
   return {
@@ -100,7 +120,7 @@ async function bootstrap(userId: number, timezone?: string) {
       daily: daily
         ? {
             goalMinutes: daily.dailyGoalMinutes,
-            completedMinutes: 0,
+            completedMinutes,
             streak: daily.streakDays,
             checkedInToday: daily.checkedInToday,
             totalXp: daily.totalXp,
@@ -108,15 +128,10 @@ async function bootstrap(userId: number, timezone?: string) {
         : null,
       notifications: { unreadCount: notifications },
       cart,
-      featureFlags: {
-        progressSync: true,
-        pushNotifications: true,
-        flashcards: true,
-        appleLogin: Boolean(EnvVars.AppleClientId),
-      },
+      featureFlags: parseFlags(),
       minSupportedVersion: {
-        android: '1.0.0',
-        ios: '1.0.0',
+        android: EnvVars.MobileMinAndroidVersion,
+        ios: EnvVars.MobileMinIosVersion,
       },
     },
     meta: {

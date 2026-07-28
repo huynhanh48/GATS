@@ -41,6 +41,7 @@ const CoursePaths = {
     _: '/course-management/courses',
     List: '/',
     Get: '/:id',
+    FlashcardDecks: '/:courseId/flashcard-decks',
   },
 } as const;
 

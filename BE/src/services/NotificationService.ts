@@ -66,16 +66,20 @@ async function list(query: {
   unreadOnly?: boolean;
   source?: 'system' | 'admin';
   userId?: number;
+  /** Staff/admin see global system feed; learners only see user-addressed rows. */
+  isStaff?: boolean;
 }) {
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(100, Math.max(1, query.limit ?? 20));
   const skip = (page - 1) * limit;
+  const learnerOnly = !query.isStaff;
   const { data, total, unreadCount } = await NotificationRepo.list({
     skip,
     take: limit,
     unreadOnly: query.unreadOnly,
     source: query.source,
     userId: query.userId,
+    learnerOnly,
   });
   const totalPages = Math.max(1, Math.ceil(total / limit) || 1);
 
@@ -105,13 +109,17 @@ async function list(query: {
   };
 }
 
-async function markRead(ids?: string[], userId?: number) {
-  const updated = await NotificationRepo.markRead(ids, userId);
+async function markRead(
+  ids?: string[],
+  userId?: number,
+  isStaff = false,
+) {
+  const updated = await NotificationRepo.markRead(ids, userId, !isStaff);
   return { updated, message: 'Đã đánh dấu đã đọc' };
 }
 
-async function markOne(id: string, userId: number) {
-  const ok = await NotificationRepo.markOneRead(id, userId);
+async function markOne(id: string, userId: number, isStaff = false) {
+  const ok = await NotificationRepo.markOneRead(id, userId, !isStaff);
   return { updated: ok ? 1 : 0, message: ok ? 'Đã đọc' : 'Không tìm thấy' };
 }
 

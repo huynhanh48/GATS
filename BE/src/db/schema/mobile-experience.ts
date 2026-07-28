@@ -16,8 +16,23 @@ import {
 import { sql } from 'drizzle-orm';
 
 import { coursesTable } from './course';
+import { lessonsTable } from './lesson';
 import { notificationsTable } from './notification';
 import { usersTable } from './user';
+
+export const FLASHCARD_DECK_STATUSES = [
+  'draft',
+  'published',
+  'archived',
+] as const;
+export type FlashcardDeckStatus = (typeof FLASHCARD_DECK_STATUSES)[number];
+
+export const FLASHCARD_CARD_STATUSES = [
+  'draft',
+  'published',
+  'archived',
+] as const;
+export type FlashcardCardStatus = (typeof FLASHCARD_CARD_STATUSES)[number];
 
 export const userDevicesTable = pgTable(
   'user_devices',
@@ -181,20 +196,36 @@ export const dailyCheckinsTable = pgTable(
   ],
 );
 
-export const flashcardDecksTable = pgTable('flashcard_decks', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  courseId: uuid('course_id').references(() => coursesTable.id, {
-    onDelete: 'cascade',
-  }),
-  title: varchar('title', { length: 255 }).notNull(),
-  version: integer('version').notNull().default(1),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const flashcardDecksTable = pgTable(
+  'flashcard_decks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    courseId: uuid('course_id').references(() => coursesTable.id, {
+      onDelete: 'cascade',
+    }),
+    lessonId: uuid('lesson_id').references(() => lessonsTable.id, {
+      onDelete: 'set null',
+    }),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description'),
+    status: varchar('status', { length: 32 }).notNull().default('draft'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index('idx_flashcard_decks_course_status').on(
+      table.courseId,
+      table.status,
+      table.sortOrder,
+    ),
+  ],
+);
 
 export const flashcardsTable = pgTable(
   'flashcards',
@@ -205,6 +236,9 @@ export const flashcardsTable = pgTable(
       .references(() => flashcardDecksTable.id, { onDelete: 'cascade' }),
     front: text('front').notNull(),
     back: text('back').notNull(),
+    hint: text('hint'),
+    sortOrder: integer('sort_order').notNull().default(0),
+    status: varchar('status', { length: 32 }).notNull().default('published'),
     version: integer('version').notNull().default(1),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -213,7 +247,14 @@ export const flashcardsTable = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [index('idx_flashcards_deck').on(table.deckId)],
+  (table) => [
+    index('idx_flashcards_deck').on(table.deckId),
+    index('idx_flashcards_deck_status_order').on(
+      table.deckId,
+      table.status,
+      table.sortOrder,
+    ),
+  ],
 );
 
 export const flashcardUserStateTable = pgTable(

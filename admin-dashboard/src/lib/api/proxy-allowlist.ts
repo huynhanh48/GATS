@@ -6,6 +6,8 @@ const ALLOWED_PREFIXES = [
   "user/me",
   "courses",
   "course-management",
+  "flashcard-decks",
+  "flashcards",
   "cart",
   "orders",
   "payment",

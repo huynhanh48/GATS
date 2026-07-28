@@ -23,6 +23,7 @@ export const idempotencyKeysTable = pgTable(
     requestHash: varchar('request_hash', { length: 64 }).notNull(),
     responseStatus: integer('response_status').notNull(),
     responseBody: jsonb('response_body').notNull(),
+    status: varchar('status', { length: 32 }).notNull().default('completed'),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -35,6 +36,7 @@ export const idempotencyKeysTable = pgTable(
       table.route,
     ),
     index('idx_idempotency_expires').on(table.expiresAt),
+    index('idx_idempotency_status').on(table.status, table.expiresAt),
   ],
 );
 

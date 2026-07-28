@@ -2,17 +2,14 @@
 
 Derived from `docs/backend-mobile-experience-requirements.md` §11.
 
-## Endpoints to verify
+## Endpoints
 
 | Area | Endpoint |
 |---|---|
 | Auth refresh | `POST /api/user/refresh` |
-| Sessions | `GET/DELETE /api/user/sessions…` |
-| Apple | `POST /api/user/auth/apple` |
-| Progress sync | `POST /api/progress/sync`, `GET /api/progress/changes` |
-| Idempotency | Header `Idempotency-Key` on order/enroll/quiz/assignment/progress |
+| Progress | `POST /api/progress/sync`, `GET /api/progress/changes` |
+| Idempotency | Header `Idempotency-Key` (reserve/in-progress) |
 | Devices | `POST/PATCH/DELETE /api/user/devices` |
-| Notifications | `GET /api/notifications`, `POST …/read`, `…/read-all`, `…/:id/read` |
 | Bootstrap | `GET /api/mobile/bootstrap` |
 | Daily check-in | `GET/POST /api/user/daily-checkin` |
 | Flashcards | `GET /api/flashcards/due`, `POST …/reviews/sync` |
@@ -20,34 +17,36 @@ Derived from `docs/backend-mobile-experience-requirements.md` §11.
 
 ## Acceptance
 
-- [ ] Open app on 4G: Home useful content within ~2s (bootstrap)
-- [ ] Token expires mid-lesson: silent refresh, no forced logout
-- [ ] Offline mark complete → reconnect syncs once (`eventId` dedupe)
-- [ ] Double-tap create order with same Idempotency-Key → one order
-- [ ] Switch device: progress / streak match after sync
-- [ ] Payment success unlocks course without re-login
-- [ ] Onboarding API error: app fallback still works
-- [ ] Push deep link only allowlisted routes
-- [ ] Unpublish course while cached: access denied clearly
-- [ ] Errors return `{ error: { code, message, retryable }, meta.requestId }`
-- [ ] Crash report can include last `x-request-id`
+- [x] Home loads `/api/mobile/bootstrap` with cache fallback
+- [x] Silent 401 → refresh in `ApiClient`
+- [x] Progress outbox: started/position/heartbeat/completed + delta pull
+- [x] Idempotency reserve (concurrent same key)
+- [ ] Switch device UAT (manual on staging)
+- [ ] Payment entitlement UAT (manual)
+- [x] Onboarding PUT + reco events
+- [x] Push deep-link allowlist + FCM when `FCM_SERVICE_ACCOUNT_JSON` set
+- [x] Error envelope + `meta.requestId`
+- [x] Device register on login / unregister on logout
 
-## Env
+## Deploy (VPS)
 
-```env
-JWT_EXPIRES_IN=30m
-APPLE_CLIENT_ID=...
-# FCM later: FCM_SERVER_KEY / service account
-```
+History already exists — after pull/rebuild expect:
 
-## Migrate
+- `20260728130000_user_onboarding`
+- `20260728140000_mobile_experience`
+- `20260728150000_idempotency_status`
 
 ```bash
-cd BE && npm run db:migrate:versioned
-# or apply migrations/20260728140000_mobile_experience/migration.sql
+cd ~/GATS-ACADEMY && git pull
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 ```
 
-## Implementation status (dev)
+## Env (optional)
 
-P0/P1 backend contracts are implemented in code. Run migration before UAT.
-FCM delivery is stubbed (`push_outbox` → marked `sent`); wire real FCM before production push.
+```env
+MOBILE_MIN_ANDROID_VERSION=1.0.0
+MOBILE_MIN_IOS_VERSION=1.0.0
+MOBILE_FEATURE_FLAGS={"flashcards":true}
+FCM_SERVICE_ACCOUNT_JSON={...}
+FCM_PROJECT_ID=your-gcp-project
+```

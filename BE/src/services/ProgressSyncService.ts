@@ -1,4 +1,4 @@
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gt, or } from 'drizzle-orm';
 import { z } from 'zod';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
@@ -189,13 +189,16 @@ async function sync(userId: number, body: unknown) {
 }
 
 async function changes(userId: number, cursor?: string) {
-  let since = new Date(0);
+  let sinceAt = new Date(0);
+  let sinceEventId = '00000000-0000-0000-0000-000000000000';
   if (cursor) {
     try {
       const parsed = JSON.parse(
         Buffer.from(cursor, 'base64url').toString('utf8'),
-      ) as { at?: string };
-      if (parsed.at) since = new Date(parsed.at);
+      ) as { at?: string; processedAt?: string; eventId?: string };
+      const at = parsed.processedAt ?? parsed.at;
+      if (at) sinceAt = new Date(at);
+      if (parsed.eventId) sinceEventId = parsed.eventId;
     } catch {
       throw new RouteError(
         HttpStatusCodes.BAD_REQUEST,
@@ -211,20 +214,32 @@ async function changes(userId: number, cursor?: string) {
     .where(
       and(
         eq(progressEventsTable.userId, userId),
-        gt(progressEventsTable.processedAt, since),
+        or(
+          gt(progressEventsTable.processedAt, sinceAt),
+          and(
+            eq(progressEventsTable.processedAt, sinceAt),
+            gt(progressEventsTable.eventId, sinceEventId),
+          ),
+        ),
       ),
     )
-    .orderBy(asc(progressEventsTable.processedAt))
+    .orderBy(
+      asc(progressEventsTable.processedAt),
+      asc(progressEventsTable.eventId),
+    )
     .limit(200);
 
-  const nextCursor =
-    rows.length > 0
-      ? Buffer.from(
-          JSON.stringify({
-            at: rows[rows.length - 1].processedAt.toISOString(),
-          }),
-        ).toString('base64url')
-      : null;
+  const last = rows[rows.length - 1];
+  const nextCursor = last
+    ? Buffer.from(
+        JSON.stringify({
+          processedAt: last.processedAt.toISOString(),
+          eventId: last.eventId,
+          // backward-compatible alias
+          at: last.processedAt.toISOString(),
+        }),
+      ).toString('base64url')
+    : null;
 
   return {
     data: rows,

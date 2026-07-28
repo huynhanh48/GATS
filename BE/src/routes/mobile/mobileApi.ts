@@ -1,7 +1,9 @@
 import { Router } from 'express';
 
 import MobilePaths from '@src/common/paths/mobile';
+import CoursePaths from '@src/common/paths/course';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
+import { getUuidRouteParam } from '@src/common/utils/route-params';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
 import MobileBootstrapService from '@src/services/MobileBootstrapService';
@@ -11,6 +13,7 @@ import type { Request, Response } from 'express';
 const apiRouter = Router();
 const mobileRouter = Router();
 const flashcardRouter = Router();
+const courseFlashcardRouter = Router({ mergeParams: true });
 
 async function bootstrap(req: Request, res: Response) {
   const timezone = req.get('x-timezone') ?? undefined;
@@ -29,7 +32,15 @@ async function bootstrap(req: Request, res: Response) {
 
 async function due(req: Request, res: Response) {
   const limit = Number(req.query.limit ?? 20);
-  const result = await FlashcardService.due(req.authUser!.id, limit);
+  const courseId =
+    typeof req.query.courseId === 'string' && req.query.courseId.length > 0
+      ? req.query.courseId
+      : undefined;
+  const result = await FlashcardService.due(
+    req.authUser!.id,
+    limit,
+    courseId,
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
@@ -42,7 +53,20 @@ async function syncReviews(req: Request, res: Response) {
 }
 
 async function stats(req: Request, res: Response) {
-  const result = await FlashcardService.stats(req.authUser!.id);
+  const courseId =
+    typeof req.query.courseId === 'string' && req.query.courseId.length > 0
+      ? req.query.courseId
+      : undefined;
+  const result = await FlashcardService.stats(req.authUser!.id, courseId);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function listCourseDecks(req: Request, res: Response) {
+  const courseId = getUuidRouteParam(req.params.courseId, 'courseId');
+  const result = await FlashcardService.listPublishedDecksForCourse(
+    req.authUser!.id,
+    courseId,
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
@@ -68,7 +92,14 @@ flashcardRouter.get(
   errorHandle(stats),
 );
 
+courseFlashcardRouter.get(
+  '/:courseId/flashcard-decks',
+  errorHandle(authMiddleware),
+  errorHandle(listCourseDecks),
+);
+
 apiRouter.use(MobilePaths.Mobile._, mobileRouter);
 apiRouter.use(MobilePaths.Flashcards._, flashcardRouter);
+apiRouter.use(CoursePaths.Course._, courseFlashcardRouter);
 
 export default apiRouter;

@@ -3,6 +3,9 @@
 > Cập nhật: 28/07/2026 — đánh giá lại sau khi bổ sung nền tảng Mobile Experience  
 > Phạm vi: Backend API, dữ liệu và vận hành phục vụ `mobile-app`  
 > Mục tiêu: xác định những năng lực backend cần có để ứng dụng nhanh, ổn định, cá nhân hóa, học liên tục trên nhiều thiết bị và đủ an toàn để phát hành production.
+>
+> Trạng thái deploy VPS và checklist go/no-go xem tại
+> [`vps-deploy-readiness-2026-07-28.md`](./vps-deploy-readiness-2026-07-28.md).
 
 ## 1. Kết luận điều hành
 

@@ -75,6 +75,12 @@ x-backend-env: &backend-env
   VIDEO_WORKER_CONCURRENCY: "1"
   HLS_UPLOAD_CONCURRENCY: "16"
   FFMPEG_X264_PRESET: veryfast
+  FCM_SERVICE_ACCOUNT_JSON: ${FCM_SERVICE_ACCOUNT_JSON:-}
+  FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+  MOBILE_FEATURE_FLAGS: ${MOBILE_FEATURE_FLAGS:-}
+  MOBILE_MIN_ANDROID_VERSION: ${MOBILE_MIN_ANDROID_VERSION:-1.0.0}
+  MOBILE_MIN_IOS_VERSION: ${MOBILE_MIN_IOS_VERSION:-1.0.0}
+  APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
 
 # Dev worker: Docker network URLs only. S3/JWT/MinIO keys come from env_file so the
 # worker uses the same LongVan bucket as BE running on the host (not in-cluster MinIO).

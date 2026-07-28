@@ -162,6 +162,10 @@ class LectureProgressStore extends ChangeNotifier {
       await _persistCache();
       _syncCourseProgress();
 
+      await ProgressOutbox.enqueueStarted(
+        courseId: courseId,
+        lessonId: lectureId,
+      );
       await ProgressOutbox.enqueueCompleted(
         courseId: courseId,
         lessonId: lectureId,

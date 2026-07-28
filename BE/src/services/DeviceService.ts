@@ -193,26 +193,113 @@ async function enqueuePush(input: {
   }
 }
 
-/** MVP: mark pending pushes as sent (real FCM when FCM_SERVER_KEY configured). */
+/** MVP: deliver pending pushes via FCM when configured; else mark sent. */
 async function processOutboxBatch(limit = 50) {
+  const FcmPushService = (await import('@src/services/FcmPushService')).default;
   const pending = await db
     .select()
     .from(pushOutboxTable)
     .where(eq(pushOutboxTable.status, 'pending'))
     .limit(limit);
 
+  let processed = 0;
   for (const item of pending) {
-    // Stub delivery — log-ready for FCM integration
-    await db
-      .update(pushOutboxTable)
-      .set({
-        status: 'sent',
-        sentAt: new Date(),
-        attempts: item.attempts + 1,
-      })
-      .where(eq(pushOutboxTable.id, item.id));
+    const attempts = item.attempts + 1;
+    try {
+      const devices = await db
+        .select()
+        .from(userDevicesTable)
+        .where(
+          and(
+            eq(userDevicesTable.userId, item.userId),
+            isNull(userDevicesTable.tokenInvalidatedAt),
+          ),
+        );
+
+      if (!FcmPushService.isFcmConfigured()) {
+        // Keep pending so a later deploy with FCM credentials can deliver.
+        await db
+          .update(pushOutboxTable)
+          .set({ attempts })
+          .where(eq(pushOutboxTable.id, item.id));
+        continue;
+      }
+
+      if (devices.length === 0) {
+        await db
+          .update(pushOutboxTable)
+          .set({
+            status: 'sent',
+            sentAt: new Date(),
+            attempts,
+            lastError: 'no_active_devices',
+          })
+          .where(eq(pushOutboxTable.id, item.id));
+        processed += 1;
+        continue;
+      }
+
+      let anyOk = false;
+      let lastError: string | undefined;
+      for (const device of devices) {
+        if (!device.pushToken) continue;
+        const result = await FcmPushService.sendPush({
+          token: device.pushToken,
+          title: item.title,
+          body: item.body,
+          deepLink: item.deepLink,
+        });
+        if (result.ok) {
+          anyOk = true;
+        } else {
+          lastError = result.error;
+          if (result.invalidToken) {
+            await db
+              .update(userDevicesTable)
+              .set({
+                tokenInvalidatedAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(userDevicesTable.id, device.id));
+          }
+        }
+      }
+
+      if (anyOk) {
+        await db
+          .update(pushOutboxTable)
+          .set({
+            status: 'sent',
+            sentAt: new Date(),
+            attempts,
+            lastError: null,
+          })
+          .where(eq(pushOutboxTable.id, item.id));
+        processed += 1;
+      } else {
+        const backoffMs = Math.min(60_000, 5_000 * attempts);
+        await db
+          .update(pushOutboxTable)
+          .set({
+            status: attempts >= 5 ? 'failed' : 'pending',
+            attempts,
+            lastError: lastError ?? 'FCM send failed',
+            scheduledAt: new Date(Date.now() + backoffMs),
+          })
+          .where(eq(pushOutboxTable.id, item.id));
+      }
+    } catch (err) {
+      await db
+        .update(pushOutboxTable)
+        .set({
+          attempts,
+          lastError: err instanceof Error ? err.message : String(err),
+          scheduledAt: new Date(Date.now() + 15_000),
+        })
+        .where(eq(pushOutboxTable.id, item.id));
+    }
   }
-  return { processed: pending.length };
+  return { processed };
 }
 
 export default {

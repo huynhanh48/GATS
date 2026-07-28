@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 import supertest from 'supertest';
 
 const {
@@ -170,6 +170,6 @@ describe('LessonProgress API', () => {
       .get(`/api/courses/${courseId}/progress`)
       .expect(403);
 
-    expect(res.body.error).toBe('You do not have access to this content');
+    expect(res.body.error.message).toBe('You do not have access to this content');
   });
 });

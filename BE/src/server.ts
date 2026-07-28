@@ -36,6 +36,7 @@ import LearnExtrasApi from '@src/routes/learn-extras/learnExtrasApi';
 import CourseChatApi from '@src/routes/course-chat/courseChatApi';
 import HealthApi from '@src/routes/health/healthApi';
 import MobileApi from '@src/routes/mobile/mobileApi';
+import FlashcardAdminApi from '@src/routes/flashcard/flashcardAdminApi';
 import CourseChatPaths from '@src/common/paths/course-chat';
 import EnvVars, {
   assertProductionConfiguration,
@@ -119,6 +120,7 @@ app.use(Paths._, CertificateApi);
 app.use(Paths._, AnalyticsApi);
 app.use(Paths._, LearnExtrasApi);
 app.use(Paths._, MobileApi);
+app.use(Paths._, FlashcardAdminApi);
 app.use(CourseChatPaths._, CourseChatApi);
 
 // Add error handler

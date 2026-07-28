@@ -2,6 +2,7 @@
 abstract final class CourseApiPaths {
   static const list = '/api/courses';
   static const recommendations = '/api/courses/recommendations';
+  static const recommendationEvents = '/api/courses/recommendations/events';
   static String byId(String id) => '/api/courses/$id';
   static String bySlug(String slug) => '/api/courses/slug/$slug';
   static String curriculum(String courseId) =>
