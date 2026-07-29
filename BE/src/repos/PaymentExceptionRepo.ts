@@ -44,6 +44,27 @@ export async function create(
   return rows[0];
 }
 
+/** Insert an already-resolved exception (audit only — not in “Chưa xử lý”). */
+export async function createResolved(
+  data: Omit<
+    NewPaymentException,
+    'id' | 'createdAt' | 'resolved' | 'resolvedAt' | 'resolvedById'
+  > & { resolutionNote?: string | null },
+): Promise<PaymentException> {
+  const rows = await db
+    .insert(paymentExceptionsTable)
+    .values({
+      ...data,
+      resolved: true,
+      resolvedAt: new Date(),
+      resolvedById: null,
+      resolutionNote:
+        data.resolutionNote ?? 'Auto-resolved: orphan transfer on 0đ order',
+    })
+    .returning();
+  return rows[0];
+}
+
 /**
  * One unresolved row per (txnRef, type). Concurrent webhook/poll updates the
  * same row instead of inserting duplicates.

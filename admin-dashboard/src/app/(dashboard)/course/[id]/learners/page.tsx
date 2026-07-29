@@ -86,7 +86,7 @@ export default async function CourseLearnersPage({ params }: PageProps) {
                 <th className="px-4 py-3">Tiến độ</th>
                 <th className="px-4 py-3">Hoạt động gần nhất</th>
                 <th className="px-4 py-3">Đăng ký lúc</th>
-                <th className="px-4 py-3">Làm bài</th>
+                <th className="px-4 py-3">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -132,12 +132,22 @@ export default async function CourseLearnersPage({ params }: PageProps) {
                     {formatDate(learner.enrolledAt)}
                   </td>
                   <td className="px-4 py-3">
-                    <Link
-                      href={`/course/${id}/learners/${learner.userId}`}
-                      className="text-sm font-medium text-[#0070EB] hover:underline"
-                    >
-                      Lịch sử & AI coach
-                    </Link>
+                    <div className="flex flex-col gap-1">
+                      <Link
+                        href={`/course/${id}/learners/${learner.userId}`}
+                        className="text-sm font-medium text-[#0070EB] hover:underline"
+                      >
+                        Lịch sử & AI coach
+                      </Link>
+                      {learner.status === "active" ? (
+                        <Link
+                          href={`/certificates?issueUser=${learner.userId}&issueCourse=${id}`}
+                          className="text-sm font-medium text-slate-600 hover:text-[#0070EB] hover:underline dark:text-slate-300"
+                        >
+                          Cấp chứng chỉ
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

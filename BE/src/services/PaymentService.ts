@@ -65,8 +65,23 @@ async function logException(input: {
   expectedAmount?: number | null;
   actualAmount?: number | null;
   rawPayload?: unknown;
+  /** When true, insert as already resolved (does not appear in “Chưa xử lý”). */
+  autoResolved?: boolean;
+  resolutionNote?: string | null;
 }) {
   try {
+    if (input.autoResolved) {
+      await PaymentExceptionRepo.createResolved({
+        type: input.type,
+        orderId: input.orderId ?? null,
+        txnRef: input.txnRef ?? null,
+        expectedAmount: input.expectedAmount ?? null,
+        actualAmount: input.actualAmount ?? null,
+        rawPayload: (input.rawPayload as Record<string, unknown>) ?? null,
+        resolutionNote: input.resolutionNote ?? null,
+      });
+      return;
+    }
     await PaymentExceptionRepo.upsertUnresolved({
       type: input.type,
       orderId: input.orderId ?? null,
@@ -190,7 +205,7 @@ async function confirmPayment(
     paidAmount !== undefined ? resolvePaidAmount(paidAmount) : undefined;
 
   // 0đ order (coupon): never require bank credit. If someone still transferred
-  // money, log once as orphan mismatch then complete enrollment.
+  // money, log once as orphan mismatch (auto-resolved) then complete enrollment.
   if (transaction.amount === 0) {
     if (actual !== undefined && actual > 0) {
       void logException({
@@ -201,8 +216,12 @@ async function confirmPayment(
         actualAmount: actual,
         rawPayload: {
           note: 'orphan_transfer_on_zero_order',
+          kind: 'overpayment',
           gatewayResponse,
         },
+        autoResolved: true,
+        resolutionNote:
+          'Auto-resolved: transfer on 0đ order — enrollment still completed',
       });
     }
   } else if (

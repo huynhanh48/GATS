@@ -137,6 +137,7 @@ const Errors = {
   ORDER_NOT_FOUND: 'Order not found',
   FORBIDDEN: 'Forbidden',
   NOT_PENDING: 'Only pending orders can be cancelled',
+  NOT_PAID: 'Only paid orders have a receipt',
   INVALID_ITEMS: 'Order items are required',
   INVALID_STATUS_TRANSITION: 'Invalid status transition',
   PAYMENT_EXPIRED: 'Payment window expired',
@@ -564,6 +565,92 @@ async function getOrderById(userId: number, orderId: string) {
 
   const transaction = await TransactionRepo.findByOrderId(orderId);
   return { order, transaction: transaction ?? null };
+}
+
+function getSellerInfo() {
+  return {
+    name: EnvVars.SellerName,
+    address: EnvVars.SellerAddress || null,
+    email: EnvVars.SellerEmail || null,
+    phone: EnvVars.SellerPhone || null,
+    taxCode: EnvVars.SellerTaxCode ?? null,
+  };
+}
+
+function buildReceiptPayload(
+  order: OrderDetail,
+  transaction: Awaited<ReturnType<typeof TransactionRepo.findByOrderId>>,
+) {
+  if (order.status !== 'paid') {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NOT_PAID);
+  }
+
+  const year = (order.paidAt ?? order.createdAt).getFullYear();
+  const shortId = order.id.replace(/-/g, '').slice(0, 8).toUpperCase();
+  const receiptNumber = `BL-${year}-${shortId}`;
+
+  const items = order.items.map((item) => ({
+    courseName: item.courseName,
+    quantity: item.quantity,
+    unitPrice: item.price,
+    lineTotal: item.price * item.quantity,
+  }));
+
+  return {
+    data: {
+      orderId: order.id,
+      status: order.status,
+      paidAt: order.paidAt?.toISOString() ?? null,
+      createdAt: order.createdAt.toISOString(),
+      receiptNumber,
+      customer: {
+        name: order.customerName,
+        email: order.customerEmail,
+        phone: order.customerPhone,
+      },
+      items,
+      discountAmount: order.discountAmount,
+      couponCode: order.couponCode,
+      totalAmount: order.totalAmount,
+      payment: {
+        method: order.paymentMethod,
+        txnRef: transaction?.txnRef ?? null,
+      },
+      seller: getSellerInfo(),
+    },
+  };
+}
+
+/** Learner (owner) or staff — paid orders only. */
+async function getOrderReceipt(
+  orderId: string,
+  actor: { userId: number; roles?: string[] },
+) {
+  const order = await OrderRepo.findByIdWithItems(orderId);
+  if (!order) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.ORDER_NOT_FOUND);
+  }
+
+  const isOwner = order.userId === actor.userId;
+  const isStaff = (actor.roles ?? []).some(
+    (r) => r === 'admin' || r === 'instructor',
+  );
+  if (!isOwner && !isStaff) {
+    throw new RouteError(HttpStatusCodes.FORBIDDEN, Errors.FORBIDDEN);
+  }
+
+  const transaction = await TransactionRepo.findByOrderId(orderId);
+  return buildReceiptPayload(order, transaction);
+}
+
+/** Admin-only receipt (same payload). */
+async function adminGetOrderReceipt(orderId: string) {
+  const order = await OrderRepo.findByIdWithItems(orderId);
+  if (!order) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.ORDER_NOT_FOUND);
+  }
+  const transaction = await TransactionRepo.findByOrderId(orderId);
+  return buildReceiptPayload(order, transaction);
 }
 
 async function cancelOrder(userId: number, orderId: string) {
@@ -1326,11 +1413,13 @@ export default {
   processSuccessfulPayment,
   listOrders,
   getOrderById,
+  getOrderReceipt,
   cancelOrder,
   expirePendingOrderIfNeeded,
   assertPaymentWindowOpen,
   adminListOrders,
   adminGetOrder,
+  adminGetOrderReceipt,
   adminUpdateOrderStatus,
   adminRepairEnrollment,
   adminExpireStalePending,

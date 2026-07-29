@@ -7,12 +7,14 @@ import * as CertificateRepo from '@src/repos/CertificateRepo';
 import * as CourseRepo from '@src/repos/CourseRepo';
 import * as EnrollmentRepo from '@src/repos/EnrollmentRepo';
 import * as UserRepo from '@src/repos/UserRepo';
+import type { Certificate } from '@src/db/schema/certificate';
 
 const Errors = {
   NOT_FOUND: 'Certificate not found',
   COURSE_NOT_FOUND: 'Course not found',
   NOT_ENROLLED: 'User is not enrolled in this course',
   ALREADY_ISSUED: 'Certificate already issued for this course',
+  NOT_REVOKED: 'Certificate is not revoked',
 } as const;
 
 function generateCertificateNumber(): string {
@@ -24,6 +26,7 @@ function generateCertificateNumber(): string {
 /**
  * Issues a certificate if one doesn't already exist for this user/course.
  * Safe to call repeatedly (e.g. every time progress is recomputed) — idempotent.
+ * Does not auto-reissue revoked certificates (admin only).
  */
 async function issueIfEligible(userId: number, courseId: string) {
   const existing = await CertificateRepo.findByUserAndCourse(userId, courseId);
@@ -48,11 +51,44 @@ async function issueIfEligible(userId: number, courseId: string) {
   return certificate;
 }
 
+async function reissueCertificate(
+  existing: Certificate,
+  actorUserId: number | undefined,
+  reason?: string | null,
+) {
+  const previousCertificateNumber = existing.certificateNumber;
+  const certificateNumber = generateCertificateNumber();
+  const certificate = await CertificateRepo.reissue(existing.id, {
+    certificateNumber,
+    issuedById: actorUserId ?? null,
+  });
+  if (!certificate) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+
+  await AuditLogRepo.record({
+    actorUserId,
+    action: 'certificate.reissued',
+    resourceType: 'certificate',
+    resourceId: certificate.id,
+    meta: {
+      userId: existing.userId,
+      courseId: existing.courseId,
+      previousCertificateNumber,
+      reason: reason?.trim() || null,
+      source: 'admin_reissue',
+    },
+  });
+
+  return certificate;
+}
+
 /** Admin-initiated manual issuance — validates enrollment first. */
 async function adminIssue(
   userId: number,
   courseId: string,
   actorUserId?: number,
+  reason?: string | null,
 ) {
   const course = await CourseRepo.findById(courseId);
   if (!course) {
@@ -66,7 +102,12 @@ async function adminIssue(
 
   const existing = await CertificateRepo.findByUserAndCourse(userId, courseId);
   if (existing) {
-    throw new RouteError(HttpStatusCodes.CONFLICT, Errors.ALREADY_ISSUED);
+    if (existing.status === 'issued') {
+      throw new RouteError(HttpStatusCodes.CONFLICT, Errors.ALREADY_ISSUED);
+    }
+    // Revoked → reissue same row with new number
+    const certificate = await reissueCertificate(existing, actorUserId, reason);
+    return { data: certificate, reissued: true as const };
   }
 
   const certificate = await CertificateRepo.create({
@@ -85,7 +126,33 @@ async function adminIssue(
     meta: { userId, courseId, source: 'admin_manual' },
   });
 
-  return { data: certificate };
+  return { data: certificate, reissued: false as const };
+}
+
+/** Admin reissue by certificate id (must be revoked + still enrolled). */
+async function adminReissue(
+  id: string,
+  actorUserId?: number,
+  reason?: string | null,
+) {
+  const existing = await CertificateRepo.findById(id);
+  if (!existing) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+  if (existing.status !== 'revoked') {
+    throw new RouteError(HttpStatusCodes.CONFLICT, Errors.NOT_REVOKED);
+  }
+
+  const enrollment = await EnrollmentRepo.findActive(
+    existing.userId,
+    existing.courseId,
+  );
+  if (!enrollment) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NOT_ENROLLED);
+  }
+
+  const certificate = await reissueCertificate(existing, actorUserId, reason);
+  return { data: certificate, reissued: true as const };
 }
 
 async function revoke(id: string, actorUserId?: number) {
@@ -178,6 +245,7 @@ export default {
   Errors,
   issueIfEligible,
   adminIssue,
+  adminReissue,
   revoke,
   listMine,
   verify,

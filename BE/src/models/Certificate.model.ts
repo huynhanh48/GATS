@@ -7,6 +7,7 @@ export type CertificateStatusInput = z.infer<typeof certificateStatusSchema>;
 export const issueCertificateSchema = z.object({
   userId: z.number().int().positive(),
   courseId: z.string().uuid(),
+  reason: z.string().trim().max(500).optional().nullable(),
 });
 
 export type IssueCertificateInput = z.infer<typeof issueCertificateSchema>;
@@ -15,6 +16,18 @@ export function parseIssueCertificateInput(
   data: unknown,
 ): IssueCertificateInput {
   return issueCertificateSchema.parse(data);
+}
+
+export const reissueCertificateSchema = z.object({
+  reason: z.string().trim().max(500).optional().nullable(),
+});
+
+export type ReissueCertificateInput = z.infer<typeof reissueCertificateSchema>;
+
+export function parseReissueCertificateInput(
+  data: unknown,
+): ReissueCertificateInput {
+  return reissueCertificateSchema.parse(data ?? {});
 }
 
 export const certificateListQuerySchema = z.object({

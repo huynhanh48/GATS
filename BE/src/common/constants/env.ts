@@ -136,6 +136,12 @@ const EnvVars = jetEnv({
   FcmServiceAccountJson: optionalStr,
   /** FCM project id (optional if present in service account JSON) */
   FcmProjectId: optionalStr,
+  /** Seller identity on payment receipts (biên lai) */
+  SellerName: defaultStr('GATS Academy'),
+  SellerAddress: defaultStr(''),
+  SellerEmail: defaultStr('support@gats.vn'),
+  SellerPhone: defaultStr(''),
+  SellerTaxCode: optionalStr,
 });
 
 const INSECURE_PRODUCTION_VALUES = new Set([

@@ -479,6 +479,16 @@ export default function ProfilePage() {
                           <span>Tổng cộng:</span>
                           <span className="text-primary">{order.totalAmount.toLocaleString("vi-VN")} đ</span>
                         </div>
+                        {order.status === "paid" ? (
+                          <div className="pt-3">
+                            <Link
+                              href={`/profile/orders/${order.id}/receipt`}
+                              className="inline-flex text-sm font-semibold text-primary hover:underline"
+                            >
+                              In hóa đơn
+                            </Link>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ))}

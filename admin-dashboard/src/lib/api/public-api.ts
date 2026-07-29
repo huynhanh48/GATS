@@ -9,6 +9,15 @@ export const ACCESS_TOKEN_COOKIE = "access_token";
  * and gets baked into the client bundle → WS spam).
  */
 export function resolvePublicApiUrl(): string {
+  const fromEnv =
+    process.env.NEXT_PUBLIC_BE_SOCKET_URL ||
+    process.env.NEXT_PUBLIC_BE_API_URL ||
+    process.env.NEXT_PUBLIC_API_URL;
+
+  if (fromEnv && fromEnv.trim().length > 0) {
+    return fromEnv.replace(/\/$/, "");
+  }
+
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
     if (
@@ -18,19 +27,10 @@ export function resolvePublicApiUrl(): string {
     ) {
       return PUBLIC_API_URL;
     }
-    // Local admin (localhost:9000 / 9100) → local BE
+    // Local admin without env override → local BE
     if (host === "localhost" || host === "127.0.0.1") {
       return "http://localhost:3000";
     }
-  }
-
-  const fromEnv =
-    process.env.NEXT_PUBLIC_BE_SOCKET_URL ||
-    process.env.NEXT_PUBLIC_BE_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL;
-
-  if (fromEnv && fromEnv.trim().length > 0) {
-    return fromEnv.replace(/\/$/, "");
   }
 
   return PUBLIC_API_URL;

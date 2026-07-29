@@ -31,6 +31,9 @@ export const orderApi = {
   getOrder: async (orderId: string) => {
     return apiClient.get(PathApi.order.get(orderId));
   },
+  getReceipt: async (orderId: string) => {
+    return apiClient.get(PathApi.order.receipt(orderId));
+  },
   listOrders: async () => {
     return apiClient.get(PathApi.order.list);
   },

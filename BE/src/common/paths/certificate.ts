@@ -7,6 +7,7 @@ const CertificatePaths = {
     AdminList: '/admin',
     AdminIssue: '/admin/issue',
     AdminRevoke: '/admin/:id/revoke',
+    AdminReissue: '/admin/:id/reissue',
   },
 } as const;
 

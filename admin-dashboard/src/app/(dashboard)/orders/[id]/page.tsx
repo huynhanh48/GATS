@@ -95,6 +95,16 @@ export default async function OrderDetailPage({ params }: PageProps) {
             tone: "slate",
           },
         ]}
+        actions={
+          order.status === "paid" ? (
+            <Link
+              href={`/orders/${order.id}/receipt`}
+              className="inline-flex rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900"
+            >
+              In hóa đơn
+            </Link>
+          ) : null
+        }
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

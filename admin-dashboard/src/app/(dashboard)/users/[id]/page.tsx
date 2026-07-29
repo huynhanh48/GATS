@@ -161,6 +161,7 @@ export default async function UserDetailPage({ params }: PageProps) {
                     <th className="px-4 py-3">Trạng thái</th>
                     <th className="px-4 py-3">Tiến độ</th>
                     <th className="px-4 py-3">Hoạt động gần nhất</th>
+                    <th className="px-4 py-3">Chứng chỉ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -199,6 +200,18 @@ export default async function UserDetailPage({ params }: PageProps) {
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-slate-500">
                         {formatDate(e.lastActivityAt)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {e.status === "active" ? (
+                          <Link
+                            href={`/certificates?issueUser=${user.id}&issueCourse=${e.courseId}`}
+                            className="text-sm font-medium text-[#0070EB] hover:underline"
+                          >
+                            Cấp chứng chỉ
+                          </Link>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -16,23 +16,26 @@ function toSepayTransferContent(txnRef: string): string {
   return `SEVQR${cleanAlnum(txnRef)}`;
 }
 
-/**
- * Our txnRef shape: ORD + unix ms digits + 6 hex (from randomBytes(3)).
- * Banks often append extra alnum after the memo — do not swallow that into the ref.
- */
-const ORD_TXN_REF_IN_CONTENT = /SEVQR(ORD\d+[A-F0-9]{6})/;
+const ORD_MS_WIDTHS = [13, 12, 14] as const;
 
 function extractTxnRefFromContent(
   content: string | undefined | null,
 ): string | null {
   if (!content) return null;
   const clean = cleanAlnum(content);
-  const match = clean.match(ORD_TXN_REF_IN_CONTENT);
-  return match?.[1] ?? null;
+
+  for (const width of ORD_MS_WIDTHS) {
+    const re = new RegExp(`(?:SEVQR)?(ORD\\d{${width}}[A-F0-9]{6})`);
+    const match = clean.match(re);
+    if (match?.[1]) return match[1];
+  }
+  return null;
 }
 
 function contentMatchesTxnRef(content: string, txnRef: string): boolean {
-  return cleanAlnum(content).includes(toSepayTransferContent(txnRef));
+  const clean = cleanAlnum(content);
+  const ref = cleanAlnum(txnRef);
+  return clean.includes(`SEVQR${ref}`) || clean.includes(ref);
 }
 
 type OrderStatus = 'pending' | 'paid' | 'cancelled' | 'refunded';
@@ -84,7 +87,25 @@ describe('SePay content matching', () => {
     expect(extractTxnRefFromContent(polluted)).toBe(txnRef);
   });
 
-  it('ignores content without SEVQR', () => {
+  it('extracts ORD from noisy VietinBank memo without SEVQR', () => {
+    const txnRef = 'ORD1784878607530DFA564';
+    const memo = `${txnRef}CTTU1019PHAMTHITOUYENFT25208N959183310`;
+    expect(extractTxnRefFromContent(memo)).toBe(txnRef);
+  });
+
+  it('does not swallow extra digits when hex starts with a digit', () => {
+    const txnRef = 'ORD178487860753012ABCD';
+    const polluted = `SEVQR${txnRef}CTTU999GARBAGE`;
+    expect(extractTxnRefFromContent(polluted)).toBe(txnRef);
+  });
+
+  it('matches content with ORD only (no SEVQR)', () => {
+    const txnRef = 'ORD1784878607530DFA564';
+    expect(contentMatchesTxnRef(`${txnRef}CTTU1019BANK`, txnRef)).toBe(true);
+    expect(contentMatchesTxnRef(`SEVQR${txnRef}`, txnRef)).toBe(true);
+  });
+
+  it('ignores content without ORD txn ref', () => {
     expect(extractTxnRefFromContent('chuyen khoan hoc phi')).toBeNull();
   });
 });
@@ -154,7 +175,7 @@ describe('PAY-SEPAY service contract', () => {
   it('documents webhook/poll recovery rules', () => {
     const rules = {
       amountMustMatchExactly: true,
-      sevqrContentRequired: true,
+      ordRefExtractedWithOrWithoutSevqr: true,
       ttlBlocksUiOnlyNotBankMatch: true,
       latePaymentLogsException: true,
       exceptionType: 'late_payment_recovered',

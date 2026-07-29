@@ -177,6 +177,8 @@ export const PathApi = {
     list: `${API_PREFIX}/orders`,
     /** GET - auth: member */
     get: (orderId: string) => `${API_PREFIX}/orders/${orderId}`,
+    /** GET - auth: member (owner) or staff — paid only */
+    receipt: (orderId: string) => `${API_PREFIX}/orders/${orderId}/receipt`,
     /** POST - auth: member */
     cancel: (orderId: string) => `${API_PREFIX}/orders/${orderId}/cancel`,
   },

@@ -67,6 +67,13 @@ orderRouter.get(
   orderHandlers.adminGetOrder,
 );
 
+orderRouter.get(
+  OrderPaths.Order.AdminReceipt,
+  errorHandle(authMiddleware),
+  errorHandle(requireAdmin),
+  orderHandlers.adminGetOrderReceipt,
+);
+
 orderRouter.patch(
   OrderPaths.Order.AdminUpdateStatus,
   errorHandle(authMiddleware),
@@ -85,6 +92,12 @@ orderRouter.get(
   OrderPaths.Order.Get,
   errorHandle(authMiddleware),
   orderHandlers.getOrderById,
+);
+
+orderRouter.get(
+  OrderPaths.Order.Receipt,
+  errorHandle(authMiddleware),
+  orderHandlers.getOrderReceipt,
 );
 
 orderRouter.post(
