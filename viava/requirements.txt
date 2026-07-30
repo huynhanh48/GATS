@@ -18,7 +18,7 @@ openpyxl
 python-pptx
 ebooklib
 beautifulsoup4
-psycopg2==2.9.12
+psycopg2-binary==2.9.10
 tiktoken==0.13.0
 mcp>=1.27,<2
 minio>=7.2.0

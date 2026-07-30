@@ -51,6 +51,8 @@ RUN apt-get update \
     python3-venv \
     python3-pip \
     ca-certificates \
+    curl \
+    libgomp1 \
   && rm -rf /var/lib/apt/lists/* \
   && npm install -g pm2
 

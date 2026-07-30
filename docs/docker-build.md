@@ -77,20 +77,27 @@ Trong log `app` kỳ vọng:
 - `[entrypoint] Applying versioned database migrations...` rồi `Schema is current`; nếu migration fail, container dừng để tránh chạy app với schema lệch
 - pm2: `gats-academy-api`, `gats-academy-worker`, `web-app`, `admin-dashboard`, `viava-api` online
 
-### Smoke Viava (sau deploy)
+### Smoke Viava + Admin AI (sau deploy)
+
+Thứ tự bắt buộc:
 
 ```powershell
-# Public (qua nginx)
-curl https://api.gats.vn/course/info
+# 1) pm2 — viava-api phải online (không restart loop)
+docker exec gats-academy pm2 list
 
-# Trong container (health nội bộ — không publish /health ra api.gats.vn)
-docker exec gats-academy curl -s http://127.0.0.1:8000/health
+# 2) Health nội bộ (cần curl trong image)
+docker exec gats-academy curl -sf http://127.0.0.1:8000/health
 
-# Admin AI quiz vẫn qua BE
-# POST /api/quizzes/:quizId/ai-generate
+# 3) Public qua nginx
+curl -sf https://api.gats.vn/course/info
+
+# 4) Admin UI: Course → Quiz → AI generate (text ngắn)
+#    → POST /api/quizzes/:quizId/ai-generate → câu hỏi được apply
 ```
 
 Swagger: `https://api.gats.vn/docs`
+
+> **Pip note:** `viava/requirements.txt` dùng `psycopg2-binary` (wheel) — không cần `libpq-dev` / `pg_config` trong image. REST API không dùng Postgres driver lúc startup.
 
 ## Những gì Dockerfile làm
 
@@ -107,7 +114,8 @@ Swagger: `https://api.gats.vn/docs`
 | Next không bind ra ngoài container | → `HOSTNAME=0.0.0.0` cho web/admin |
 | Thiếu `next.config` trong image | → copy `next.config.ts` / `next.config.mjs` |
 | BE `start` cần `config/.env.production` | → tạo file placeholder trong image; secret lấy từ Compose env |
-| Viava numpy/scipy trên Alpine | → runtime **bookworm-slim** + pip venv |
+| Viava numpy/scipy trên Alpine | → runtime **bookworm-slim** + pip venv + `libgomp1` |
+| Build fail `pg_config` / `psycopg2` | → `psycopg2-binary` trong `viava/requirements.txt` |
 | BE gọi Viava v1 path | → v2 `/course/learning-path` + `/course/exercises/*` + `/course/chat` |
 
 ## Lỗi thường gặp
@@ -119,6 +127,8 @@ Swagger: `https://api.gats.vn/docs`
 | Build BE fail cookie | Đảm bảo `AuthService.getCookieOptions(req?)` đã merge trước khi build |
 | Migration failed | Container chủ động dừng; không sửa migration đã apply, kiểm tra `DATABASE_URL`, checksum và backup trước khi retry |
 | Port đã dùng | Đổi mapping trong `docker-compose.yml` hoặc tắt process host |
+| `pg_config` / Failed to build `psycopg2` | Đã dùng `psycopg2-binary`; rebuild image |
+| `viava-api` restart loop | Điền đủ `AZURE_OPENAI_*` (+ transcribe) vào root `.env` rồi `up` lại |
 
 ## Chỉ chạy infra (dev BE trên máy)
 
