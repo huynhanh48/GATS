@@ -47,7 +47,13 @@ export function AuthModal({
       setConfirmPassword("");
       setUserName("");
       setAcceptedTerms(false);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
     }
+    return () => {
+      document.body.style.overflow = "unset";
+    };
   }, [isOpen, initialMode]);
 
   if (!mounted) return null;
@@ -133,7 +139,7 @@ export function AuthModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-              className="w-full max-w-lg max-h-[calc(100vh-120px)] overflow-y-auto bg-white rounded-2xl shadow-2xl pointer-events-auto relative border border-slate-200"
+              className="w-full max-w-lg max-h-[calc(100vh-120px)] overflow-y-auto overflow-x-hidden bg-white rounded-2xl shadow-2xl pointer-events-auto relative border border-slate-200"
             >
               <button
                 onClick={onClose}
@@ -299,12 +305,12 @@ export function AuthModal({
                         <GoogleMark className="w-5 h-5" />
                         <span className="text-[1.4rem] font-medium text-slate-700">Tiếp tục với Google</span>
                       </div>
-                      <div className="absolute inset-0 z-10 flex scale-[1.35] items-center justify-center opacity-0 overflow-hidden" aria-hidden>
+                      <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 overflow-hidden" aria-hidden>
                         <GoogleLogin
                           type="standard"
                           theme="outline"
                           size="large"
-                          width="400"
+                          width="320"
                           text="continue_with"
                           onSuccess={async (credentialResponse) => {
                             if (!credentialResponse.credential) {

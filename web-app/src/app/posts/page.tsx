@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Metadata } from 'next';
 import { PostsClient } from './PostsClient';
 import { Header } from '@/components/layout/Header';
@@ -13,7 +13,15 @@ export default function PostsPage() {
   return (
     <main className="min-h-screen bg-background selection:bg-primary/30 relative">
       <Header />
-      <PostsClient />
+      <Suspense
+        fallback={
+          <div className="flex min-h-[50vh] items-center justify-center text-slate-500">
+            Đang tải bài viết…
+          </div>
+        }
+      >
+        <PostsClient />
+      </Suspense>
       <Footer />
     </main>
   );

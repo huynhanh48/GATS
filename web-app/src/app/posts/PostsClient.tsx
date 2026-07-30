@@ -1,27 +1,25 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PostCard } from '@/components/posts/PostCard';
 import { BlogSidebar } from '@/components/posts/BlogSidebar';
 import apiClient from '@/lib/apiClient';
 import { PathApi } from '@/constants/PathApi';
-import { CourseCategory } from '@/types/course';
 import { Post } from '@/types/post';
-import { ChevronLeft, ChevronRight, Search, LayoutGrid, List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { ChevronLeft, ChevronRight, Search, LayoutGrid, List, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Container } from '@/components/layout/Container';
 import Link from 'next/link';
-import { resolveMediaUrl } from '@/lib/media/url';
 import { theme as designTheme } from '@/lib/theme';
 
 export const PostsClient = () => {
-  const [activeCategory, setActiveCategory] = useState<string | 'all'>('all');
-  const [categories, setCategories] = useState<CourseCategory[]>([]);
+  const searchParams = useSearchParams();
+  const tagFilter = searchParams.get('tag')?.trim() || '';
+  const categoryFilter = searchParams.get('category')?.trim() || '';
+
   const [posts, setPosts] = useState<Post[]>([]);
-  const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
@@ -35,42 +33,35 @@ export const PostsClient = () => {
   const [totalPages, setTotalPages] = useState(1);
   const limit = 6;
 
+  // Reset page when URL filters change
+  useEffect(() => {
+    setPage(1);
+  }, [tagFilter, categoryFilter]);
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
-      setPage(1); // Reset page on new search
+      setPage(1);
     }, 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // Fetch Categories
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await apiClient.get(PathApi.categories.list, { params: { type: 'post', status: 'active' } });
-        const data = response as any;
-        if (data?.data && Array.isArray(data.data)) {
-          setCategories(data.data);
-        } else {
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        setCategories([]);
-      }
-    };
-    fetchCategories();
-  }, []);
 
   // Fetch Posts
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const params: any = { page, limit, status: 'published' };
-        if (activeCategory && activeCategory !== 'all') {
-          params.category = activeCategory;
+        const params: Record<string, string | number> = {
+          page,
+          limit,
+          status: 'published',
+        };
+        if (categoryFilter) {
+          params.category = categoryFilter;
+        }
+        if (tagFilter) {
+          params.tag = tagFilter;
         }
         if (debouncedSearch) {
           params.search = debouncedSearch;
@@ -79,10 +70,6 @@ export const PostsClient = () => {
         const data = response as any;
         if (data?.data && Array.isArray(data.data)) {
           setPosts(data.data);
-          
-          if (isInitialLoad && !debouncedSearch && activeCategory === 'all' && page === 1) {
-            setRecentPosts(data.data.slice(0, 3));
-          }
 
           if (data.pagination) {
             setTotalPages(data.pagination.totalPages || Math.ceil(data.pagination.total / limit) || 1);
@@ -103,9 +90,9 @@ export const PostsClient = () => {
       }
     };
     fetchPosts();
-  }, [activeCategory, page, debouncedSearch, isInitialLoad]);
+  }, [categoryFilter, tagFilter, page, debouncedSearch]);
 
-  const MOCK_TAGS = ['Free couses', 'Marketing', 'Idea', 'LMS', 'LearnPress', 'Instructor'];
+  const hasActiveFilter = Boolean(tagFilter || categoryFilter);
 
   return (
     <div className="w-full flex flex-col relative z-10 bg-white">
@@ -118,9 +105,9 @@ export const PostsClient = () => {
       >
         <Container size="xl">
           <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2">
-            <Link href="/" className="hover:text-primary transition-colors">Homepage</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
             <span>›</span>
-            <span className="text-slate-800">Blog</span>
+            <span className="text-slate-800">Bài viết</span>
           </div>
         </Container>
       </div>
@@ -129,14 +116,36 @@ export const PostsClient = () => {
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6 border-b border-border/10 pb-6">
-          <h1 className="text-[2.8rem] md:text-[3.2rem] font-bold text-[#111827] font-heading">
-            All Articles
-          </h1>
+          <div>
+            <h1 className="text-[2.8rem] md:text-[3.2rem] font-bold text-[#111827] font-heading">
+              Tất cả bài viết
+            </h1>
+            {hasActiveFilter ? (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {categoryFilter ? (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[1.2rem] text-primary">
+                    Danh mục: {categoryFilter}
+                    <Link href={tagFilter ? `/posts?tag=${tagFilter}` : '/posts'} aria-label="Xóa lọc danh mục">
+                      <X className="h-3.5 w-3.5" />
+                    </Link>
+                  </span>
+                ) : null}
+                {tagFilter ? (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-[1.2rem] text-primary">
+                    Từ khóa: {tagFilter}
+                    <Link href={categoryFilter ? `/posts?category=${categoryFilter}` : '/posts'} aria-label="Xóa lọc từ khóa">
+                      <X className="h-3.5 w-3.5" />
+                    </Link>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
           <div className="flex items-center gap-4">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Tìm kiếm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full md:w-[260px] h-[4rem] border-b border-slate-300 bg-transparent px-2 pr-10 text-[1.4rem] text-slate-700 outline-none focus:border-primary transition-colors"
@@ -196,7 +205,7 @@ export const PostsClient = () => {
                     </motion.div>
 
                     {/* Pagination */}
-                    {true && (
+                    {totalPages > 1 && (
                       <div className="flex justify-center mt-auto pb-10">
                         <div className="flex select-none items-center gap-3">
                           <button
@@ -244,6 +253,14 @@ export const PostsClient = () => {
                     <Search className="w-12 h-12 text-slate-300 mb-4" />
                     <h3 className="text-2xl font-bold mb-2 text-[#111827]">Không tìm thấy bài viết nào</h3>
                     <p>Thử điều chỉnh lại từ khóa hoặc danh mục xem sao nhé.</p>
+                    {hasActiveFilter ? (
+                      <Link
+                        href="/posts"
+                        className="mt-4 text-[1.4rem] font-medium text-primary hover:underline"
+                      >
+                        Xóa bộ lọc
+                      </Link>
+                    ) : null}
                   </motion.div>
                 )}
               </div>
@@ -251,7 +268,10 @@ export const PostsClient = () => {
           </div>
 
           {/* Sidebar */}
-          <BlogSidebar />
+          <BlogSidebar
+            activeTag={tagFilter || null}
+            activeCategory={categoryFilter || null}
+          />
         </div>
       </Container>
     </div>

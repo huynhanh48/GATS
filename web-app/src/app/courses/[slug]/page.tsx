@@ -196,13 +196,14 @@ export default function CourseDetailPage({
       return;
     }
 
-    const isPreviewOnly = !isEnrolled;
-
-    const linkedPost = isPreviewOnly ? null : (lesson.linkedPost ?? null);
-    const lessonContent = isPreviewOnly ? null :
-      (typeof lesson.content === "string" && lesson.content.trim()
+    // Preview = video only (no lesson article / linked post), regardless of auth.
+    const isPreviewPlay = Boolean(lesson.preview);
+    const linkedPost = isPreviewPlay ? null : (lesson.linkedPost ?? null);
+    const lessonContent = isPreviewPlay
+      ? null
+      : typeof lesson.content === "string" && lesson.content.trim()
         ? lesson.content
-        : null);
+        : null;
 
     setSelectedLinkedPost(linkedPost);
     setSelectedLessonContent(lessonContent);
@@ -506,8 +507,8 @@ export default function CourseDetailPage({
           {/* Left column */}
           <div className="lg:w-[62%] min-w-0">
             {/* Tabs */}
-            <div className="bg-white border border-slate-200 rounded-t-xl overflow-x-auto">
-              <div className="flex min-w-max" role="tablist">
+            <div className="overflow-hidden rounded-t-xl border border-slate-200 bg-white">
+              <div className="grid grid-cols-3 sm:grid-cols-5" role="tablist">
                 {TABS.map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
@@ -518,7 +519,7 @@ export default function CourseDetailPage({
                       aria-selected={isActive}
                       onClick={() => setActiveTab(tab.id)}
                       className={cn(
-                        "relative px-6 py-4 text-[1.45rem] font-semibold transition-colors whitespace-nowrap",
+                        "relative min-h-11 min-w-0 px-2 py-3 text-[1.35rem] font-semibold whitespace-nowrap transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#ff782d] sm:px-3 sm:py-4 sm:text-[1.45rem]",
                         isActive
                           ? "text-[#ff782d]"
                           : "text-slate-600 hover:text-[#111827]",

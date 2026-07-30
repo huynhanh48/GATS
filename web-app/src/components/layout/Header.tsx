@@ -117,28 +117,6 @@ export function Header() {
               Khóa học
             </Link>
 
-            {sessionReady && status === "authenticated" ? (
-              <Link
-                href="/learning"
-                className={cn(
-                  navLinkBase,
-                  "px-6",
-                  isNavActive(pathname, "/learning") ? navLinkActive : navLinkInactive,
-                )}
-              >
-                Học tập
-              </Link>
-            ) : null}
-
-            {sessionReady && status === "authenticated" && canTeach ? (
-              <a
-                href={teachingHref}
-                className={cn(navLinkBase, "px-6", navLinkInactive)}
-              >
-                Giảng dạy
-              </a>
-            ) : null}
-
             <Link
               href="/posts"
               className={cn(

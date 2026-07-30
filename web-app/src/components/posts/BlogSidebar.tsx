@@ -5,12 +5,19 @@ import { PathApi } from '@/constants/PathApi';
 import { CourseCategory } from '@/types/course';
 import { Post } from '@/types/post';
 import { resolveMediaUrl } from '@/lib/media/url';
+import { cn } from '@/lib/utils';
 
 interface BlogSidebarProps {
   tocContent?: React.ReactNode;
+  activeTag?: string | null;
+  activeCategory?: string | null;
 }
 
-export const BlogSidebar = ({ tocContent }: BlogSidebarProps = {}) => {
+export const BlogSidebar = ({
+  tocContent,
+  activeTag,
+  activeCategory,
+}: BlogSidebarProps = {}) => {
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
   const [tags, setTags] = useState<{id: string, name: string, slug: string}[]>([]);
@@ -39,19 +46,28 @@ export const BlogSidebar = ({ tocContent }: BlogSidebarProps = {}) => {
       {/* Category */}
       <div>
         <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6 pb-2 border-b border-border/10">
-          Category
+          Danh mục
         </h3>
         <div className="space-y-4">
-          {categories.map((opt) => (
-            <Link
-              href={`/posts?category=${opt.slug || opt.id}`}
-              key={opt.id}
-              className="w-full flex items-center justify-between text-[1.4rem] font-medium text-slate-600 hover:text-primary transition-colors"
-            >
-              <span>{opt.name}</span>
-              <span className="text-slate-400 font-normal">{opt.courseCount ?? Math.floor(Math.random() * 20) + 1}</span>
-            </Link>
-          ))}
+          {categories.map((opt) => {
+            const slug = opt.slug || opt.id;
+            const isActive = activeCategory === slug;
+            return (
+              <Link
+                href={`/posts?category=${slug}`}
+                key={opt.id}
+                className={cn(
+                  "w-full flex items-center justify-between text-[1.4rem] font-medium transition-colors",
+                  isActive ? "text-primary" : "text-slate-600 hover:text-primary",
+                )}
+              >
+                <span>{opt.name}</span>
+                <span className="text-slate-400 font-normal">
+                  {opt.postCount ?? 0}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
@@ -60,11 +76,17 @@ export const BlogSidebar = ({ tocContent }: BlogSidebarProps = {}) => {
       {/* Recent Posts */}
       <div>
         <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6 pb-2 border-b border-border/10">
-          Recent Posts
+          Bài viết mới
         </h3>
         <div className="space-y-6">
           {recentPosts.map((post) => {
-            const date = post.publishedAt || post.createdAt ? new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(post.publishedAt || post.createdAt)) : '';
+            const date = post.publishedAt || post.createdAt
+              ? new Intl.DateTimeFormat('vi-VN', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                }).format(new Date(post.publishedAt || post.createdAt))
+              : '';
             return (
               <Link key={post.id} href={`/posts/${post.slug}`} className="flex gap-4 group">
                 <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-100">
@@ -93,19 +115,27 @@ export const BlogSidebar = ({ tocContent }: BlogSidebarProps = {}) => {
       {/* Tags */}
       <div>
         <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6 pb-2 border-b border-border/10">
-          Tags
+          Từ khóa
         </h3>
         <div className="flex flex-wrap gap-2">
           {tags.length > 0 ? (
-            tags.map(tag => (
-              <Link 
-                href={`/posts?tag=${tag.slug}`}
-                key={tag.id}
-                className="px-4 py-2 text-[1.3rem] rounded-md border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-colors"
-              >
-                {tag.name}
-              </Link>
-            ))
+            tags.map(tag => {
+              const isActive = activeTag === tag.slug;
+              return (
+                <Link 
+                  href={`/posts?tag=${tag.slug}`}
+                  key={tag.id}
+                  className={cn(
+                    "px-4 py-2 text-[1.3rem] rounded-md border transition-colors",
+                    isActive
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-slate-200 text-slate-600 hover:border-primary hover:text-primary",
+                  )}
+                >
+                  {tag.name}
+                </Link>
+              );
+            })
           ) : (
             <span className="text-slate-400 text-[1.3rem]">Không có từ khóa nào</span>
           )}

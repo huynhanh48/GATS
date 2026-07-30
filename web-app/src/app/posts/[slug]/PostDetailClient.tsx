@@ -197,9 +197,9 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
       >
         <Container size="xl">
           <div className="text-[1.3rem] font-medium text-slate-500 flex items-center flex-wrap gap-2">
-            <Link href="/" className="hover:text-primary transition-colors">Homepage</Link>
+            <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
             <span>›</span>
-            <Link href="/posts" className="hover:text-primary transition-colors">Blog</Link>
+            <Link href="/posts" className="hover:text-primary transition-colors">Bài viết</Link>
             {post.category?.name && (
               <>
                 <span>›</span>
