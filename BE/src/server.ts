@@ -45,7 +45,7 @@ import EnvVars, {
 import cors from 'cors';
 import originGuard from './middleware/originGuard';
 import { errorHandle } from './middleware/errorHandle';
-import { getAllowedOrigins } from './common/utils/cors';
+import { getAllowedOrigins, isOriginAllowed } from './common/utils/cors';
 import requestContext from './middleware/requestContext';
 import responseMeta from './middleware/responseMeta';
 /******************************************************************************
@@ -72,7 +72,7 @@ app.use(
   cors({
     origin(origin, callback) {
       // Server-to-server/mobile clients do not send Origin.
-      if (!origin || getAllowedOrigins().includes(origin)) {
+      if (!origin || isOriginAllowed(origin)) {
         return callback(null, true);
       }
       return callback(null, false);

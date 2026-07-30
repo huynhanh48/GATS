@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
-import 'package:gats_academy/data/mock/mock_data.dart';
+import 'package:gats_academy/features/ai_coach/data/ai_coach_store.dart';
+import 'package:gats_academy/features/ai_coach/models/ai_coach_session.dart';
+import 'package:gats_academy/features/ai_coach/presentation/widgets/ai_coach_session_sheet.dart';
 
 class AiCoachScreen extends StatefulWidget {
   const AiCoachScreen({super.key});
@@ -18,13 +21,17 @@ class AiCoachScreen extends StatefulWidget {
 class _AiCoachScreenState extends State<AiCoachScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
-  late List<ChatMessage> _messages;
+
+  String _userId = 'guest';
+  AiCoachSession? _activeSession;
+  List<AiChatMessage> _messages = [];
+  bool _isLoading = true;
   bool _isTyping = false;
 
   @override
   void initState() {
     super.initState();
-    _messages = List.of(MockData.initialChatMessages);
+    _initSession();
   }
 
   @override
@@ -34,23 +41,124 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     super.dispose();
   }
 
-  Future<void> _sendMessage(String text) async {
-    if (text.trim().isEmpty || _isTyping) return;
+  Future<void> _initSession() async {
+    final user = await AuthPrefs.currentUser();
+    final userId = user?.id ?? 'guest';
+    _userId = userId;
 
+    final sessions = await AiCoachStore.loadSessions(userId);
+    final activeId = await AiCoachStore.loadActiveSessionId(userId);
+
+    AiCoachSession? active;
+    if (activeId != null && activeId.isNotEmpty) {
+      active = sessions.cast<AiCoachSession?>().firstWhere(
+            (s) => s?.id == activeId,
+            orElse: () => null,
+          );
+    }
+    if (active == null && sessions.isNotEmpty) {
+      active = sessions.first;
+    }
+
+    if (!mounted) return;
     setState(() {
-      _messages.add(ChatMessage(text: text.trim(), isUser: true));
+      _activeSession = active;
+      _messages = active != null ? List.from(active.messages) : [];
+      _isLoading = false;
+    });
+
+    _scrollToEnd();
+  }
+
+  void _startNewSession() async {
+    setState(() {
+      _activeSession = null;
+      _messages = [];
+    });
+    await AiCoachStore.saveActiveSessionId(_userId, null);
+  }
+
+  void _selectSession(AiCoachSession session) async {
+    setState(() {
+      _activeSession = session;
+      _messages = List.from(session.messages);
+    });
+    await AiCoachStore.saveActiveSessionId(_userId, session.id);
+    _scrollToEnd();
+  }
+
+  void _openHistorySheet() {
+    AiCoachSessionSheet.show(
+      context: context,
+      userId: _userId,
+      activeSessionId: _activeSession?.id,
+      onSelectSession: _selectSession,
+      onNewSession: _startNewSession,
+    );
+  }
+
+  Future<void> _sendMessage(String text) async {
+    final trimmedText = text.trim();
+    if (trimmedText.isEmpty || _isTyping) return;
+
+    _controller.clear();
+    HapticFeedback.lightImpact();
+
+    final userMsg = AiChatMessage.create(text: trimmedText, isUser: true);
+
+    AiCoachSession session;
+    if (_activeSession == null) {
+      final titleSnippet = trimmedText.length > 28
+          ? '${trimmedText.substring(0, 28)}...'
+          : trimmedText;
+      session = await AiCoachStore.createNewSession(
+        _userId,
+        title: titleSnippet,
+        initialMessages: [userMsg],
+      );
+    } else {
+      var currentTitle = _activeSession!.title;
+      if (currentTitle == 'Cuộc trò chuyện mới' || currentTitle.isEmpty) {
+        currentTitle = trimmedText.length > 28
+            ? '${trimmedText.substring(0, 28)}...'
+            : trimmedText;
+      }
+      final updatedMsgs = [..._activeSession!.messages, userMsg];
+      session = _activeSession!.copyWith(
+        title: currentTitle,
+        messages: updatedMsgs,
+        updatedAt: DateTime.now(),
+      );
+      await AiCoachStore.saveSession(_userId, session);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _activeSession = session;
+      _messages = List.from(session.messages);
       _isTyping = true;
     });
-    _controller.clear();
     _scrollToEnd();
-    HapticFeedback.lightImpact();
 
     await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted) return;
 
+    final aiMsg = AiChatMessage.create(
+      text: AppStrings.aiCoachMockReply,
+      isUser: false,
+    );
+    final finalMsgs = [...session.messages, aiMsg];
+    final updatedSession = session.copyWith(
+      messages: finalMsgs,
+      updatedAt: DateTime.now(),
+    );
+    await AiCoachStore.saveSession(_userId, updatedSession);
+
+    if (!mounted) return;
     setState(() {
+      _activeSession = updatedSession;
+      _messages = List.from(updatedSession.messages);
       _isTyping = false;
-      _messages.add(ChatMessage(text: AppStrings.aiCoachMockReply, isUser: false));
     });
     _scrollToEnd();
   }
@@ -69,10 +177,15 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasConversation = _messages.length > 1;
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final hasConversation = _messages.isNotEmpty;
 
     return Column(
       children: [
+        _buildSessionHeader(context),
         Expanded(
           child: !hasConversation
               ? _WelcomeHero(onPrompt: _sendMessage)
@@ -88,6 +201,65 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
           onSend: _sendMessage,
         ),
       ],
+    );
+  }
+
+  Widget _buildSessionHeader(BuildContext context) {
+    final gats = context.gatsColors;
+    final sessionTitle = _activeSession?.title ?? 'Cuộc trò chuyện mới';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: gats.surface.withValues(alpha: gats.isStarry ? 0.6 : 0.95),
+        border: Border(
+          bottom: BorderSide(color: gats.divider.withValues(alpha: 0.4)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              size: 14,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              sessionTitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: gats.textPrimary,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.history_rounded, size: 20),
+            tooltip: 'Lịch sử trò chuyện',
+            color: gats.textSecondary,
+            onPressed: _openHistorySheet,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
+            tooltip: 'Tạo cuộc trò chuyện mới',
+            color: AppColors.primary,
+            onPressed: _startNewSession,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -374,7 +546,7 @@ class _ChatBody extends StatelessWidget {
     required this.scrollController,
   });
 
-  final List<ChatMessage> messages;
+  final List<AiChatMessage> messages;
   final bool isTyping;
   final ScrollController scrollController;
 
@@ -382,7 +554,8 @@ class _ChatBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       controller: scrollController,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
       itemCount: messages.length + (isTyping ? 1 : 0),
       itemBuilder: (context, index) {
         if (isTyping && index == messages.length) {
@@ -407,7 +580,7 @@ class _AnimatedChatBubble extends StatefulWidget {
     this.isLatest = false,
   });
 
-  final ChatMessage message;
+  final AiChatMessage message;
   final bool isLatest;
 
   @override
@@ -463,17 +636,19 @@ class _AnimatedChatBubbleState extends State<_AnimatedChatBubble>
 class _ChatBubble extends StatelessWidget {
   const _ChatBubble({required this.message});
 
-  final ChatMessage message;
+  final AiChatMessage message;
 
   @override
   Widget build(BuildContext context) {
-    return message.isUser ? _UserBubble(message: message) : _CoachBubble(message: message);
+    return message.isUser
+        ? _UserBubble(message: message)
+        : _CoachBubble(message: message);
   }
 }
 
 class _UserBubble extends StatelessWidget {
   const _UserBubble({required this.message});
-  final ChatMessage message;
+  final AiChatMessage message;
 
   @override
   Widget build(BuildContext context) {
@@ -482,7 +657,8 @@ class _UserBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14, left: 48),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -518,7 +694,7 @@ class _UserBubble extends StatelessWidget {
 
 class _CoachBubble extends StatelessWidget {
   const _CoachBubble({required this.message});
-  final ChatMessage message;
+  final AiChatMessage message;
 
   @override
   Widget build(BuildContext context) {
@@ -548,7 +724,8 @@ class _CoachBubble extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: gats.surface,
                     borderRadius: const BorderRadius.only(
@@ -588,9 +765,11 @@ class _CoachBubble extends StatelessWidget {
                     children: [
                       _ReactionPill(icon: Icons.thumb_up_rounded, onTap: () {}),
                       const SizedBox(width: 6),
-                      _ReactionPill(icon: Icons.thumb_down_rounded, onTap: () {}),
+                      _ReactionPill(
+                          icon: Icons.thumb_down_rounded, onTap: () {}),
                       const SizedBox(width: 6),
-                      _ReactionPill(icon: Icons.content_copy_rounded, onTap: () {}),
+                      _ReactionPill(
+                          icon: Icons.content_copy_rounded, onTap: () {}),
                     ],
                   ),
                 ),
@@ -697,7 +876,8 @@ class _BouncingDot extends StatefulWidget {
   State<_BouncingDot> createState() => _BouncingDotState();
 }
 
-class _BouncingDotState extends State<_BouncingDot> with SingleTickerProviderStateMixin {
+class _BouncingDotState extends State<_BouncingDot>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 
   @override

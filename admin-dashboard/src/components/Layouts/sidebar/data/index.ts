@@ -37,6 +37,16 @@ export const NAV_DATA = [
         ],
       },
       {
+        title: "AI Gen (Viava v2)",
+        icon: Icons.SparklesIcon,
+        items: [
+          {
+            title: "Thử nghiệm AI Gen",
+            url: "/ai-gen",
+          },
+        ],
+      },
+      {
         title: "Bài viết",
         icon: Icons.DocumentIcon,
         items: [
