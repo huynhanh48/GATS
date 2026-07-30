@@ -39,6 +39,7 @@ import {
 import * as CourseRepo from '@src/repos/CourseRepo';
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
+import * as QuizRepo from '@src/repos/QuizRepo';
 import * as VideoRepo from '@src/repos/VideoRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 
@@ -812,6 +813,41 @@ async function getPlayback(
   };
 }
 
+export type AiQuizSourceItem = {
+  videoId: string;
+  lessonId: string;
+  title: string | null;
+  audioFlacUrl: string;
+  quizId: string | null;
+  hasQuiz: boolean;
+};
+
+async function listAiQuizSources(courseId: string) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+
+  const videos = await VideoRepo.findReadyWithFlacByCourseId(courseId);
+  const data: AiQuizSourceItem[] = [];
+
+  for (const video of videos) {
+    const audioFlacUrl = buildAudioFlacUrl(video.audioFlacKey);
+    if (!audioFlacUrl) continue;
+    const quiz = await QuizRepo.findByLessonId(video.lessonId);
+    data.push({
+      videoId: video.id,
+      lessonId: video.lessonId,
+      title: video.title,
+      audioFlacUrl,
+      quizId: quiz?.id ?? null,
+      hasQuiz: Boolean(quiz?.id),
+    });
+  }
+
+  return { data };
+}
+
 export default {
   Errors,
   initUpload,
@@ -826,6 +862,7 @@ export default {
   getByLesson,
   deleteVideo,
   getPlayback,
+  listAiQuizSources,
   build720pPlaylistKey,
   buildHlsPlaylistKey,
 };

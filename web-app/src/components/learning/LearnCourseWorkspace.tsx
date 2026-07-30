@@ -556,8 +556,8 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
       <div className="mx-auto flex w-full max-w-[1536px] flex-1 items-start gap-5 px-3 py-5 sm:px-5 lg:py-6">
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
           {lessonType === "video" ? (
-            <div className="flex justify-center bg-muted/40 p-2 sm:p-3 lg:p-4">
-            <div className="relative aspect-video w-full max-w-[1180px] overflow-hidden rounded-2xl bg-black shadow-xl shadow-black/20 ring-1 ring-black/10 dark:ring-white/10">
+            <div className="flex w-full flex-col bg-muted/40 p-2 sm:p-3 lg:p-4">
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-xl shadow-black/20 ring-1 ring-black/10 dark:ring-white/10">
               {playbackUrl && resumePrompt == null ? (
                 <HlsVideoPlayer
                   url={playbackUrl}
@@ -620,7 +620,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
               ) : null}
             </div>
             {audioFlacUrl ? (
-              <div className="mt-2 flex w-full max-w-[1180px] justify-end">
+              <div className="mt-3 flex w-full justify-end">
                 <a
                   href={audioFlacUrl}
                   download

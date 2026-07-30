@@ -36,6 +36,7 @@ import LessonAttachmentService from '@src/services/LessonAttachmentService';
 import LessonService from '@src/services/LessonService';
 import OnboardingRecommendationService from '@src/services/OnboardingRecommendationService';
 import RecommendationAnalyticsService from '@src/services/RecommendationAnalyticsService';
+import VideoService from '@src/services/VideoService';
 
 function isAuthenticated(req: Request): boolean {
   return req.authUser !== undefined;
@@ -287,6 +288,13 @@ async function removeLessonAttachment(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function listAiQuizSources(req: Request, res: Response) {
+  const result = await VideoService.listAiQuizSources(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   list: errorHandle(list),
   recommendations: errorHandle(recommendations),
@@ -299,6 +307,7 @@ export default {
   getBySlug: errorHandle(getBySlug),
   getById: errorHandle(getById),
   getManagedById: errorHandle(getManagedById),
+  listAiQuizSources: errorHandle(listAiQuizSources),
   create: errorHandle(create),
   update: errorHandle(update),
   publish: errorHandle(publish),

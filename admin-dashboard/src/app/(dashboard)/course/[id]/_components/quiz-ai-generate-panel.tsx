@@ -51,7 +51,7 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
         form.append("text", text.trim());
       } else if (sourceMode === "file_url") {
         if (!fileUrl.trim()) {
-          toast.error("Nhập URL file");
+          toast.error("Nhập URL S3 FLAC (…/audio.flac) hoặc URL tài liệu");
           return;
         }
         form.append("file_url", fileUrl.trim());
@@ -110,15 +110,16 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
         </button>
       </div>
       <p className="mb-3 text-xs text-dark-4 dark:text-dark-6">
-        Dùng cùng luồng input với bài tập AI (text / URL / file). Chỉ các loại
-        mcq, đúng-sai, điền khuyết, short answer được map vào quiz GATS.
+        Text / upload file / URL (PDF hoặc S3 FLAC{" "}
+        <code className="text-[10px]">…/audio.flac</code>). Viava transcribe
+        audio FLAC. Chỉ map mcq, đúng-sai, điền khuyết, short answer.
       </p>
 
       <div className="mb-3 flex flex-wrap gap-2">
         {(
           [
             ["text", "Text"],
-            ["file_url", "URL file"],
+            ["file_url", "URL S3 FLAC / file"],
             ["file", "Upload file"],
           ] as const
         ).map(([mode, label]) => (
@@ -150,7 +151,7 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
       {sourceMode === "file_url" ? (
         <input
           className={inputClass}
-          placeholder="https://…"
+          placeholder="https://…/audio.flac hoặc URL tài liệu"
           value={fileUrl}
           onChange={(e) => setFileUrl(e.target.value)}
           disabled={pending}

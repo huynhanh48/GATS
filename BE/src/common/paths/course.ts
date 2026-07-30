@@ -42,6 +42,7 @@ const CoursePaths = {
     List: '/',
     Get: '/:id',
     FlashcardDecks: '/:courseId/flashcard-decks',
+    AiQuizSources: '/:courseId/ai-quiz-sources',
   },
 } as const;
 

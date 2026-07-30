@@ -223,6 +223,11 @@ courseManagementRouter.get(
   courseHandlers.getManagedById,
 );
 courseManagementRouter.get(
+  CoursePaths.Management.AiQuizSources,
+  errorHandle(requireCourseUpdate('courseId')),
+  courseHandlers.listAiQuizSources,
+);
+courseManagementRouter.get(
   CoursePaths.Management.FlashcardDecks,
   errorHandle(requireCourseUpdate('courseId')),
   errorHandle(flashcardAdminHandlers.listDecks),

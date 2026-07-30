@@ -88,12 +88,27 @@ docker exec gats-academy pm2 list
 # 2) Health nội bộ (cần curl trong image)
 docker exec gats-academy curl -sf http://127.0.0.1:8000/health
 
-# 3) Public qua nginx
+# 3) Public qua reverse proxy (nếu expose /course)
 curl -sf https://api.gats.vn/course/info
 
-# 4) Admin UI: Course → Quiz → AI generate (text ngắn)
-#    → POST /api/quizzes/:quizId/ai-generate → câu hỏi được apply
+# 4) Env trong container — Azure STT + VIAVA bắt buộc cho FLAC transcribe
+docker exec gats-academy printenv VIAVA_COURSE_GEN_URL
+# kỳ vọng: http://127.0.0.1:8000
+# Azure Speech / OpenAI keys phải có (copy từ viava/.env vào root .env Compose)
 ```
+
+**Admin AI — thử nghiệm từ FLAC (ưu tiên):**
+
+1. Video khóa học `ready` + có `audio_flac_key` (S3 public/presigned `.flac`).
+2. Lesson của video **đã có quiz** (không auto-tạo).
+3. Admin → `/ai-gen`:
+   - **Course video FLAC** — chọn course → video có FLAC → Run (dùng `quizId` cùng lesson; `file_url` = FLAC).
+   - **URL S3 FLAC** — dán `https://…/audio.flac` + **UUID quiz thật**.
+   - **Text** — smoke nhanh + UUID quiz thật (không cần audio).
+4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **200** + câu hỏi apply (FLAC có thể vài phút; client timeout 180s).
+5. UUID giả / trống → **400**, không **500**.
+
+**Quiz builder (trong course):** panel AI có mode **URL S3 FLAC** (`file_url`) cạnh text / upload file.
 
 Swagger: `https://api.gats.vn/docs`
 

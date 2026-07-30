@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import { getRouteParam } from '@src/common/utils/route-params';
+import {
+  getRouteParam,
+  getUuidRouteParam,
+} from '@src/common/utils/route-params';
 import { parseUserIdParam } from '@src/models/Enrollment.model';
 import {
   parseCreateQuizInput,
@@ -80,7 +83,7 @@ async function aiGenerate(req: Request, res: Response) {
       }
     : undefined;
   const result = await QuizAiService.generateForQuiz(
-    getRouteParam(req.params.quizId),
+    getUuidRouteParam(req.params.quizId, 'quizId'),
     fields,
     uploaded,
   );

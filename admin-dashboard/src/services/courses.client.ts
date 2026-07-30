@@ -203,4 +203,22 @@ export const coursesClient = {
       method: "DELETE",
     });
   },
+
+  listAiQuizSources(
+    courseId: string,
+  ): Promise<ApiResult<{ data: AiQuizSourceItem[] }>> {
+    return apiRequest<{ data: AiQuizSourceItem[] }>({
+      url: `/course-management/courses/${courseId}/ai-quiz-sources`,
+      method: "GET",
+    });
+  },
+};
+
+export type AiQuizSourceItem = {
+  videoId: string;
+  lessonId: string;
+  title: string | null;
+  audioFlacUrl: string;
+  quizId: string | null;
+  hasQuiz: boolean;
 };

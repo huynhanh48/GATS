@@ -104,6 +104,11 @@ Dùng khi muốn kiểm thử toàn bộ ứng dụng trong container mà không
 docker compose -p gats-academy up --build -d
 ```
 
+docker compose -p gats-academy -f docker-compose.yml -f [docker-compose.prod](http://docker-compose.prod).yml up -d --build app
+
+  
+
+
 **Xem log toàn bộ ứng dụng hoặc service chỉ định:**
 
 ```powershell
