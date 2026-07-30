@@ -55,3 +55,5 @@ export * from './schema/auth-session';
 export * from './schema/idempotency-key';
 export * from './schema/progress-event';
 export * from './schema/mobile-experience';
+export * from './schema/ai-coach-session';
+export * from './schema/ai-coach-message';

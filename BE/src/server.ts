@@ -38,6 +38,7 @@ import HealthApi from '@src/routes/health/healthApi';
 import MobileApi from '@src/routes/mobile/mobileApi';
 import FlashcardAdminApi from '@src/routes/flashcard/flashcardAdminApi';
 import CourseChatPaths from '@src/common/paths/course-chat';
+import AiCoachApi from '@src/routes/ai-coach/aiCoachApi';
 import EnvVars, {
   assertProductionConfiguration,
   NodeEnvs,
@@ -122,6 +123,7 @@ app.use(Paths._, LearnExtrasApi);
 app.use(Paths._, MobileApi);
 app.use(Paths._, FlashcardAdminApi);
 app.use(CourseChatPaths._, CourseChatApi);
+app.use(Paths._ + '/ai-coach', AiCoachApi);
 
 // Add error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

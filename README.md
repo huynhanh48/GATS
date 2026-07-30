@@ -81,6 +81,10 @@ npm run dev
 Dùng khi muốn kiểm thử toàn bộ ứng dụng trong container mà không cần chạy `npm run dev` thủ công.
 
 **Khởi chạy toàn bộ stack:**
+
+> **Lưu ý:** Lệnh này sẽ boot Backend ở chế độ Production. API sẽ tự động chặn khởi động (crash) nếu phát hiện dùng chung các secret mặc định kém an toàn trong `docker-compose.yml` (như JWT_SECRET, MINIO_ROOT_PASSWORD).
+> Để API chạy được, bạn cần tạo file `.env` ở thư mục gốc (có thể copy từ `.env.vps.example`) và điền các secret an toàn cho `JWT_SECRET`, `EMAIL_PASSWORD`, `MINIO_ROOT_PASSWORD`, `MINIO_SECRET_KEY`.
+
 ```powershell
 docker compose -p gats-academy up --build -d
 ```

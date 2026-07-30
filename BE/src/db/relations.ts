@@ -32,6 +32,8 @@ import { cartsTable, cartItemsTable } from './schema/cart';
 import { ordersTable, orderItemsTable } from './schema/order';
 import { transactionsTable } from './schema/transaction';
 import { bankAccountsTable } from './schema/bank-account';
+import { aiCoachSessionsTable } from './schema/ai-coach-session';
+import { aiCoachMessagesTable } from './schema/ai-coach-message';
 
 const tables = {
   usersTable,
@@ -68,6 +70,8 @@ const tables = {
   orderItemsTable,
   transactionsTable,
   bankAccountsTable,
+  aiCoachSessionsTable,
+  aiCoachMessagesTable,
 };
 
 export const relations = defineRelations(tables, (r) => ({
@@ -502,6 +506,22 @@ export const relations = defineRelations(tables, (r) => ({
     }),
   },
   bankAccountsTable: {},
+  aiCoachSessionsTable: {
+    user: r.one.usersTable({
+      from: r.aiCoachSessionsTable.userId,
+      to: r.usersTable.id,
+    }),
+    messages: r.many.aiCoachMessagesTable({
+      from: r.aiCoachSessionsTable.id,
+      to: r.aiCoachMessagesTable.sessionId,
+    }),
+  },
+  aiCoachMessagesTable: {
+    session: r.one.aiCoachSessionsTable({
+      from: r.aiCoachMessagesTable.sessionId,
+      to: r.aiCoachSessionsTable.id,
+    }),
+  },
 }));
 
 export { tables };
