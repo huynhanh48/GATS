@@ -21,8 +21,6 @@ const EXERCISE_GENERATE_PATH: Record<ViavaCompatExerciseType, string> = {
   short_answer: '/course/exercises/short-answer/generate',
 };
 
-const DEFAULT_TIMEOUT_MS = 180_000;
-
 export function getViavaBaseUrl(): string | undefined {
   const base = EnvVars.ViavaCourseGenUrl?.replace(/\/$/, '');
   return base || undefined;
@@ -126,7 +124,6 @@ function statusFromViava(httpStatus: number): HttpStatusCodes {
 async function viavaRequest(
   path: string,
   init: RequestInit,
-  timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<unknown> {
   const base = getViavaBaseUrl();
   if (!base) {
@@ -145,7 +142,6 @@ async function viavaRequest(
         ...authHeaders(),
         ...(init.headers as Record<string, string> | undefined),
       },
-      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
     throw new RouteError(

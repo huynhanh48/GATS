@@ -118,6 +118,7 @@ export const quizClient = {
   /**
    * POST /quizzes/:quizId/ai-generate — multipart (text | file_url | file)
    * Calls Viava course gen, maps exercises → GATS quiz questions, optionally persists.
+   * No client timeout — FLAC/transcribe may take several minutes.
    */
   async aiGenerate(
     quizId: string,
@@ -137,11 +138,40 @@ export const quizClient = {
       const response = await apiClient.post(
         `/quizzes/${quizId}/ai-generate`,
         form,
-        { timeout: 180_000 },
+        { timeout: 0 },
       );
       return { data: response.data, error: null };
     } catch (error) {
       return { data: null, error: normalizeApiError(error) };
     }
+  },
+
+  /** GET /quizzes/:quizId — full quiz with questions (admin). */
+  getAdmin(quizId: string): Promise<ApiResult<{ data: Quiz }>> {
+    return apiRequest<{ data: Quiz }>({
+      url: `/quizzes/${quizId}?_t=${Date.now()}`,
+      method: "GET",
+    });
+  },
+
+  /**
+   * After gateway 504/timeout, BE may still finish apply. Poll quiz for new questions.
+   */
+  async pollNewQuestions(
+    quizId: string,
+    previousCount: number,
+    options?: { attempts?: number; delayMs?: number },
+  ): Promise<QuizQuestion[]> {
+    const attempts = options?.attempts ?? 18;
+    const delayMs = options?.delayMs ?? 5_000;
+    for (let i = 0; i < attempts; i++) {
+      await new Promise((r) => setTimeout(r, delayMs));
+      const res = await this.getAdmin(quizId);
+      const questions = res.data?.data?.questions ?? [];
+      if (questions.length > previousCount) {
+        return questions.slice(previousCount);
+      }
+    }
+    return [];
   },
 };

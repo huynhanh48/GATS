@@ -104,7 +104,7 @@ docker exec gats-academy printenv VIAVA_COURSE_GEN_URL
 3. Admin → `/ai-gen`:
    - **Quiz đích** — chọn khóa → chọn bài quiz (theo tên, không dán UUID).
    - **Nguồn** — Course video FLAC (có thể khác khóa) / URL S3 FLAC / Text — độc lập với quiz đích.
-4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **200** + câu hỏi apply (FLAC có thể vài phút; client timeout 180s).
+4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **200** + câu hỏi apply (FLAC có thể lâu; client/BE **không** abort timeout — reverse proxy ngoài nếu 504 thì tăng `proxy_read_timeout`).
 5. UUID giả trên path API → **400**, không **500**.
 
 **Quiz builder (trong course):** panel AI có mode **URL S3 FLAC** (`file_url`) cạnh text / upload file.

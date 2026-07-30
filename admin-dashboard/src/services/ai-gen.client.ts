@@ -25,7 +25,7 @@ export const aiGenClient = {
       const response = await apiClient.post<AiQuizGenerateResponse>(
         `/quizzes/${quizId}/ai-generate`,
         form,
-        { timeout: 180_000 },
+        { timeout: 0 },
       );
       return { data: response.data, error: null };
     } catch (error) {

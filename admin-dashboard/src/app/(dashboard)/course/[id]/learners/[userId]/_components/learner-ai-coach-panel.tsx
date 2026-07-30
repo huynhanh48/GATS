@@ -22,7 +22,7 @@ export function LearnerAiCoachPanel({ courseId, userId }: Props) {
         const res = await apiClient.post<LearningCoachResponse>(
           `/courses/${courseId}/enrollments/learners/${userId}/ai-coach`,
           null,
-          { timeout: 180_000 },
+          { timeout: 0 },
         );
         setReport(res.data.data);
         toast.success(res.data.message ?? "Đã tạo báo cáo coach");
