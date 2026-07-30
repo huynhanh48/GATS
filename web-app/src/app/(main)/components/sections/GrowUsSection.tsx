@@ -1,57 +1,42 @@
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
 import Link from "next/link";
 
 export function GrowUsSection() {
   return (
-    <section className="w-full pt-0 pb-24 bg-white overflow-hidden">
-      <Container size="xl" className="flex flex-col md:flex-row items-center justify-between gap-16 md:gap-24">
-
-        {/* Left Side: Illustration */}
-        <div className="w-full md:w-1/2 flex justify-center md:justify-start">
+    <section className="relative w-full py-24 md:py-32 bg-[#FDF3E7] overflow-hidden">
+        {/* Background Illustrations */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex justify-between items-end pb-8">
           <img
-            src="/images/us/vector-bg.svg"
-            alt="Students learning and reading"
-            className="w-full max-w-[60rem] object-contain"
+            src="/images/us/illustration-2.svg"
+            alt="Left decoration"
+            className="h-[55%] md:h-[70%] w-auto max-w-[35%] md:max-w-[40%] object-contain object-left-bottom"
+          />
+          <img
+            src="/images/us/illustration-1.svg"
+            alt="Right decoration"
+            className="h-[55%] md:h-[70%] w-auto max-w-[35%] md:max-w-[40%] object-contain object-right-bottom"
           />
         </div>
 
-        {/* Right Side: Content */}
-        <div className="w-full md:w-1/2 flex flex-col items-start">
-          <h2 className="text-[3.2rem] md:text-[3.8rem] font-bold text-[#111827] font-heading leading-[1.3] mb-10">
-            Phát triển sự nghiệp cùng <br/> <span className="text-primary">GATS Academy</span>
-          </h2>
+      
+      <Container size="lg" className="relative z-10 flex flex-col items-center justify-center text-center mx-auto px-4">
+        <h2 className="text-[3.2rem] md:text-[4.6rem] font-extrabold text-[#0B272C] font-heading leading-[1.2] mb-6">
+          Phát triển sự nghiệp cùng <br className="hidden md:block" /> GATS Academy
+        </h2>
+        
+        <p className="text-[1.6rem] md:text-[1.8rem] text-slate-700 font-medium max-w-3xl mx-auto mb-10 leading-relaxed">
+          Chương trình học thực chiến, cập nhật xu hướng AI mới nhất cùng đội ngũ chuyên gia giàu kinh nghiệm. Đồng hành trọn đời trên con đường thăng tiến của bạn.
+        </p>
 
-          <ul className="flex flex-col gap-5 mb-12">
-            <li className="flex items-center gap-4">
-              <Check className="w-[2rem] h-[2rem] text-[#10b981]" strokeWidth={3} />
-              <span className="text-[1.8rem] font-medium text-slate-700">Chương trình học thực chiến</span>
-            </li>
-            <li className="flex items-center gap-4">
-              <Check className="w-[2rem] h-[2rem] text-[#10b981]" strokeWidth={3} />
-              <span className="text-[1.8rem] font-medium text-slate-700">Đội ngũ chuyên gia giàu kinh nghiệm</span>
-            </li>
-            <li className="flex items-center gap-4">
-              <Check className="w-[2rem] h-[2rem] text-[#10b981]" strokeWidth={3} />
-              <span className="text-[1.8rem] font-medium text-slate-700">Cập nhật công nghệ AI mới nhất</span>
-            </li>
-            <li className="flex items-center gap-4">
-              <Check className="w-[2rem] h-[2rem] text-[#10b981]" strokeWidth={3} />
-              <span className="text-[1.8rem] font-medium text-slate-700">Cộng đồng hỗ trợ học tập trọn đời</span>
-            </li>
-          </ul>
-
-          <Button
-            asChild
-            className="rounded-full px-10 h-[4.8rem] text-[1.6rem] font-bold bg-[#ff782d] hover:bg-[#e66a26] text-white transition-all shadow-md hover:shadow-lg"
-          >
-            <Link href="/courses">
-              Bắt đầu hành trình
-            </Link>
-          </Button>
-        </div>
-
+        <Button
+          asChild
+          className="rounded-full px-12 h-[5.4rem] text-[1.6rem] font-bold bg-[#0B272C] hover:bg-[#0B272C]/90 text-white transition-all shadow-md hover:shadow-lg"
+        >
+          <Link href="/courses">
+            Bắt đầu hành trình
+          </Link>
+        </Button>
       </Container>
     </section>
   );

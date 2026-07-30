@@ -130,3 +130,6 @@ import { Container } from '@/components/layout/Container'
 - **Vietnamese Fonts Caution**: When using fonts like `Be Vietnam Pro` for headings with Vietnamese diacritics (dấu ắ, ầ, ể...), ALWAYS ensure sufficient `line-height` to prevent clipping at the top or bottom of the text bounding box.
 - **Line-Height Minimums**: Avoid tight leading (e.g. `leading-[1.1]` or `leading-none`) for large Vietnamese headings. Use `leading-[1.3]`, `leading-[1.4]`, `leading-[1.5]`, or `leading-normal` depending on font size.
 - **Padding fallback**: If necessary, add `py-2` or `py-4` to the heading element to give extra breathing room for ascenders/descenders if overflow clipping occurs within a tight flex/grid container.
+
+## Translation & Language Rules
+- **Vietnamese by Default**: The templates provided might contain hardcoded English labels (e.g., "Prev Articles", "Login", "Comments"). **ALWAYS** translate these hardcoded structural texts and labels into Vietnamese when implementing them in the application. Do not leave English text in the UI unless it's a technical term that shouldn't be translated (like "Email").

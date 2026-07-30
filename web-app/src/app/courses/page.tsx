@@ -19,6 +19,7 @@ import {
   Search,
   LayoutGrid,
   List,
+  X,
 } from "lucide-react";
 
 import { Footer } from "@/components/layout/Footer";
@@ -27,6 +28,7 @@ import { Container } from "@/components/layout/Container";
 import { PathApi } from "@/constants/PathApi";
 import apiClient from "@/lib/apiClient";
 import { resolveMediaUrl } from "@/lib/media/url";
+import { theme as designTheme } from "@/lib/theme";
 import type { Course, CourseCategory, PaginationData } from "@/types/course";
 
 type CategoriesPayload = {
@@ -102,6 +104,7 @@ export default function CoursesPage() {
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const [openAccordion, setOpenAccordion] = useState<Record<string, boolean>>({
     level: true,
@@ -176,12 +179,192 @@ export default function CoursesPage() {
     };
   }, [levelFilter, productTypeFilter, priceFilter, sortBy, currentPage, searchQuery]);
 
+  const filterContent = (
+    <div className="space-y-8">
+      {/* Category Filter */}
+      <div>
+        <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+          Danh mục khóa học
+        </h3>
+        <div className="space-y-4">
+          {[ALL_CATEGORY, ...categories].map((opt) => (
+            <label
+              key={opt.id}
+              className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                  <input
+                    type="checkbox"
+                    checked={productTypeFilter === (opt.slug || opt.id)}
+                    onChange={() => {
+                      setProductTypeFilter(opt.slug || opt.id);
+                      setCurrentPage(1);
+                    }}
+                    className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                  <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span>{opt.name === "Tất cả" ? "Tất cả" : opt.name}</span>
+              </div>
+              <span className="text-[1.4rem] text-slate-400">{opt.courseCount ?? 15}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Instructors Filter */}
+      <div className="pt-8 border-t border-slate-200">
+        <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+          Giảng viên
+        </h3>
+        <div className="space-y-4">
+          {["Kenny White", "John Doe"].map((instructor) => (
+            <label
+              key={instructor}
+              className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                  <input
+                    type="checkbox"
+                    className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                  <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span>{instructor}</span>
+              </div>
+              <span className="text-[1.4rem] text-slate-400">15</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Price Filter */}
+      <div className="pt-8 border-t border-slate-200">
+        <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+          Giá
+        </h3>
+        <div className="space-y-4">
+          {PRICE_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                  <input
+                    type="checkbox"
+                    checked={priceFilter === opt.value}
+                    onChange={() => {
+                      setPriceFilter(opt.value);
+                      setCurrentPage(1);
+                    }}
+                    className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                  <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span>{opt.label === "Tất cả" ? "Tất cả" : opt.label === "Miễn phí" ? "Miễn phí" : "Trả phí"}</span>
+              </div>
+              <span className="text-[1.4rem] text-slate-400">15</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Review Filter */}
+      <div className="pt-8 border-t border-slate-200">
+        <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+          Đánh giá
+        </h3>
+        <div className="space-y-4">
+          {[5, 4, 3, 2, 1].map((stars) => (
+            <label
+              key={stars}
+              className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                  <input
+                    type="checkbox"
+                    className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                  <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="flex gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className={`w-4 h-4 ${i < stars ? "text-amber-400" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                  ))}
+                </div>
+              </div>
+              <span className="text-[1.4rem] text-slate-400">(1,025)</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Level Filter */}
+      <div className="pt-8 border-t border-slate-200">
+        <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
+          Trình độ
+        </h3>
+        <div className="space-y-4">
+          {LEVEL_OPTIONS.map((opt) => (
+            <label
+              key={opt.value}
+              className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
+                  <input
+                    type="checkbox"
+                    checked={levelFilter === opt.value}
+                    onChange={() => {
+                      setLevelFilter(opt.value);
+                      setCurrentPage(1);
+                    }}
+                    className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                  <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
+                  <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span>{opt.label}</span>
+              </div>
+              <span className="text-[1.4rem] text-slate-400">15</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <main className="relative flex min-h-screen flex-col justify-between bg-white overflow-hidden">
       <Header />
 
       {/* Breadcrumb Area */}
-      <div className="w-full bg-[#f8f9fa] py-4 mt-[7.2rem] border-b border-border/10">
+      <div
+        className="w-full bg-[#f8f9fa] py-4 border-b border-border/10"
+        style={{
+          marginTop: `calc(${designTheme.layout.headerHeight} + 1px)`,
+        }}
+      >
         <Container size="xl">
           <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2">
             <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
@@ -197,8 +380,8 @@ export default function CoursesPage() {
           <h1 className="text-[2.8rem] md:text-[3.2rem] font-bold text-[#111827] font-heading">
             Tất cả khóa học
           </h1>
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <div className="relative flex-1">
               <input
                 type="text"
                 placeholder="Tìm kiếm..."
@@ -225,15 +408,21 @@ export default function CoursesPage() {
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setViewMode("grid")}
-                className={`w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
+                className={`hidden md:flex w-[4rem] h-[4rem] rounded-full items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
               >
                 <LayoutGrid className="w-[1.8rem] h-[1.8rem]" />
               </button>
               <button 
                 onClick={() => setViewMode("list")}
-                className={`w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
+                className={`hidden md:flex w-[4rem] h-[4rem] rounded-full items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
               >
                 <List className="w-[1.8rem] h-[1.8rem]" />
+              </button>
+              <button 
+                onClick={() => setIsMobileFilterOpen(true)}
+                className={`md:hidden w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition-colors ${isMobileFilterOpen ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
+              >
+                <SlidersHorizontal className="w-[1.8rem] h-[1.8rem]" />
               </button>
             </div>
           </div>
@@ -428,181 +617,51 @@ export default function CoursesPage() {
             ) : null}
           </div>
 
-          {/* Sidebar Filters (Right) */}
-          <div className="w-full md:w-[240px] lg:w-[280px] shrink-0 space-y-8">
-            {/* Category Filter */}
-            <div>
-              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
-                Course Category
-              </h3>
-              <div className="space-y-4">
-                {[ALL_CATEGORY, ...categories].map((opt) => (
-                  <label
-                    key={opt.id}
-                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
-                        <input
-                          type="checkbox"
-                          checked={productTypeFilter === (opt.slug || opt.id)}
-                          onChange={() => {
-                            setProductTypeFilter(opt.slug || opt.id);
-                            setCurrentPage(1);
-                          }}
-                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
-                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>{opt.name === "Tất cả" ? "All" : opt.name}</span>
-                    </div>
-                    <span className="text-[1.4rem] text-slate-400">{opt.courseCount ?? 15}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Instructors Filter */}
-            <div className="pt-8 border-t border-slate-200">
-              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
-                Instructors
-              </h3>
-              <div className="space-y-4">
-                {["Kenny White", "John Doe"].map((instructor) => (
-                  <label
-                    key={instructor}
-                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
-                        <input
-                          type="checkbox"
-                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
-                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>{instructor}</span>
-                    </div>
-                    <span className="text-[1.4rem] text-slate-400">15</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Price Filter */}
-            <div className="pt-8 border-t border-slate-200">
-              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
-                Price
-              </h3>
-              <div className="space-y-4">
-                {PRICE_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
-                        <input
-                          type="checkbox"
-                          checked={priceFilter === opt.value}
-                          onChange={() => {
-                            setPriceFilter(opt.value);
-                            setCurrentPage(1);
-                          }}
-                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
-                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>{opt.label === "Tất cả" ? "All" : opt.label === "Miễn phí" ? "Free" : "Paid"}</span>
-                    </div>
-                    <span className="text-[1.4rem] text-slate-400">15</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Review Filter */}
-            <div className="pt-8 border-t border-slate-200">
-              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
-                Review
-              </h3>
-              <div className="space-y-4">
-                {[5, 4, 3, 2, 1].map((stars) => (
-                  <label
-                    key={stars}
-                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
-                        <input
-                          type="checkbox"
-                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
-                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div className="flex gap-1">
-                        {[...Array(5)].map((_, i) => (
-                          <svg key={i} className={`w-4 h-4 ${i < stars ? "text-amber-400" : "text-slate-300"}`} fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                    <span className="text-[1.4rem] text-slate-400">(1,025)</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Level Filter */}
-            <div className="pt-8 border-t border-slate-200">
-              <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
-                Level
-              </h3>
-              <div className="space-y-4">
-                {LEVEL_OPTIONS.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
-                        <input
-                          type="checkbox"
-                          checked={levelFilter === opt.value}
-                          onChange={() => {
-                            setLevelFilter(opt.value);
-                            setCurrentPage(1);
-                          }}
-                          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        />
-                        <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
-                        <svg className="pointer-events-none absolute h-3 w-3 text-white hidden peer-checked:block z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span>{opt.label === "Tất cả" ? "All levels" : opt.label === "Cơ bản" ? "Beginner" : opt.label === "Trung cấp" ? "Intermidiate" : "Expert"}</span>
-                    </div>
-                    <span className="text-[1.4rem] text-slate-400">15</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+          {/* Sidebar Filters (Right) - Desktop Only */}
+          <div className="hidden md:block w-full md:w-[240px] lg:w-[280px] shrink-0">
+            {filterContent}
           </div>
         </div>
       </Container>
+
+      {/* Mobile Filters Drawer */}
+      <AnimatePresence>
+        {isMobileFilterOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileFilterOpen(false)}
+              className="fixed inset-0 z-[100] bg-black/60 md:hidden"
+            />
+            {/* Drawer */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.3 }}
+              className="fixed right-0 top-0 bottom-0 z-[101] w-[300px] max-w-[85vw] bg-white shadow-2xl md:hidden flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <h2 className="text-[2.2rem] font-bold text-[#111827] font-heading">
+                  Bộ lọc
+                </h2>
+                <button
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-[#111827] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1 pb-safe">
+                {filterContent}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </main>

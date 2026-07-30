@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, ChevronDown, ShoppingCart, Menu, BookOpen, PenTool, Users, ArrowRight, GraduationCap, Search } from "lucide-react";
+import { Moon, Sun, ChevronDown, ShoppingCart, Menu, BookOpen, PenTool, Users, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { Container } from "@/components/layout/Container";
 import { theme as designTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -25,7 +27,18 @@ import { useCart } from "@/components/providers/CartProvider";
 
 const subscribeToClient = () => () => {};
 
+const navLinkBase =
+  "flex items-center h-full transition-colors";
+const navLinkActive = "text-[#ff782d] bg-[#f8f9fa]";
+const navLinkInactive = "hover:text-[#ff782d]";
+
+function isNavActive(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Header() {
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribeToClient,
@@ -83,13 +96,21 @@ export function Header() {
           <nav className="hidden md:flex items-center text-[1.5rem] font-bold text-[#111827] h-full ml-10">
             <Link
               href="/"
-              className="flex items-center h-full px-8 text-[#ff782d] bg-[#f8f9fa] transition-colors"
+              className={cn(
+                navLinkBase,
+                "px-8",
+                isNavActive(pathname, "/") ? navLinkActive : navLinkInactive,
+              )}
             >
               Trang chủ
             </Link>
             <Link
               href="/courses"
-              className="flex items-center h-full px-6 hover:text-[#ff782d] transition-colors"
+              className={cn(
+                navLinkBase,
+                "px-6",
+                isNavActive(pathname, "/courses") ? navLinkActive : navLinkInactive,
+              )}
             >
               Khóa học
             </Link>
@@ -97,7 +118,11 @@ export function Header() {
             {sessionReady && status === "authenticated" ? (
               <Link
                 href="/learning"
-                className="flex items-center h-full px-6 hover:text-[#ff782d] transition-colors"
+                className={cn(
+                  navLinkBase,
+                  "px-6",
+                  isNavActive(pathname, "/learning") ? navLinkActive : navLinkInactive,
+                )}
               >
                 Học tập
               </Link>
@@ -106,7 +131,7 @@ export function Header() {
             {sessionReady && status === "authenticated" && canTeach ? (
               <a
                 href={teachingHref}
-                className="flex items-center h-full px-6 hover:text-[#ff782d] transition-colors"
+                className={cn(navLinkBase, "px-6", navLinkInactive)}
               >
                 Giảng dạy
               </a>
@@ -114,14 +139,22 @@ export function Header() {
 
             <Link
               href="/posts"
-              className="flex items-center h-full px-6 hover:text-[#ff782d] transition-colors"
+              className={cn(
+                navLinkBase,
+                "px-6",
+                isNavActive(pathname, "/posts") ? navLinkActive : navLinkInactive,
+              )}
             >
               Bài viết
             </Link>
             
             <Link
               href="/about"
-              className="flex items-center h-full px-6 hover:text-[#ff782d] transition-colors"
+              className={cn(
+                navLinkBase,
+                "px-6",
+                isNavActive(pathname, "/about") ? navLinkActive : navLinkInactive,
+              )}
             >
               Chúng tôi
               <ChevronDown className="ml-1 w-4 h-4 opacity-50" />
@@ -216,16 +249,48 @@ export function Header() {
                     <h3 className="font-bold text-[2rem] text-foreground">Edu<span className="text-[#ff782d]">Gats</span></h3>
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    <Link href="/" className="flex items-center gap-3 p-4 rounded-lg bg-[#f8f9fa] text-[#ff782d] font-bold text-[1.6rem]">
+                    <Link
+                      href="/"
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
+                        isNavActive(pathname, "/")
+                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
+                          : "hover:bg-slate-50 font-semibold",
+                      )}
+                    >
                       Trang chủ
                     </Link>
-                    <Link href="/courses" className="flex items-center gap-3 p-4 rounded-lg hover:bg-slate-50 font-semibold text-[1.6rem]">
+                    <Link
+                      href="/courses"
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
+                        isNavActive(pathname, "/courses")
+                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
+                          : "hover:bg-slate-50 font-semibold",
+                      )}
+                    >
                       <BookOpen className="w-5 h-5 text-slate-400" /> Khoá học
                     </Link>
-                    <Link href="/posts" className="flex items-center gap-3 p-4 rounded-lg hover:bg-slate-50 font-semibold text-[1.6rem]">
+                    <Link
+                      href="/posts"
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
+                        isNavActive(pathname, "/posts")
+                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
+                          : "hover:bg-slate-50 font-semibold",
+                      )}
+                    >
                       <PenTool className="w-5 h-5 text-slate-400" /> Bài viết
                     </Link>
-                    <Link href="/about" className="flex items-center gap-3 p-4 rounded-lg hover:bg-slate-50 font-semibold text-[1.6rem]">
+                    <Link
+                      href="/about"
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
+                        isNavActive(pathname, "/about")
+                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
+                          : "hover:bg-slate-50 font-semibold",
+                      )}
+                    >
                       <Users className="w-5 h-5 text-slate-400" /> Chúng tôi
                     </Link>
                   </div>

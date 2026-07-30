@@ -124,357 +124,228 @@ export function AuthModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
           />
 
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-              className="w-full max-w-5xl bg-background rounded-3xl overflow-hidden shadow-2xl pointer-events-auto flex flex-col md:flex-row relative border border-border/50 h-[90vh] md:h-[750px]"
+              className="w-full max-w-lg max-h-[calc(100vh-120px)] overflow-y-auto bg-white rounded-2xl shadow-2xl pointer-events-auto relative border border-slate-200"
             >
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="hidden md:flex w-[45%] relative bg-black p-4">
-                <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(0,112,235,0.15)] bg-black">
-                  <Image
-                    src="https://placehold.co/800x800"
-                    alt="AI Artwork"
-                    fill
-                    className="object-cover opacity-90 mix-blend-screen"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+              <div className="p-6 sm:p-8">
+                <h3 className="text-[2.2rem] font-bold text-[#111827] mb-6">
+                  {isLogin ? "Đăng nhập" : "Đăng ký"}
+                </h3>
 
-                  <div className="absolute bottom-10 left-10 right-10">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-[2px] bg-primary/60 rounded-full" />
-                      <div className="w-4 h-[2px] bg-primary/40 rounded-full" />
-                      <div className="w-2 h-[2px] bg-primary/20 rounded-full" />
-                    </div>
-                    <h2 className="text-4xl font-bold text-white mb-3">
-                      Tạo Nguồn Cảm Hứng
-                    </h2>
-                    <p className="text-gray-300 text-sm leading-relaxed text-balance">
-                      Không gian làm việc AI hỗ trợ bạn sáng tạo và nâng tầm ý
-                      tưởng.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-full md:w-[55%] flex flex-col items-center justify-center p-8 md:p-16 overflow-y-auto">
-                <div className="w-full max-w-md">
-                  <div className="flex items-center justify-center mb-10">
-                    <div className="bg-muted p-1 rounded-full flex gap-1 shadow-inner border border-border/50">
-                      <button
-                        type="button"
-                        onClick={() => setIsLogin(false)}
-                        className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
-                          !isLogin
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                        }`}
-                      >
-                        Đăng ký
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsLogin(true)}
-                        className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
-                          isLogin
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/25"
-                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-                        }`}
-                      >
-                        Đăng nhập
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-3xl font-bold text-center mb-8">
-                    {isLogin ? "Đăng Nhập" : "Tạo Tài Khoản"}
-                  </h3>
-
-                  <form className="space-y-4" onSubmit={handleSubmit}>
-                    <AnimatePresence mode="popLayout">
-                      {!isLogin && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="space-y-4"
-                        >
-                          <div className="relative">
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
-                            <input
-                              type="text"
-                              placeholder="Tên đăng nhập (username)"
-                              value={userName}
-                              onChange={(e) => setUserName(e.target.value)}
-                              className="w-full h-12 pl-12 pr-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-sm"
-                              autoComplete="username"
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                  {!isLogin && (
+                    <div className="space-y-4">
                       <input
                         type="email"
-                        placeholder="Nhập Email của bạn"
+                        placeholder="Email*"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full h-12 pl-12 pr-4 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-sm"
+                        className="w-full h-[46px] px-4 rounded-md border border-slate-200 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
                         autoComplete="email"
+                        required
                       />
-                    </div>
-
-                    <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                       <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Mật khẩu"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full h-12 pl-12 pr-12 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-sm"
-                        autoComplete={
-                          isLogin ? "current-password" : "new-password"
-                        }
+                        type="text"
+                        placeholder="Tên đăng nhập*"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="w-full h-[46px] px-4 rounded-md border border-slate-200 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                        autoComplete="username"
+                        required
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
-
-                    {isLogin ? (
-                      <div className="-mt-2 text-right">
-                        <Link
-                          href="/forgot-password"
-                          onClick={onClose}
-                          className="text-xs font-semibold text-primary hover:underline"
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Mật khẩu*"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full h-[46px] pl-4 pr-12 rounded-md border border-slate-200 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                          autoComplete="new-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                         >
-                          Quên mật khẩu?
-                        </Link>
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
                       </div>
-                    ) : null}
-
-                    <AnimatePresence mode="popLayout">
-                      {!isLogin && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                          animate={{
-                            opacity: 1,
-                            height: "auto",
-                            marginTop: 16,
-                          }}
-                          exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                          className="relative"
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Xác nhận mật khẩu*"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="w-full h-[46px] pl-4 pr-12 rounded-md border border-slate-200 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                          autoComplete="new-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                         >
-                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
-                          <input
-                            type={showConfirmPassword ? "text" : "password"}
-                            placeholder="Xác nhận mật khẩu"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full h-12 pl-12 pr-12 rounded-xl bg-card border border-border/50 text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all shadow-sm"
-                            autoComplete="new-password"
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
-                            }
-                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground transition-colors"
-                          >
-                            {showConfirmPassword ? (
-                              <EyeOff className="w-5 h-5" />
-                            ) : (
-                              <Eye className="w-5 h-5" />
-                            )}
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {!isLogin ? (
-                      <label className="flex cursor-pointer items-start gap-3 text-xs leading-relaxed text-muted-foreground">
+                          {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      <label className="flex cursor-pointer items-start gap-3 text-[1.3rem] text-slate-500">
                         <input
                           type="checkbox"
                           checked={acceptedTerms}
-                          onChange={(event) =>
-                            setAcceptedTerms(event.target.checked)
-                          }
-                          className="mt-0.5 size-4 shrink-0 rounded border-border accent-primary"
+                          onChange={(event) => setAcceptedTerms(event.target.checked)}
+                          className="mt-1 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
                         />
                         <span>
                           Tôi đã đọc và đồng ý với{" "}
-                          <Link
-                            href="/terms"
-                            onClick={onClose}
-                            className="font-semibold text-foreground hover:underline"
-                          >
+                          <Link href="/terms" onClick={onClose} className="font-semibold text-slate-700 hover:text-primary">
                             Điều khoản dịch vụ
                           </Link>{" "}
                           và{" "}
-                          <Link
-                            href="/privacy"
-                            onClick={onClose}
-                            className="font-semibold text-foreground hover:underline"
-                          >
+                          <Link href="/privacy" onClick={onClose} className="font-semibold text-slate-700 hover:text-primary">
                             Chính sách quyền riêng tư
                           </Link>
                           .
                         </span>
                       </label>
-                    ) : null}
-
-                    <div className="pt-4">
-                      <button
-                        type="submit"
-                        disabled={submitting}
-                        className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-semibold shadow-[0_0_20px_rgba(0,112,235,0.4)] hover:shadow-[0_0_30px_rgba(0,112,235,0.6)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none"
-                      >
-                        {submitting
-                          ? "Đang xử lý..."
-                          : isLogin
-                            ? "Đăng Nhập"
-                            : "Tạo tài khoản"}
-                      </button>
                     </div>
-                  </form>
+                  )}
 
-                  <div className="flex items-center gap-4 my-8">
-                    <div className="h-[1px] flex-1 bg-border/50"></div>
-                    <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                      Hoặc
-                    </span>
-                    <div className="h-[1px] flex-1 bg-border/50"></div>
-                  </div>
-
-                  <div className="flex gap-4 justify-center">
-                    {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
-                      <div
-                        className="relative flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm transition-colors hover:bg-muted/50"
-                        aria-label="Đăng nhập Google"
-                      >
-                        {/* Icon hiển thị (GIS widget bị cắt trong ô nhỏ → dùng SVG riêng). */}
-                        <GoogleMark className="pointer-events-none relative z-0" />
-                        {/* Lớp GIS trong suốt nhận click → vẫn lấy idToken. */}
-                        <div
-                          className="absolute inset-0 z-10 flex scale-[1.35] items-center justify-center opacity-[0.02] [&_div]:!m-0"
-                          aria-hidden
+                  {isLogin && (
+                    <div className="space-y-4">
+                      <input
+                        type="text"
+                        placeholder="Email hoặc tên đăng nhập*"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full h-[46px] px-4 rounded-md border border-slate-200 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                        autoComplete="username"
+                        required
+                      />
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Mật khẩu*"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full h-[46px] pl-4 pr-12 rounded-md border border-slate-200 text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                          autoComplete="current-password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                         >
-                          <GoogleLogin
-                            type="icon"
-                            shape="square"
-                            size="large"
-                            theme={
-                              mounted &&
-                              document.documentElement.classList.contains(
-                                "dark",
-                              )
-                                ? "filled_black"
-                                : "outline"
-                            }
-                            onSuccess={async (credentialResponse) => {
-                              if (!credentialResponse.credential) {
-                                toast.error("Không nhận được token Google.");
-                                return;
-                              }
-                              setSubmitting(true);
-                              try {
-                                await loginWithGoogle(
-                                  credentialResponse.credential,
-                                );
-                                toast.success("Đăng nhập Google thành công!");
-                                onClose();
-                              } catch (error: unknown) {
-                                const err = error as {
-                                  message?: string;
-                                  error?: string;
-                                };
-                                toast.error(
-                                  err?.message ||
-                                    err?.error ||
-                                    "Đăng nhập Google thất bại!",
-                                );
-                              } finally {
-                                setSubmitting(false);
-                              }
-                            }}
-                            onError={() => {
-                              toast.error(
-                                "Google từ chối đăng nhập. Mở đúng URL đã khai báo trong Google Console (http hoặc https phải khớp).",
-                              );
-                            }}
-                          />
-                        </div>
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toast.error(
-                            "Google Login chưa cấu hình (thiếu NEXT_PUBLIC_GOOGLE_CLIENT_ID lúc build).",
-                          )
-                        }
-                        className="flex h-12 w-16 items-center justify-center rounded-xl border border-border/50 bg-card shadow-sm transition-colors hover:bg-muted/50"
-                        aria-label="Đăng nhập Google (chưa cấu hình)"
+                      <label className="flex cursor-pointer items-center gap-3 text-[1.4rem] text-slate-500">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                        />
+                        <span>Ghi nhớ đăng nhập</span>
+                      </label>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full h-[46px] rounded-full bg-[#FF7622] hover:bg-[#FF7622]/90 text-white font-semibold text-[1.5rem] transition-colors duration-300 disabled:opacity-50 mt-2"
+                  >
+                    {submitting ? "Đang xử lý..." : isLogin ? "Đăng nhập" : "Đăng ký"}
+                  </button>
+
+                  {isLogin && (
+                    <div className="pt-2 text-left">
+                      <Link
+                        href="/forgot-password"
+                        onClick={onClose}
+                        className="text-[1.4rem] text-[#111827] font-medium hover:text-primary transition-colors"
                       >
-                        <GoogleMark />
-                      </button>
-                    )}
+                        Quên mật khẩu?
+                      </Link>
+                    </div>
+                  )}
+                </form>
+
+                <div className="flex items-center gap-4 my-6">
+                  <div className="h-[1px] flex-1 bg-slate-200"></div>
+                  <span className="text-[1.2rem] text-slate-400 font-medium">HOẶC</span>
+                  <div className="h-[1px] flex-1 bg-slate-200"></div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+                    <div className="relative w-full h-[46px] rounded-full border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer">
+                      <div className="flex items-center gap-3 pointer-events-none z-0">
+                        <GoogleMark className="w-5 h-5" />
+                        <span className="text-[1.4rem] font-medium text-slate-700">Tiếp tục với Google</span>
+                      </div>
+                      <div className="absolute inset-0 z-10 flex scale-[1.35] items-center justify-center opacity-0 overflow-hidden" aria-hidden>
+                        <GoogleLogin
+                          type="standard"
+                          theme="outline"
+                          size="large"
+                          width="400"
+                          text="continue_with"
+                          onSuccess={async (credentialResponse) => {
+                            if (!credentialResponse.credential) {
+                              toast.error("Không nhận được token Google.");
+                              return;
+                            }
+                            setSubmitting(true);
+                            try {
+                              await loginWithGoogle(credentialResponse.credential);
+                              toast.success("Đăng nhập Google thành công!");
+                              onClose();
+                            } catch (error: unknown) {
+                              const err = error as { message?: string; error?: string };
+                              toast.error(err?.message || err?.error || "Đăng nhập Google thất bại!");
+                            } finally {
+                              setSubmitting(false);
+                            }
+                          }}
+                          onError={() => {
+                            toast.error("Google từ chối đăng nhập.");
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
                     <button
                       type="button"
-                      onClick={handleComingSoon}
-                      className="flex h-12 w-16 items-center justify-center rounded-xl border border-border/50 bg-card shadow-sm transition-colors hover:bg-muted/50"
-                      aria-label="Đăng nhập Facebook (sắp ra mắt)"
+                      onClick={() => toast.error("Google Login chưa cấu hình.")}
+                      className="w-full h-[46px] rounded-full border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-3"
                     >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="text-[#1877F2]"
-                      >
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
+                      <GoogleMark className="w-5 h-5" />
+                      <span className="text-[1.4rem] font-medium text-slate-700">Tiếp tục với Google</span>
                     </button>
+                  )}
+                  
+                  <div className="text-center mt-4">
                     <button
-                      type="button"
-                      onClick={handleComingSoon}
-                      className="flex h-12 w-16 items-center justify-center rounded-xl border border-border/50 bg-card shadow-sm transition-colors hover:bg-muted/50"
-                      aria-label="Đăng nhập Apple (sắp ra mắt)"
+                      onClick={() => setIsLogin(!isLogin)}
+                      className="text-[1.4rem] text-slate-600 font-medium hover:text-primary transition-colors"
                     >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="text-foreground"
-                      >
-                        <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.665-1.48 3.666-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.56-1.702z" />
-                      </svg>
+                      {isLogin ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập"}
                     </button>
                   </div>
                 </div>
