@@ -116,9 +116,8 @@ export const quizClient = {
   },
 
   /**
-   * POST /quizzes/:quizId/ai-generate — multipart (text | file_url | file)
-   * Calls Viava course gen, maps exercises → GATS quiz questions, optionally persists.
-   * No client timeout — FLAC/transcribe may take several minutes.
+   * POST /quizzes/:quizId/ai-generate — enqueue BullMQ job (202 + jobId).
+   * Generation runs on worker; poll with getAiGenerateJob / waitForAiGenerateJob.
    */
   async aiGenerate(
     quizId: string,
@@ -127,10 +126,9 @@ export const quizClient = {
     ApiResult<{
       message?: string;
       data?: {
-        questions?: QuizQuestion[];
-        skipped_count?: number;
-        question_count?: number;
-        applied?: boolean;
+        jobId?: string;
+        quizId?: string;
+        status?: string;
       };
     }>
   > {
@@ -146,6 +144,95 @@ export const quizClient = {
     }
   },
 
+  /** GET /quizzes/:quizId/ai-generate/jobs/:jobId */
+  getAiGenerateJob(
+    quizId: string,
+    jobId: string,
+  ): Promise<
+    ApiResult<{
+      data: {
+        jobId?: string;
+        quizId?: string;
+        status: string;
+        error?: string;
+        result?: {
+          message?: string;
+          data?: {
+            questions?: QuizQuestion[];
+            skipped_count?: number;
+            question_count?: number;
+            applied?: boolean;
+          };
+        } | null;
+      };
+    }>
+  > {
+    return apiRequest({
+      url: `/quizzes/${quizId}/ai-generate/jobs/${jobId}`,
+      method: "GET",
+    });
+  },
+
+  /**
+   * Poll job until completed / failed. Interval ~2.5s; no early abort for FLAC.
+   */
+  async waitForAiGenerateJob(
+    quizId: string,
+    jobId: string,
+    options?: { intervalMs?: number; maxAttempts?: number },
+  ): Promise<
+    ApiResult<{
+      message?: string;
+      data?: {
+        questions?: QuizQuestion[];
+        skipped_count?: number;
+        question_count?: number;
+        applied?: boolean;
+      };
+    }>
+  > {
+    const intervalMs = options?.intervalMs ?? 2_500;
+    const maxAttempts = options?.maxAttempts ?? 720; // ~30 min
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const res = await this.getAiGenerateJob(quizId, jobId);
+      if (res.error) {
+        return { data: null, error: res.error };
+      }
+
+      const status = res.data?.data?.status;
+      if (status === "completed") {
+        const result = res.data?.data?.result;
+        return {
+          data: {
+            message: result?.message,
+            data: result?.data,
+          },
+          error: null,
+        };
+      }
+      if (status === "failed") {
+        return {
+          data: null,
+          error: {
+            message: res.data?.data?.error ?? "AI generation failed",
+            status: 500,
+          },
+        };
+      }
+
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+
+    return {
+      data: null,
+      error: {
+        message: "AI generation timed out waiting for job",
+        status: 408,
+      },
+    };
+  },
+
   /** GET /quizzes/:quizId — full quiz with questions (admin). */
   getAdmin(quizId: string): Promise<ApiResult<{ data: Quiz }>> {
     return apiRequest<{ data: Quiz }>({
@@ -155,7 +242,7 @@ export const quizClient = {
   },
 
   /**
-   * After gateway drop / Network Error, BE may still have applied questions.
+   * Fallback if job status is lost / poll fails: BE may still have applied questions.
    * Check once immediately, then poll briefly.
    */
   async recoverQuestionsAfterDrop(

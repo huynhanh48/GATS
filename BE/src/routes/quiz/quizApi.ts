@@ -65,6 +65,13 @@ apiRouter.post(
 );
 
 apiRouter.get(
+  QuizPaths.Quiz.Questions.AiGenerateJob,
+  errorHandle(authMiddleware),
+  errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
+  errorHandle(quizHandlers.getAiGenerateJob),
+);
+
+apiRouter.get(
   QuizPaths.Quiz.Questions.List,
   errorHandle(authMiddleware),
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),

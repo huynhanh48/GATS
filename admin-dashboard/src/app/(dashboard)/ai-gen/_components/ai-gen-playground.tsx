@@ -234,28 +234,56 @@ export function AiGenPlayground() {
       });
 
       try {
-        const res = await quizClient.aiGenerate(targetQuizId, form);
-        setLastResponse(res);
-        if (res.error) {
-          if (isDroppedConnection(res.error.message, res.error.status)) {
-            toast.message("Mất kết nối proxy — đang tải lại câu hỏi từ quiz…");
+        const enqueue = await quizClient.aiGenerate(targetQuizId, form);
+        setLastResponse(enqueue);
+        if (enqueue.error) {
+          if (isDroppedConnection(enqueue.error.message, enqueue.error.status)) {
+            toast.message("Mất kết nối — đang tải lại câu hỏi từ quiz…");
             const recovered = await quizClient.recoverQuestionsAfterDrop(
               targetQuizId,
               previousCount,
             );
-            setLastResponse({ recovered, error: res.error });
+            setLastResponse({ recovered, error: enqueue.error });
             if (recovered.length > 0) {
               setGeneratedQuestions(recovered);
               setSkippedCount(null);
               toast.success(
-                `Proxy cắt response, nhưng đã có ${recovered.length} câu hỏi trong quiz`,
+                `Đã có ${recovered.length} câu hỏi trong quiz (fallback)`,
               );
               return;
             }
           }
+          toast.error(`Lỗi: ${enqueue.error.message}`);
+          return;
+        }
+
+        const jobId = enqueue.data?.data?.jobId;
+        if (!jobId) {
+          toast.error("Không nhận được jobId từ server");
+          return;
+        }
+
+        toast.message("Đang gen trên server… (poll job)");
+        const res = await quizClient.waitForAiGenerateJob(targetQuizId, jobId);
+        setLastResponse(res);
+
+        if (res.error) {
+          const recovered = await quizClient.recoverQuestionsAfterDrop(
+            targetQuizId,
+            previousCount,
+          );
+          if (recovered.length > 0) {
+            setGeneratedQuestions(recovered);
+            setSkippedCount(null);
+            toast.success(
+              `Job lỗi/poll fail, nhưng đã có ${recovered.length} câu hỏi trong quiz`,
+            );
+            return;
+          }
           toast.error(`Lỗi: ${res.error.message}`);
           return;
         }
+
         const questions = res.data?.data?.questions ?? [];
         const skipped = res.data?.data?.skipped_count ?? 0;
         setGeneratedQuestions(questions);
@@ -266,19 +294,17 @@ export function AiGenPlayground() {
         );
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gọi API";
-        if (isDroppedConnection(msg)) {
-          toast.message("Mất kết nối — đang tải lại câu hỏi từ quiz…");
-          const recovered = await quizClient.recoverQuestionsAfterDrop(
-            targetQuizId,
-            previousCount,
+        toast.message("Đang thử tải lại câu hỏi từ quiz…");
+        const recovered = await quizClient.recoverQuestionsAfterDrop(
+          targetQuizId,
+          previousCount,
+        );
+        if (recovered.length > 0) {
+          setGeneratedQuestions(recovered);
+          toast.success(
+            `Đã có ${recovered.length} câu hỏi trong quiz (fallback)`,
           );
-          if (recovered.length > 0) {
-            setGeneratedQuestions(recovered);
-            toast.success(
-              `Proxy cắt response, nhưng đã có ${recovered.length} câu hỏi trong quiz`,
-            );
-            return;
-          }
+          return;
         }
         toast.error(msg);
       }
@@ -599,7 +625,7 @@ export function AiGenPlayground() {
               className="mt-2 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50"
             >
               {pending
-                ? "Đang sinh AI (có thể vài phút với FLAC)…"
+                ? "Đang gen trên server… (có thể vài phút với FLAC)"
                 : "Chạy thử Sinh Quiz AI"}
             </button>
           </div>

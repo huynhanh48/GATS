@@ -82,8 +82,9 @@ Trong log `app` kỳ vọng:
 Thứ tự bắt buộc:
 
 ```powershell
-# 1) pm2 — viava-api phải online (không restart loop)
+# 1) pm2 — api + worker + viava-api phải online (AI quiz gen chạy trên worker)
 docker exec gats-academy pm2 list
+# kỳ vọng: gats-academy-api, gats-academy-worker, viava-api = online
 
 # 2) Health nội bộ (cần curl trong image)
 docker exec gats-academy curl -sf http://127.0.0.1:8000/health
@@ -104,10 +105,11 @@ docker exec gats-academy printenv VIAVA_COURSE_GEN_URL
 3. Admin → `/ai-gen`:
    - **Quiz đích** — chọn khóa → chọn bài quiz (theo tên, không dán UUID).
    - **Nguồn** — Course video FLAC (có thể khác khóa) / URL S3 FLAC / Text — độc lập với quiz đích.
-4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **200** + câu hỏi apply (FLAC có thể lâu; client/BE **không** abort timeout — reverse proxy ngoài nếu 504 thì tăng `proxy_read_timeout`).
-5. UUID giả trên path API → **400**, không **500**.
+4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **202** `{ jobId }` ngay; UI poll `GET .../ai-generate/jobs/:jobId` đến `completed` rồi dán câu hỏi. FLAC có thể lâu trên **worker** — không phụ thuộc proxy timeout dài.
+5. Cần `gats-academy-worker` online (cùng process xử lý `quiz-ai-generate` + video). Worker offline → job kẹt `queued` / fail → toast lỗi rõ.
+6. UUID giả trên path API → **400**, không **500**.
 
-**Quiz builder (trong course):** panel AI có mode **URL S3 FLAC** (`file_url`) cạnh text / upload file.
+**Quiz builder (trong course):** panel AI có mode **URL S3 FLAC** (`file_url`) cạnh text / upload file — cùng flow async enqueue + poll.
 
 Swagger: `https://api.gats.vn/docs`
 

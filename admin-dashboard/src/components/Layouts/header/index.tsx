@@ -53,7 +53,7 @@ export function Header() {
       )}
 
       <div className="max-xl:hidden">
-        <h1 className="mb-0.5 text-xl font-black text-slate-950 dark:text-white">
+        <h1 className="mb-0.5 font-sans text-xl font-bold text-slate-950 dark:text-white">
           {pageTitle}
         </h1>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">

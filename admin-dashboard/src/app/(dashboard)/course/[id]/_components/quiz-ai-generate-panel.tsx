@@ -80,10 +80,10 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
       const beforeRes = await quizClient.getAdmin(quizId);
       const previousCount = beforeRes.data?.data?.questions?.length ?? 0;
 
-      const res = await quizClient.aiGenerate(quizId, form);
-      if (res.error) {
-        if (isDroppedConnection(res.error.message, res.error.status)) {
-          toast.message("Mất kết nối proxy — đang tải lại câu hỏi từ quiz…");
+      const enqueue = await quizClient.aiGenerate(quizId, form);
+      if (enqueue.error) {
+        if (isDroppedConnection(enqueue.error.message, enqueue.error.status)) {
+          toast.message("Mất kết nối — đang tải lại câu hỏi từ quiz…");
           const recovered = await quizClient.recoverQuestionsAfterDrop(
             quizId,
             previousCount,
@@ -91,11 +91,36 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
           if (recovered.length > 0) {
             onGenerated(recovered);
             toast.success(
-              `Proxy cắt response, nhưng đã thêm ${recovered.length} câu hỏi vào quiz`,
+              `Đã thêm ${recovered.length} câu hỏi vào quiz (fallback)`,
             );
             setOpen(false);
             return;
           }
+        }
+        toast.error(enqueue.error.message);
+        return;
+      }
+
+      const jobId = enqueue.data?.data?.jobId;
+      if (!jobId) {
+        toast.error("Không nhận được jobId từ server");
+        return;
+      }
+
+      toast.message("Đang gen trên server…");
+      const res = await quizClient.waitForAiGenerateJob(quizId, jobId);
+      if (res.error) {
+        const recovered = await quizClient.recoverQuestionsAfterDrop(
+          quizId,
+          previousCount,
+        );
+        if (recovered.length > 0) {
+          onGenerated(recovered);
+          toast.success(
+            `Job lỗi/poll fail, nhưng đã thêm ${recovered.length} câu hỏi vào quiz`,
+          );
+          setOpen(false);
+          return;
         }
         toast.error(res.error.message);
         return;
@@ -274,7 +299,9 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
           onClick={handleGenerate}
           className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
         >
-          {pending ? "Đang sinh (1–3 phút)…" : "Sinh & thêm vào quiz"}
+          {pending
+            ? "Đang gen trên server…"
+            : "Sinh & thêm vào quiz"}
         </button>
       </div>
     </div>

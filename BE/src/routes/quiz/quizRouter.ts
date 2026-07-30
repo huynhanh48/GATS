@@ -1,3 +1,5 @@
+import { unlink } from 'fs/promises';
+
 import { Request, Response } from 'express';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
@@ -5,6 +7,7 @@ import {
   getRouteParam,
   getUuidRouteParam,
 } from '@src/common/utils/route-params';
+import { RouteError } from '@src/common/utils/route-errors';
 import { parseUserIdParam } from '@src/models/Enrollment.model';
 import {
   parseCreateQuizInput,
@@ -17,10 +20,16 @@ import {
   parseUpdateQuizQuestionInput,
 } from '@src/models/Quiz.model';
 import { parseGenerateQuizAiFields } from '@src/models/QuizAi.model';
+import {
+  enqueueQuizAiGenerateJob,
+  getQuizAiGenerateJob,
+} from '@src/queues/quiz-ai.queue';
+import * as QuizRepo from '@src/repos/QuizRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 import QuizAiService from '@src/services/QuizAiService';
 import QuizAttemptService from '@src/services/QuizAttemptService';
 import QuizService from '@src/services/QuizService';
+import { getViavaBaseUrl } from '@src/services/viava/ViavaClient';
 
 function authUserId(req: Request): number {
   return req.authUser!.id;
@@ -74,6 +83,7 @@ async function addQuestion(req: Request, res: Response) {
 }
 
 async function aiGenerate(req: Request, res: Response) {
+  const quizId = getUuidRouteParam(req.params.quizId, 'quizId');
   const fields = parseGenerateQuizAiFields(req.body ?? {});
   const uploaded = req.file
     ? {
@@ -82,12 +92,100 @@ async function aiGenerate(req: Request, res: Response) {
         mimetype: req.file.mimetype,
       }
     : undefined;
-  const result = await QuizAiService.generateForQuiz(
-    getUuidRouteParam(req.params.quizId, 'quizId'),
-    fields,
-    uploaded,
-  );
-  return res.status(HttpStatusCodes.OK).json(result);
+
+  if (!getViavaBaseUrl()) {
+    if (uploaded?.path) await unlink(uploaded.path).catch(() => undefined);
+    throw new RouteError(
+      HttpStatusCodes.SERVICE_UNAVAILABLE,
+      QuizAiService.Errors.NOT_CONFIGURED,
+    );
+  }
+
+  const quiz = await QuizRepo.findById(quizId);
+  if (!quiz) {
+    if (uploaded?.path) await unlink(uploaded.path).catch(() => undefined);
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, QuizAiService.Errors.QUIZ_NOT_FOUND);
+  }
+
+  const hasFile = Boolean(uploaded);
+  const hasUrl = Boolean(fields.file_url?.trim());
+  const hasText = Boolean(fields.text?.trim());
+  const inputCount = [hasFile, hasUrl, hasText].filter(Boolean).length;
+  if (inputCount === 0) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, QuizAiService.Errors.NO_INPUT);
+  }
+  if (inputCount > 1) {
+    if (uploaded?.path) await unlink(uploaded.path).catch(() => undefined);
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      QuizAiService.Errors.MULTIPLE_INPUTS,
+    );
+  }
+
+  let jobId: string;
+  try {
+    jobId = await enqueueQuizAiGenerateJob({
+      quizId,
+      fields,
+      upload: uploaded,
+    });
+  } catch (error) {
+    if (uploaded?.path) await unlink(uploaded.path).catch(() => undefined);
+    throw error;
+  }
+
+  return res.status(HttpStatusCodes.ACCEPTED).json({
+    data: {
+      jobId,
+      quizId,
+      status: 'queued',
+    },
+    message: 'AI quiz generation queued',
+  });
+}
+
+async function getAiGenerateJob(req: Request, res: Response) {
+  const quizId = getUuidRouteParam(req.params.quizId, 'quizId');
+  const jobId = getRouteParam(req.params.jobId);
+  const job = await getQuizAiGenerateJob(jobId);
+
+  if (!job || job.data.quizId !== quizId) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, 'AI generate job not found');
+  }
+
+  const state = await job.getState();
+  const status =
+    state === 'waiting' || state === 'delayed' || state === 'prioritized'
+      ? 'queued'
+      : state;
+  const base = {
+    jobId: job.id,
+    quizId,
+    status,
+  };
+
+  if (state === 'completed') {
+    const result = job.returnvalue;
+    return res.status(HttpStatusCodes.OK).json({
+      data: {
+        ...base,
+        result: result ?? null,
+      },
+    });
+  }
+
+  if (state === 'failed') {
+    return res.status(HttpStatusCodes.OK).json({
+      data: {
+        ...base,
+        error: job.failedReason ?? 'AI generation failed',
+      },
+    });
+  }
+
+  return res.status(HttpStatusCodes.OK).json({
+    data: base,
+  });
 }
 
 async function listQuestions(req: Request, res: Response) {
@@ -215,6 +313,7 @@ export default {
   getMemberQuiz,
   addQuestion,
   aiGenerate,
+  getAiGenerateJob,
   listQuestions,
   getQuestion,
   updateQuestion,
