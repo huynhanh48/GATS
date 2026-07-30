@@ -81,6 +81,21 @@ x-backend-env: &backend-env
   MOBILE_MIN_ANDROID_VERSION: ${MOBILE_MIN_ANDROID_VERSION:-1.0.0}
   MOBILE_MIN_IOS_VERSION: ${MOBILE_MIN_IOS_VERSION:-1.0.0}
   APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+  # Viava (same container :8000). BE calls loopback; nginx proxies api.gats.vn/course/*
+  VIAVA_COURSE_GEN_URL: ${VIAVA_COURSE_GEN_URL:-http://127.0.0.1:8000}
+  VIAVA_API_KEY: ${VIAVA_API_KEY:-}
+  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+  AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+  AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-}
+  AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-2024-10-21}
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:-text-embedding-3-small}
+  AZURE_OPENAI_TRANSCRIBE_API_KEY: ${AZURE_OPENAI_TRANSCRIBE_API_KEY:-}
+  AZURE_OPENAI_TRANSCRIBE_ENDPOINT: ${AZURE_OPENAI_TRANSCRIBE_ENDPOINT:-}
+  AZURE_TRANSCRIBE_DEPLOYMENT: ${AZURE_TRANSCRIBE_DEPLOYMENT:-}
+  TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+  QDRANT_URL: ${QDRANT_URL:-}
+  QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+  RAG_WORK_DIR: ${RAG_WORK_DIR:-/app/viava/rag_data}
 
 # Dev worker: Docker network URLs only. S3/JWT/MinIO keys come from env_file so the
 # worker uses the same LongVan bucket as BE running on the host (not in-cluster MinIO).
@@ -212,6 +227,9 @@ services:
       - "3000:3000" # backend API
       - "3005:3005" # web-app
       - "9100:9000" # admin-dashboard (host 9100; 9000 busy on VPS)
+      # Viava is internal (nginx → app:8000); not published on host by default
+    volumes:
+      - viava_rag_data:/app/viava/rag_data
     environment:
       <<: *backend-env
       # Production gate — do not inherit development from x-backend-env.
@@ -243,3 +261,4 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  viava_rag_data:

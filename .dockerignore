@@ -12,3 +12,9 @@ admin-dashboard/.next
 BE/node_modules
 BE/dist
 mobile-app
+viava/.venv
+viava/rag_data
+viava/**/__pycache__
+viava/**/.pytest_cache
+viava/docs
+viava/scripts

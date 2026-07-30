@@ -1,7 +1,6 @@
 import { unlink } from 'fs/promises';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import EnvVars from '@src/common/constants/env';
 import { RouteError } from '@src/common/utils/route-errors';
 import {
   type GenerateQuizAiFields,
@@ -11,6 +10,13 @@ import {
 } from '@src/models/QuizAi.model';
 import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
+import {
+  generateExercisesByType,
+  generateLearningPath,
+  getViavaBaseUrl,
+  resolveViavaDomainFromLessonId,
+  type ViavaCompatExerciseType,
+} from '@src/services/viava/ViavaClient';
 
 const Errors = {
   NOT_CONFIGURED:
@@ -29,15 +35,6 @@ type UploadedAiFile = {
 };
 
 type ViavaExercise = Record<string, unknown>;
-
-type ViavaGenerateResponse = {
-  learning_path?: { course_title?: string };
-  exercise_suite?: {
-    course_title?: string;
-    total_exercises?: number;
-    exercises?: ViavaExercise[];
-  };
-};
 
 function letterToIndex(letter: string): number | null {
   const ch = letter.trim().toUpperCase();
@@ -80,6 +77,7 @@ function mapMcq(ex: ViavaExercise): MappedQuizQuestionDraft | null {
     asString(ex.question) ?? asString(ex.prompt) ?? asString(ex.statement);
   if (!question) return null;
 
+  const rawOptions = Array.isArray(ex.options) ? ex.options : [];
   const options = asStringArray(ex.options);
   if (options.length < 2) return null;
 
@@ -109,6 +107,18 @@ function mapMcq(ex: ViavaExercise): MappedQuizQuestionDraft | null {
         return options.findIndex(
           (opt) => opt.toLowerCase() === raw.toLowerCase(),
         );
+      })
+      .filter((i) => i >= 0);
+  }
+
+  // v2 MCQOption.is_correct
+  if (correctIndexes.length === 0) {
+    correctIndexes = rawOptions
+      .map((opt, i) => {
+        if (opt && typeof opt === 'object' && (opt as { is_correct?: unknown }).is_correct === true) {
+          return i;
+        }
+        return -1;
       })
       .filter((i) => i >= 0);
   }
@@ -145,7 +155,10 @@ function mapMcq(ex: ViavaExercise): MappedQuizQuestionDraft | null {
   return {
     type: finalType,
     question,
-    explanation: asString(ex.explanation) ?? asString(ex.rationale),
+    explanation:
+      asString(ex.explanation_correct) ??
+      asString(ex.explanation) ??
+      asString(ex.rationale),
     points: 1,
     isRequired: true,
     caseSensitive: false,
@@ -191,6 +204,7 @@ function mapFillBlank(ex: ViavaExercise): MappedQuizQuestionDraft | null {
       if (blank && typeof blank === 'object') {
         const rec = blank as Record<string, unknown>;
         return (
+          asString(rec.correct_answer) ??
           asString(rec.answer) ??
           asString(rec.content) ??
           asString(rec.value) ??
@@ -229,6 +243,7 @@ function mapShortAnswer(ex: ViavaExercise): MappedQuizQuestionDraft | null {
 
   const keywords = asStringArray(ex.keywords);
   const single =
+    asString(ex.model_answer) ??
     asString(ex.correct_answer) ??
     asString(ex.answer) ??
     asString(ex.expected_answer);
@@ -287,101 +302,6 @@ export function mapViavaExercisesToQuizQuestions(exercises: ViavaExercise[]): {
   return { questions, skipped };
 }
 
-async function callViavaGenerate(options: {
-  fields: GenerateQuizAiFields;
-  file?: UploadedAiFile;
-}): Promise<ViavaGenerateResponse> {
-  const base = EnvVars.ViavaCourseGenUrl?.replace(/\/$/, '');
-  if (!base) {
-    throw new RouteError(HttpStatusCodes.SERVICE_UNAVAILABLE, Errors.NOT_CONFIGURED);
-  }
-
-  const path = EnvVars.ViavaCourseGenPath.startsWith('/')
-    ? EnvVars.ViavaCourseGenPath
-    : `/${EnvVars.ViavaCourseGenPath}`;
-  const url = `${base}${path}`;
-
-  const form = new FormData();
-  form.append('language', options.fields.language);
-  form.append('target_level', options.fields.target_level);
-  form.append('max_lessons', '1');
-  form.append('exercises_per_lesson', String(options.fields.question_count));
-  form.append(
-    'exercise_types',
-    options.fields.exercise_types.join(','),
-  );
-  form.append('detail_level', options.fields.detail_level);
-  form.append('include_coding', 'false');
-  form.append('shuffle_options', String(options.fields.shuffle_options));
-  form.append('max_options_per_mcq', String(options.fields.max_options_per_mcq));
-
-  const hasFile = Boolean(options.file);
-  const hasUrl = Boolean(options.fields.file_url?.trim());
-  const hasText = Boolean(options.fields.text?.trim());
-  const inputCount = [hasFile, hasUrl, hasText].filter(Boolean).length;
-
-  if (inputCount === 0) {
-    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NO_INPUT);
-  }
-  if (inputCount > 1) {
-    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.MULTIPLE_INPUTS);
-  }
-
-  if (options.file) {
-    const blob = await fileToBlob(options.file);
-    form.append('file', blob, options.file.originalname);
-  } else if (options.fields.file_url) {
-    form.append('file_url', options.fields.file_url);
-  } else if (options.fields.text) {
-    form.append('text', options.fields.text);
-  }
-
-  const headers: Record<string, string> = {};
-  if (EnvVars.ViavaApiKey) {
-    headers.Authorization = `Bearer ${EnvVars.ViavaApiKey}`;
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: form,
-      signal: AbortSignal.timeout(180_000),
-    });
-  } catch (error) {
-    throw new RouteError(
-      HttpStatusCodes.BAD_GATEWAY,
-      `${Errors.GENERATION_FAILED}: ${error instanceof Error ? error.message : 'network error'}`,
-    );
-  }
-
-  const payload = (await response.json().catch(() => null)) as
-    | ViavaGenerateResponse
-    | { detail?: unknown; message?: string; code?: string }
-    | null;
-
-  if (!response.ok) {
-    const detail =
-      payload && typeof payload === 'object'
-        ? asString((payload as { message?: unknown }).message) ??
-          asString((payload as { code?: unknown }).code) ??
-          JSON.stringify(payload).slice(0, 300)
-        : `HTTP ${response.status}`;
-    const status =
-      response.status === 400
-        ? HttpStatusCodes.BAD_REQUEST
-        : response.status === 413
-          ? HttpStatusCodes.PAYLOAD_TOO_LARGE
-          : response.status === 422
-            ? HttpStatusCodes.UNPROCESSABLE_ENTITY
-            : HttpStatusCodes.BAD_GATEWAY;
-    throw new RouteError(status, `${Errors.GENERATION_FAILED}: ${detail}`);
-  }
-
-  return (payload ?? {}) as ViavaGenerateResponse;
-}
-
 async function fileToBlob(file: UploadedAiFile): Promise<Blob> {
   const { readFile } = await import('fs/promises');
   const buf = await readFile(file.path);
@@ -395,33 +315,103 @@ async function generateForQuiz(
   fields: GenerateQuizAiFields,
   file?: UploadedAiFile,
 ) {
+  if (!getViavaBaseUrl()) {
+    throw new RouteError(HttpStatusCodes.SERVICE_UNAVAILABLE, Errors.NOT_CONFIGURED);
+  }
+
   const quiz = await QuizRepo.findById(quizId);
   if (!quiz) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.QUIZ_NOT_FOUND);
   }
 
-  let remote: ViavaGenerateResponse;
+  const hasFile = Boolean(file);
+  const hasUrl = Boolean(fields.file_url?.trim());
+  const hasText = Boolean(fields.text?.trim());
+  const inputCount = [hasFile, hasUrl, hasText].filter(Boolean).length;
+  if (inputCount === 0) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.NO_INPUT);
+  }
+  if (inputCount > 1) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.MULTIPLE_INPUTS);
+  }
+
+  const domain = await resolveViavaDomainFromLessonId(quiz.lessonId);
+  const exercisesPerType = Math.max(
+    1,
+    Math.ceil(fields.question_count / fields.exercise_types.length),
+  );
+
+  let learningPath: Record<string, unknown>;
   try {
-    remote = await callViavaGenerate({ fields, file });
+    learningPath = await generateLearningPath({
+      language: fields.language,
+      target_level: fields.target_level,
+      detail_level: fields.detail_level,
+      domain,
+      max_lessons: 1,
+      exercises_per_lesson: fields.question_count,
+      text: fields.text,
+      file_url: fields.file_url,
+      file: file
+        ? {
+            blob: await fileToBlob(file),
+            filename: file.originalname,
+          }
+        : undefined,
+    });
   } finally {
     if (file?.path) {
       await unlink(file.path).catch(() => undefined);
     }
   }
 
-  const exercises = remote.exercise_suite?.exercises ?? [];
-  const { questions, skipped } = mapViavaExercisesToQuizQuestions(exercises);
+  const collected: ViavaExercise[] = [];
+  const skipped: SkippedAiExercise[] = [];
+  let courseTitle =
+    asString(learningPath.course_title) ?? null;
+
+  for (const type of fields.exercise_types as ViavaCompatExerciseType[]) {
+    try {
+      const result = await generateExercisesByType(type, {
+        learning_path: learningPath,
+        language: fields.language,
+        target_level: fields.target_level,
+        detail_level: fields.detail_level,
+        exercises_per_lesson: exercisesPerType,
+      });
+      if (!courseTitle && result.course_title) {
+        courseTitle = result.course_title;
+      }
+      for (const ex of result.exercises) {
+        collected.push({ ...ex, type: asString(ex.type) ?? type });
+      }
+    } catch (error) {
+      skipped.push({
+        type,
+        reason:
+          error instanceof Error
+            ? error.message.slice(0, 200)
+            : 'Exercise generation failed',
+      });
+    }
+  }
+
+  const mapped = mapViavaExercisesToQuizQuestions(collected);
+  const questions = mapped.questions;
+  skipped.push(...mapped.skipped);
 
   if (questions.length === 0) {
     throw new RouteError(HttpStatusCodes.UNPROCESSABLE_ENTITY, Errors.EMPTY_RESULT);
   }
+
+  const limited = questions.slice(0, fields.question_count);
 
   const created: Awaited<
     ReturnType<typeof QuizQuestionRepo.createQuestionWithAnswers>
   >[] = [];
 
   if (fields.apply) {
-    for (const draft of questions) {
+    for (const draft of limited) {
       const saved = await QuizQuestionRepo.createQuestionWithAnswers({
         quizId,
         type: draft.type,
@@ -439,20 +429,18 @@ async function generateForQuiz(
 
   return {
     data: {
-      course_title:
-        remote.exercise_suite?.course_title ??
-        remote.learning_path?.course_title ??
-        null,
-      question_count: questions.length,
+      course_title: courseTitle,
+      domain,
+      question_count: limited.length,
       skipped_count: skipped.length,
       skipped,
-      questions: fields.apply ? created : questions,
+      questions: fields.apply ? created : limited,
       applied: fields.apply,
       supported_exercise_types: QUIZ_COMPAT_EXERCISE_TYPES,
     },
     message: fields.apply
       ? `Đã thêm ${created.length} câu hỏi AI vào quiz`
-      : `Đã sinh ${questions.length} câu hỏi (chưa lưu)`,
+      : `Đã sinh ${limited.length} câu hỏi (chưa lưu)`,
   };
 }
 

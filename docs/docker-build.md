@@ -11,6 +11,7 @@
 | BE API | 3000 | 3000 |
 | Web | 3005 | 3005 |
 | Admin | 9000 | 9100 |
+| Viava (FastAPI) | 8000 | (internal; nginx → `api.gats.vn/course/*`) |
 
 ## Trước khi build (bắt buộc)
 
@@ -32,8 +33,12 @@ notepad .env
 | `NEXT_PUBLIC_API_URL` | URL API mà **trình duyệt** gọi (vd `https://api.gats.vn`) |
 | `APP_URL` / `FRONTEND_URL` | Link email + CORS |
 | `JWT_SECRET`, `SEPAY_API_KEY`, S3… | Production secrets (không để mặc định compose) |
+| `AZURE_OPENAI_*` (+ transcribe) | **Bắt buộc** cho `viava-api` — thiếu → pm2 restart loop |
+| `VIAVA_COURSE_GEN_URL` | Default trong container: `http://127.0.0.1:8000` |
 
 > Đổi `NEXT_PUBLIC_*` → phải **build lại** image (`--build`). Chỉ restart container không đủ.
+>
+> Thêm/sửa `viava/` hoặc Python deps → **rebuild** image (pip chạy lúc build).
 
 ## Build & chạy full stack
 
@@ -70,14 +75,29 @@ curl -i http://127.0.0.1:9100/
 Trong log `app` kỳ vọng:
 
 - `[entrypoint] Applying versioned database migrations...` rồi `Schema is current`; nếu migration fail, container dừng để tránh chạy app với schema lệch
-- pm2: `gats-academy-api`, `gats-academy-worker`, `web-app`, `admin-dashboard` online
+- pm2: `gats-academy-api`, `gats-academy-worker`, `web-app`, `admin-dashboard`, `viava-api` online
+
+### Smoke Viava (sau deploy)
+
+```powershell
+# Public (qua nginx)
+curl https://api.gats.vn/course/info
+
+# Trong container (health nội bộ — không publish /health ra api.gats.vn)
+docker exec gats-academy curl -s http://127.0.0.1:8000/health
+
+# Admin AI quiz vẫn qua BE
+# POST /api/quizzes/:quizId/ai-generate
+```
+
+Swagger: `https://api.gats.vn/docs`
 
 ## Những gì Dockerfile làm
 
 1. **web-builder** — `npm ci` + `next build` với `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_API_URL`
 2. **be-builder** — `npm run build` (tsc) — cần pass sau fix cookie
 3. **admin-builder** — `next build`
-4. Image runtime — copy artifact + versioned SQL + `docker-entrypoint.sh` → checksum migration runner rồi `pm2-runtime`
+4. Image runtime (`node:22-bookworm-slim`) — copy artifact + Python venv (`viava/`) + versioned SQL + `docker-entrypoint.sh` → checksum migration runner rồi `pm2-runtime` (gồm `viava-api` uvicorn `:8000`)
 
 ## Đã chỉnh gần đây (tránh lỗi deploy)
 
@@ -87,6 +107,8 @@ Trong log `app` kỳ vọng:
 | Next không bind ra ngoài container | → `HOSTNAME=0.0.0.0` cho web/admin |
 | Thiếu `next.config` trong image | → copy `next.config.ts` / `next.config.mjs` |
 | BE `start` cần `config/.env.production` | → tạo file placeholder trong image; secret lấy từ Compose env |
+| Viava numpy/scipy trên Alpine | → runtime **bookworm-slim** + pip venv |
+| BE gọi Viava v1 path | → v2 `/course/learning-path` + `/course/exercises/*` + `/course/chat` |
 
 ## Lỗi thường gặp
 

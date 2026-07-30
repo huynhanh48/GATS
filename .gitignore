@@ -15,6 +15,11 @@ BE/config/.env.development
 !.env.*.example
 !**/.env.*.example
 
+# Vendored Viava (Python)
+viava/.venv/
+viava/rag_data/
+viava/**/__pycache__/
+
 # Logs
 logs/
 *.log

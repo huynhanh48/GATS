@@ -1,5 +1,4 @@
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import EnvVars from '@src/common/constants/env';
 import { RouteError } from '@src/common/utils/route-errors';
 import {
   buildMinioPublicUrl,
@@ -8,6 +7,11 @@ import {
 import LearningHistoryService, {
   type CourseExerciseHistory,
 } from '@src/services/LearningHistoryService';
+import {
+  chatWithViava,
+  getViavaBaseUrl,
+  resolveViavaDomainFromCourseId,
+} from '@src/services/viava/ViavaClient';
 
 const Errors = {
   EMPTY_HISTORY: 'Học viên chưa có lịch sử làm bài trong khóa này',
@@ -92,93 +96,30 @@ function buildDeterministicMarkdown(history: CourseExerciseHistory): string {
   return lines.join('\n');
 }
 
-function extractAiTips(remote: unknown): string | null {
-  if (!remote || typeof remote !== 'object') return null;
-  const suite = (remote as { exercise_suite?: { exercises?: unknown[] } })
-    .exercise_suite;
-  const path = (remote as {
-    learning_path?: {
-      milestones?: Array<{
-        title?: string;
-        description?: string;
-        learning_objectives?: string[];
-      }>;
-    };
-  }).learning_path;
-
-  const tips: string[] = [];
-
-  for (const ex of suite?.exercises ?? []) {
-    if (!ex || typeof ex !== 'object') continue;
-    const rec = ex as Record<string, unknown>;
-    const q =
-      (typeof rec.question === 'string' && rec.question) ||
-      (typeof rec.statement === 'string' && rec.statement) ||
-      (typeof rec.problem === 'string' && rec.problem) ||
-      (typeof rec.text === 'string' && rec.text);
-    if (q) tips.push(`- ${q}`);
-    if (Array.isArray(rec.keywords)) {
-      for (const kw of rec.keywords) {
-        if (typeof kw === 'string' && kw.trim()) tips.push(`- ${kw.trim()}`);
-      }
-    }
-  }
-
-  for (const m of path?.milestones ?? []) {
-    if (m.title) tips.push(`- **${m.title}**: ${m.description ?? ''}`.trim());
-    for (const obj of m.learning_objectives ?? []) {
-      if (obj.trim()) tips.push(`- ${obj.trim()}`);
-    }
-  }
-
-  if (tips.length === 0) return null;
-  return ['## Gợi ý cải thiện (AI)', ...tips.slice(0, 40)].join('\n');
+function extractAiTipsFromAnswer(answer: string): string {
+  return ['## Gợi ý cải thiện (AI)', answer.trim()].join('\n');
 }
 
-async function callViavaCoach(markdownHistory: string): Promise<string | null> {
-  const base = EnvVars.ViavaCourseGenUrl?.replace(/\/$/, '');
-  if (!base) return null;
-
-  const path = EnvVars.ViavaCourseGenPath.startsWith('/')
-    ? EnvVars.ViavaCourseGenPath
-    : `/${EnvVars.ViavaCourseGenPath}`;
+async function callViavaCoach(
+  markdownHistory: string,
+  domain: string,
+): Promise<string | null> {
+  if (!getViavaBaseUrl()) return null;
 
   const prompt = [
     'Bạn là cố vấn học tập. Dựa trên lịch sử làm bài dưới đây, hãy đưa đánh giá và gợi ý cải thiện bằng tiếng Việt.',
     'Tập trung: điểm yếu, chủ đề cần ôn, thứ tự làm lại bài, thói quen học.',
-    'Trả kết quả dưới dạng bài tập short_answer / true_false / mcq với nội dung là các gợi ý cải thiện cụ thể.',
+    'Trả lời dạng markdown ngắn gọn, có bullet points cụ thể.',
     '',
     markdownHistory,
   ].join('\n');
 
-  const form = new FormData();
-  form.append('text', prompt);
-  form.append('language', 'vi');
-  form.append('target_level', 'intermediate');
-  form.append('max_lessons', '3');
-  form.append('exercises_per_lesson', '5');
-  form.append('exercise_types', 'short_answer,true_false,mcq');
-  form.append('detail_level', 'detailed');
-  form.append('include_coding', 'false');
-
-  const headers: Record<string, string> = {};
-  if (EnvVars.ViavaApiKey) {
-    headers.Authorization = `Bearer ${EnvVars.ViavaApiKey}`;
-  }
-
-  try {
-    const response = await fetch(`${base}${path}`, {
-      method: 'POST',
-      headers,
-      body: form,
-      signal: AbortSignal.timeout(180_000),
-    });
-    if (!response.ok) return null;
-    const payload = await response.json();
-    return extractAiTips(payload);
-  } catch {
-    return null;
-  }
+  const result = await chatWithViava({
+    query: prompt,
+    domains: domain && domain !== 'general' ? [domain] : undefined,
+  });
+  if (!result?.answer) return null;
+  return extractAiTipsFromAnswer(result.answer);
 }
 
 async function generateCoachReport(
@@ -196,8 +137,9 @@ async function generateCoachReport(
     throw new RouteError(HttpStatusCodes.UNPROCESSABLE_ENTITY, Errors.EMPTY_HISTORY);
   }
 
+  const domain = await resolveViavaDomainFromCourseId(courseId);
   const baseMd = buildDeterministicMarkdown(history);
-  const aiSection = await callViavaCoach(baseMd);
+  const aiSection = await callViavaCoach(baseMd, domain);
   const usedAi = Boolean(aiSection);
   const reportMarkdown = aiSection
     ? `${baseMd}\n\n${aiSection}\n`
@@ -220,6 +162,7 @@ async function generateCoachReport(
       history,
       reportMarkdown,
       usedAi,
+      domain,
       files: {
         markdown: {
           storageKey: mdKey,
