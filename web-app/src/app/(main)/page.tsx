@@ -19,7 +19,7 @@ export default function Home() {
       <TopCategories />
       <FeaturedCourses />
       <PromoSection />
-      <GrowUsSection />
+      {/* <GrowUsSection /> */}
       <FeatureSection />
       <Testimonials />
       <LatestPosts />

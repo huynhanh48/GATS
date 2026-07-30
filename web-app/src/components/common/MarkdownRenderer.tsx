@@ -30,6 +30,14 @@ const slugify = (text: string) => {
     .trim();
 };
 
+// Helper to deeply extract text from React children
+const extractText = (children: any): string => {
+  if (typeof children === 'string' || typeof children === 'number') return String(children);
+  if (Array.isArray(children)) return children.map(extractText).join('');
+  if (React.isValidElement(children)) return extractText((children.props as any).children);
+  return '';
+};
+
 export const MarkdownRenderer = ({ content, className }: MarkdownRendererProps) => {
   return (
     <div className={cn(
@@ -54,18 +62,14 @@ export const MarkdownRenderer = ({ content, className }: MarkdownRendererProps) 
           // Generate IDs for h2 headings
           h2: ({ children, node, ...props }) => {
             const elementId = props.id || (node as any)?.properties?.id;
-            const text = React.Children.toArray(children)
-              .map(child => (typeof child === 'string' || typeof child === 'number' ? child : ''))
-              .join('');
+            const text = extractText(children);
             const id = elementId || slugify(text) || `h2-${Math.random().toString(36).substr(2, 5)}`;
             return <h2 {...props} id={id}>{children}</h2>;
           },
           // Generate IDs for h3 headings
           h3: ({ children, node, ...props }) => {
             const elementId = props.id || (node as any)?.properties?.id;
-            const text = React.Children.toArray(children)
-              .map(child => (typeof child === 'string' || typeof child === 'number' ? child : ''))
-              .join('');
+            const text = extractText(children);
             const id = elementId || slugify(text) || `h3-${Math.random().toString(36).substr(2, 5)}`;
             return <h3 {...props} id={id}>{children}</h3>;
           },

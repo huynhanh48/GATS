@@ -9,96 +9,68 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CapabilitiesSection } from "./components/CapabilitiesSection";
 
-const stats = [
-  { value: "5000+", label: "Học viên toàn cầu", icon: Users },
-  { value: "50+", label: "Khóa học chất lượng", icon: BookOpen },
-  { value: "95%", label: "Tỷ lệ đánh giá 5 sao", icon: Star },
-  { value: "10+", label: "Năm kinh nghiệm", icon: Trophy },
-];
-
 export default function AboutPage() {
   return (
-    <main className="min-h-screen bg-background relative pt-24 pb-16 overflow-hidden">
+    <main className="min-h-screen bg-background relative pb-16 overflow-hidden">
       <Header />
-      
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden pt-24 pb-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[640px] w-[640px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent"
-        />
-        
-        <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-brand-primary">
-          <Sparkles className="w-4 h-4" />
-          <span>Nền tảng học tập của tương lai</span>
+      <section className="relative w-full overflow-hidden pt-32 pb-32 md:pt-40 md:pb-40 bg-[#FDF3E7]">
+        {/* Background Illustrations */}
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden flex justify-between items-end pb-8">
+          <img
+            src="/images/us/illustration-2.svg"
+            alt="Left decoration"
+            className="h-[55%] md:h-[70%] w-auto max-w-[35%] md:max-w-[40%] object-contain object-left-bottom"
+          />
+          <img
+            src="/images/us/illustration-1.svg"
+            alt="Right decoration"
+            className="h-[55%] md:h-[70%] w-auto max-w-[35%] md:max-w-[40%] object-contain object-right-bottom"
+          />
         </div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight"
-        >
-          Định hình Tương lai cùng <br className="hidden md:block" />
-          <span className="text-brand-primary">
-            GATS Academy
-          </span>
-        </motion.h1>
-        
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-lg md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed"
-        >
-          Chúng tôi tiên phong cung cấp giải pháp đào tạo AI và công nghệ thực chiến, giúp doanh nghiệp và cá nhân bứt phá giới hạn trong kỷ nguyên số.
-        </motion.p>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
-          <Link href="/courses">
-            <Button size="lg" className="rounded-full px-8 py-6 text-lg font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all gap-2">
-              Khám phá khóa học <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
-          <Link href="/contact">
-            <Button size="lg" variant="outline" className="rounded-full px-8 py-6 text-lg font-bold border-2 transition-all">
-              Liên hệ với chúng tôi
-            </Button>
-          </Link>
-        </motion.div>
-      </section>
 
-      {/* Stats Section */}
-      <section className="relative z-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto -mt-16 mb-24">
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, i) => {
-              const Icon = stat.icon;
-              return (
-                <motion.div 
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="text-center"
-                >
-                  <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-brand-primary">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-4xl font-black text-foreground mb-2">{stat.value}</h3>
-                  <p className="text-muted-foreground font-medium">{stat.label}</p>
-                </motion.div>
-              );
-            })}
-          </div>
+        <div className="relative z-10 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
+
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-[3.6rem] md:text-[5.4rem] font-extrabold tracking-tight mb-8 leading-[1.2] text-[#0B272C]"
+          >
+            Định hình Tương lai cùng <br className="hidden md:block" />
+            <span className="text-[#0070EB]">
+              GATS Academy
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-[1.6rem] md:text-[2rem] text-slate-700 font-medium mb-12 max-w-3xl mx-auto leading-relaxed"
+          >
+            Chúng tôi tiên phong cung cấp giải pháp đào tạo AI và công nghệ thực chiến, giúp doanh nghiệp và cá nhân bứt phá giới hạn trong kỷ nguyên số.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
+          >
+            <Link href="/courses">
+              <Button size="lg" className="rounded-full px-10 h-[5.4rem] text-[1.6rem] font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all gap-2 bg-[#FF7622] hover:bg-[#FF7622]/90 text-white">
+                Khám phá khóa học
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button size="lg" variant="outline" className="rounded-full px-10 h-[5.4rem] text-[1.6rem] font-bold border-2 transition-all bg-white/80 hover:bg-white text-slate-800 border-slate-200">
+                Liên hệ với chúng tôi
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
@@ -112,7 +84,7 @@ export default function AboutPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -139,7 +111,7 @@ export default function AboutPage() {
             </ul>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
@@ -169,7 +141,7 @@ export default function AboutPage() {
           <h2 className="text-3xl md:text-5xl font-bold mb-6">Giá Trị Cốt Lõi</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Những nguyên tắc định hướng mọi hành động tại GATS Academy.</p>
         </div>
-        
+
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-10">
           {[
             { icon: Lightbulb, title: "Đổi Mới Từng Ngày", desc: "Luôn tìm kiếm và áp dụng những công nghệ, framework mới nhất vào chương trình đào tạo." },
@@ -215,8 +187,8 @@ export default function AboutPage() {
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
             <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-black/10 rounded-full blur-3xl"></div>
           </div>
-          
-          <h2 className="text-4xl md:text-5xl font-black mb-6 leading-tight">Sẵn Sàng Trở Thành <br/>Chuyên Gia Công Nghệ?</h2>
+
+          <h2 className="text-4xl md:text-5xl font-black mb-6 leading-tight">Sẵn Sàng Trở Thành <br />Chuyên Gia Công Nghệ?</h2>
           <p className="text-blue-100 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
             Hàng ngàn học viên đã thay đổi sự nghiệp. Bây giờ đến lượt bạn. Hãy bắt đầu hành trình ngay hôm nay.
           </p>

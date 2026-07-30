@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ThumbsUp, Send, MessageSquare, LogIn, Reply, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ThumbsUp, Send, MessageSquare, LogIn, Reply, Trash2, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
 import { PathApi } from '@/constants/PathApi';
 import { toast } from 'sonner';
@@ -308,53 +308,40 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
     const showReplies = hasReplies || replies.length > 0;
 
     return (
-      <div key={comment.id} className={`flex gap-4 p-4 rounded-2xl hover:bg-muted/30 transition-colors ${isReply ? 'mt-2' : ''}`}>
-        <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center font-bold text-sm uppercase ${getAvatarColor(comment.author?.userName || 'Khách')} shadow-sm`}>
+      <div key={comment.id} className={`flex gap-5 ${isReply ? 'mt-6 ml-16' : ''}`}>
+        <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center font-bold text-[1.4rem] uppercase ${getAvatarColor(comment.author?.userName || 'Khách')}`}>
           {(comment.author?.userName || 'Khách').substring(0, 2)}
         </div>
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-foreground text-sm">
-                {comment.author?.userName || 'Khách'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {new Intl.DateTimeFormat('vi-VN', {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-bold text-[#111827] text-[1.5rem]">
+              {comment.author?.userName || 'Khách'}
+            </span>
+            <div className="flex items-center gap-4">
+              <span className="text-[1.3rem] text-slate-400">
+                {new Intl.DateTimeFormat('en-US', {
+                  month: 'long',
+                  day: '2-digit',
+                  year: 'numeric',
                 }).format(new Date(comment.createdAt))}
               </span>
+              {isOwner && (
+                <button
+                  onClick={() => handleDelete(comment, isReply)}
+                  className="text-slate-400 hover:text-red-500 transition-colors"
+                  title="Xóa bình luận"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
             </div>
-
-            {isOwner && (
-              <button
-                onClick={() => handleDelete(comment, isReply)}
-                className="text-muted-foreground hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-500/10"
-                title="Xóa bình luận"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
           </div>
 
-          <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap mt-1">
+          <p className="text-slate-500 text-[1.4rem] leading-relaxed whitespace-pre-wrap mb-2">
             {comment.content}
           </p>
 
-          <div className="flex items-center gap-4 pt-2">
-            <button
-              onClick={() => handleLike(comment, isReply)}
-              className={`flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-full hover:bg-muted transition-colors ${comment.isLiked
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
-                }`}
-            >
-              <ThumbsUp className={`w-3.5 h-3.5 ${comment.isLiked ? 'fill-current' : ''}`} />
-              <span>{comment.likeCount || 0}</span>
-            </button>
-
+          <div className="flex items-center gap-4">
             {!isReply && (
               <button
                 onClick={() => {
@@ -365,20 +352,20 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
                   setReplyingTo(replyingTo === comment.id ? null : comment.id);
                   setReplyContent('');
                 }}
-                className="flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                className="flex items-center gap-1.5 text-[1.3rem] font-medium text-red-500 hover:text-red-600 transition-colors"
               >
-                <Reply className="w-3.5 h-3.5" />
-                <span>Phản hồi</span>
+                <Reply className="w-4 h-4" />
+                <span>Reply</span>
               </button>
             )}
 
             {!isReply && showReplies && (
               <button
                 onClick={() => toggleReplies(comment.id)}
-                className="flex items-center gap-1.5 text-xs font-semibold py-1.5 px-3 rounded-full text-primary hover:bg-primary/10 transition-colors ml-auto"
+                className="flex items-center gap-1.5 text-[1.3rem] font-medium text-primary hover:text-primary/80 transition-colors"
               >
-                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                <span>{replies.length || comment.replyCount} phản hồi</span>
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                <span>{replies.length || comment.replyCount} replies</span>
               </button>
             )}
           </div>
@@ -426,84 +413,120 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
   };
 
   return (
-    <div className="mt-20 pt-10 border-t border-border/40">
-      <div className="flex items-center gap-3 mb-8">
-        <MessageSquare className="w-6 h-6 text-[#0070EB]" />
-        <h3 className="text-2xl font-bold text-foreground">
-          Bình luận
+    <div className="mt-20 pt-10">
+      <div className="mb-8">
+        <h3 className="text-[2.2rem] font-bold text-[#111827] font-heading mb-2">
+          Comments
         </h3>
+        <p className="text-slate-500 text-[1.4rem]">{comments.length} Comments</p>
       </div>
 
-      {/* Comment Editor */}
-      <div className="mb-10 bg-card/40 border border-border/40 backdrop-blur-md rounded-2xl p-6 shadow-sm">
-        {isAuthenticated ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex gap-4">
-              <div className={`w-10 h-10 rounded-full shrink-0 flex items-center justify-center font-bold text-sm uppercase ${getAvatarColor(currentUsername)} shadow-sm`}>
-                {currentUsername.substring(0, 2) || '??'}
-              </div>
-              <div className="w-full relative">
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Chia sẻ ý kiến của bạn..."
-                  className="w-full min-h-[90px] p-4 bg-background/50 border border-border/50 text-foreground placeholder:text-muted-foreground/60 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all resize-none shadow-inner"
-                  required
-                />
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={submitting || !content.trim()}
-                className="px-6 py-2.5 bg-primary text-primary-foreground font-semibold rounded-full flex items-center gap-2 hover:opacity-95 disabled:opacity-50 disabled:pointer-events-none shadow-[0_0_20px_rgba(0,112,235,0.2)] hover:shadow-[0_0_25px_rgba(0,112,235,0.4)] transition-all duration-300"
-              >
-                {submitting ? 'Đang gửi...' : 'Gửi bình luận'}
-                <Send className="w-4 h-4" />
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="py-6 flex flex-col items-center justify-center text-center space-y-4">
-            <p className="text-muted-foreground text-sm max-w-sm">
-              Tham gia thảo luận về bài học này cùng cộng đồng học viên tại GATS Academy.
-            </p>
-            <button
-              onClick={handleLoginPrompt}
-              className="px-6 py-2.5 bg-primary text-primary-foreground font-semibold rounded-full flex items-center gap-2 hover:opacity-95 shadow-[0_0_20px_rgba(0,112,235,0.2)] transition-all duration-300"
-            >
-              <LogIn className="w-4.5 h-4.5" />
-              Đăng nhập để bình luận
-            </button>
-          </div>
-        )}
-      </div>
+
 
       {/* Comments List */}
       {loading ? (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {[1, 2].map((i) => (
             <div key={i} className="flex gap-4 animate-pulse">
-              <div className="w-10 h-10 bg-muted rounded-full shrink-0"></div>
-              <div className="space-y-2 flex-1">
-                <div className="h-4 bg-muted rounded-full w-24"></div>
-                <div className="h-3 bg-muted rounded-full w-full"></div>
-                <div className="h-3 bg-muted rounded-full w-4/5"></div>
+              <div className="w-12 h-12 bg-slate-200 rounded-full shrink-0"></div>
+              <div className="space-y-3 flex-1">
+                <div className="h-4 bg-slate-200 rounded-full w-32"></div>
+                <div className="h-3 bg-slate-200 rounded-full w-full"></div>
+                <div className="h-3 bg-slate-200 rounded-full w-4/5"></div>
               </div>
             </div>
           ))}
         </div>
       ) : comments.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {comments.map((comment) => renderComment(comment, false))}
+          
+          {/* Pagination Mock */}
+          <div className="flex items-center justify-center gap-2 mt-12 pt-8">
+            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors text-[1.4rem]">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button className="w-8 h-8 rounded-full bg-[#111827] text-white flex items-center justify-center font-medium text-[1.4rem]">
+              1
+            </button>
+            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors font-medium text-[1.4rem]">
+              2
+            </button>
+            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors font-medium text-[1.4rem]">
+              3
+            </button>
+            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors text-[1.4rem]">
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="py-12 text-center">
-          <p className="text-muted-foreground text-sm">
-            Chưa có bình luận nào cho bài viết này. Hãy là người đầu tiên chia sẻ ý kiến của bạn!
-          </p>
+        <div className="py-12 text-center text-slate-500 text-[1.4rem]">
+          No comments yet. Be the first to share your thoughts!
         </div>
       )}
+
+      {/* Leave A Comment */}
+      <div className="mt-16">
+        <h3 className="text-[2.2rem] font-bold text-[#111827] font-heading mb-2">
+          Leave A Comment
+        </h3>
+        <p className="text-slate-500 text-[1.4rem] mb-8">
+          Your email address will not be published. Required fields are marked *
+        </p>
+
+        {isAuthenticated ? (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <input
+                type="text"
+                placeholder="Name*"
+                className="w-full p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                required
+              />
+              <input
+                type="email"
+                placeholder="Email*"
+                className="w-full p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
+                required
+              />
+            </div>
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Comment"
+              className="w-full min-h-[160px] p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors resize-y text-[1.4rem]"
+              required
+            />
+            <div className="flex items-center gap-3">
+              <input type="checkbox" id="save-info" className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary" />
+              <label htmlFor="save-info" className="text-[1.4rem] text-slate-500">
+                Save my name, email in this browser for the next time I comment
+              </label>
+            </div>
+            <button
+              type="submit"
+              disabled={submitting || !content.trim()}
+              className="px-8 py-3 bg-[#FF7622] text-white font-semibold rounded-full hover:bg-[#FF7622]/90 disabled:opacity-50 transition-colors text-[1.4rem]"
+            >
+              {submitting ? 'Posting...' : 'Post Comment'}
+            </button>
+          </form>
+        ) : (
+          <div className="py-12 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
+            <p className="text-slate-500 text-[1.4rem]">
+              You must be logged in to post a comment.
+            </p>
+            <button
+              onClick={handleLoginPrompt}
+              className="px-8 py-3 bg-[#FF7622] text-white font-semibold rounded-full flex items-center gap-2 hover:bg-[#FF7622]/90 transition-colors text-[1.4rem]"
+            >
+              <LogIn className="w-5 h-5" />
+              Login to Comment
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
