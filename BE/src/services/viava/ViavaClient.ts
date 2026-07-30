@@ -69,19 +69,28 @@ export async function resolveViavaDomainFromLessonId(
   return normalizeViavaDomain(rows[0]?.slug);
 }
 
+function sanitizeAsciiSecret(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  // Strip BOM, zero-width chars, wrapping quotes, whitespace from .env paste noise.
+  const cleaned = raw
+    .replace(/^\uFEFF/, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
+  if (!cleaned) return undefined;
+  for (let i = 0; i < cleaned.length; i++) {
+    if (cleaned.charCodeAt(i) > 127) return undefined;
+  }
+  return cleaned;
+}
+
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
-  if (EnvVars.ViavaApiKey) {
-    // Node fetch requires header values to be ByteString (code points ≤ 255).
-    const token = EnvVars.ViavaApiKey;
-    for (let i = 0; i < token.length; i++) {
-      if (token.charCodeAt(i) > 255) {
-        throw new RouteError(
-          HttpStatusCodes.INTERNAL_SERVER_ERROR,
-          'VIAVA_API_KEY contains non-ASCII characters',
-        );
-      }
-    }
+  // Optional — Viava REST currently has no Bearer gate. Skip if unset/invalid
+  // so a polluted VIAVA_API_KEY (VN text, smart quotes) does not block AI gen.
+  const token = sanitizeAsciiSecret(EnvVars.ViavaApiKey);
+  if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
   return headers;
