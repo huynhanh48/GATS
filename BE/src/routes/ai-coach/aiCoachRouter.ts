@@ -1,76 +1,57 @@
 import { Request, Response } from 'express';
-import aiCoachService from '@src/services/ai-coach-service';
+
+import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
+import { getUuidRouteParam } from '@src/common/utils/route-params';
 import {
   createAiCoachSessionSchema,
   updateAiCoachSessionSchema,
   addAiCoachMessageSchema,
 } from '@src/schemas/ai-coach-schemas';
+import aiCoachService from '@src/services/ai-coach-service';
+
+function authUserId(req: Request): number {
+  return req.authUser!.id;
+}
 
 async function getSessions(req: Request, res: Response) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const sessions = await aiCoachService.getSessions(userId);
-  return res.json({ data: sessions });
+  const sessions = await aiCoachService.getSessions(authUserId(req));
+  return res.status(HttpStatusCodes.OK).json({ data: sessions });
 }
 
 async function createSession(req: Request, res: Response) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
   const parsed = createAiCoachSessionSchema.parse(req.body);
-  const session = await aiCoachService.createSession(userId, parsed);
-  return res.status(201).json({ data: session });
+  const session = await aiCoachService.createSession(authUserId(req), parsed);
+  return res.status(HttpStatusCodes.CREATED).json({ data: session });
 }
 
 async function getSessionDetails(req: Request, res: Response) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { id } = req.params;
-  const session = await aiCoachService.getSessionDetails(id, userId);
-  return res.json({ data: session });
+  const id = getUuidRouteParam(req.params.id, 'id');
+  const session = await aiCoachService.getSessionDetails(id, authUserId(req));
+  return res.status(HttpStatusCodes.OK).json({ data: session });
 }
 
 async function updateSession(req: Request, res: Response) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { id } = req.params;
+  const id = getUuidRouteParam(req.params.id, 'id');
   const parsed = updateAiCoachSessionSchema.parse(req.body);
-  const session = await aiCoachService.updateSession(id, userId, parsed);
-  return res.json({ data: session });
+  const session = await aiCoachService.updateSession(
+    id,
+    authUserId(req),
+    parsed,
+  );
+  return res.status(HttpStatusCodes.OK).json({ data: session });
 }
 
 async function deleteSession(req: Request, res: Response) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { id } = req.params;
-  await aiCoachService.deleteSession(id, userId);
-  return res.status(204).send();
+  const id = getUuidRouteParam(req.params.id, 'id');
+  await aiCoachService.deleteSession(id, authUserId(req));
+  return res.status(HttpStatusCodes.NO_CONTENT).send();
 }
 
 async function addMessage(req: Request, res: Response) {
-  const userId = req.user?.id;
-  if (!userId) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { id } = req.params;
+  const id = getUuidRouteParam(req.params.id, 'id');
   const parsed = addAiCoachMessageSchema.parse(req.body);
-  const message = await aiCoachService.addMessage(id, userId, parsed);
-  return res.status(201).json({ data: message });
+  const message = await aiCoachService.addMessage(id, authUserId(req), parsed);
+  return res.status(HttpStatusCodes.CREATED).json({ data: message });
 }
 
 export default {
