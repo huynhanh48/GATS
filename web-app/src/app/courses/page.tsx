@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -89,6 +89,25 @@ function getUIProps(course: Course) {
 }
 
 export default function CoursesPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#f8f9fa] pt-28">
+          <Header />
+          <Container size="xl">
+            <p className="py-20 text-center text-[1.6rem] text-slate-500">
+              Đang tải khóa học…
+            </p>
+          </Container>
+        </main>
+      }
+    >
+      <CoursesPageContent />
+    </Suspense>
+  );
+}
+
+function CoursesPageContent() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [latestCourses, setLatestCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
