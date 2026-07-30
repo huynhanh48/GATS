@@ -44,7 +44,6 @@ export function CourseChatPanel({ courseId, currentUserId }: Props) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
   const [accessClosed, setAccessClosed] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
   const accessClosedRef = useRef(false);
 
   const load = useCallback(async (silent = false) => {
@@ -75,10 +74,6 @@ export function CourseChatPanel({ courseId, currentUserId }: Props) {
     }, 5000);
     return () => window.clearInterval(timer);
   }, [load]);
-
-  useEffect(() => {
-    if (!loading) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length, loading]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -182,7 +177,6 @@ export function CourseChatPanel({ courseId, currentUserId }: Props) {
                 </article>
               );
             })}
-            <div ref={bottomRef} />
           </div>
         )}
       </div>
