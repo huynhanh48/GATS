@@ -35,6 +35,7 @@ import CurriculumService from '@src/services/CurriculumService';
 import LessonAttachmentService from '@src/services/LessonAttachmentService';
 import LessonService from '@src/services/LessonService';
 import OnboardingRecommendationService from '@src/services/OnboardingRecommendationService';
+import QuizService from '@src/services/QuizService';
 import RecommendationAnalyticsService from '@src/services/RecommendationAnalyticsService';
 import VideoService from '@src/services/VideoService';
 
@@ -295,6 +296,13 @@ async function listAiQuizSources(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function listAiQuizTargets(req: Request, res: Response) {
+  const result = await QuizService.listAiQuizTargets(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   list: errorHandle(list),
   recommendations: errorHandle(recommendations),
@@ -308,6 +316,7 @@ export default {
   getById: errorHandle(getById),
   getManagedById: errorHandle(getManagedById),
   listAiQuizSources: errorHandle(listAiQuizSources),
+  listAiQuizTargets: errorHandle(listAiQuizTargets),
   create: errorHandle(create),
   update: errorHandle(update),
   publish: errorHandle(publish),

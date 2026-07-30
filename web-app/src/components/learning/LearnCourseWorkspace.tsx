@@ -706,7 +706,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
 
             {hasContent ? (
               <div
-                className="prose prose-sm dark:prose-invert mx-auto max-w-4xl rounded-2xl border border-border bg-card p-5 sm:p-8"
+                className="prose dark:prose-invert mx-auto w-full max-w-6xl text-[16px] leading-7 rounded-2xl border border-border bg-card p-5 sm:p-8 lg:p-10"
                 dangerouslySetInnerHTML={{ __html: activeLesson!.content! }}
               />
             ) : null}

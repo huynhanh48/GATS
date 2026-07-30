@@ -488,8 +488,12 @@ function CoursesPageContent() {
 
             <div className={viewMode === "list" ? "flex flex-col gap-8" : "grid grid-cols-1 md:grid-cols-2 gap-8"}>
               {errorMsg && (
-                <div className="bg-red-50 text-red-500 p-4 rounded-md col-span-full">
-                  <strong>Error: </strong> {errorMsg}
+                <div
+                  role="alert"
+                  className="col-span-full rounded-xl border border-red-200 bg-red-50 p-5 text-[1.5rem] text-red-700"
+                >
+                  <strong>Không thể tải danh sách khóa học: </strong>
+                  {errorMsg}
                 </div>
               )}
               {isLoading ? (

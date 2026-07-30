@@ -39,7 +39,6 @@ import {
 import * as CourseRepo from '@src/repos/CourseRepo';
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
-import * as QuizRepo from '@src/repos/QuizRepo';
 import * as VideoRepo from '@src/repos/VideoRepo';
 import CourseAccessService from '@src/services/CourseAccessService';
 
@@ -818,8 +817,6 @@ export type AiQuizSourceItem = {
   lessonId: string;
   title: string | null;
   audioFlacUrl: string;
-  quizId: string | null;
-  hasQuiz: boolean;
 };
 
 async function listAiQuizSources(courseId: string) {
@@ -834,14 +831,11 @@ async function listAiQuizSources(courseId: string) {
   for (const video of videos) {
     const audioFlacUrl = buildAudioFlacUrl(video.audioFlacKey);
     if (!audioFlacUrl) continue;
-    const quiz = await QuizRepo.findByLessonId(video.lessonId);
     data.push({
       videoId: video.id,
       lessonId: video.lessonId,
       title: video.title,
       audioFlacUrl,
-      quizId: quiz?.id ?? null,
-      hasQuiz: Boolean(quiz?.id),
     });
   }
 

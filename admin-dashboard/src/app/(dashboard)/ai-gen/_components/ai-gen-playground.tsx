@@ -2,7 +2,11 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { coursesClient, type AiQuizSourceItem } from "@/services/courses.client";
+import {
+  coursesClient,
+  type AiQuizSourceItem,
+  type AiQuizTargetItem,
+} from "@/services/courses.client";
 import { quizClient } from "@/services/quiz.client";
 
 type TabKey = "quiz_gen" | "learning_path_v2" | "coach_chat" | "json_inspector";
@@ -14,18 +18,23 @@ const inputClass =
 const labelClass =
   "mb-1 block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 type CourseOption = { id: string; title: string };
 
 export function AiGenPlayground() {
   const [activeTab, setActiveTab] = useState<TabKey>("quiz_gen");
   const [pending, startTransition] = useTransition();
 
-  const [sourceMode, setSourceMode] = useState<SourceMode>("course_flac");
   const [courses, setCourses] = useState<CourseOption[]>([]);
-  const [courseId, setCourseId] = useState("");
+
+  // Target quiz (where questions are applied) — independent of source
+  const [targetCourseId, setTargetCourseId] = useState("");
+  const [targets, setTargets] = useState<AiQuizTargetItem[]>([]);
+  const [targetsLoading, setTargetsLoading] = useState(false);
+  const [selectedLessonId, setSelectedLessonId] = useState("");
+
+  // Content source — independent of quiz
+  const [sourceMode, setSourceMode] = useState<SourceMode>("course_flac");
+  const [sourceCourseId, setSourceCourseId] = useState("");
   const [sources, setSources] = useState<AiQuizSourceItem[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState("");
@@ -33,7 +42,7 @@ export function AiGenPlayground() {
   const [text, setText] = useState(
     "Lập trình hướng đối tượng (OOP) là một phương pháp luận lập trình dựa trên khái niệm 'đối tượng', có thể chứa dữ liệu dưới dạng các trường và mã dưới dạng các thủ tục. 4 trụ cột: Đóng gói, Kế thừa, Đa hình, Trừu tượng.",
   );
-  const [quizId, setQuizId] = useState("");
+
   const [language, setLanguage] = useState("vi");
   const [targetLevel, setTargetLevel] = useState("intermediate");
   const [questionCount, setQuestionCount] = useState(5);
@@ -57,6 +66,7 @@ export function AiGenPlayground() {
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
   const [skippedCount, setSkippedCount] = useState<number | null>(null);
 
+  const selectedTarget = targets.find((t) => t.lessonId === selectedLessonId);
   const selectedSource = sources.find((s) => s.videoId === selectedVideoId);
 
   useEffect(() => {
@@ -72,14 +82,39 @@ export function AiGenPlayground() {
   }, []);
 
   useEffect(() => {
-    if (!courseId || sourceMode !== "course_flac") {
+    if (!targetCourseId) {
+      setTargets([]);
+      setSelectedLessonId("");
+      return;
+    }
+    let cancelled = false;
+    setTargetsLoading(true);
+    void coursesClient.listAiQuizTargets(targetCourseId).then((res) => {
+      if (cancelled) return;
+      setTargetsLoading(false);
+      if (res.error) {
+        toast.error(res.error.message);
+        setTargets([]);
+        return;
+      }
+      const items = res.data?.data ?? [];
+      setTargets(items);
+      setSelectedLessonId(items[0]?.lessonId ?? "");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [targetCourseId]);
+
+  useEffect(() => {
+    if (!sourceCourseId || sourceMode !== "course_flac") {
       setSources([]);
       setSelectedVideoId("");
       return;
     }
     let cancelled = false;
     setSourcesLoading(true);
-    void coursesClient.listAiQuizSources(courseId).then((res) => {
+    void coursesClient.listAiQuizSources(sourceCourseId).then((res) => {
       if (cancelled) return;
       setSourcesLoading(false);
       if (res.error) {
@@ -94,40 +129,56 @@ export function AiGenPlayground() {
     return () => {
       cancelled = true;
     };
-  }, [courseId, sourceMode]);
+  }, [sourceCourseId, sourceMode]);
 
-  useEffect(() => {
-    if (sourceMode === "course_flac" && selectedSource?.quizId) {
-      setQuizId(selectedSource.quizId);
+  async function ensureQuizId(
+    courseId: string,
+    target: AiQuizTargetItem,
+  ): Promise<string | null> {
+    if (target.quizId) return target.quizId;
+
+    const created = await quizClient.createQuiz(courseId, target.lessonId, {
+      passing_score: 70,
+      max_attempts: 1,
+      show_result: true,
+      show_explanation: true,
+    });
+    if (created.error || !created.data?.data?.id) {
+      toast.error(
+        created.error?.message ?? "Không khởi tạo được quiz cho bài học",
+      );
+      return null;
     }
-  }, [sourceMode, selectedSource?.quizId, selectedSource?.videoId]);
+    const quizId = created.data.data.id;
+    setTargets((prev) =>
+      prev.map((t) =>
+        t.lessonId === target.lessonId
+          ? { ...t, quizId, hasQuiz: true }
+          : t,
+      ),
+    );
+    return quizId;
+  }
 
   function handleGenerateQuiz() {
     startTransition(async () => {
-      let targetQuizId = quizId.trim();
+      if (!targetCourseId || !selectedTarget) {
+        toast.error("Chọn khóa học và bài quiz đích");
+        return;
+      }
+
       let fileUrlToSend: string | undefined;
       let textToSend: string | undefined;
 
       if (sourceMode === "course_flac") {
         if (!selectedSource?.audioFlacUrl) {
-          toast.error("Chọn video có audio FLAC trong khóa học");
+          toast.error("Chọn video có audio FLAC làm nguồn");
           return;
         }
-        if (!selectedSource.quizId) {
-          toast.error(
-            "Lesson video này chưa có quiz — tạo quiz trên lesson rồi thử lại",
-          );
-          return;
-        }
-        targetQuizId = selectedSource.quizId;
         fileUrlToSend = selectedSource.audioFlacUrl;
       } else if (sourceMode === "s3_flac_url") {
         if (!s3FlacUrl.trim()) {
           toast.error("Nhập URL S3 FLAC (https://…/audio.flac)");
-          return;
-        }
-        if (!UUID_RE.test(targetQuizId)) {
-          toast.error("Nhập UUID quiz thật để apply câu hỏi");
           return;
         }
         fileUrlToSend = s3FlacUrl.trim();
@@ -136,12 +187,11 @@ export function AiGenPlayground() {
           toast.error("Nhập nội dung text");
           return;
         }
-        if (!UUID_RE.test(targetQuizId)) {
-          toast.error("Nhập UUID quiz thật (không hỗ trợ preview giả)");
-          return;
-        }
         textToSend = text.trim();
       }
+
+      const targetQuizId = await ensureQuizId(targetCourseId, selectedTarget);
+      if (!targetQuizId) return;
 
       const form = new FormData();
       form.append("language", language);
@@ -157,6 +207,7 @@ export function AiGenPlayground() {
 
       setLastRequestPayload({
         quizId: targetQuizId,
+        quizLesson: selectedTarget.label,
         sourceMode,
         file_url: fileUrlToSend,
         text: textToSend ? `${textToSend.slice(0, 120)}…` : undefined,
@@ -254,12 +305,12 @@ export function AiGenPlayground() {
             Viava API v2.0
           </span>
           <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-            Sinh Quiz AI — FLAC video khóa học / URL S3
+            Sinh Quiz AI
           </h2>
         </div>
         <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-          Course FLAC dùng <code>audioFlacUrl</code> → Viava transcribe → apply
-          vào quiz cùng lesson. URL S3 FLAC / text cần UUID quiz thật.
+          Chọn bài quiz đích và nguồn nội dung độc lập (video FLAC / URL S3 /
+          text). Không cần dán UUID.
         </p>
       </div>
 
@@ -291,12 +342,62 @@ export function AiGenPlayground() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6 dark:border-slate-800 dark:bg-slate-950">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Cấu hình sinh Quiz
+              1. Quiz đích (gắn câu hỏi vào đâu)
             </h3>
 
             <div>
-              <label className={labelClass}>Nguồn dữ liệu</label>
-              <div className="flex flex-wrap gap-2">
+              <label className={labelClass}>Khóa học</label>
+              <select
+                className={inputClass}
+                value={targetCourseId}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  setTargetCourseId(id);
+                  if (!sourceCourseId && id) setSourceCourseId(id);
+                }}
+                disabled={pending}
+              >
+                <option value="">— Chọn khóa học —</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Bài quiz {targetsLoading ? "(đang tải…)" : ""}
+              </label>
+              <select
+                className={inputClass}
+                value={selectedLessonId}
+                onChange={(e) => setSelectedLessonId(e.target.value)}
+                disabled={pending || !targetCourseId || targetsLoading}
+              >
+                {targets.length === 0 ? (
+                  <option value="">
+                    {targetCourseId
+                      ? "Khóa chưa có bài loại Quiz — thêm lesson Quiz trong Curriculum"
+                      : "Chọn khóa học trước"}
+                  </option>
+                ) : (
+                  targets.map((t) => (
+                    <option key={t.lessonId} value={t.lessonId}>
+                      {t.label}
+                      {t.hasQuiz ? "" : " (sẽ tự khởi tạo)"}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+              <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
+                2. Nguồn nội dung (sinh từ đâu)
+              </h3>
+              <div className="mb-3 flex flex-wrap gap-2">
                 {(
                   [
                     ["course_flac", "Course video FLAC"],
@@ -319,89 +420,80 @@ export function AiGenPlayground() {
                   </button>
                 ))}
               </div>
+
+              {sourceMode === "course_flac" && (
+                <>
+                  <div className="mb-3">
+                    <label className={labelClass}>Khóa học nguồn (video)</label>
+                    <select
+                      className={inputClass}
+                      value={sourceCourseId}
+                      onChange={(e) => setSourceCourseId(e.target.value)}
+                      disabled={pending}
+                    >
+                      <option value="">— Chọn khóa học —</option>
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      Video có FLAC {sourcesLoading ? "(đang tải…)" : ""}
+                    </label>
+                    <select
+                      className={inputClass}
+                      value={selectedVideoId}
+                      onChange={(e) => setSelectedVideoId(e.target.value)}
+                      disabled={pending || !sourceCourseId || sourcesLoading}
+                    >
+                      {sources.length === 0 ? (
+                        <option value="">
+                          {sourceCourseId
+                            ? "Không có video ready + FLAC"
+                            : "Chọn khóa học nguồn"}
+                        </option>
+                      ) : (
+                        sources.map((s) => (
+                          <option key={s.videoId} value={s.videoId}>
+                            {(s.title || s.videoId).slice(0, 80)}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {sourceMode === "s3_flac_url" && (
+                <div>
+                  <label className={labelClass}>URL S3 FLAC</label>
+                  <input
+                    className={inputClass}
+                    value={s3FlacUrl}
+                    onChange={(e) => setS3FlacUrl(e.target.value)}
+                    placeholder="https://…/audio.flac"
+                    disabled={pending}
+                  />
+                </div>
+              )}
+
+              {sourceMode === "text" && (
+                <div>
+                  <label className={labelClass}>Nội dung văn bản</label>
+                  <textarea
+                    className={`${inputClass} min-h-[140px]`}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    disabled={pending}
+                  />
+                </div>
+              )}
             </div>
 
-            {sourceMode === "course_flac" && (
-              <>
-                <div>
-                  <label className={labelClass}>Khóa học</label>
-                  <select
-                    className={inputClass}
-                    value={courseId}
-                    onChange={(e) => setCourseId(e.target.value)}
-                    disabled={pending}
-                  >
-                    <option value="">— Chọn khóa học —</option>
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelClass}>
-                    Video có FLAC {sourcesLoading ? "(đang tải…)" : ""}
-                  </label>
-                  <select
-                    className={inputClass}
-                    value={selectedVideoId}
-                    onChange={(e) => setSelectedVideoId(e.target.value)}
-                    disabled={pending || !courseId || sourcesLoading}
-                  >
-                    {sources.length === 0 ? (
-                      <option value="">
-                        {courseId
-                          ? "Không có video ready + FLAC"
-                          : "Chọn khóa học trước"}
-                      </option>
-                    ) : (
-                      sources.map((s) => (
-                        <option key={s.videoId} value={s.videoId}>
-                          {(s.title || s.videoId).slice(0, 60)}
-                          {s.hasQuiz ? "" : " — chưa có quiz"}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                  {selectedSource ? (
-                    <p className="mt-1 text-[11px] text-slate-500">
-                      Quiz lesson:{" "}
-                      {selectedSource.quizId ?? (
-                        <span className="text-amber-600">thiếu — tạo quiz trên lesson video</span>
-                      )}
-                    </p>
-                  ) : null}
-                </div>
-              </>
-            )}
-
-            {sourceMode === "s3_flac_url" && (
-              <div>
-                <label className={labelClass}>URL S3 FLAC</label>
-                <input
-                  className={inputClass}
-                  value={s3FlacUrl}
-                  onChange={(e) => setS3FlacUrl(e.target.value)}
-                  placeholder="https://…/audio.flac"
-                  disabled={pending}
-                />
-              </div>
-            )}
-
-            {sourceMode === "text" && (
-              <div>
-                <label className={labelClass}>Nội dung văn bản</label>
-                <textarea
-                  className={`${inputClass} min-h-[140px]`}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  disabled={pending}
-                />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4 dark:border-slate-800">
               <div>
                 <label className={labelClass}>Ngôn ngữ</label>
                 <input
@@ -453,29 +545,6 @@ export function AiGenPlayground() {
                 </select>
               </div>
             </div>
-
-            {sourceMode !== "course_flac" ? (
-              <div>
-                <label className={labelClass}>Mã Quiz (UUID bắt buộc)</label>
-                <input
-                  className={inputClass}
-                  value={quizId}
-                  onChange={(e) => setQuizId(e.target.value)}
-                  placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                  disabled={pending}
-                />
-              </div>
-            ) : (
-              <div>
-                <label className={labelClass}>Quiz đích (tự từ lesson)</label>
-                <input
-                  className={inputClass}
-                  value={selectedSource?.quizId ?? ""}
-                  readOnly
-                  disabled
-                />
-              </div>
-            )}
 
             <button
               type="button"

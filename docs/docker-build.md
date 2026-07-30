@@ -100,13 +100,12 @@ docker exec gats-academy printenv VIAVA_COURSE_GEN_URL
 **Admin AI — thử nghiệm từ FLAC (ưu tiên):**
 
 1. Video khóa học `ready` + có `audio_flac_key` (S3 public/presigned `.flac`).
-2. Lesson của video **đã có quiz** (không auto-tạo).
+2. Có ít nhất một **bài học loại Quiz** trong khóa (Curriculum). Chưa khởi tạo quiz cũng được — `/ai-gen` tự tạo khi Run.
 3. Admin → `/ai-gen`:
-   - **Course video FLAC** — chọn course → video có FLAC → Run (dùng `quizId` cùng lesson; `file_url` = FLAC).
-   - **URL S3 FLAC** — dán `https://…/audio.flac` + **UUID quiz thật**.
-   - **Text** — smoke nhanh + UUID quiz thật (không cần audio).
+   - **Quiz đích** — chọn khóa → chọn bài quiz (theo tên, không dán UUID).
+   - **Nguồn** — Course video FLAC (có thể khác khóa) / URL S3 FLAC / Text — độc lập với quiz đích.
 4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **200** + câu hỏi apply (FLAC có thể vài phút; client timeout 180s).
-5. UUID giả / trống → **400**, không **500**.
+5. UUID giả trên path API → **400**, không **500**.
 
 **Quiz builder (trong course):** panel AI có mode **URL S3 FLAC** (`file_url`) cạnh text / upload file.
 

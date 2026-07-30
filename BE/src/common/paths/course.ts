@@ -43,6 +43,7 @@ const CoursePaths = {
     Get: '/:id',
     FlashcardDecks: '/:courseId/flashcard-decks',
     AiQuizSources: '/:courseId/ai-quiz-sources',
+    AiQuizTargets: '/:courseId/ai-quiz-targets',
   },
 } as const;
 

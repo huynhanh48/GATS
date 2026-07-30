@@ -1,6 +1,8 @@
 import { and, asc, count, eq } from 'drizzle-orm';
 
 import db from '@src/db';
+import { courseSectionsTable } from '@src/db/schema/course-section';
+import { lessonsTable } from '@src/db/schema/lesson';
 import { quizzesTable, type Quiz } from '@src/db/schema/quiz';
 import { quizAttemptsTable } from '@src/db/schema/quiz-attempt';
 
@@ -20,6 +22,52 @@ export async function findByLessonId(lessonId: string): Promise<Quiz | undefined
     .where(eq(quizzesTable.lessonId, lessonId))
     .limit(1);
   return rows[0];
+}
+
+export type AiQuizTargetRow = {
+  lessonId: string;
+  lessonTitle: string;
+  lessonOrder: number;
+  sectionId: string;
+  sectionTitle: string;
+  sectionOrder: number;
+  quizId: string | null;
+};
+
+/** Quiz-type lessons in a course (left-join quiz row if already initialized). */
+export async function listAiQuizTargetsByCourseId(
+  courseId: string,
+): Promise<AiQuizTargetRow[]> {
+  const rows = await db
+    .select({
+      lessonId: lessonsTable.id,
+      lessonTitle: lessonsTable.title,
+      lessonOrder: lessonsTable.order,
+      sectionId: courseSectionsTable.id,
+      sectionTitle: courseSectionsTable.title,
+      sectionOrder: courseSectionsTable.order,
+      quizId: quizzesTable.id,
+    })
+    .from(lessonsTable)
+    .innerJoin(
+      courseSectionsTable,
+      eq(lessonsTable.sectionId, courseSectionsTable.id),
+    )
+    .leftJoin(quizzesTable, eq(quizzesTable.lessonId, lessonsTable.id))
+    .where(
+      and(eq(lessonsTable.courseId, courseId), eq(lessonsTable.type, 'quiz')),
+    )
+    .orderBy(asc(courseSectionsTable.order), asc(lessonsTable.order));
+
+  return rows.map((row) => ({
+    lessonId: row.lessonId,
+    lessonTitle: row.lessonTitle,
+    lessonOrder: row.lessonOrder,
+    sectionId: row.sectionId,
+    sectionTitle: row.sectionTitle,
+    sectionOrder: row.sectionOrder,
+    quizId: row.quizId ?? null,
+  }));
 }
 
 export async function create(data: {

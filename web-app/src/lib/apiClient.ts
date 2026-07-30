@@ -22,15 +22,17 @@ export const PUBLIC_API_URL = "https://api.gats.vn";
 function resolveApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     const host = window.location.hostname;
-    // Always use relative URL in local development to utilize Next.js rewrites
-    if (host === "localhost" || host === "127.0.0.1") {
+    // Use same-origin API on the learner website. In production Nginx sends
+    // `/api` directly to the backend without crossing API bot protection.
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "gats.vn" ||
+      host === "www.gats.vn"
+    ) {
       return "";
     }
-    if (
-      host === "gats.vn" ||
-      host === "www.gats.vn" ||
-      host === "admin.gats.vn"
-    ) {
+    if (host === "admin.gats.vn") {
       return PUBLIC_API_URL;
     }
   }
@@ -55,6 +57,40 @@ type RetriableRequest = {
   _auth401Handled?: boolean;
 };
 
+function normalizeApiError(error: unknown): Error {
+  if (!axios.isAxiosError(error)) {
+    return error instanceof Error
+      ? error
+      : new Error("Không thể kết nối với máy chủ. Vui lòng thử lại.");
+  }
+
+  const data: unknown = error.response?.data;
+  if (typeof data === "string") {
+    const trimmed = data.trim();
+    const isHtml =
+      trimmed.startsWith("<!DOCTYPE html") ||
+      trimmed.startsWith("<html") ||
+      /<title>.*(?:Bot Detection|Human).*<\/title>/i.test(trimmed);
+
+    return new Error(
+      isHtml
+        ? "Máy chủ đang tạm thời từ chối yêu cầu. Vui lòng tải lại trang sau ít phút."
+        : trimmed || error.message
+    );
+  }
+
+  if (data && typeof data === "object" && "message" in data) {
+    const message = (data as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) {
+      return new Error(message);
+    }
+  }
+
+  return new Error(
+    error.message || "Không thể kết nối với máy chủ. Vui lòng thử lại."
+  );
+}
+
 apiClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
@@ -73,7 +109,7 @@ apiClient.interceptors.response.use(
       onUnauthorizedSession?.();
     }
 
-    return Promise.reject(error.response?.data || error.message);
+    return Promise.reject(normalizeApiError(error));
   }
 );
 

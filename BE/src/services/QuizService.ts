@@ -9,6 +9,7 @@ import type {
 } from '@src/models/Quiz.model';
 import { shuffleArray } from '@src/models/Quiz.model';
 import * as AssignmentRepo from '@src/repos/AssignmentRepo';
+import * as CourseRepo from '@src/repos/CourseRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
 import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
@@ -30,6 +31,7 @@ const Errors = {
   INVALID_LESSON_TYPE_CHANGE: 'Cannot change lesson type when quiz data exists',
   INVALID_REORDER: 'Invalid question reorder payload',
   INVALID_SUBMISSION: 'Invalid quiz submission',
+  COURSE_NOT_FOUND: 'Course not found',
 } as const;
 
 async function assertQuizLesson(courseId: string, lessonId: string) {
@@ -469,6 +471,26 @@ export async function assertLessonTypeChangeAllowed(
   }
 }
 
+async function listAiQuizTargets(courseId: string) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+
+  const rows = await QuizRepo.listAiQuizTargetsByCourseId(courseId);
+  return {
+    data: rows.map((row) => ({
+      lessonId: row.lessonId,
+      lessonTitle: row.lessonTitle,
+      sectionId: row.sectionId,
+      sectionTitle: row.sectionTitle,
+      quizId: row.quizId,
+      hasQuiz: Boolean(row.quizId),
+      label: `${row.sectionTitle} · ${row.lessonTitle}`,
+    })),
+  };
+}
+
 export default {
   Errors,
   create,
@@ -484,4 +506,5 @@ export default {
   removeQuestion,
   reorderQuestions,
   assertLessonTypeChangeAllowed,
+  listAiQuizTargets,
 };

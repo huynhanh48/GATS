@@ -72,9 +72,26 @@ export async function resolveViavaDomainFromLessonId(
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
   if (EnvVars.ViavaApiKey) {
-    headers.Authorization = `Bearer ${EnvVars.ViavaApiKey}`;
+    // Node fetch requires header values to be ByteString (code points ≤ 255).
+    const token = EnvVars.ViavaApiKey;
+    for (let i = 0; i < token.length; i++) {
+      if (token.charCodeAt(i) > 255) {
+        throw new RouteError(
+          HttpStatusCodes.INTERNAL_SERVER_ERROR,
+          'VIAVA_API_KEY contains non-ASCII characters',
+        );
+      }
+    }
+    headers.Authorization = `Bearer ${token}`;
   }
   return headers;
+}
+
+/** Filename for multipart Content-Disposition — must be ASCII for Node fetch. */
+function asciiFilename(name: string | undefined): string {
+  const base = (name ?? 'upload.bin').split(/[/\\]/).pop() ?? 'upload.bin';
+  const ascii = base.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '_');
+  return ascii.trim() || 'upload.bin';
 }
 
 function asErrorDetail(payload: unknown, status: number): string {
@@ -153,28 +170,45 @@ export type LearningPathGenerateInput = {
 export async function generateLearningPath(
   input: LearningPathGenerateInput,
 ): Promise<Record<string, unknown>> {
-  const form = new FormData();
-  form.append('language', input.language);
-  form.append('target_level', input.target_level);
-  form.append('detail_level', input.detail_level);
-  form.append('domain', input.domain);
-  form.append('max_lessons', String(input.max_lessons ?? 1));
-  form.append(
-    'exercises_per_lesson',
-    String(input.exercises_per_lesson ?? 5),
-  );
+  // Viava CourseGenerateRequest via Depends() reads scalar fields as query
+  // params (see viava tests). Putting Vietnamese `text` in FormData/headers
+  // can trip Node fetch ByteString limits; URLSearchParams encodes UTF-8 safely.
+  const params = new URLSearchParams({
+    language: input.language,
+    target_level: input.target_level,
+    detail_level: input.detail_level,
+    domain: input.domain,
+    max_lessons: String(input.max_lessons ?? 1),
+    exercises_per_lesson: String(input.exercises_per_lesson ?? 5),
+  });
+
+  let body: FormData | undefined;
 
   if (input.file) {
-    form.append('file', input.file.blob, input.file.filename);
-  } else if (input.file_url) {
-    form.append('file_url', input.file_url);
-  } else if (input.text) {
-    form.append('text', input.text);
+    body = new FormData();
+    body.append('file', input.file.blob, asciiFilename(input.file.filename));
+  } else if (input.file_url?.trim()) {
+    params.set('file_url', input.file_url.trim());
+  } else if (input.text?.trim()) {
+    const text = input.text.trim();
+    // Keep short text in query (matches Viava smoke tests). Long text → file
+    // part so we stay under typical URL length limits.
+    if (Buffer.byteLength(text, 'utf8') <= 6_000) {
+      params.set('text', text);
+    } else {
+      body = new FormData();
+      body.append(
+        'file',
+        new Blob([text], { type: 'text/plain;charset=UTF-8' }),
+        'content.txt',
+      );
+    }
   }
 
-  const payload = await viavaRequest('/course/learning-path/generate', {
+  const path = `/course/learning-path/generate?${params.toString()}`;
+  const payload = await viavaRequest(path, {
     method: 'POST',
-    body: form,
+    ...(body ? { body } : {}),
   });
   return (payload ?? {}) as Record<string, unknown>;
 }
