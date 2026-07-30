@@ -46,12 +46,14 @@
       },
     },
     {
-      // Viava course AI (FastAPI). Bind 0.0.0.0 so nginx (other container) can reach :8000.
+      // Viava course AI (FastAPI). Bind 0.0.0.0 so an external reverse proxy can reach :8000.
       // BE inside this container uses http://127.0.0.1:8000.
+      // interpreter: "none" — do NOT run the venv binary through Node (pm2 default).
       name: "viava-api",
       cwd: "./viava",
-      script: "./.venv/bin/uvicorn",
-      args: "servers.rest_api.main:app --host 0.0.0.0 --port 8000",
+      script: "./.venv/bin/python",
+      args: "-m uvicorn servers.rest_api.main:app --host 0.0.0.0 --port 8000",
+      interpreter: "none",
       env: {
         RAG_WORK_DIR: "/app/viava/rag_data",
       },

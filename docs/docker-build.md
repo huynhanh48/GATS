@@ -129,6 +129,8 @@ Swagger: `https://api.gats.vn/docs`
 | Port đã dùng | Đổi mapping trong `docker-compose.yml` hoặc tắt process host |
 | `pg_config` / Failed to build `psycopg2` | Đã dùng `psycopg2-binary`; rebuild image |
 | `viava-api` restart loop | Điền đủ `AZURE_OPENAI_*` (+ transcribe) vào root `.env` rồi `up` lại |
+| `SyntaxError: Unexpected identifier 'uvicorn'` | PM2 đang chạy Python bằng Node — cần `interpreter: "none"` + `python -m uvicorn` trong `ecosystem.config.js`, rồi rebuild/restart `app` |
+| Compose nginx fail port 80 | Có reverse proxy ngoài rồi thì **không cần** service `nginx` của compose; Admin AI chỉ cần `viava-api` online trong container (`127.0.0.1:8000`) |
 
 ## Chỉ chạy infra (dev BE trên máy)
 
