@@ -16,6 +16,20 @@ type Props = {
 
 type SourceMode = "text" | "file_url" | "file";
 
+function isDroppedConnection(message: string, status?: number): boolean {
+  if (status === 504 || status === 502 || status === 524) return true;
+  const m = message.toLowerCase();
+  return (
+    m.includes("network error") ||
+    m.includes("504") ||
+    m.includes("502") ||
+    m.includes("timeout") ||
+    m.includes("timed out") ||
+    m.includes("econnaborted") ||
+    m.includes("failed to fetch")
+  );
+}
+
 export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
@@ -63,8 +77,26 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
         form.append("file", file);
       }
 
+      const beforeRes = await quizClient.getAdmin(quizId);
+      const previousCount = beforeRes.data?.data?.questions?.length ?? 0;
+
       const res = await quizClient.aiGenerate(quizId, form);
       if (res.error) {
+        if (isDroppedConnection(res.error.message, res.error.status)) {
+          toast.message("Mất kết nối proxy — đang tải lại câu hỏi từ quiz…");
+          const recovered = await quizClient.recoverQuestionsAfterDrop(
+            quizId,
+            previousCount,
+          );
+          if (recovered.length > 0) {
+            onGenerated(recovered);
+            toast.success(
+              `Proxy cắt response, nhưng đã thêm ${recovered.length} câu hỏi vào quiz`,
+            );
+            setOpen(false);
+            return;
+          }
+        }
         toast.error(res.error.message);
         return;
       }

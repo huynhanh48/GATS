@@ -155,14 +155,28 @@ export const quizClient = {
   },
 
   /**
-   * After gateway 504/timeout, BE may still finish apply. Poll quiz for new questions.
+   * After gateway drop / Network Error, BE may still have applied questions.
+   * Check once immediately, then poll briefly.
    */
+  async recoverQuestionsAfterDrop(
+    quizId: string,
+    previousCount: number,
+    options?: { attempts?: number; delayMs?: number },
+  ): Promise<QuizQuestion[]> {
+    const immediate = await this.getAdmin(quizId);
+    const now = immediate.data?.data?.questions ?? [];
+    if (now.length > previousCount) {
+      return now.slice(previousCount);
+    }
+    return this.pollNewQuestions(quizId, previousCount, options);
+  },
+
   async pollNewQuestions(
     quizId: string,
     previousCount: number,
     options?: { attempts?: number; delayMs?: number },
   ): Promise<QuizQuestion[]> {
-    const attempts = options?.attempts ?? 18;
+    const attempts = options?.attempts ?? 24;
     const delayMs = options?.delayMs ?? 5_000;
     for (let i = 0; i < attempts; i++) {
       await new Promise((r) => setTimeout(r, delayMs));

@@ -20,6 +20,20 @@ const labelClass =
 
 type CourseOption = { id: string; title: string };
 
+function isDroppedConnection(message: string, status?: number): boolean {
+  if (status === 504 || status === 502 || status === 524) return true;
+  const m = message.toLowerCase();
+  return (
+    m.includes("network error") ||
+    m.includes("504") ||
+    m.includes("502") ||
+    m.includes("timeout") ||
+    m.includes("timed out") ||
+    m.includes("econnaborted") ||
+    m.includes("failed to fetch")
+  );
+}
+
 export function AiGenPlayground() {
   const [activeTab, setActiveTab] = useState<TabKey>("quiz_gen");
   const [pending, startTransition] = useTransition();
@@ -193,6 +207,9 @@ export function AiGenPlayground() {
       const targetQuizId = await ensureQuizId(targetCourseId, selectedTarget);
       if (!targetQuizId) return;
 
+      const beforeRes = await quizClient.getAdmin(targetQuizId);
+      const previousCount = beforeRes.data?.data?.questions?.length ?? 0;
+
       const form = new FormData();
       form.append("language", language);
       form.append("target_level", targetLevel);
@@ -220,6 +237,22 @@ export function AiGenPlayground() {
         const res = await quizClient.aiGenerate(targetQuizId, form);
         setLastResponse(res);
         if (res.error) {
+          if (isDroppedConnection(res.error.message, res.error.status)) {
+            toast.message("Mất kết nối proxy — đang tải lại câu hỏi từ quiz…");
+            const recovered = await quizClient.recoverQuestionsAfterDrop(
+              targetQuizId,
+              previousCount,
+            );
+            setLastResponse({ recovered, error: res.error });
+            if (recovered.length > 0) {
+              setGeneratedQuestions(recovered);
+              setSkippedCount(null);
+              toast.success(
+                `Proxy cắt response, nhưng đã có ${recovered.length} câu hỏi trong quiz`,
+              );
+              return;
+            }
+          }
           toast.error(`Lỗi: ${res.error.message}`);
           return;
         }
@@ -232,9 +265,22 @@ export function AiGenPlayground() {
             `Sinh thành công ${questions.length} câu hỏi!${skipped ? ` (Bỏ qua ${skipped})` : ""}`,
         );
       } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Đã xảy ra lỗi khi gọi API",
-        );
+        const msg = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gọi API";
+        if (isDroppedConnection(msg)) {
+          toast.message("Mất kết nối — đang tải lại câu hỏi từ quiz…");
+          const recovered = await quizClient.recoverQuestionsAfterDrop(
+            targetQuizId,
+            previousCount,
+          );
+          if (recovered.length > 0) {
+            setGeneratedQuestions(recovered);
+            toast.success(
+              `Proxy cắt response, nhưng đã có ${recovered.length} câu hỏi trong quiz`,
+            );
+            return;
+          }
+        }
+        toast.error(msg);
       }
     });
   }
