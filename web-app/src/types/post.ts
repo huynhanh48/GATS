@@ -19,4 +19,6 @@ export interface Post {
   category?: CourseCategory | null;
   tags?: CourseTag[];
   author?: CourseAuthor | null;
+  prevPost?: { title: string; slug: string } | null;
+  nextPost?: { title: string; slug: string } | null;
 }

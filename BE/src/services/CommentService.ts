@@ -88,16 +88,22 @@ async function listReplies(
 
 async function create(
   postId: string,
-  userId: number,
+  userId: number | undefined,
   input: CreateCommentInput,
   isAuthenticated: boolean,
 ): Promise<CommentRecord> {
   await PostService.assertPostReadableById(postId, userId, isAuthenticated);
 
+  if (!userId && (!input.guestName || !input.guestEmail)) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Guest name and email are required');
+  }
+
   const content = await maskBannedWords(input.content);
   return CommentRepo.create({
     postId,
-    userId,
+    userId: userId ?? null,
+    guestName: userId ? null : input.guestName,
+    guestEmail: userId ? null : input.guestEmail,
     content,
     parentId: null,
   });
@@ -106,11 +112,15 @@ async function create(
 async function reply(
   postId: string,
   parentId: string,
-  userId: number,
+  userId: number | undefined,
   input: CreateCommentInput,
   isAuthenticated: boolean,
 ): Promise<CommentRecord> {
   await PostService.assertPostReadableById(postId, userId, isAuthenticated);
+
+  if (!userId && (!input.guestName || !input.guestEmail)) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Guest name and email are required');
+  }
 
   const parent = await CommentRepo.findById(parentId);
   if (
@@ -125,7 +135,9 @@ async function reply(
   const content = await maskBannedWords(input.content);
   return CommentRepo.create({
     postId,
-    userId,
+    userId: userId ?? null,
+    guestName: userId ? null : input.guestName,
+    guestEmail: userId ? null : input.guestEmail,
     content,
     parentId,
   });

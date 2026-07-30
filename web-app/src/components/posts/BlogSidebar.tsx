@@ -13,23 +13,26 @@ interface BlogSidebarProps {
 export const BlogSidebar = ({ tocContent }: BlogSidebarProps = {}) => {
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [recentPosts, setRecentPosts] = useState<Post[]>([]);
+  const [tags, setTags] = useState<{id: string, name: string, slug: string}[]>([]);
   
   useEffect(() => {
     const fetchSidebarData = async () => {
       try {
-        const catRes = await apiClient.get(PathApi.categories.list, { params: { type: 'post', status: 'active' } }) as any;
-        if (catRes?.data) setCategories(catRes.data);
+        const [catRes, postRes, tagRes] = await Promise.all([
+          apiClient.get(PathApi.categories.list, { params: { type: 'post', status: 'active' } }),
+          apiClient.get(PathApi.posts.list, { params: { page: 1, limit: 3, status: 'published' } }),
+          apiClient.get(PathApi.tags.list, { params: { type: 'post' } })
+        ]) as [any, any, any];
         
-        const postRes = await apiClient.get(PathApi.posts.list, { params: { page: 1, limit: 3, status: 'published' } }) as any;
+        if (catRes?.data) setCategories(catRes.data);
         if (postRes?.data) setRecentPosts(postRes.data);
+        if (tagRes?.data) setTags(tagRes.data);
       } catch (error) {
         console.error('Error fetching sidebar data:', error);
       }
     };
     fetchSidebarData();
   }, []);
-
-  const MOCK_TAGS = ['Free couses', 'Marketing', 'Idea', 'LMS', 'LearnPress', 'Instructor'];
 
   return (
     <div className="w-full lg:w-[320px] shrink-0 space-y-10">
@@ -93,14 +96,19 @@ export const BlogSidebar = ({ tocContent }: BlogSidebarProps = {}) => {
           Tags
         </h3>
         <div className="flex flex-wrap gap-2">
-          {MOCK_TAGS.map(tag => (
-            <span 
-              key={tag}
-              className="px-4 py-2 text-[1.3rem] rounded-md border border-slate-200 text-slate-600 hover:border-primary hover:text-primary cursor-pointer transition-colors"
-            >
-              {tag}
-            </span>
-          ))}
+          {tags.length > 0 ? (
+            tags.map(tag => (
+              <Link 
+                href={`/posts?tag=${tag.slug}`}
+                key={tag.id}
+                className="px-4 py-2 text-[1.3rem] rounded-md border border-slate-200 text-slate-600 hover:border-primary hover:text-primary transition-colors"
+              >
+                {tag.name}
+              </Link>
+            ))
+          ) : (
+            <span className="text-slate-400 text-[1.3rem]">Không có từ khóa nào</span>
+          )}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowUpDown,
@@ -102,9 +103,18 @@ export default function CoursesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchParams = useSearchParams();
+  const keywordFromUrl = searchParams.get("keyword")?.trim() ?? "";
+  const [searchInput, setSearchInput] = useState(keywordFromUrl);
+  const [searchQuery, setSearchQuery] = useState(keywordFromUrl);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  useEffect(() => {
+    if (!keywordFromUrl) return;
+    setSearchInput(keywordFromUrl);
+    setSearchQuery(keywordFromUrl);
+    setCurrentPage(1);
+  }, [keywordFromUrl]);
 
   const [openAccordion, setOpenAccordion] = useState<Record<string, boolean>>({
     level: true,

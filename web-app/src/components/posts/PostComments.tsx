@@ -61,8 +61,24 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
   const [replyContent, setReplyContent] = useState('');
   const [submittingReply, setSubmittingReply] = useState(false);
 
+  // Guest state
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [saveGuestInfo, setSaveGuestInfo] = useState(false);
+
   const currentUsername = user?.userName || '';
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    // Load saved guest info
+    if (typeof window !== 'undefined') {
+      const savedName = localStorage.getItem('guestName');
+      const savedEmail = localStorage.getItem('guestEmail');
+      if (savedName) setGuestName(savedName);
+      if (savedEmail) setGuestEmail(savedEmail);
+      if (savedName || savedEmail) setSaveGuestInfo(true);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,20 +129,35 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
     openAuthModal('login');
   };
 
+  const handleSaveGuestInfo = () => {
+    if (saveGuestInfo) {
+      localStorage.setItem('guestName', guestName);
+      localStorage.setItem('guestEmail', guestEmail);
+    } else {
+      localStorage.removeItem('guestName');
+      localStorage.removeItem('guestEmail');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || submitting) return;
 
-    if (!isAuthenticated) {
-      handleLoginPrompt();
+    if (!isAuthenticated && (!guestName.trim() || !guestEmail.trim())) {
+      toast.error('Vui lòng nhập Tên và Email để bình luận');
       return;
     }
 
     setSubmitting(true);
     try {
-      const response = (await apiClient.post(PathApi.comments.create(postId), {
-        content: content.trim(),
-      })) as { comment?: Comment; data?: Comment };
+      const payload: any = { content: content.trim() };
+      if (!isAuthenticated) {
+        payload.guestName = guestName.trim();
+        payload.guestEmail = guestEmail.trim();
+        handleSaveGuestInfo();
+      }
+
+      const response = (await apiClient.post(PathApi.comments.create(postId), payload)) as { comment?: Comment; data?: Comment };
 
       const newComment = response.comment || response.data;
       if (newComment) {
@@ -135,8 +166,8 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
           likeCount: 0,
           isLiked: false,
           author: {
-            id: newComment.userId,
-            userName: currentUsername || 'Bạn',
+            id: newComment.userId || 0,
+            userName: currentUsername || guestName.trim() || 'Bạn',
           },
         };
         setComments((prev) => [enrichedComment, ...prev]);
@@ -156,16 +187,21 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
   const handleSubmitReply = async (parentId: string) => {
     if (!replyContent.trim() || submittingReply) return;
 
-    if (!isAuthenticated) {
-      handleLoginPrompt();
+    if (!isAuthenticated && (!guestName.trim() || !guestEmail.trim())) {
+      toast.error('Vui lòng nhập Tên và Email ở Form dưới cùng để phản hồi');
       return;
     }
 
     setSubmittingReply(true);
     try {
-      const response = (await apiClient.post(PathApi.comments.createReply(postId, parentId), {
-        content: replyContent.trim(),
-      })) as { comment?: Comment; data?: Comment };
+      const payload: any = { content: replyContent.trim() };
+      if (!isAuthenticated) {
+        payload.guestName = guestName.trim();
+        payload.guestEmail = guestEmail.trim();
+        handleSaveGuestInfo();
+      }
+
+      const response = (await apiClient.post(PathApi.comments.createReply(postId, parentId), payload)) as { comment?: Comment; data?: Comment };
 
       const newReply = response.comment || response.data;
       if (newReply) {
@@ -174,8 +210,8 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
           likeCount: 0,
           isLiked: false,
           author: {
-            id: newReply.userId,
-            userName: currentUsername || 'Bạn',
+            id: newReply.userId || 0,
+            userName: currentUsername || guestName.trim() || 'Bạn',
           },
         };
         setRepliesMap(prev => ({
@@ -475,57 +511,56 @@ export const PostComments = ({ postId }: PostCommentsProps) => {
           Your email address will not be published. Required fields are marked *
         </p>
 
-        {isAuthenticated ? (
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {!isAuthenticated && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <input
                 type="text"
                 placeholder="Name*"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
                 className="w-full p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
                 required
               />
               <input
                 type="email"
                 placeholder="Email*"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
                 className="w-full p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors text-[1.4rem]"
                 required
               />
             </div>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Comment"
-              className="w-full min-h-[160px] p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors resize-y text-[1.4rem]"
-              required
-            />
+          )}
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Comment"
+            className="w-full min-h-[160px] p-4 bg-transparent border border-slate-200 rounded-lg text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-primary transition-colors resize-y text-[1.4rem]"
+            required
+          />
+          {!isAuthenticated && (
             <div className="flex items-center gap-3">
-              <input type="checkbox" id="save-info" className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary" />
+              <input 
+                type="checkbox" 
+                id="save-info" 
+                checked={saveGuestInfo}
+                onChange={(e) => setSaveGuestInfo(e.target.checked)}
+                className="w-5 h-5 rounded border-slate-300 text-primary focus:ring-primary" 
+              />
               <label htmlFor="save-info" className="text-[1.4rem] text-slate-500">
                 Save my name, email in this browser for the next time I comment
               </label>
             </div>
-            <button
-              type="submit"
-              disabled={submitting || !content.trim()}
-              className="px-8 py-3 bg-[#FF7622] text-white font-semibold rounded-full hover:bg-[#FF7622]/90 disabled:opacity-50 transition-colors text-[1.4rem]"
-            >
-              {submitting ? 'Posting...' : 'Post Comment'}
-            </button>
-          </form>
-        ) : (
-          <div className="py-12 border border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
-            <p className="text-slate-500 text-[1.4rem]">
-              You must be logged in to post a comment.
-            </p>
-            <button
-              onClick={handleLoginPrompt}
-              className="px-8 py-3 bg-[#FF7622] text-white font-semibold rounded-full flex items-center gap-2 hover:bg-[#FF7622]/90 transition-colors text-[1.4rem]"
-            >
-              <LogIn className="w-5 h-5" />
-              Login to Comment
-            </button>
-          </div>
-        )}
+          )}
+          <button
+            type="submit"
+            disabled={submitting || !content.trim()}
+            className="px-8 py-3 bg-[#FF7622] text-white font-semibold rounded-full hover:bg-[#FF7622]/90 disabled:opacity-50 transition-colors text-[1.4rem]"
+          >
+            {submitting ? 'Posting...' : 'Post Comment'}
+          </button>
+        </form>
       </div>
     </div>
   );

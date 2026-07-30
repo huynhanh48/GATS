@@ -238,6 +238,16 @@ async function getBySlug(
   const categoryMap = await CategoryRepo.findByPostIds([row.id]);
   const category = categoryMap.get(row.id) ?? null;
 
+  let prevPost: { title: string; slug: string } | undefined;
+  let nextPost: { title: string; slug: string } | undefined;
+
+  if (row.publishedAt) {
+    [prevPost, nextPost] = await Promise.all([
+      PostRepo.findAdjacentPost(row.publishedAt, 'prev', { hasAdminRead: adminRead, isAuthenticated }),
+      PostRepo.findAdjacentPost(row.publishedAt, 'next', { hasAdminRead: adminRead, isAuthenticated }),
+    ]);
+  }
+
   return {
     id: row.id,
     title: row.title,
@@ -261,6 +271,8 @@ async function getBySlug(
     },
     category,
     tags,
+    prevPost,
+    nextPost,
   };
 }
 

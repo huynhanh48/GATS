@@ -8,7 +8,9 @@ export const commentStatusSchema = z.enum(commentStatusEnum.enumValues);
 export const commentRecordSchema = z.object({
   id: z.string().uuid(),
   postId: z.string().uuid(),
-  userId: z.number().int().positive(),
+  userId: z.number().int().positive().nullable(),
+  guestName: z.string().nullable().optional(),
+  guestEmail: z.string().email().nullable().optional(),
   parentId: z.string().uuid().nullable(),
   content: z.string(),
   status: commentStatusSchema,
@@ -21,12 +23,20 @@ export const commentListItemSchema = commentRecordSchema
   .extend({
     likeCount: z.number().int().min(0),
     isLiked: z.boolean(),
-    author: postAuthorSchema,
+    author: z.object({
+      id: z.number().int().positive().optional(),
+      userName: z.string(),
+    }),
   });
 
 export const createCommentSchema = z.object({
   content: z.string().min(1).max(5000),
-});
+  guestName: z.string().min(1).max(255).optional(),
+  guestEmail: z.string().email().max(255).optional(),
+}).refine(data => {
+  // We'll enforce that guestName/Email are provided at the service level if userId is not present
+  return true;
+}, "Guest name and email are required if not authenticated");
 
 export const updateCommentSchema = z
   .object({

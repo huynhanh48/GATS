@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, ChevronDown, ShoppingCart, Menu, BookOpen, PenTool, Users, Search } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Container } from "@/components/layout/Container";
+import { SearchModal } from "@/components/layout/SearchModal";
 import { theme as designTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
@@ -48,6 +49,7 @@ export function Header() {
   const { user, logout, status } = useAuth();
   const { openAuthModal } = useAuthModal();
   const { items } = useCart();
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -174,19 +176,7 @@ export function Header() {
                 )}
               </Link>
 
-              {mounted && (
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="flex items-center justify-center w-9 h-9 rounded-full text-slate-600 hover:bg-slate-100 transition-colors"
-                  aria-label="Toggle dark mode"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="w-[1.6rem] h-[1.6rem]" />
-                  ) : (
-                    <Moon className="w-[1.6rem] h-[1.6rem]" />
-                  )}
-                </button>
-              )}
+              {/* Dark mode toggle — hidden for now */}
             </div>
 
             {/* Auth */}
@@ -230,10 +220,17 @@ export function Header() {
                 </button>
               ))}
 
-            {/* Search Button (From Template) */}
-            <button className="hidden md:flex items-center justify-center w-10 h-10 rounded-full border border-[#ff782d] text-[#ff782d] hover:bg-[#ff782d] hover:text-white transition-colors">
+            {/* Search Button */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-full border border-[#ff782d] text-[#ff782d] hover:bg-[#ff782d] hover:text-white transition-colors"
+              aria-label="Tìm kiếm"
+            >
               <Search className="w-[1.6rem] h-[1.6rem]" />
             </button>
+
+            <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
 
             {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center">

@@ -294,31 +294,16 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
                 <div className="flex flex-wrap gap-2">
                   {post.tags && post.tags.length > 0 ? (
                     post.tags.map(t => (
-                      <span key={t.id} className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
+                      <Link 
+                        href={`/posts?tag=${t.slug}`}
+                        key={t.id} 
+                        className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer"
+                      >
                         {t.name}
-                      </span>
+                      </Link>
                     ))
                   ) : (
-                    <>
-                      <span className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
-                        Free couses
-                      </span>
-                      <span className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
-                        Marketing
-                      </span>
-                      <span className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
-                        Idea
-                      </span>
-                      <span className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
-                        LMS
-                      </span>
-                      <span className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
-                        LearnPress
-                      </span>
-                      <span className="px-4 py-1.5 border border-slate-200 rounded-md text-[1.3rem] text-slate-600 hover:text-primary hover:border-primary transition-colors cursor-pointer">
-                        Instructor
-                      </span>
-                    </>
+                    <span className="text-slate-400 text-[1.3rem] italic">Chưa có từ khóa</span>
                   )}
                 </div>
               </div>
@@ -335,31 +320,38 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
               </div>
             </div>
 
-            {/* Previous / Next Article Links (Mocked as per template) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
-              <div className="flex items-center gap-4 p-6 border border-slate-100 rounded-2xl hover:border-primary/30 transition-all cursor-pointer group">
-                <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                  <ChevronLeft className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-[1.2rem] text-slate-400 mb-1 block">Bài viết trước</span>
-                  <h4 className="text-[1.4rem] font-bold text-[#111827] line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                    Best LearnPress WordPress Theme Collection For 2023
-                  </h4>
-                </div>
+            {/* Previous / Next Article Links */}
+            {(post.prevPost || post.nextPost) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
+                {post.prevPost ? (
+                  <Link href={`/posts/${post.prevPost.slug}`} className="flex items-center gap-4 p-6 border border-slate-100 rounded-2xl hover:border-primary/30 hover:shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] transition-all cursor-pointer group">
+                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                      <ChevronLeft className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[1.2rem] text-slate-400 mb-1 block">Bài viết trước</span>
+                      <h4 className="text-[1.4rem] font-bold text-[#111827] line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                        {post.prevPost.title}
+                      </h4>
+                    </div>
+                  </Link>
+                ) : <div />}
+                
+                {post.nextPost ? (
+                  <Link href={`/posts/${post.nextPost.slug}`} className="flex items-center gap-4 p-6 border border-slate-100 rounded-2xl hover:border-primary/30 hover:shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] transition-all cursor-pointer group text-right flex-row-reverse">
+                    <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                      <ChevronRight className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-[1.2rem] text-slate-400 mb-1 block">Bài tiếp theo</span>
+                      <h4 className="text-[1.4rem] font-bold text-[#111827] line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                        {post.nextPost.title}
+                      </h4>
+                    </div>
+                  </Link>
+                ) : <div />}
               </div>
-              <div className="flex items-center gap-4 p-6 border border-slate-100 rounded-2xl hover:border-primary/30 transition-all cursor-pointer group text-right flex-row-reverse">
-                <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-[1.2rem] text-slate-400 mb-1 block">Bài tiếp theo</span>
-                  <h4 className="text-[1.4rem] font-bold text-[#111827] line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                    Best LearnPress WordPress Theme Collection For 2023
-                  </h4>
-                </div>
-              </div>
-            </div>
+            )}
 
             {/* Comments Section */}
             <PostComments postId={post.id} />
