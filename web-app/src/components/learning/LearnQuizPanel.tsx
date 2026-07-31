@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -8,6 +8,7 @@ import {
   submitLessonQuiz,
   type QuizSubmitResult,
   type QuizTakePayload,
+  type QuizTakeQuestion,
 } from "@/services/learning.service";
 
 type Props = {
@@ -15,6 +16,104 @@ type Props = {
   lessonId: string;
   onPassed?: () => void;
 };
+
+/** Matches underscores used as blanks (___ or longer). */
+const BLANK_PATTERN = /_{3,}/g;
+const BLANK_SPLIT = /_{3,}/;
+export const FILL_BLANK_JOIN = "|";
+
+export function countFillBlanks(questionText: string): number {
+  return (questionText.match(BLANK_PATTERN) ?? []).length;
+}
+
+export function splitFillBlankParts(value: string, blankCount: number): string[] {
+  const raw = value ?? "";
+  if (blankCount <= 1) return [raw];
+  const parts = raw.includes(FILL_BLANK_JOIN)
+    ? raw.split(FILL_BLANK_JOIN)
+    : raw.includes(";")
+      ? raw.split(";")
+      : raw.split(",");
+  const normalized = parts.map((p) => p.trim());
+  while (normalized.length < blankCount) normalized.push("");
+  return normalized.slice(0, blankCount);
+}
+
+export function joinFillBlankParts(parts: string[]): string {
+  return parts.map((p) => p.trim()).join(FILL_BLANK_JOIN);
+}
+
+const softInputClass =
+  "rounded-lg border border-border/50 bg-muted/25 px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary/40 focus:bg-background focus:ring-2 focus:ring-primary/10";
+
+function FillBlankAnswer({
+  question,
+  value,
+  onChange,
+  disabled,
+}: {
+  question: QuizTakeQuestion;
+  value: string;
+  onChange: (next: string) => void;
+  disabled?: boolean;
+}) {
+  const blankCount = countFillBlanks(question.question);
+  const parts =
+    blankCount > 1
+      ? splitFillBlankParts(value, blankCount)
+      : [value ?? ""];
+
+  const updatePart = (index: number, next: string) => {
+    if (blankCount <= 1) {
+      onChange(next);
+      return;
+    }
+    const copy = [...parts];
+    copy[index] = next;
+    onChange(joinFillBlankParts(copy));
+  };
+
+  if (blankCount <= 1) {
+    return (
+      <input
+        value={parts[0] || ""}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className={`w-full ${softInputClass}`}
+        placeholder="Nhập đáp án…"
+        autoComplete="off"
+      />
+    );
+  }
+
+  const segments = question.question.split(BLANK_SPLIT);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm leading-8 text-foreground">
+        {segments.map((segment, index) => (
+          <Fragment key={`seg-${index}`}>
+            <span>{segment}</span>
+            {index < blankCount ? (
+              <input
+                value={parts[index] || ""}
+                onChange={(e) => updatePart(index, e.target.value)}
+                disabled={disabled}
+                className={`mx-1 inline-block min-w-[7rem] max-w-[12rem] align-baseline ${softInputClass}`}
+                placeholder={`Ô ${index + 1}`}
+                aria-label={`Ô trống ${index + 1}`}
+                autoComplete="off"
+              />
+            ) : null}
+          </Fragment>
+        ))}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        Điền lần lượt từng ô trống trong câu.
+      </p>
+    </div>
+  );
+}
 
 export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
   const [quiz, setQuiz] = useState<QuizTakePayload | null>(null);
@@ -65,9 +164,18 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
       }
     }
 
-    const missing = quiz.questions.filter(
-      (q) => q.isRequired !== false && !answers[q.id]?.trim(),
-    );
+    const missing = quiz.questions.filter((q) => {
+      if (q.isRequired === false) return false;
+      const value = answers[q.id]?.trim();
+      if (!value) return true;
+      if (q.type === "fill_blank") {
+        const blanks = countFillBlanks(q.question);
+        if (blanks > 1) {
+          return splitFillBlankParts(value, blanks).some((p) => !p.trim());
+        }
+      }
+      return false;
+    });
     if (missing.length > 0) {
       toast.error("Vui lòng trả lời hết các câu bắt buộc");
       return;
@@ -94,7 +202,7 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-8 flex items-center justify-center gap-2 text-muted-foreground">
+      <div className="rounded-2xl bg-muted/20 p-8 flex items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin" /> Đang tải quiz…
       </div>
     );
@@ -102,7 +210,7 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
 
   if (error || !quiz) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-3">
+      <div className="space-y-3 rounded-2xl bg-muted/20 p-5">
         <p className="text-sm text-destructive">{error || "Không có quiz"}</p>
         <button
           type="button"
@@ -116,12 +224,10 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-6">
+    <div className="space-y-5 rounded-2xl bg-muted/20 p-4 sm:p-5">
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">
-          Quiz
-        </p>
-        <h3 className="text-lg font-bold">{quiz.title || "Bài kiểm tra"}</h3>
+        <p className="mb-1 text-xs font-medium text-primary">Quiz</p>
+        <h3 className="text-lg font-semibold">{quiz.title || "Bài kiểm tra"}</h3>
         {quiz.description ? (
           <p className="text-sm text-muted-foreground mt-1">{quiz.description}</p>
         ) : null}
@@ -153,47 +259,66 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
       ) : (
         <>
           <div className="space-y-5">
-            {quiz.questions.map((q, idx) => (
-              <div key={q.id} className="space-y-2">
-                <p className="font-semibold text-sm">
-                  {idx + 1}. {q.question}
-                  <span className="text-muted-foreground font-normal">
-                    {" "}
-                    ({q.points} điểm)
-                  </span>
-                </p>
-                {q.type === "fill_blank" ? (
-                  <input
-                    value={answers[q.id] || ""}
-                    onChange={(e) =>
-                      setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                    }
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
-                    placeholder="Nhập đáp án"
-                  />
-                ) : (
-                  <div className="space-y-2">
-                    {(q.answers ?? []).map((opt) => (
-                      <label
-                        key={opt.id}
-                        className="flex items-start gap-2 rounded-xl border border-border px-3 py-2 text-sm cursor-pointer hover:bg-muted/50"
-                      >
-                        <input
-                          type="radio"
-                          name={q.id}
-                          checked={answers[q.id] === opt.id}
-                          onChange={() =>
-                            setAnswers((prev) => ({ ...prev, [q.id]: opt.id }))
-                          }
-                          className="mt-1"
-                        />
-                        <span>{opt.answer}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+            {quiz.questions.map((q, idx) => {
+              const blanks = countFillBlanks(q.question);
+              const showTitleSeparately =
+                q.type !== "fill_blank" || blanks <= 1;
+
+              return (
+                <div key={q.id} className="space-y-2">
+                  {showTitleSeparately ? (
+                    <p className="font-semibold text-sm">
+                      {idx + 1}. {q.question}
+                      <span className="text-muted-foreground font-normal">
+                        {" "}
+                        ({q.points} điểm)
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="font-semibold text-sm">
+                      {idx + 1}.
+                      <span className="text-muted-foreground font-normal">
+                        {" "}
+                        ({q.points} điểm)
+                      </span>
+                    </p>
+                  )}
+                  {q.type === "fill_blank" ? (
+                    <FillBlankAnswer
+                      question={q}
+                      value={answers[q.id] || ""}
+                      onChange={(next) =>
+                        setAnswers((prev) => ({ ...prev, [q.id]: next }))
+                      }
+                      disabled={submitting}
+                    />
+                  ) : (
+                    <div className="space-y-2">
+                      {(q.answers ?? []).map((opt) => (
+                        <label
+                          key={opt.id}
+                          className="flex items-start gap-2 rounded-xl border border-border/60 bg-muted/15 px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40"
+                        >
+                          <input
+                            type="radio"
+                            name={q.id}
+                            checked={answers[q.id] === opt.id}
+                            onChange={() =>
+                              setAnswers((prev) => ({
+                                ...prev,
+                                [q.id]: opt.id,
+                              }))
+                            }
+                            className="mt-1"
+                          />
+                          <span>{opt.answer}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <button
             type="button"
