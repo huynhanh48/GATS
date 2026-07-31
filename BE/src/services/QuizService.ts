@@ -10,6 +10,7 @@ import type {
 import { shuffleArray } from '@src/models/Quiz.model';
 import * as AssignmentRepo from '@src/repos/AssignmentRepo';
 import * as CourseRepo from '@src/repos/CourseRepo';
+import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
 import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
@@ -493,17 +494,33 @@ async function listAiQuizTargets(courseId: string) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
   }
 
-  const rows = await QuizRepo.listAiQuizTargetsByCourseId(courseId);
+  const [sections, lessons] = await Promise.all([
+    CourseSectionRepo.listByCourse(courseId),
+    LessonRepo.listByCourse(courseId),
+  ]);
+  const sectionById = new Map(
+    sections.map((section) => [section.id, section]),
+  );
+  const quizLessons = lessons.filter((lesson) => lesson.type === 'quiz');
+  const quizzes = await Promise.all(
+    quizLessons.map((lesson) => QuizRepo.findByLessonId(lesson.id)),
+  );
+
   return {
-    data: rows.map((row) => ({
-      lessonId: row.lessonId,
-      lessonTitle: row.lessonTitle,
-      sectionId: row.sectionId,
-      sectionTitle: row.sectionTitle,
-      quizId: row.quizId,
-      hasQuiz: Boolean(row.quizId),
-      label: `${row.sectionTitle} · ${row.lessonTitle}`,
-    })),
+    data: quizLessons.map((lesson, index) => {
+      const section = sectionById.get(lesson.sectionId);
+      const quizId = quizzes[index]?.id ?? null;
+      const sectionTitle = section?.title ?? 'Chương chưa xác định';
+      return {
+        lessonId: lesson.id,
+        lessonTitle: lesson.title,
+        sectionId: lesson.sectionId,
+        sectionTitle,
+        quizId,
+        hasQuiz: Boolean(quizId),
+        label: `${sectionTitle} · ${lesson.title}`,
+      };
+    }),
   };
 }
 
