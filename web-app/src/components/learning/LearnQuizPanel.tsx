@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -17,9 +17,11 @@ type Props = {
   onPassed?: () => void;
 };
 
-/** Matches underscores used as blanks (___ or longer). */
-const BLANK_PATTERN = /_{3,}/g;
-const BLANK_SPLIT = /_{3,}/;
+/**
+ * Matches plain blanks (`___`) and numbered blanks (`___1___`).
+ * A numbered marker is one blank, not two underscore groups.
+ */
+const BLANK_PATTERN = /_{3,}\s*\d+\s*_{3,}|_{3,}/g;
 export const FILL_BLANK_JOIN = "|";
 
 export function countFillBlanks(questionText: string): number {
@@ -81,35 +83,40 @@ function FillBlankAnswer({
         disabled={disabled}
         className={`w-full ${softInputClass}`}
         placeholder="Nhập đáp án…"
+        aria-label="Ô trống 1"
         autoComplete="off"
       />
     );
   }
 
-  const segments = question.question.split(BLANK_SPLIT);
+  let markerIndex = 0;
+  const displayQuestion = question.question.replace(BLANK_PATTERN, () => {
+    markerIndex += 1;
+    return `(${markerIndex})`;
+  });
 
   return (
     <div className="space-y-3">
-      <p className="text-sm leading-8 text-foreground">
-        {segments.map((segment, index) => (
-          <Fragment key={`seg-${index}`}>
-            <span>{segment}</span>
-            {index < blankCount ? (
-              <input
-                value={parts[index] || ""}
-                onChange={(e) => updatePart(index, e.target.value)}
-                disabled={disabled}
-                className={`mx-1 inline-block min-w-[7rem] max-w-[12rem] align-baseline ${softInputClass}`}
-                placeholder={`Ô ${index + 1}`}
-                aria-label={`Ô trống ${index + 1}`}
-                autoComplete="off"
-              />
-            ) : null}
-          </Fragment>
+      <p className="text-sm leading-7 text-foreground">{displayQuestion}</p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        {parts.map((part, index) => (
+          <label key={index} className="space-y-1">
+            <span className="block text-xs font-medium text-muted-foreground">
+              Ô {index + 1}
+            </span>
+            <input
+              value={part || ""}
+              onChange={(e) => updatePart(index, e.target.value)}
+              disabled={disabled}
+              className={`w-full min-w-0 ${softInputClass}`}
+              placeholder={`Nhập ô ${index + 1}`}
+              autoComplete="off"
+            />
+          </label>
         ))}
-      </p>
+      </div>
       <p className="text-xs text-muted-foreground">
-        Điền lần lượt từng ô trống trong câu.
+        Điền lần lượt từng ô trống theo số thứ tự trong câu.
       </p>
     </div>
   );

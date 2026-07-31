@@ -3,7 +3,8 @@ import type { QuizQuestionAnswer } from '@src/db/schema/quiz-question-answer';
 import { normalizeFillBlankAnswer } from '@src/models/Quiz.model';
 
 function countFillBlanks(questionText: string): number {
-  return (questionText.match(/_{3,}/g) ?? []).length;
+  // Treat a numbered marker such as `___1___` as one blank, not two.
+  return (questionText.match(/_{3,}\s*\d+\s*_{3,}|_{3,}/g) ?? []).length;
 }
 
 function splitFillBlankParts(text: string): string[] {
