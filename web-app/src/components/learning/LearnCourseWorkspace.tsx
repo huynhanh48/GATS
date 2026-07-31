@@ -71,6 +71,17 @@ function flattenLessons(sections: SectionRow[]): LessonRow[] {
   return sections.flatMap((s) => s.lessons ?? []);
 }
 
+export function isLessonSequentiallyUnlocked(
+  lessons: Array<{ id: string }>,
+  lessonIndex: number,
+  completedIds: Set<string>,
+): boolean {
+  if (lessonIndex < 0 || lessonIndex >= lessons.length) return false;
+  return lessons
+    .slice(0, lessonIndex)
+    .every((lesson) => completedIds.has(lesson.id));
+}
+
 function formatSeconds(total: number) {
   const s = Math.max(0, Math.floor(total));
   const m = Math.floor(s / 60);
@@ -145,8 +156,9 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
       if (Array.isArray(progress.completedLessonIds)) {
         setCompletedIds(new Set(progress.completedLessonIds));
       }
+      return progress;
     } catch {
-      // ignore
+      return null;
     }
   }, []);
 
@@ -210,18 +222,39 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         setCourse(courseData);
         setSections(mappedSections);
         const flat = flattenLessons(mappedSections);
+        const progress = await refreshCourseProgress(courseData.id);
+        const initialCompletedIds = new Set(progress?.completedLessonIds ?? []);
+        const requestedIndex = lessonIdProp
+          ? flat.findIndex((lesson) => lesson.id === lessonIdProp)
+          : -1;
+        const requestedIsUnlocked =
+          requestedIndex >= 0 &&
+          !flat[requestedIndex].locked &&
+          isLessonSequentiallyUnlocked(
+            flat,
+            requestedIndex,
+            initialCompletedIds,
+          );
+        const firstAvailable =
+          flat.find(
+            (lesson, index) =>
+              !lesson.locked &&
+              isLessonSequentiallyUnlocked(flat, index, initialCompletedIds),
+          )?.id ?? null;
         const preferred =
-          (lessonIdProp && flat.find((l) => l.id === lessonIdProp)?.id) ||
-          flat.find((l) => !l.locked)?.id ||
+          (requestedIsUnlocked ? lessonIdProp : null) ||
+          firstAvailable ||
           flat[0]?.id ||
           null;
         const preferredSectionIdx = mappedSections.findIndex((s) =>
           (s.lessons ?? []).some((l) => l.id === preferred),
         );
         setOpenSections(preferredSectionIdx >= 0 ? [preferredSectionIdx] : [0]);
-        await refreshCourseProgress(courseData.id);
 
         if (preferred) {
+          if (lessonIdProp && lessonIdProp !== preferred) {
+            toast.info("Hãy hoàn thành bài trước để mở khóa bài này");
+          }
           setActiveLessonId(preferred);
           // Chỉ redirect khi URL chưa có đúng lessonId (tránh remount thừa → hủy HLS)
           if (lessonIdProp !== preferred) {
@@ -387,9 +420,17 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   };
 
   const goRelative = (delta: number) => {
-    const next = lessons[activeIndex + delta];
-    if (!next || next.locked) {
+    const nextIndex = activeIndex + delta;
+    const next = lessons[nextIndex];
+    const locked =
+      Boolean(next?.locked) ||
+      !isLessonSequentiallyUnlocked(lessons, nextIndex, completedIds);
+    if (!next) {
       toast.info(delta > 0 ? "Đây là bài cuối" : "Đây là bài đầu");
+      return;
+    }
+    if (locked) {
+      toast.info("Hãy hoàn thành bài hiện tại để mở khóa bài tiếp theo");
       return;
     }
     navigateLesson(next.id);
@@ -488,7 +529,16 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
               {(section.lessons ?? []).map((lesson) => {
                 const active = lesson.id === activeLessonId;
                 const done = completedIds.has(lesson.id);
-                const locked = Boolean(lesson.locked);
+                const lessonIndex = lessons.findIndex(
+                  (item) => item.id === lesson.id,
+                );
+                const locked =
+                  Boolean(lesson.locked) ||
+                  !isLessonSequentiallyUnlocked(
+                    lessons,
+                    lessonIndex,
+                    completedIds,
+                  );
                 const type = (lesson.type || "video").toLowerCase();
                 const TypeIcon = lessonTypeIcon(type);
                 return (
@@ -497,7 +547,12 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                       type="button"
                       disabled={locked}
                       onClick={() => {
-                        if (locked) return;
+                        if (locked) {
+                          toast.info(
+                            "Hãy hoàn thành bài trước để mở khóa bài này",
+                          );
+                          return;
+                        }
                         navigateLesson(lesson.id);
                         setSidebarOpen(false);
                       }}
@@ -717,7 +772,21 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
               <button
                 type="button"
                 onClick={() => goRelative(1)}
-                disabled={activeIndex < 0 || activeIndex >= lessons.length - 1}
+                disabled={
+                  activeIndex < 0 ||
+                  activeIndex >= lessons.length - 1 ||
+                  Boolean(lessons[activeIndex + 1]?.locked) ||
+                  !isLessonSequentiallyUnlocked(
+                    lessons,
+                    activeIndex + 1,
+                    completedIds,
+                  )
+                }
+                title={
+                  activeLessonId && !completedIds.has(activeLessonId)
+                    ? "Hoàn thành bài hiện tại để mở khóa bài tiếp theo"
+                    : undefined
+                }
                 className="inline-flex min-h-10 cursor-pointer items-center gap-1 rounded-xl border border-border bg-background px-3.5 py-2 text-sm font-medium text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
               >
                 Sau <ChevronRight className="h-4 w-4" />
