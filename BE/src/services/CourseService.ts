@@ -99,18 +99,53 @@ async function attachPublic(course: CourseRecord): Promise<CoursePublic> {
 
 async function attachPublicList(
   courses: CourseRecord[],
-): Promise<CoursePublic[]> {
-  const [categoryMap, tagMap] = await Promise.all([
+): Promise<
+  Array<
+    CoursePublic & {
+      stats: CourseDetail['stats'] & {
+        ratingDistribution: Record<number, number>;
+      };
+    }
+  >
+> {
+  const courseIds = courses.map((course) => course.id);
+  const [
+    categoryMap,
+    tagMap,
+    enrollmentMap,
+    reviewMap,
+    reviewDistributionMap,
+    sectionMap,
+    lessonMap,
+  ] = await Promise.all([
     CategoryRepo.findByCourseIds(courses.map((course) => course.id)),
     CourseTagRepo.findByCourseIds(courses.map((course) => course.id)),
+    EnrollmentRepo.countActiveByCourses(courseIds),
+    CourseReviewRepo.getStatsByCourses(courseIds),
+    CourseReviewRepo.getRatingDistributionByCourses(courseIds),
+    CourseSectionRepo.countByCourses(courseIds),
+    LessonRepo.getStatsByCourses(courseIds),
   ]);
-  return courses.map((course) =>
-    toPublicCourse(
+  return courses.map((course) => {
+    const reviewStats = reviewMap.get(course.id);
+    const lessonStats = lessonMap.get(course.id);
+    return {
+      ...toPublicCourse(
       course,
       categoryMap.get(course.id) ?? null,
       tagMap.get(course.id) ?? [],
-    ),
-  );
+      ),
+      stats: {
+        enrollmentCount: enrollmentMap.get(course.id) ?? 0,
+        ratingCount: reviewStats?.ratingCount ?? 0,
+        averageRating: reviewStats?.averageRating ?? null,
+        ratingDistribution: reviewDistributionMap.get(course.id) ?? {},
+        sectionCount: sectionMap.get(course.id) ?? 0,
+        lessonCount: lessonStats?.lessonCount ?? 0,
+        totalDurationSeconds: lessonStats?.totalDurationSeconds ?? 0,
+      },
+    };
+  });
 }
 
 function buildPagination(query: ListCoursesQuery, total: number) {

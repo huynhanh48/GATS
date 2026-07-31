@@ -29,6 +29,7 @@ export interface CourseStats {
   enrollmentCount: number;
   ratingCount: number;
   averageRating: number | null;
+  ratingDistribution?: Record<number, number>;
   sectionCount: number;
   lessonCount: number;
   totalDurationSeconds: number;

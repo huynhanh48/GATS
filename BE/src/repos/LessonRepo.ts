@@ -1,4 +1,4 @@
-import { and, asc, count, eq, max } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, max, sum } from 'drizzle-orm';
 
 import db from '@src/db';
 import { lessonsTable } from '@src/db/schema/lesson';
@@ -9,6 +9,32 @@ import {
 
 function parseRow(row: unknown): LessonRecord {
   return lessonRecordSchema.parse(row);
+}
+
+export async function getStatsByCourses(
+  courseIds: string[],
+): Promise<
+  Map<string, { lessonCount: number; totalDurationSeconds: number }>
+> {
+  if (courseIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      courseId: lessonsTable.courseId,
+      lessonCount: count(),
+      totalDurationSeconds: sum(lessonsTable.duration),
+    })
+    .from(lessonsTable)
+    .where(inArray(lessonsTable.courseId, courseIds))
+    .groupBy(lessonsTable.courseId);
+  return new Map(
+    rows.map((row) => [
+      row.courseId,
+      {
+        lessonCount: Number(row.lessonCount ?? 0),
+        totalDurationSeconds: Number(row.totalDurationSeconds ?? 0),
+      },
+    ]),
+  );
 }
 
 export async function findById(id: string): Promise<LessonRecord | undefined> {

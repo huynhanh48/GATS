@@ -13,10 +13,11 @@ import {
   ChevronUp,
   SlidersHorizontal,
   Sparkles,
-  Clock,
   Users,
   BarChart,
   FileText,
+  Layers3,
+  Star,
   Search,
   LayoutGrid,
   List,
@@ -127,6 +128,17 @@ function CoursesPageContent() {
   const [searchInput, setSearchInput] = useState(keywordFromUrl);
   const [searchQuery, setSearchQuery] = useState(keywordFromUrl);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const reviewCounts = courses.reduce<Record<number, number>>(
+    (counts, course) => {
+      for (let rating = 1; rating <= 5; rating += 1) {
+        counts[rating] =
+          (counts[rating] ?? 0) +
+          (course.stats?.ratingDistribution?.[rating] ?? 0);
+      }
+      return counts;
+    },
+    {},
+  );
 
   useEffect(() => {
     if (!keywordFromUrl) return;
@@ -325,6 +337,7 @@ function CoursesPageContent() {
                 <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
                   <input
                     type="checkbox"
+                    disabled={(reviewCounts[stars] ?? 0) === 0}
                     className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   />
                   <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
@@ -340,7 +353,9 @@ function CoursesPageContent() {
                   ))}
                 </div>
               </div>
-              <span className="text-[1.4rem] text-slate-400">(1,025)</span>
+              <span className="text-[1.4rem] text-slate-400">
+                ({(reviewCounts[stars] ?? 0).toLocaleString("vi-VN")})
+              </span>
             </label>
           ))}
         </div>
@@ -546,15 +561,19 @@ function CoursesPageContent() {
                             {course.title}
                           </h3>
 
-                          {/* Meta stats mock */}
+                          {/* Course statistics from the API */}
                           <div className="flex flex-wrap items-center gap-4 text-[1.3rem] text-slate-500 mb-4">
                             <div className="flex items-center gap-1.5">
-                              <Clock className="w-4 h-4 text-[#ff782d]" />
-                              <span className="font-medium">4 Tuần</span>
+                              <Layers3 className="w-4 h-4 text-[#ff782d]" />
+                              <span className="font-medium">
+                                {course.stats?.sectionCount ?? 0} Chương
+                              </span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Users className="w-4 h-4 text-[#ff782d]" />
-                              <span className="font-medium">156 Học viên</span>
+                              <span className="font-medium">
+                                {(course.stats?.enrollmentCount ?? 0).toLocaleString("vi-VN")} Học viên
+                              </span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <BarChart className="w-4 h-4 text-[#ff782d]" />
@@ -562,7 +581,17 @@ function CoursesPageContent() {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <FileText className="w-4 h-4 text-[#ff782d]" />
-                              <span className="font-medium">20 Bài học</span>
+                              <span className="font-medium">
+                                {course.stats?.lessonCount ?? 0} Bài học
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                              <span className="font-medium">
+                                {course.stats?.averageRating != null
+                                  ? `${course.stats.averageRating.toFixed(1)} (${(course.stats.ratingCount ?? 0).toLocaleString("vi-VN")})`
+                                  : "Chưa có đánh giá"}
+                              </span>
                             </div>
                           </div>
 

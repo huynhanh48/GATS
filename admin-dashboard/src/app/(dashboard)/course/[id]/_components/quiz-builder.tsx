@@ -630,6 +630,7 @@ export function QuizBuilder({
       <QuizSettingsForm quizId={quiz.id} initial={quiz} />
 
       <QuizAiGeneratePanel
+        courseId={courseId}
         quizId={quiz.id}
         onGenerated={(created) => {
           if (created.length === 0) return;

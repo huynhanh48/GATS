@@ -1,4 +1,13 @@
-import { and, count, eq, gt, gte, isNull, or } from 'drizzle-orm';
+import {
+  and,
+  count,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNull,
+  or,
+} from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -88,6 +97,33 @@ export async function countActiveByCourse(courseId: string): Promise<number> {
     .from(courseEnrollmentsTable)
     .where(activeEnrollmentByCourseCondition(courseId));
   return Number(result?.total ?? 0);
+}
+
+export async function countActiveByCourses(
+  courseIds: string[],
+): Promise<Map<string, number>> {
+  if (courseIds.length === 0) return new Map();
+  const now = new Date();
+  const rows = await db
+    .select({
+      courseId: courseEnrollmentsTable.courseId,
+      total: count(),
+    })
+    .from(courseEnrollmentsTable)
+    .where(
+      and(
+        inArray(courseEnrollmentsTable.courseId, courseIds),
+        eq(courseEnrollmentsTable.status, 'active'),
+        or(
+          isNull(courseEnrollmentsTable.expiredAt),
+          gt(courseEnrollmentsTable.expiredAt, now),
+        ),
+      ),
+    )
+    .groupBy(courseEnrollmentsTable.courseId);
+  return new Map(
+    rows.map((row) => [row.courseId, Number(row.total ?? 0)]),
+  );
 }
 
 export async function countByStatus(): Promise<

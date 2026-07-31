@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import type { QuizQuestion } from "@/lib/api/types";
+import {
+  coursesClient,
+  type AiQuizSourceItem,
+} from "@/services/courses.client";
 import { quizClient } from "@/services/quiz.client";
 
 const inputClass =
@@ -10,11 +14,12 @@ const inputClass =
 const labelClass = "mb-1.5 block text-sm font-medium text-dark dark:text-white";
 
 type Props = {
+  courseId: string;
   quizId: string;
   onGenerated: (questions: QuizQuestion[]) => void;
 };
 
-type SourceMode = "text" | "file_url" | "file";
+type SourceMode = "course_video" | "text" | "file_url" | "file";
 
 function isDroppedConnection(message: string, status?: number): boolean {
   if (status === 504 || status === 502 || status === 524) return true;
@@ -30,10 +35,17 @@ function isDroppedConnection(message: string, status?: number): boolean {
   );
 }
 
-export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
+export function QuizAiGeneratePanel({
+  courseId,
+  quizId,
+  onGenerated,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
-  const [sourceMode, setSourceMode] = useState<SourceMode>("text");
+  const [sourceMode, setSourceMode] = useState<SourceMode>("course_video");
+  const [videoSources, setVideoSources] = useState<AiQuizSourceItem[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState("");
   const [text, setText] = useState("");
   const [fileUrl, setFileUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -44,6 +56,35 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
   const [exerciseTypes, setExerciseTypes] = useState(
     "mcq,true_false,fill_in_blank,short_answer",
   );
+  const selectedVideo = videoSources.find(
+    (source) => source.videoId === selectedVideoId,
+  );
+
+  useEffect(() => {
+    if (!open || sourceMode !== "course_video" || !courseId) return;
+    let cancelled = false;
+    setSourcesLoading(true);
+    void coursesClient.listAiQuizSources(courseId).then((res) => {
+      if (cancelled) return;
+      setSourcesLoading(false);
+      if (res.error) {
+        setVideoSources([]);
+        setSelectedVideoId("");
+        toast.error(res.error.message);
+        return;
+      }
+      const sources = res.data?.data ?? [];
+      setVideoSources(sources);
+      setSelectedVideoId((current) =>
+        sources.some((source) => source.videoId === current)
+          ? current
+          : (sources[0]?.videoId ?? ""),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, open, sourceMode]);
 
   function handleGenerate() {
     startTransition(async () => {
@@ -57,7 +98,13 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
       form.append("shuffle_options", "true");
       form.append("max_options_per_mcq", "4");
 
-      if (sourceMode === "text") {
+      if (sourceMode === "course_video") {
+        if (!selectedVideo?.audioFlacUrl) {
+          toast.error("Chọn một video đã xử lý audio FLAC");
+          return;
+        }
+        form.append("file_url", selectedVideo.audioFlacUrl);
+      } else if (sourceMode === "text") {
         if (!text.trim()) {
           toast.error("Nhập nội dung text để sinh quiz");
           return;
@@ -175,6 +222,7 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
       <div className="mb-3 flex flex-wrap gap-2">
         {(
           [
+            ["course_video", "Video trong khóa học"],
             ["text", "Text"],
             ["file_url", "URL S3 FLAC / file"],
             ["file", "Upload file"],
@@ -195,6 +243,34 @@ export function QuizAiGeneratePanel({ quizId, onGenerated }: Props) {
           </button>
         ))}
       </div>
+
+      {sourceMode === "course_video" ? (
+        <div className="rounded-lg border border-violet-200 bg-white p-3 dark:border-violet-900 dark:bg-dark-2">
+          <label className={labelClass}>Video dùng làm nguồn</label>
+          <select
+            className={inputClass}
+            value={selectedVideoId}
+            onChange={(event) => setSelectedVideoId(event.target.value)}
+            disabled={pending || sourcesLoading}
+          >
+            {sourcesLoading ? (
+              <option value="">Đang tải danh sách video…</option>
+            ) : videoSources.length === 0 ? (
+              <option value="">Chưa có video nào đã xử lý audio FLAC</option>
+            ) : (
+              videoSources.map((source) => (
+                <option key={source.videoId} value={source.videoId}>
+                  {source.title || `Video bài học ${source.lessonId}`}
+                </option>
+              ))
+            )}
+          </select>
+          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            VIAVA sẽ dùng bản audio FLAC của video để nhận dạng nội dung, sinh
+            câu hỏi và thêm trực tiếp vào quiz này.
+          </p>
+        </div>
+      ) : null}
 
       {sourceMode === "text" ? (
         <textarea

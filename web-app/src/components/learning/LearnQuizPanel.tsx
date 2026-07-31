@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  BookOpenCheck,
   CheckCircle2,
+  CircleHelp,
   Lightbulb,
   Loader2,
+  Send,
   RotateCcw,
   XCircle,
 } from "lucide-react";
@@ -51,8 +54,12 @@ export function joinFillBlankParts(parts: string[]): string {
   return parts.map((p) => p.trim()).join(FILL_BLANK_JOIN);
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 const softInputClass =
-  "rounded-lg border border-border/50 bg-muted/25 px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus:border-primary/40 focus:bg-background focus:ring-2 focus:ring-primary/10";
+  "rounded-xl border border-border bg-background px-4 py-3 text-[15px] text-foreground outline-none transition placeholder:text-muted-foreground/65 focus:border-primary/60 focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60";
 
 function FillBlankAnswer({
   question,
@@ -81,33 +88,70 @@ function FillBlankAnswer({
     onChange(joinFillBlankParts(copy));
   };
 
-  if (blankCount <= 1) {
+  if (blankCount === 0) {
     return (
-      <input
-        value={parts[0] || ""}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        className={`w-full ${softInputClass}`}
-        placeholder="Nhập đáp án…"
-        aria-label="Ô trống 1"
-        autoComplete="off"
-      />
+      <div className="space-y-2">
+        <label
+          htmlFor={`essay-${question.id}`}
+          className="text-sm font-semibold text-foreground"
+        >
+          Bài làm của bạn
+        </label>
+        <textarea
+          id={`essay-${question.id}`}
+          value={parts[0] || ""}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className={`min-h-36 w-full resize-y leading-6 ${softInputClass}`}
+          placeholder="Trình bày câu trả lời đầy đủ, rõ ràng và có dẫn chứng nếu cần…"
+          aria-describedby={`essay-help-${question.id}`}
+        />
+        <div
+          id={`essay-help-${question.id}`}
+          className="flex items-center justify-between gap-3 text-xs text-muted-foreground"
+        >
+          <span>Câu trả lời được lưu trong lúc bạn nhập.</span>
+          <span className="shrink-0 tabular-nums">
+            {(parts[0] || "").length} ký tự
+          </span>
+        </div>
+      </div>
     );
   }
 
-  let markerIndex = 0;
-  const displayQuestion = question.question.replace(BLANK_PATTERN, () => {
-    markerIndex += 1;
-    return `(${markerIndex})`;
-  });
+  if (blankCount === 1) {
+    return (
+      <label className="block space-y-2">
+        <span className="text-sm font-semibold text-foreground">
+          Câu trả lời
+        </span>
+        <input
+          value={parts[0] || ""}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className={`w-full ${softInputClass}`}
+          placeholder="Nhập đáp án…"
+          aria-label="Ô trống 1"
+          autoComplete="off"
+        />
+      </label>
+    );
+  }
+
+  const displayQuestion = question.question
+    .split(BLANK_PATTERN)
+    .map((segment, index) => (index === 0 ? segment : `(${index})${segment}`))
+    .join("");
 
   return (
     <div className="space-y-3">
-      <p className="text-sm leading-7 text-foreground">{displayQuestion}</p>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="rounded-xl bg-muted/45 px-4 py-3 text-[15px] leading-7 text-foreground">
+        {displayQuestion}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {parts.map((part, index) => (
           <label key={index} className="space-y-1">
-            <span className="block text-xs font-medium text-muted-foreground">
+            <span className="block text-xs font-semibold text-muted-foreground">
               Ô {index + 1}
             </span>
             <input
@@ -144,15 +188,16 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
       const data = await fetchLessonQuiz(courseId, lessonId);
       setQuiz(data);
       setAnswers({});
-    } catch (err: any) {
+    } catch (err: unknown) {
       setQuiz(null);
-      setError(err?.message || "Không tải được bài quiz");
+      setError(getErrorMessage(err, "Không tải được bài quiz"));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, lessonId]);
@@ -206,8 +251,8 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
           ? "Đã nộp bài — chưa đạt điểm qua"
           : "Đã nộp bài quiz",
       );
-    } catch (err: any) {
-      toast.error(err?.message || "Nộp bài thất bại");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Nộp bài thất bại"));
     } finally {
       setSubmitting(false);
     }
@@ -236,16 +281,56 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
     );
   }
 
-  return (
-    <div className="space-y-5 rounded-2xl bg-muted/20 p-4 sm:p-5">
-      <div>
-        <p className="mb-1 text-xs font-medium text-primary">Quiz</p>
-        <h3 className="text-lg font-semibold">{quiz.title || "Bài kiểm tra"}</h3>
-        {quiz.description ? (
-          <p className="text-sm text-muted-foreground mt-1">{quiz.description}</p>
-        ) : null}
-      </div>
+  const answeredCount = quiz.questions.filter(
+    (question) => Boolean(answers[question.id]?.trim()),
+  ).length;
+  const completionPercent =
+    quiz.questions.length > 0
+      ? Math.round((answeredCount / quiz.questions.length) * 100)
+      : 0;
 
+  return (
+    <section className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+      <header className="border-b border-border/70 bg-gradient-to-br from-primary/[0.07] via-background to-background p-5 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <BookOpenCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                Bài kiểm tra kiến thức
+              </p>
+              <h3 className="mt-1 text-xl font-bold">
+                {quiz.title || "Bài kiểm tra"}
+              </h3>
+            </div>
+          </div>
+          {!result ? (
+            <div className="min-w-40 rounded-xl border border-border/70 bg-background/80 px-3 py-2.5">
+              <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                <span>Tiến độ</span>
+                <span className="tabular-nums">
+                  {answeredCount}/{quiz.questions.length} câu
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${completionPercent}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+        {quiz.description ? (
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+            {quiz.description}
+          </p>
+        ) : null}
+      </header>
+
+      <div className="p-4 sm:p-6">
       {result ? (
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2">
@@ -345,31 +430,46 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
         </div>
       ) : (
         <>
-          <div className="space-y-5">
+          <div className="space-y-4">
             {quiz.questions.map((q, idx) => {
               const blanks = countFillBlanks(q.question);
               const showTitleSeparately =
                 q.type !== "fill_blank" || blanks <= 1;
+              const isEssay = q.type === "fill_blank" && blanks === 0;
 
               return (
-                <div key={q.id} className="space-y-2">
+                <article
+                  key={q.id}
+                  className="scroll-mt-24 rounded-2xl border border-border/70 bg-background p-4 transition-shadow focus-within:border-primary/30 focus-within:shadow-[0_8px_30px_-18px_hsl(var(--primary)/0.35)] sm:p-5"
+                >
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="grid h-7 min-w-7 place-items-center rounded-lg bg-primary/10 px-2 text-xs font-bold text-primary">
+                        {idx + 1}
+                      </span>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {isEssay
+                          ? "Tự luận"
+                          : q.type === "fill_blank"
+                            ? "Điền khuyết"
+                            : "Chọn một đáp án"}
+                      </span>
+                    </div>
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                      {q.points} điểm
+                    </span>
+                  </div>
                   {showTitleSeparately ? (
-                    <p className="font-semibold text-sm">
-                      {idx + 1}. {q.question}
-                      <span className="text-muted-foreground font-normal">
-                        {" "}
-                        ({q.points} điểm)
-                      </span>
+                    <p className="mb-4 text-[15px] font-semibold leading-7 sm:text-base">
+                      {q.question}
                     </p>
-                  ) : (
-                    <p className="font-semibold text-sm">
-                      {idx + 1}.
-                      <span className="text-muted-foreground font-normal">
-                        {" "}
-                        ({q.points} điểm)
-                      </span>
-                    </p>
-                  )}
+                  ) : null}
+                  {q.description ? (
+                    <div className="mb-4 flex items-start gap-2 rounded-xl bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+                      <CircleHelp className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>{q.description}</span>
+                    </div>
+                  ) : null}
                   {q.type === "fill_blank" ? (
                     <FillBlankAnswer
                       question={q}
@@ -380,11 +480,17 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
                       disabled={submitting}
                     />
                   ) : (
-                    <div className="space-y-2">
-                      {(q.answers ?? []).map((opt) => (
+                    <div className="grid gap-2.5">
+                      {(q.answers ?? []).map((opt, optionIndex) => {
+                        const selected = answers[q.id] === opt.id;
+                        return (
                         <label
                           key={opt.id}
-                          className="flex items-start gap-2 rounded-xl border border-border/60 bg-muted/15 px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40"
+                          className={`group flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-sm leading-6 transition ${
+                            selected
+                              ? "border-primary/60 bg-primary/[0.07] text-foreground ring-2 ring-primary/10"
+                              : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/35"
+                          }`}
                         >
                           <input
                             type="radio"
@@ -396,27 +502,54 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
                                 [q.id]: opt.id,
                               }))
                             }
-                            className="mt-1"
+                            className="sr-only"
                           />
-                          <span>{opt.answer}</span>
+                          <span
+                            aria-hidden="true"
+                            className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs font-bold transition ${
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-muted-foreground group-hover:border-primary/40"
+                            }`}
+                          >
+                            {String.fromCharCode(65 + optionIndex)}
+                          </span>
+                          <span className="flex-1">{opt.answer}</span>
+                          {selected ? (
+                            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                          ) : null}
                         </label>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
-                </div>
+                </article>
               );
             })}
           </div>
-          <button
-            type="button"
-            disabled={submitting}
-            onClick={() => void onSubmit()}
-            className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold hover:bg-primary/90 disabled:opacity-50"
-          >
-            {submitting ? "Đang nộp..." : "Nộp bài"}
-          </button>
+          <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-border/70 bg-muted/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              {answeredCount === quiz.questions.length
+                ? "Bạn đã trả lời tất cả câu hỏi."
+                : `Còn ${quiz.questions.length - answeredCount} câu chưa trả lời.`}
+            </p>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => void onSubmit()}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
+              {submitting ? "Đang nộp bài..." : "Nộp bài kiểm tra"}
+            </button>
+          </div>
         </>
       )}
-    </div>
+      </div>
+    </section>
   );
 }
