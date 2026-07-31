@@ -384,8 +384,13 @@ async function submitQuiz(
       (item) => item.questionId === question.id,
     );
     let grade = { score: 0, isCorrect: false };
+    let selectedAnswer: string | null = null;
 
     if (answer && question.type === 'single_choice') {
+      selectedAnswer =
+        question.answers.find(
+          (option) => option.id === answer.selectedAnswerId,
+        )?.answer ?? null;
       grade = gradeSingleChoiceQuestion(
         question,
         question.answers,
@@ -394,6 +399,7 @@ async function submitQuiz(
     }
 
     if (answer && question.type === 'fill_blank') {
+      selectedAnswer = answer.textAnswer?.trim() || null;
       grade = gradeFillBlankQuestion(
         question,
         answer.textAnswer,
@@ -403,9 +409,19 @@ async function submitQuiz(
 
     return {
       questionId: question.id,
+      question: question.question,
       isCorrect: grade.isCorrect,
       score: grade.score,
-      explanation: question.explanation,
+      maxScore: question.points,
+      selectedAnswer,
+      correctAnswers: question.answers
+        .filter((option) => option.isCorrect)
+        .sort((a, b) => a.order - b.order)
+        .map((option) => option.answer),
+      explanation:
+        quiz.showExplanation && question.explanation
+          ? question.explanation
+          : undefined,
     };
   });
 

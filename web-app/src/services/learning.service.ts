@@ -126,8 +126,12 @@ export type QuizSubmitResult = {
   totalQuestions: number;
   results: Array<{
     questionId: string;
+    question: string;
     isCorrect: boolean;
     score: number;
+    maxScore: number;
+    selectedAnswer: string | null;
+    correctAnswers: string[];
     explanation?: string | null;
   }>;
 };

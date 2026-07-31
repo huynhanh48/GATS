@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import {
+  CheckCircle2,
+  Lightbulb,
+  Loader2,
+  RotateCcw,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   fetchLessonQuiz,
@@ -241,26 +247,100 @@ export function LearnQuizPanel({ courseId, lessonId, onPassed }: Props) {
       </div>
 
       {result ? (
-        <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2">
-          <div className="flex items-center gap-2 font-bold">
-            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-            Kết quả: {result.correctCount}/{result.totalQuestions} đúng ·{" "}
-            {Math.round(result.percentage)}%
-            {typeof result.passed === "boolean"
-              ? result.passed
-                ? " · Đạt"
-                : " · Chưa đạt"
-              : null}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2">
+            <div className="flex items-center gap-2 font-bold">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              Kết quả: {result.correctCount}/{result.totalQuestions} đúng ·{" "}
+              {Math.round(result.percentage)}%
+              {typeof result.passed === "boolean"
+                ? result.passed
+                  ? " · Đạt"
+                  : " · Chưa đạt"
+                : null}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Điểm: {result.score}/{result.maxScore}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Điểm: {result.score}/{result.maxScore}
-          </p>
+
+          <div className="space-y-3" aria-label="Chi tiết kết quả bài kiểm tra">
+            {result.results.map((item, index) => (
+              <article
+                key={item.questionId}
+                className={`rounded-xl border p-4 ${
+                  item.isCorrect
+                    ? "border-emerald-500/25 bg-emerald-500/[0.06]"
+                    : "border-destructive/25 bg-destructive/[0.04]"
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  {item.isCorrect ? (
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                  )}
+                  <div className="min-w-0 flex-1 space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Câu {index + 1} · {item.score}/{item.maxScore} điểm
+                      </p>
+                      <p className="mt-1 text-sm font-semibold leading-6">
+                        {item.question}
+                      </p>
+                    </div>
+
+                    <dl className="grid gap-2 text-sm">
+                      <div>
+                        <dt className="font-medium text-muted-foreground">
+                          Câu trả lời của bạn
+                        </dt>
+                        <dd
+                          className={
+                            item.isCorrect
+                              ? "mt-0.5 text-emerald-700 dark:text-emerald-300"
+                              : "mt-0.5 text-destructive"
+                          }
+                        >
+                          {item.selectedAnswer || "Chưa trả lời"}
+                        </dd>
+                      </div>
+                      {!item.isCorrect && item.correctAnswers.length > 0 ? (
+                        <div>
+                          <dt className="font-medium text-muted-foreground">
+                            Đáp án đúng
+                          </dt>
+                          <dd className="mt-0.5 text-emerald-700 dark:text-emerald-300">
+                            {item.correctAnswers.join(" · ")}
+                          </dd>
+                        </div>
+                      ) : null}
+                    </dl>
+
+                    {item.explanation ? (
+                      <div className="flex items-start gap-2 rounded-lg bg-background/70 p-3 text-sm leading-6">
+                        <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                        <div>
+                          <p className="font-semibold">Giải thích từ VIAVA</p>
+                          <p className="mt-0.5 text-muted-foreground">
+                            {item.explanation}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
           <button
             type="button"
             onClick={() => void load()}
-            className="text-sm font-semibold text-primary hover:underline"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold text-primary transition hover:bg-muted"
           >
-            Làm lại
+            <RotateCcw className="h-4 w-4" />
+            Làm lại bài
           </button>
         </div>
       ) : (
