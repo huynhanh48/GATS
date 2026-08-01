@@ -13,6 +13,7 @@ import type {
   ListCoursesQuery,
   UpdateCourseInput,
 } from '@src/models/Course.model';
+import type { UpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import { parseCourseDetail, parseCoursePublic } from '@src/models/Course.model';
 import type { TagPublic } from '@src/models/Tag.model';
 import * as AssignmentRepo from '@src/repos/AssignmentRepo';
@@ -318,6 +319,42 @@ async function getById(id: string, viewer?: AuthUser) {
 
   assertPublishedAccess(course.status, isAdmin || isInstructor);
   return attachPublic(course);
+}
+
+async function getMyReview(courseId: string, userId: number) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+  return {
+    data: (await CourseReviewRepo.findByCourseAndUser(courseId, userId)) ?? null,
+  };
+}
+
+async function upsertReview(
+  courseId: string,
+  userId: number,
+  input: UpsertCourseReviewInput,
+) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+  const enrolled = await CourseAccessService.isEnrolled(userId, courseId);
+  if (!enrolled) {
+    throw new RouteError(
+      HttpStatusCodes.FORBIDDEN,
+      'Chỉ học viên đã đăng ký mới có thể đánh giá khóa học',
+    );
+  }
+  const review = await CourseReviewRepo.upsert({
+    courseId,
+    userId,
+    rating: input.rating,
+    content: input.content?.trim() || null,
+  });
+  const stats = await CourseReviewRepo.getStatsByCourse(courseId);
+  return { data: review, stats };
 }
 
 async function getBySlug(
@@ -749,6 +786,8 @@ export default {
   listPublic,
   listManaged,
   getById,
+  getMyReview,
+  upsertReview,
   getBySlug,
   create,
   update,

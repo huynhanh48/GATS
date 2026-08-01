@@ -52,6 +52,22 @@ export type CreateCardInput = {
 
 export type UpdateCardInput = Partial<CreateCardInput>;
 
+export type FlashcardAiSource = {
+  postId: string;
+  postTitle: string;
+  postExcerpt: string | null;
+  lessonId: string;
+  lessonTitle: string;
+};
+
+export type GenerateFlashcardsInput = {
+  postId: string;
+  count: number;
+  language: string;
+  targetLevel: "beginner" | "intermediate" | "advanced";
+  detailLevel: "brief" | "standard" | "detailed";
+};
+
 export const flashcardClient = {
   listDecks(
     courseId: string,
@@ -141,6 +157,35 @@ export const flashcardClient = {
       url: `/flashcard-decks/${deckId}/cards/import`,
       method: "POST",
       data: { csv },
+    });
+  },
+
+  listAiSources(
+    deckId: string,
+  ): Promise<ApiResult<{ data: FlashcardAiSource[] }>> {
+    return apiRequest({
+      url: `/flashcard-decks/${deckId}/ai-sources`,
+      method: "GET",
+    });
+  },
+
+  generateFromArticle(
+    deckId: string,
+    body: GenerateFlashcardsInput,
+  ): Promise<
+    ApiResult<{
+      data: {
+        generated: number;
+        source: { postId: string; title: string };
+        cards: FlashcardCard[];
+      };
+    }>
+  > {
+    return apiRequest({
+      url: `/flashcard-decks/${deckId}/cards/ai-generate`,
+      method: "POST",
+      data: body,
+      timeout: 0,
     });
   },
 };

@@ -12,13 +12,15 @@ export type ViavaCompatExerciseType =
   | 'mcq'
   | 'true_false'
   | 'fill_in_blank'
-  | 'short_answer';
+  | 'short_answer'
+  | 'flashcard';
 
 const EXERCISE_GENERATE_PATH: Record<ViavaCompatExerciseType, string> = {
   mcq: '/course/exercises/mcq/generate',
   true_false: '/course/exercises/true-false/generate',
   fill_in_blank: '/course/exercises/fill-in-blank/generate',
   short_answer: '/course/exercises/short-answer/generate',
+  flashcard: '/course/exercises/flashcard/generate',
 };
 
 export function getViavaBaseUrl(): string | undefined {

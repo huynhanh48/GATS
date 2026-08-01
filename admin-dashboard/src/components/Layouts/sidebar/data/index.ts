@@ -41,7 +41,7 @@ export const NAV_DATA = [
         icon: Icons.SparklesIcon,
         items: [
           {
-            title: "Thử nghiệm AI Gen",
+            title: "Sinh Quiz AI",
             url: "/ai-gen",
           },
         ],

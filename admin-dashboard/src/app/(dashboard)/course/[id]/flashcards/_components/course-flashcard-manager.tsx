@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { FileText, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   flashcardClient,
   type FlashcardCard,
   type FlashcardDeck,
   type FlashcardDeckStatus,
+  type FlashcardAiSource,
 } from "@/services/flashcard.client";
 
 const inputClass =
@@ -38,6 +40,17 @@ export function CourseFlashcardManager({ courseId }: Props) {
   const [cardHint, setCardHint] = useState("");
   const [csvText, setCsvText] = useState("");
   const [editingCard, setEditingCard] = useState<FlashcardCard | null>(null);
+  const [aiSources, setAiSources] = useState<FlashcardAiSource[]>([]);
+  const [aiSourcesLoading, setAiSourcesLoading] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiPostId, setAiPostId] = useState("");
+  const [aiCount, setAiCount] = useState(10);
+  const [aiLevel, setAiLevel] = useState<
+    "beginner" | "intermediate" | "advanced"
+  >("intermediate");
+  const [aiDetail, setAiDetail] = useState<
+    "brief" | "standard" | "detailed"
+  >("standard");
 
   const selectedDeck = decks.find((d) => d.id === selectedDeckId) ?? null;
 
@@ -70,10 +83,48 @@ export function CourseFlashcardManager({ courseId }: Props) {
   useEffect(() => {
     if (!selectedDeckId) {
       setCards([]);
+      setAiSources([]);
+      setAiPostId("");
       return;
     }
     void loadCards(selectedDeckId);
+    setAiSourcesLoading(true);
+    void flashcardClient.listAiSources(selectedDeckId).then((result) => {
+      setAiSourcesLoading(false);
+      if (result.error || !result.data) {
+        toast.error(result.error?.message ?? "Không tải được nguồn bài viết");
+        return;
+      }
+      setAiSources(result.data.data);
+      setAiPostId((current) =>
+        result.data?.data.some((source) => source.postId === current)
+          ? current
+          : (result.data?.data[0]?.postId ?? ""),
+      );
+    });
   }, [selectedDeckId, loadCards]);
+
+  async function handleAiGenerate() {
+    if (!selectedDeckId || !aiPostId) {
+      toast.error("Hãy chọn một bài viết làm nguồn");
+      return;
+    }
+    setAiGenerating(true);
+    const result = await flashcardClient.generateFromArticle(selectedDeckId, {
+      postId: aiPostId,
+      count: aiCount,
+      language: "vi",
+      targetLevel: aiLevel,
+      detailLevel: aiDetail,
+    });
+    setAiGenerating(false);
+    if (result.error || !result.data) {
+      toast.error(result.error?.message ?? "VIAVA không sinh được flashcard");
+      return;
+    }
+    toast.success(`Đã sinh ${result.data.data.generated} flashcard nháp`);
+    await Promise.all([loadCards(selectedDeckId), loadDecks()]);
+  }
 
   async function handleCreateDeck() {
     if (!newDeckTitle.trim()) {
@@ -296,6 +347,139 @@ export function CourseFlashcardManager({ courseId }: Props) {
             </div>
 
             <div className="grid gap-4 xl:grid-cols-2">
+              <div className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-4 dark:border-violet-900 dark:from-violet-950/30 dark:to-[#0b1220] xl:col-span-2">
+                <div className="mb-4 flex items-start gap-3">
+                  <span className="rounded-xl bg-violet-600 p-2 text-white">
+                    <Sparkles className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white">
+                      Sinh flashcard bằng VIAVA
+                    </h4>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Chọn bài viết đã liên kết với một bài học trong khóa này.
+                      Thẻ mới được lưu ở trạng thái nháp để bạn duyệt lại.
+                    </p>
+                  </div>
+                </div>
+
+                {aiSourcesLoading ? (
+                  <div className="rounded-xl border border-dashed border-violet-200 p-4 text-sm text-slate-500">
+                    Đang tải nguồn bài viết…
+                  </div>
+                ) : aiSources.length === 0 ? (
+                  <div className="flex items-start gap-3 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20">
+                    <FileText
+                      className="mt-0.5 h-5 w-5 shrink-0 text-amber-600"
+                      aria-hidden="true"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        Khóa học chưa có bài viết làm nguồn
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Vào Giáo trình, liên kết một bài viết với bài học rồi quay
+                        lại đây.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                    <label className="md:col-span-2 xl:col-span-2">
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Bài viết nguồn
+                      </span>
+                      <select
+                        className={inputClass}
+                        value={aiPostId}
+                        onChange={(event) => setAiPostId(event.target.value)}
+                      >
+                        {aiSources.map((source) => (
+                          <option key={source.postId} value={source.postId}>
+                            {source.postTitle} — {source.lessonTitle}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Số thẻ
+                      </span>
+                      <input
+                        className={inputClass}
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={aiCount}
+                        onChange={(event) =>
+                          setAiCount(
+                            Math.min(
+                              30,
+                              Math.max(1, Number(event.target.value) || 1),
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Trình độ
+                      </span>
+                      <select
+                        className={inputClass}
+                        value={aiLevel}
+                        onChange={(event) =>
+                          setAiLevel(
+                            event.target.value as
+                              | "beginner"
+                              | "intermediate"
+                              | "advanced",
+                          )
+                        }
+                      >
+                        <option value="beginner">Cơ bản</option>
+                        <option value="intermediate">Trung cấp</option>
+                        <option value="advanced">Nâng cao</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Độ chi tiết
+                      </span>
+                      <select
+                        className={inputClass}
+                        value={aiDetail}
+                        onChange={(event) =>
+                          setAiDetail(
+                            event.target.value as
+                              | "brief"
+                              | "standard"
+                              | "detailed",
+                          )
+                        }
+                      >
+                        <option value="brief">Ngắn gọn</option>
+                        <option value="standard">Tiêu chuẩn</option>
+                        <option value="detailed">Chi tiết</option>
+                      </select>
+                    </label>
+                    <div className="md:col-span-2 xl:col-span-5">
+                      <button
+                        type="button"
+                        disabled={aiGenerating || !aiPostId}
+                        onClick={() => void handleAiGenerate()}
+                        className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Sparkles className="h-4 w-4" aria-hidden="true" />
+                        {aiGenerating
+                          ? "VIAVA đang phân tích bài viết…"
+                          : "Sinh và thêm vào bộ thẻ"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#0b1220]">
                 <h4 className="mb-3 text-sm font-bold">Thêm thẻ</h4>
                 <div className="space-y-2">

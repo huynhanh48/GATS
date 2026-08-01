@@ -20,6 +20,7 @@ const CoursePaths = {
     Publish: '/:id/publish',
     PublishReadiness: '/:id/publish-readiness',
     Curriculum: '/:courseId/curriculum',
+    Review: '/:courseId/review',
     Sections: {
       _: '/:courseId/sections',
       List: '/:courseId/sections',

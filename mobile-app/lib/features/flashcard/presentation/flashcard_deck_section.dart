@@ -11,9 +11,14 @@ import 'package:gats_academy/features/flashcard/presentation/flashcard_study_scr
 import 'package:gats_academy/features/home/data/mobile_bootstrap_store.dart';
 
 class FlashcardDeckSection extends StatefulWidget {
-  const FlashcardDeckSection({super.key, this.onSessionComplete});
+  const FlashcardDeckSection({
+    super.key,
+    this.onSessionComplete,
+    this.courseId,
+  });
 
   final VoidCallback? onSessionComplete;
+  final String? courseId;
 
   @override
   State<FlashcardDeckSection> createState() => _FlashcardDeckSectionState();
@@ -40,7 +45,8 @@ class _FlashcardDeckSectionState extends State<FlashcardDeckSection> {
     if (token == null || token.isEmpty) {
       if (mounted) {
         setState(() {
-          _decks = MockData.flashcardDecks;
+          _decks =
+              widget.courseId == null ? MockData.flashcardDecks : const [];
           _fromApi = false;
           _loading = false;
         });
@@ -49,7 +55,10 @@ class _FlashcardDeckSectionState extends State<FlashcardDeckSection> {
     }
 
     try {
-      final cards = await FlashcardApiService.due(token: token);
+      final cards = await FlashcardApiService.due(
+        token: token,
+        courseId: widget.courseId,
+      );
       if (!mounted) return;
       setState(() {
         _fromApi = true;
@@ -61,7 +70,8 @@ class _FlashcardDeckSectionState extends State<FlashcardDeckSection> {
       if (!mounted) return;
       setState(() {
         // Offline fallback only — do not merge with API decks.
-        _decks = MockData.flashcardDecks;
+        _decks =
+            widget.courseId == null ? MockData.flashcardDecks : const [];
         _fromApi = false;
         _loading = false;
       });

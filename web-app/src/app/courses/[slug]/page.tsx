@@ -111,6 +111,11 @@ export default function CourseDetailPage({
   const [commentEmail, setCommentEmail] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [saveCommentInfo, setSaveCommentInfo] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewContent, setReviewContent] = useState("");
+  const [reviewSaving, setReviewSaving] = useState(false);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
 
   const loadCourse = useEffectEvent(async (slug: string) => {
     setIsLoading(true);
@@ -152,6 +157,88 @@ export default function CourseDetailPage({
     }
     void syncEnrollment(courseData.id);
   }, [isAuthenticated, courseData?.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !courseData?.id) {
+      setReviewRating(0);
+      setReviewContent("");
+      setHasExistingReview(false);
+      return;
+    }
+    let cancelled = false;
+    void apiClient
+      .get(PathApi.courses.review(courseData.id))
+      .then((res: any) => {
+        if (cancelled) return;
+        const review = res?.data;
+        setReviewRating(review?.rating ?? 0);
+        setReviewContent(review?.content ?? "");
+        setHasExistingReview(Boolean(review));
+      })
+      .catch(() => {
+        if (!cancelled) setHasExistingReview(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, courseData?.id]);
+
+  const handleReviewSubmit = async () => {
+    if (!isAuthenticated) {
+      openAuthModal("login");
+      return;
+    }
+    if (!isEnrolled) {
+      toast.error("Bạn cần đăng ký khóa học trước khi đánh giá");
+      return;
+    }
+    if (!courseData?.id || reviewRating < 1) {
+      toast.error("Vui lòng chọn số sao đánh giá");
+      return;
+    }
+    setReviewSaving(true);
+    try {
+      const res: any = await apiClient.put(
+        PathApi.courses.review(courseData.id),
+        {
+          rating: reviewRating,
+          content: reviewContent.trim() || null,
+        },
+      );
+      const stats = res?.stats;
+      if (stats) {
+        setCourseData((current) =>
+          current
+            ? {
+                ...current,
+                stats: {
+                  ...(current.stats ?? {
+                    enrollmentCount: 0,
+                    sectionCount: 0,
+                    lessonCount: 0,
+                    totalDurationSeconds: 0,
+                  }),
+                  ratingCount: stats.ratingCount,
+                  averageRating: stats.averageRating,
+                },
+              }
+            : current,
+        );
+      }
+      setHasExistingReview(true);
+      toast.success(
+        hasExistingReview
+          ? "Đã cập nhật đánh giá của bạn"
+          : "Cảm ơn bạn đã đánh giá khóa học",
+      );
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Không thể gửi đánh giá",
+      );
+    } finally {
+      setReviewSaving(false);
+    }
+  };
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
@@ -817,22 +904,128 @@ export default function CourseDetailPage({
               ) : null}
 
               {activeTab === "reviews" ? (
-                <div className="flex flex-col gap-4">
-                  {course.rating != null && course.ratingCount > 0 ? (
-                    <div className="flex items-center gap-3 text-[1.6rem]">
-                      <span className="font-bold text-[#111827]">
-                        {Number(course.rating).toFixed(1)}
-                      </span>
-                      <Star className="size-5 fill-amber-400 text-amber-400" />
-                      <span className="text-slate-500">
-                        ({course.ratingCount} đánh giá)
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-[1.5rem] text-slate-500">
-                      Chưa có đánh giá cho khóa học này.
+                <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center">
+                    {course.rating != null && course.ratingCount > 0 ? (
+                      <>
+                        <p className="text-[3.2rem] font-bold leading-none text-[#111827]">
+                          {Number(course.rating).toFixed(1)}
+                        </p>
+                        <div className="mt-3 flex justify-center gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`size-5 ${
+                                star <= Math.round(Number(course.rating))
+                                  ? "fill-amber-400 text-amber-400"
+                                  : "fill-slate-200 text-slate-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="mt-2 text-[1.3rem] text-slate-500">
+                          {course.ratingCount.toLocaleString("vi-VN")} đánh giá
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[1.6rem] font-semibold text-[#111827]">
+                          Chưa có đánh giá
+                        </p>
+                        <p className="mt-1 text-[1.3rem] leading-5 text-slate-500">
+                          Hãy là học viên đầu tiên chia sẻ trải nghiệm.
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                    <h3 className="text-[1.8rem] font-bold text-[#111827]">
+                      {hasExistingReview
+                        ? "Cập nhật đánh giá của bạn"
+                        : "Đánh giá khóa học"}
+                    </h3>
+                    <p className="mt-1 text-[1.3rem] text-slate-500">
+                      Phản hồi của bạn giúp chúng tôi cải thiện nội dung khóa học.
                     </p>
-                  )}
+
+                    <fieldset className="mt-5">
+                      <legend className="mb-2 text-[1.4rem] font-semibold text-[#111827]">
+                        Mức độ hài lòng
+                      </legend>
+                      <div
+                        className="flex w-fit gap-1"
+                        onMouseLeave={() => setReviewHover(0)}
+                      >
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const highlighted =
+                            star <= (reviewHover || reviewRating);
+                          return (
+                            <button
+                              key={star}
+                              type="button"
+                              onMouseEnter={() => setReviewHover(star)}
+                              onFocus={() => setReviewHover(star)}
+                              onBlur={() => setReviewHover(0)}
+                              onClick={() => setReviewRating(star)}
+                              aria-label={`${star} sao`}
+                              aria-pressed={reviewRating === star}
+                              className="grid size-11 place-items-center rounded-lg transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                            >
+                              <Star
+                                className={`size-7 transition ${
+                                  highlighted
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "fill-transparent text-slate-300"
+                                }`}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+
+                    <label className="mt-4 block">
+                      <span className="mb-2 block text-[1.4rem] font-semibold text-[#111827]">
+                        Nhận xét <span className="font-normal text-slate-400">(không bắt buộc)</span>
+                      </span>
+                      <textarea
+                        value={reviewContent}
+                        onChange={(event) =>
+                          setReviewContent(event.target.value.slice(0, 2000))
+                        }
+                        rows={4}
+                        placeholder="Chia sẻ điều bạn thích hoặc góp ý để khóa học tốt hơn…"
+                        className="w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-[1.4rem] leading-6 text-[#111827] outline-none transition placeholder:text-slate-400 focus:border-[#ff782d] focus:ring-4 focus:ring-orange-100"
+                      />
+                      <span className="mt-1 block text-right text-[1.2rem] text-slate-400">
+                        {reviewContent.length}/2000
+                      </span>
+                    </label>
+
+                    {!isAuthenticated ? (
+                      <p className="mb-3 text-[1.3rem] text-slate-500">
+                        Đăng nhập để đánh giá khóa học.
+                      </p>
+                    ) : !isEnrolled ? (
+                      <p className="mb-3 text-[1.3rem] text-slate-500">
+                        Chỉ học viên đã đăng ký mới có thể gửi đánh giá.
+                      </p>
+                    ) : null}
+
+                    <button
+                      type="button"
+                      onClick={() => void handleReviewSubmit()}
+                      disabled={reviewSaving || (isAuthenticated && (!isEnrolled || reviewRating < 1))}
+                      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#ff782d] px-5 py-2.5 text-[1.4rem] font-bold text-white transition hover:bg-[#e9661f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {reviewSaving
+                        ? "Đang gửi…"
+                        : hasExistingReview
+                          ? "Cập nhật đánh giá"
+                          : "Gửi đánh giá"}
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>

@@ -264,7 +264,7 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
 
             {/* Post Content */}
             <div className={cn(
-              "w-full text-slate-600 leading-relaxed text-[1.6rem]",
+              "mx-auto w-full max-w-4xl text-slate-600 leading-relaxed text-[1.7rem] md:text-[1.8rem]",
               "[&_h2]:text-[2.4rem] [&_h2]:font-bold [&_h2]:mt-10 [&_h2]:mb-6 [&_h2]:text-[#111827] [&_h2]:font-heading",
               "[&_h3]:text-[2rem] [&_h3]:font-bold [&_h3]:mt-8 [&_h3]:mb-4 [&_h3]:text-[#111827] [&_h3]:font-heading",
               "[&_p]:mb-6 [&_p]:leading-[1.8]",

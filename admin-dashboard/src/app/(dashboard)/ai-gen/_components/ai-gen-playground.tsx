@@ -9,8 +9,6 @@ import {
 } from "@/services/courses.client";
 import { quizClient } from "@/services/quiz.client";
 
-type TabKey = "quiz_gen" | "learning_path_v2" | "coach_chat" | "json_inspector";
-
 type SourceMode = "course_flac" | "s3_flac_url" | "text";
 
 const inputClass =
@@ -35,7 +33,6 @@ function isDroppedConnection(message: string, status?: number): boolean {
 }
 
 export function AiGenPlayground() {
-  const [activeTab, setActiveTab] = useState<TabKey>("quiz_gen");
   const [pending, startTransition] = useTransition();
 
   const [courses, setCourses] = useState<CourseOption[]>([]);
@@ -65,18 +62,6 @@ export function AiGenPlayground() {
     "mcq,true_false,fill_in_blank,short_answer",
   );
 
-  const [domain, setDomain] = useState("lap-trinh-web");
-  const [lpMaxLessons, setLpMaxLessons] = useState(1);
-  const [lpExercisesPerLesson, setLpExercisesPerLesson] = useState(5);
-  const [chatPrompt, setChatPrompt] = useState(
-    "Học viên hay trả lời sai các câu hỏi liên quan đến Đa hình trong OOP. Hãy đưa ra 3 lời khuyên ngắn gọn.",
-  );
-  const [chatHistory, setChatHistory] = useState(
-    "## Kết quả kiểm tra gần đây\n- Quiz 1: 4/10 điểm\n- Quiz 2: 6/10 điểm",
-  );
-
-  const [lastResponse, setLastResponse] = useState<unknown>(null);
-  const [lastRequestPayload, setLastRequestPayload] = useState<unknown>(null);
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
   const [skippedCount, setSkippedCount] = useState<number | null>(null);
 
@@ -222,20 +207,8 @@ export function AiGenPlayground() {
       if (fileUrlToSend) form.append("file_url", fileUrlToSend);
       if (textToSend) form.append("text", textToSend);
 
-      setLastRequestPayload({
-        quizId: targetQuizId,
-        quizLesson: selectedTarget.label,
-        sourceMode,
-        file_url: fileUrlToSend,
-        text: textToSend ? `${textToSend.slice(0, 120)}…` : undefined,
-        language,
-        target_level: targetLevel,
-        question_count: questionCount,
-      });
-
       try {
         const enqueue = await quizClient.aiGenerate(targetQuizId, form);
-        setLastResponse(enqueue);
         if (enqueue.error) {
           if (isDroppedConnection(enqueue.error.message, enqueue.error.status)) {
             toast.message("Mất kết nối — đang tải lại câu hỏi từ quiz…");
@@ -243,7 +216,6 @@ export function AiGenPlayground() {
               targetQuizId,
               previousCount,
             );
-            setLastResponse({ recovered, error: enqueue.error });
             if (recovered.length > 0) {
               setGeneratedQuestions(recovered);
               setSkippedCount(null);
@@ -265,7 +237,6 @@ export function AiGenPlayground() {
 
         toast.message("Đang gen trên server… (poll job)");
         const res = await quizClient.waitForAiGenerateJob(targetQuizId, jobId);
-        setLastResponse(res);
 
         if (res.error) {
           const recovered = await quizClient.recoverQuestionsAfterDrop(
@@ -311,64 +282,6 @@ export function AiGenPlayground() {
     });
   }
 
-  function handleSimulateLearningPathV2() {
-    startTransition(() => {
-      const payload = {
-        endpoint: "/course/learning-path/generate",
-        method: "POST",
-        body: {
-          domain,
-          language,
-          target_level: targetLevel,
-          detail_level: detailLevel,
-          max_lessons: lpMaxLessons,
-          exercises_per_lesson: lpExercisesPerLesson,
-          source_type: sourceMode,
-        },
-      };
-      setLastRequestPayload(payload);
-      const mockV2Response = {
-        status: 200,
-        viava_version: "2.0",
-        learning_path: {
-          course_title: `Khóa học thử nghiệm: ${domain}`,
-          target_level: targetLevel,
-          milestones: [
-            {
-              id: "m1",
-              title: "Khái niệm cốt lõi",
-              lessons: [
-                {
-                  id: "l1",
-                  title: "Tổng quan bài giảng AI",
-                  summary: "Định nghĩa và ví dụ thực tế.",
-                  estimated_duration_minutes: 15,
-                },
-              ],
-            },
-          ],
-        },
-      };
-      setLastResponse(mockV2Response);
-      toast.success("Mô phỏng sinh Learning Path v2 thành công!");
-    });
-  }
-
-  function handleSimulateCoachChat() {
-    startTransition(() => {
-      setLastRequestPayload({
-        endpoint: "/course/chat",
-        query: `${chatPrompt}\n\n${chatHistory}`,
-        domains: [domain],
-      });
-      setLastResponse({
-        status: 200,
-        answer: `## Gợi ý cải thiện (AI Coach)\n\n1. Ôn Polymorphism\n2. Vẽ sơ đồ kế thừa\n3. Viết ví dụ code ngắn`,
-      });
-      toast.success("Mô phỏng AI Coach Chat v2 thành công!");
-    });
-  }
-
   return (
     <div className="space-y-6">
       <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 p-5 dark:border-blue-900/50 dark:from-blue-950/30 dark:to-indigo-950/30">
@@ -386,32 +299,7 @@ export function AiGenPlayground() {
         </p>
       </div>
 
-      <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-800">
-        {(
-          [
-            ["quiz_gen", "Sinh Quiz AI (GATS)"],
-            ["learning_path_v2", "Lộ trình Viava v2"],
-            ["coach_chat", "AI Coach & Chat v2"],
-            ["json_inspector", "Payload Inspector"],
-          ] as const
-        ).map(([key, label]) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setActiveTab(key)}
-            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              activeTab === key
-                ? "border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
-                : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === "quiz_gen" && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6 dark:border-slate-800 dark:bg-slate-950">
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
               1. Quiz đích (gắn câu hỏi vào đâu)
@@ -679,93 +567,7 @@ export function AiGenPlayground() {
               </div>
             )}
           </div>
-        </div>
-      )}
-
-      {activeTab === "learning_path_v2" && (
-        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label className={labelClass}>Domain</label>
-              <input
-                className={inputClass}
-                value={domain}
-                onChange={(e) => setDomain(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>max_lessons</label>
-              <input
-                type="number"
-                className={inputClass}
-                value={lpMaxLessons}
-                onChange={(e) => setLpMaxLessons(Number(e.target.value) || 1)}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>exercises / lesson</label>
-              <input
-                type="number"
-                className={inputClass}
-                value={lpExercisesPerLesson}
-                onChange={(e) =>
-                  setLpExercisesPerLesson(Number(e.target.value) || 5)
-                }
-              />
-            </div>
-          </div>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={handleSimulateLearningPathV2}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            Mô phỏng Learning Path v2
-          </button>
-        </div>
-      )}
-
-      {activeTab === "coach_chat" && (
-        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <textarea
-            className={`${inputClass} min-h-[80px]`}
-            value={chatPrompt}
-            onChange={(e) => setChatPrompt(e.target.value)}
-          />
-          <textarea
-            className={`${inputClass} min-h-[90px] font-mono text-xs`}
-            value={chatHistory}
-            onChange={(e) => setChatHistory(e.target.value)}
-          />
-          <button
-            type="button"
-            disabled={pending}
-            onClick={handleSimulateCoachChat}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
-          >
-            Mô phỏng AI Coach
-          </button>
-        </div>
-      )}
-
-      {activeTab === "json_inspector" && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <pre className="max-h-96 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-green-400">
-            {JSON.stringify(
-              lastRequestPayload || { note: "Chưa có request" },
-              null,
-              2,
-            )}
-          </pre>
-          <pre className="max-h-96 overflow-auto rounded-lg bg-slate-900 p-3 font-mono text-xs text-blue-400">
-            {JSON.stringify(
-              lastResponse || { note: "Chưa nhận response" },
-              null,
-              2,
-            )}
-          </pre>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

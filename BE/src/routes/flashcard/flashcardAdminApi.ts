@@ -80,6 +80,18 @@ deckRouter.post(
   errorHandle(requireCourseUpdate('courseId')),
   errorHandle(flashcardAdminHandlers.importCards),
 );
+deckRouter.get(
+  FlashcardAdminPaths.Decks.AiSources,
+  errorHandle(attachDeckCourseId),
+  errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(flashcardAdminHandlers.listAiSources),
+);
+deckRouter.post(
+  FlashcardAdminPaths.Decks.AiGenerate,
+  errorHandle(attachDeckCourseId),
+  errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(flashcardAdminHandlers.generateCardsFromArticle),
+);
 
 cardRouter.use(errorHandle(authMiddleware));
 cardRouter.use(errorHandle(requireStaff));

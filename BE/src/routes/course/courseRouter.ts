@@ -19,6 +19,7 @@ import {
   parseCreateCourseSectionInput,
   parseUpdateCourseSectionInput,
 } from '@src/models/CourseSection.model';
+import { parseUpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import {
   parseCreateLessonInput,
   parseUpdateLessonInput,
@@ -124,6 +125,23 @@ async function getById(req: Request, res: Response) {
     undefined,
   );
   return res.status(HttpStatusCodes.OK).json({ course });
+}
+
+async function getMyReview(req: Request, res: Response) {
+  const result = await CourseService.getMyReview(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+    req.authUser!.id,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function upsertReview(req: Request, res: Response) {
+  const result = await CourseService.upsertReview(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+    req.authUser!.id,
+    parseUpsertCourseReviewInput(req.body),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function getManagedById(req: Request, res: Response) {
@@ -314,6 +332,8 @@ export default {
   removeCategory: errorHandle(removeCategory),
   getBySlug: errorHandle(getBySlug),
   getById: errorHandle(getById),
+  getMyReview: errorHandle(getMyReview),
+  upsertReview: errorHandle(upsertReview),
   getManagedById: errorHandle(getManagedById),
   listAiQuizSources: errorHandle(listAiQuizSources),
   listAiQuizTargets: errorHandle(listAiQuizTargets),

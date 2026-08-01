@@ -1,10 +1,11 @@
-import { and, asc, count, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, count, eq, isNull, max, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { RouteError } from '@src/common/utils/route-errors';
 import db from '@src/db';
 import { coursesTable } from '@src/db/schema/course';
+import { lessonsTable } from '@src/db/schema/lesson';
 import {
   FLASHCARD_CARD_STATUSES,
   FLASHCARD_DECK_STATUSES,
@@ -13,6 +14,12 @@ import {
   type FlashcardCardStatus,
   type FlashcardDeckStatus,
 } from '@src/db/schema/mobile-experience';
+import { postsTable } from '@src/db/schema/post';
+import {
+  generateExercisesByType,
+  generateLearningPath,
+  resolveViavaDomainFromCourseId,
+} from '@src/services/viava/ViavaClient';
 
 const deckStatusSchema = z.enum(FLASHCARD_DECK_STATUSES);
 const cardStatusSchema = z.enum(FLASHCARD_CARD_STATUSES);
@@ -39,6 +46,16 @@ const updateCardSchema = createCardSchema.partial();
 
 const importSchema = z.object({
   csv: z.string().min(1).max(500_000),
+});
+
+const aiGenerateSchema = z.object({
+  postId: z.string().uuid(),
+  count: z.number().int().min(1).max(30).default(10),
+  language: z.string().trim().min(2).max(30).default('vi'),
+  targetLevel: z
+    .enum(['beginner', 'intermediate', 'advanced'])
+    .default('intermediate'),
+  detailLevel: z.enum(['brief', 'standard', 'detailed']).default('standard'),
 });
 
 function mapDeck(row: typeof flashcardDecksTable.$inferSelect, cardCount = 0) {
@@ -177,6 +194,22 @@ async function updateDeck(deckId: string, body: unknown) {
     })
     .where(eq(flashcardDecksTable.id, deckId))
     .returning();
+  // Publishing a deck is the approval action for AI-generated draft cards.
+  // Mobile intentionally exposes published decks/cards only.
+  if (input.status === 'published') {
+    await db
+      .update(flashcardsTable)
+      .set({
+        status: 'published',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(flashcardsTable.deckId, deckId),
+          eq(flashcardsTable.status, 'draft'),
+        ),
+      );
+  }
   const [countRow] = await db
     .select({ total: count() })
     .from(flashcardsTable)
@@ -345,6 +378,182 @@ async function importCards(deckId: string, body: unknown) {
   return { data: { imported: created.length, cards: created } };
 }
 
+async function listAiSources(deckId: string) {
+  const deck = await getDeckOrThrow(deckId);
+  if (!deck.courseId) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      'This flashcard deck is not attached to a course',
+    );
+  }
+  const rows = await db
+    .select({
+      postId: postsTable.id,
+      postTitle: postsTable.title,
+      postExcerpt: postsTable.excerpt,
+      lessonId: lessonsTable.id,
+      lessonTitle: lessonsTable.title,
+    })
+    .from(lessonsTable)
+    .innerJoin(postsTable, eq(lessonsTable.linkedPostId, postsTable.id))
+    .where(
+      and(
+        eq(lessonsTable.courseId, deck.courseId),
+        isNull(postsTable.deletedAt),
+      ),
+    )
+    .orderBy(asc(lessonsTable.order));
+
+  const seen = new Set<string>();
+  return {
+    data: rows.filter((row) => {
+      if (seen.has(row.postId)) return false;
+      seen.add(row.postId);
+      return true;
+    }),
+  };
+}
+
+function articleToPlainText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function readExerciseString(
+  exercise: Record<string, unknown>,
+  keys: string[],
+): string {
+  for (const key of keys) {
+    const value = exercise[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
+
+async function generateCardsFromArticle(deckId: string, body: unknown) {
+  const deck = await getDeckOrThrow(deckId);
+  if (!deck.courseId) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      'This flashcard deck is not attached to a course',
+    );
+  }
+  const input = aiGenerateSchema.parse(body);
+  const [source] = await db
+    .select({
+      title: postsTable.title,
+      content: postsTable.content,
+    })
+    .from(lessonsTable)
+    .innerJoin(postsTable, eq(lessonsTable.linkedPostId, postsTable.id))
+    .where(
+      and(
+        eq(lessonsTable.courseId, deck.courseId),
+        eq(postsTable.id, input.postId),
+        isNull(postsTable.deletedAt),
+      ),
+    )
+    .limit(1);
+
+  if (!source) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      'Article is not linked to a lesson in this course',
+    );
+  }
+
+  const text = articleToPlainText(source.content);
+  if (text.length < 40) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      'Article content is too short to generate flashcards',
+    );
+  }
+
+  const domain = await resolveViavaDomainFromCourseId(deck.courseId);
+  const learningPath = await generateLearningPath({
+    language: input.language,
+    target_level: input.targetLevel,
+    detail_level: input.detailLevel,
+    domain,
+    max_lessons: 1,
+    exercises_per_lesson: input.count,
+    text: `${source.title}\n\n${text}`,
+  });
+  const generated = await generateExercisesByType('flashcard', {
+    learning_path: learningPath,
+    language: input.language,
+    target_level: input.targetLevel,
+    detail_level: input.detailLevel,
+    exercises_per_lesson: input.count,
+  });
+
+  const normalized = generated.exercises
+    .map((exercise) => ({
+      front: readExerciseString(exercise, [
+        'front_side_prompt',
+        'front',
+        'question',
+        'prompt',
+      ]),
+      back: readExerciseString(exercise, [
+        'back_side_answer',
+        'back',
+        'answer',
+      ]),
+      hint:
+        readExerciseString(exercise, [
+          'mnemonics_hint',
+          'hint',
+          'mnemonic',
+        ]) || null,
+    }))
+    .filter((card) => card.front && card.back)
+    .slice(0, input.count);
+
+  if (normalized.length === 0) {
+    throw new RouteError(
+      HttpStatusCodes.BAD_GATEWAY,
+      'VIAVA did not return any valid flashcards',
+    );
+  }
+
+  const [orderRow] = await db
+    .select({ maxOrder: max(flashcardsTable.sortOrder) })
+    .from(flashcardsTable)
+    .where(eq(flashcardsTable.deckId, deckId));
+  const firstOrder = Number(orderRow?.maxOrder ?? -1) + 1;
+  const rows = await db
+    .insert(flashcardsTable)
+    .values(
+      normalized.map((card, index) => ({
+        deckId,
+        ...card,
+        sortOrder: firstOrder + index,
+        status: 'draft' as const,
+      })),
+    )
+    .returning();
+
+  return {
+    data: {
+      generated: rows.length,
+      source: { postId: input.postId, title: source.title },
+      cards: rows.map(mapCard),
+    },
+  };
+}
+
 async function resolveDeckCourseId(deckId: string): Promise<string | null> {
   const deck = await getDeckOrThrow(deckId);
   return deck.courseId;
@@ -366,6 +575,8 @@ export default {
   updateCard,
   archiveCard,
   importCards,
+  listAiSources,
+  generateCardsFromArticle,
   getDeckOrThrow,
   getCardOrThrow,
   resolveDeckCourseId,

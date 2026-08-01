@@ -19,6 +19,7 @@ import 'package:gats_academy/features/course/presentation/widgets/group_chat_pan
 import 'package:gats_academy/features/course/presentation/widgets/lecture_preview_sheet.dart';
 import 'package:gats_academy/features/course/presentation/quiz_take_screen.dart';
 import 'package:gats_academy/features/course/presentation/lesson_quiz_launcher.dart';
+import 'package:gats_academy/features/flashcard/presentation/flashcard_deck_section.dart';
 import 'package:gats_academy/features/store/presentation/course_store_detail_screen.dart';
 
 /// Màn học đầy đủ — chỉ dành cho khóa đã mua / đăng ký (hoặc mentor/admin).
@@ -156,9 +157,10 @@ class _CourseLearningView extends StatefulWidget {
 
 class _CourseLearningViewState extends State<_CourseLearningView>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController = TabController(length: 3, vsync: this);
+  late final TabController _tabController = TabController(length: 4, vsync: this);
   final _progress = LectureProgressStore.instance;
   bool _progressReady = false;
+  int _flashcardReloadVersion = 0;
 
   @override
   void initState() {
@@ -272,6 +274,7 @@ class _CourseLearningViewState extends State<_CourseLearningView>
       tabLabels: [
         AppStrings.courseTabLectures,
         AppStrings.courseTabQuiz,
+        'Flashcard',
         AppStrings.courseTabGroup,
       ],
       hero: CourseLearningHeader(
@@ -325,6 +328,21 @@ class _CourseLearningViewState extends State<_CourseLearningView>
           course: course,
           isMentor: widget.isMentor,
           bottomInset: 0,
+        ),
+        RefreshIndicator(
+          onRefresh: () async {
+            setState(() => _flashcardReloadVersion++);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              FlashcardDeckSection(
+                key: ValueKey('${course.id}:$_flashcardReloadVersion'),
+                courseId: course.id,
+              ),
+            ],
+          ),
         ),
         widget.canAccessChat
             ? GroupChatPanel(

@@ -7,6 +7,8 @@ const FlashcardAdminPaths = {
     Delete: '/:deckId',
     Cards: '/:deckId/cards',
     Import: '/:deckId/cards/import',
+    AiSources: '/:deckId/ai-sources',
+    AiGenerate: '/:deckId/cards/ai-generate',
   },
   Cards: {
     _: '/flashcards',

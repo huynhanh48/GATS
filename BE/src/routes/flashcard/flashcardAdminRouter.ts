@@ -54,6 +54,21 @@ async function importCards(req: Request, res: Response) {
   return res.status(HttpStatusCodes.CREATED).json(result);
 }
 
+async function listAiSources(req: Request, res: Response) {
+  const deckId = getUuidRouteParam(req.params.deckId, 'deckId');
+  const result = await FlashcardAdminService.listAiSources(deckId);
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function generateCardsFromArticle(req: Request, res: Response) {
+  const deckId = getUuidRouteParam(req.params.deckId, 'deckId');
+  const result = await FlashcardAdminService.generateCardsFromArticle(
+    deckId,
+    req.body,
+  );
+  return res.status(HttpStatusCodes.CREATED).json(result);
+}
+
 async function updateCard(req: Request, res: Response) {
   const cardId = getUuidRouteParam(req.params.cardId, 'cardId');
   const result = await FlashcardAdminService.updateCard(cardId, req.body);
@@ -74,6 +89,8 @@ export default {
   listCards,
   createCard,
   importCards,
+  listAiSources,
+  generateCardsFromArticle,
   updateCard,
   archiveCard,
 };

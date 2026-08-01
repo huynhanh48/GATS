@@ -91,6 +91,16 @@ courseRouter.get(
   errorHandle(optionalAuthMiddleware),
   courseHandlers.getCurriculum,
 );
+courseRouter.get(
+  CoursePaths.Course.Review,
+  errorHandle(authMiddleware),
+  courseHandlers.getMyReview,
+);
+courseRouter.put(
+  CoursePaths.Course.Review,
+  errorHandle(authMiddleware),
+  courseHandlers.upsertReview,
+);
 
 courseRouter.get(
   CoursePaths.Course.Sections.List,

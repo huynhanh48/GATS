@@ -140,33 +140,42 @@ function FillBlankAnswer({
 
   const displayQuestion = question.question
     .split(BLANK_PATTERN)
-    .map((segment, index) => (index === 0 ? segment : `(${index})${segment}`))
+    .map((segment, index) =>
+      index === 0 ? segment : `____${index}____${segment}`,
+    )
     .join("");
 
   return (
     <div className="space-y-3">
-      <div className="rounded-xl bg-muted/45 px-4 py-3 text-[15px] leading-7 text-foreground">
+      <div className="rounded-xl border border-border/60 bg-muted/35 px-4 py-3 font-medium text-[15px] leading-8 text-foreground">
         {displayQuestion}
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {parts.map((part, index) => (
-          <label key={index} className="space-y-1">
-            <span className="block text-xs font-semibold text-muted-foreground">
-              Ô {index + 1}
+          <label
+            key={index}
+            className="rounded-xl border border-border/60 bg-card p-3 transition focus-within:border-primary/40 focus-within:bg-primary/[0.025]"
+          >
+            <span className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-foreground">
+              <span>Đáp án {index + 1}</span>
+              <span className="font-mono text-xs font-bold tracking-wide text-primary">
+                ____{index + 1}____
+              </span>
             </span>
             <input
               value={part || ""}
               onChange={(e) => updatePart(index, e.target.value)}
               disabled={disabled}
               className={`w-full min-w-0 ${softInputClass}`}
-              placeholder={`Nhập ô ${index + 1}`}
+              placeholder={`Nhập đáp án cho ô ${index + 1}`}
+              aria-label={`Đáp án cho ô trống ${index + 1}`}
               autoComplete="off"
             />
           </label>
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        Điền lần lượt từng ô trống theo số thứ tự trong câu.
+        Điền đáp án tương ứng với số được đánh dấu trong câu hỏi.
       </p>
     </div>
   );

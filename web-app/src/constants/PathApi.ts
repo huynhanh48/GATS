@@ -45,6 +45,7 @@ export const PathApi = {
     detailById: (id: string) => `${API_PREFIX}/courses/${id}`,
     /** GET – auth: optional */
     curriculum: (courseId: string) => `${API_PREFIX}/courses/${courseId}/curriculum`,
+    review: (courseId: string) => `${API_PREFIX}/courses/${courseId}/review`,
     /** GET – auth: member (enrolled or course read permission) */
     sections: (courseId: string) => `${API_PREFIX}/courses/${courseId}/sections`,
     /** GET – auth: optional – legacy alias of categories.list?type=course */
