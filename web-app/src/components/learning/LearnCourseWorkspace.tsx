@@ -185,6 +185,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         if (cancelled) return;
         if (!courseData?.id) {
           setLoadError("Không tìm thấy khóa học");
+          if (!cancelled) setLoading(false);
           return;
         }
 
@@ -198,6 +199,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
           Boolean(user?.roles?.includes("admin"));
         if (!enrolled && !canMentorCourse) {
           toast.error("Bạn chưa đăng ký khóa học này");
+          if (!cancelled) setLoading(false);
           router.push(`/courses/${slug}`);
           return;
         }
@@ -222,7 +224,36 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         setCourse(courseData);
         setSections(mappedSections);
         const flat = flattenLessons(mappedSections);
-        const progress = await refreshCourseProgress(courseData.id);
+
+        // Start lesson fetch ASAP when URL lesson is not hard-locked; progress
+        // unlock may still redirect after. Cache dedupes if loadLesson re-runs.
+        const tentativeLesson =
+          lessonIdProp &&
+          flat.find((lesson) => lesson.id === lessonIdProp && !lesson.locked);
+        if (tentativeLesson) {
+          setActiveLessonId(tentativeLesson.id);
+          const sectionIdx = mappedSections.findIndex((s) =>
+            (s.lessons ?? []).some((l) => l.id === tentativeLesson.id),
+          );
+          setOpenSections(sectionIdx >= 0 ? [sectionIdx] : [0]);
+        }
+
+        // Paint shell before progress / unlock resolve.
+        if (!cancelled) setLoading(false);
+
+        // Prefetch playback in parallel with progress (TTL cache dedupes loadLesson).
+        const progressPromise = refreshCourseProgress(courseData.id);
+        if (
+          tentativeLesson &&
+          (tentativeLesson.type || "video").toLowerCase() === "video"
+        ) {
+          void fetchLessonPlayback(courseData.id, tentativeLesson.id).catch(
+            () => null,
+          );
+        }
+        const progress = await progressPromise;
+        if (cancelled) return;
+
         const initialCompletedIds = new Set(progress?.completedLessonIds ?? []);
         const requestedIndex = lessonIdProp
           ? flat.findIndex((lesson) => lesson.id === lessonIdProp)
@@ -264,7 +295,6 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
       } catch (err: any) {
         console.error(err);
         setLoadError(err?.message || "Không tải được khóa học");
-      } finally {
         if (!cancelled) setLoading(false);
       }
     })();
@@ -472,7 +502,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
             <RotateCcw className="w-4 h-4" /> Thử lại
           </button>
           <Link
-            href="/learning"
+            href="/profile?tab=courses"
             className="rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
             Về Học tập
@@ -617,7 +647,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
       <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-[1536px] items-center gap-3 px-3 sm:px-5">
           <Link
-            href="/learning"
+            href="/profile?tab=courses"
             className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <ArrowLeft className="h-4 w-4" />

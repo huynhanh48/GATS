@@ -5,8 +5,12 @@
 #   docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
 # Worker reads S3 (LongVan) from BE/config/.env.development — same bucket as host API.
 #
-# Full production stack:
+# Local full stack (defaults → localhost API, NOT api.gats.vn):
+#   copy .env.example .env   # optional; defaults already point at localhost
 #   docker compose -p gats-academy up --build -d
+#
+# Production VPS (must use prod overlay + .env from .env.vps.example → api.gats.vn):
+#   docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 #
 # Exposed on the host (left = host port; changed to avoid conflicts on the VPS):
 #   - Backend API      http://localhost:3000
@@ -34,8 +38,9 @@ x-backend-env: &backend-env
   AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
   EMAIL_USER: noreply@gats.dev
   EMAIL_PASSWORD: changeme
-  APP_URL: ${APP_URL:-https://api.gats.vn}
-  FRONTEND_URL: ${FRONTEND_URL:-https://gats.vn,https://admin.gats.vn,http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100}
+  # Local default. Prod overlay requires APP_URL from .env (https://api.gats.vn).
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100,https://gats.vn,https://admin.gats.vn}
   # Must match the Web client ID used by the browser (NEXT_PUBLIC_*).
   # Empty → BE returns "Google Login is not configured".
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-${NEXT_PUBLIC_GOOGLE_CLIENT_ID}}
@@ -211,8 +216,8 @@ services:
         # Baked into the web-app client bundle at build time (NEXT_PUBLIC_*).
         # Override via .env next to this file or `--build-arg`.
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
-        # Where the BROWSER reaches the API (baked at build time).
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
+        # Baked at build time. Local default = localhost; VPS .env sets api.gats.vn.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     image: gats-academy
     container_name: gats-academy
     restart: unless-stopped
@@ -230,15 +235,19 @@ services:
       # Viava is internal (nginx → app:8000); not published on host by default
     volumes:
       - viava_rag_data:/app/viava/rag_data
+      # Local: Viava reads this via load_dotenv (not baked — .dockerignore excludes .env*).
+      # VPS: prefer AZURE_* in root .env (compose interpolation); mount is optional.
+      - ./viava/.env:/app/viava/.env:ro
     environment:
       <<: *backend-env
-      # Production gate — do not inherit development from x-backend-env.
-      NODE_ENV: production
+      # Local full stack: keep development so compose defaults pass env.ts gates.
+      # VPS: docker-compose.prod.yml overrides NODE_ENV=production + real secrets.
+      NODE_ENV: development
       # Admin SSR/proxy → API inside the same container (NOT the public URL).
       BE_API_URL: http://localhost:3000
       # Browser sockets / any NEXT_PUBLIC client calls from admin.
-      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
-      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
+      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     healthcheck:
       test:
         [

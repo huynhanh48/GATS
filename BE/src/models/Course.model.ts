@@ -113,6 +113,10 @@ export const updateCourseSchema = z
 
 export const softDeleteVisibilitySchema = z.enum(['without', 'with', 'only']);
 
+export const courseListSortSchema = z
+  .enum(['newest', 'price_asc', 'price_desc'])
+  .default('newest');
+
 const listCoursesQueryBaseSchema = z.object({
   status: courseStatusSchema.optional(),
   level: courseLevelQuerySchema.optional(),
@@ -127,6 +131,7 @@ const listCoursesQueryBaseSchema = z.object({
     .transform((v) => (v && v.length > 0 ? v : undefined)),
   /** Soft-delete visibility. `only`/`with` require auth (admin trash). Default: without */
   deleted: softDeleteVisibilitySchema.optional(),
+  sort: courseListSortSchema.optional(),
   page: z.coerce.number().int().min(1).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
   take: z.coerce.number().int().min(1).max(100).optional(),
@@ -135,6 +140,7 @@ const listCoursesQueryBaseSchema = z.object({
 
 export const listCoursesQuerySchema = listCoursesQueryBaseSchema.transform(
   (data) => {
+    const sort = data.sort ?? 'newest';
     if (data.take !== undefined) {
       const res: any = {
         status: data.status,
@@ -142,6 +148,7 @@ export const listCoursesQuerySchema = listCoursesQueryBaseSchema.transform(
         category: data.category,
         tag: data.tag,
         deleted: data.deleted,
+        sort,
         skip: data.skip ?? 0,
         take: data.take,
         mode: 'offset' as const,
@@ -159,6 +166,7 @@ export const listCoursesQuerySchema = listCoursesQueryBaseSchema.transform(
       category: data.category,
       tag: data.tag,
       deleted: data.deleted,
+      sort,
       page,
       limit,
       skip: (page - 1) * limit,

@@ -1,5 +1,6 @@
 import {
   and,
+  asc,
   count,
   desc,
   eq,
@@ -7,6 +8,7 @@ import {
   inArray,
   ne,
   or,
+  sql,
   type SQL,
 } from 'drizzle-orm';
 
@@ -59,6 +61,23 @@ export async function findById(
   return rows[0] ? parseRow(rows[0]) : undefined;
 }
 
+/** Batch lookup — avoids N+1 in enrollment listMine. */
+export async function findByIds(
+  ids: string[],
+  options: { deleted?: SoftDeleteVisibility } = {},
+): Promise<CourseRecord[]> {
+  if (ids.length === 0) return [];
+  const unique = [...new Set(ids)];
+  const conditions: SQL[] = [inArray(coursesTable.id, unique)];
+  withSoftDelete(conditions, options.deleted);
+
+  const rows = await db
+    .select()
+    .from(coursesTable)
+    .where(and(...conditions));
+  return rows.map(parseRow);
+}
+
 export async function findBySlug(
   slug: string,
   options: { deleted?: SoftDeleteVisibility } = {},
@@ -108,6 +127,8 @@ export async function slugExists(
   return rows.length > 0;
 }
 
+export type CourseListSort = 'newest' | 'price_asc' | 'price_desc';
+
 export async function findMany(options: {
   status?: CourseStatus;
   level?: string;
@@ -115,6 +136,7 @@ export async function findMany(options: {
   instructorId?: number;
   courseIds?: string[];
   keyword?: string;
+  sort?: CourseListSort;
   skip: number;
   take: number;
   deleted?: SoftDeleteVisibility;
@@ -152,12 +174,21 @@ export async function findMany(options: {
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
+  // Effective storefront price: sale when set, else list price.
+  const effectivePrice = sql`COALESCE(${coursesTable.salePrice}, ${coursesTable.price})`;
+  const orderByClause =
+    options.sort === 'price_asc'
+      ? [asc(effectivePrice), desc(coursesTable.createdAt)]
+      : options.sort === 'price_desc'
+        ? [desc(effectivePrice), desc(coursesTable.createdAt)]
+        : [desc(coursesTable.createdAt)];
+
   const [rows, totalRows] = await Promise.all([
     db
       .select()
       .from(coursesTable)
       .where(whereClause)
-      .orderBy(desc(coursesTable.createdAt))
+      .orderBy(...orderByClause)
       .limit(options.take)
       .offset(options.skip),
     db.select({ total: count() }).from(coursesTable).where(whereClause),

@@ -1,6 +1,63 @@
 import apiClient from "@/lib/apiClient";
 import { PathApi } from "@/constants/PathApi";
 
+const LEARN_CACHE_TTL_MS = 45_000;
+
+type CacheEntry<T> = { at: number; value: T };
+
+function readCache<T>(map: Map<string, CacheEntry<T>>, key: string): T | null {
+  const hit = map.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > LEARN_CACHE_TTL_MS) {
+    map.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+function writeCache<T>(
+  map: Map<string, CacheEntry<T>>,
+  key: string,
+  value: T,
+): void {
+  map.set(key, { at: Date.now(), value });
+}
+
+async function withInflight<T>(
+  inflight: Map<string, Promise<T>>,
+  key: string,
+  factory: () => Promise<T>,
+): Promise<T> {
+  const existing = inflight.get(key);
+  if (existing) return existing;
+  const promise = factory().finally(() => {
+    inflight.delete(key);
+  });
+  inflight.set(key, promise);
+  return promise;
+}
+
+const enrollmentsCache = new Map<string, CacheEntry<EnrollmentWithCourse[]>>();
+const enrollmentsInflight = new Map<string, Promise<EnrollmentWithCourse[]>>();
+const courseSlugCache = new Map<string, CacheEntry<unknown>>();
+const courseSlugInflight = new Map<string, Promise<unknown>>();
+const lessonPlaybackCache = new Map<
+  string,
+  CacheEntry<{
+    videoId: string | null;
+    playbackUrl: string;
+    audioFlacUrl: string | null;
+  }>
+>();
+const lessonPlaybackInflight = new Map<
+  string,
+  Promise<{
+    videoId: string | null;
+    playbackUrl: string;
+    audioFlacUrl: string | null;
+  }>
+>();
+
 export type EnrollmentWithCourse = {
   id: string;
   courseId: string;
@@ -21,6 +78,7 @@ export type CourseProgress = {
   totalLessons: number;
   percent: number;
   completedLessonIds?: string[];
+  nextLessonId?: string | null;
 };
 
 export type LessonProgress = {
@@ -34,8 +92,16 @@ export type LessonProgress = {
 };
 
 export async function fetchMyEnrollments(): Promise<EnrollmentWithCourse[]> {
-  const res: any = await apiClient.get(PathApi.enrollment.listMine);
-  return Array.isArray(res?.data) ? res.data : [];
+  const cacheKey = "mine";
+  const cached = readCache(enrollmentsCache, cacheKey);
+  if (cached) return cached;
+
+  return withInflight(enrollmentsInflight, cacheKey, async () => {
+    const res: any = await apiClient.get(PathApi.enrollment.listMine);
+    const data = Array.isArray(res?.data) ? res.data : [];
+    writeCache(enrollmentsCache, cacheKey, data);
+    return data;
+  });
 }
 
 export async function fetchCourseProgress(
@@ -74,30 +140,72 @@ export async function upsertLessonProgress(
 }
 
 export async function fetchCourseBySlug(slug: string) {
-  const res: any = await apiClient.get(PathApi.courses.detailBySlug(slug));
-  return res?.course ?? res?.data?.course ?? res?.data ?? null;
+  const cacheKey = slug.trim().toLowerCase();
+  const cached = readCache(courseSlugCache, cacheKey);
+  if (cached !== null) return cached;
+
+  return withInflight(courseSlugInflight, cacheKey, async () => {
+    const res: any = await apiClient.get(PathApi.courses.detailBySlug(slug));
+    const course = res?.course ?? res?.data?.course ?? res?.data ?? null;
+    writeCache(courseSlugCache, cacheKey, course);
+    return course;
+  });
 }
 
 export async function fetchLessonPlayback(courseId: string, lessonId: string) {
-  const lessonVideoRes: any = await apiClient.get(
-    PathApi.video.lessonVideo(courseId, lessonId),
-  );
-  const videoId = lessonVideoRes?.data?.videoId as string | undefined;
-  if (!videoId) {
-    return {
-      videoId: null as string | null,
-      playbackUrl: "",
-      audioFlacUrl: null as string | null,
-    };
-  }
-  const playbackRes: any = await apiClient.get(
-    PathApi.video.playback(courseId, videoId),
-  );
-  return {
-    videoId,
-    playbackUrl: (playbackRes?.data?.playbackUrl as string) || "",
-    audioFlacUrl: (playbackRes?.data?.audioFlacUrl as string) || null,
-  };
+  const cacheKey = `${courseId}:${lessonId}`;
+  const cached = readCache(lessonPlaybackCache, cacheKey);
+  if (cached) return cached;
+
+  return withInflight(lessonPlaybackInflight, cacheKey, async () => {
+    try {
+      const playbackRes: any = await apiClient.get(
+        PathApi.video.lessonPlayback(courseId, lessonId),
+      );
+      const data = playbackRes?.data;
+      if (!data?.videoId) {
+        const empty = {
+          videoId: null as string | null,
+          playbackUrl: "",
+          audioFlacUrl: null as string | null,
+        };
+        writeCache(lessonPlaybackCache, cacheKey, empty);
+        return empty;
+      }
+      const result = {
+        videoId: data.videoId as string,
+        playbackUrl: (data.playbackUrl as string) || "",
+        audioFlacUrl: (data.audioFlacUrl as string) || null,
+      };
+      writeCache(lessonPlaybackCache, cacheKey, result);
+      return result;
+    } catch {
+      // Fallback to legacy two-hop if combined route unavailable.
+      const lessonVideoRes: any = await apiClient.get(
+        PathApi.video.lessonVideo(courseId, lessonId),
+      );
+      const videoId = lessonVideoRes?.data?.videoId as string | undefined;
+      if (!videoId) {
+        const empty = {
+          videoId: null as string | null,
+          playbackUrl: "",
+          audioFlacUrl: null as string | null,
+        };
+        writeCache(lessonPlaybackCache, cacheKey, empty);
+        return empty;
+      }
+      const playbackRes: any = await apiClient.get(
+        PathApi.video.playback(courseId, videoId),
+      );
+      const result = {
+        videoId,
+        playbackUrl: (playbackRes?.data?.playbackUrl as string) || "",
+        audioFlacUrl: (playbackRes?.data?.audioFlacUrl as string) || null,
+      };
+      writeCache(lessonPlaybackCache, cacheKey, result);
+      return result;
+    }
+  });
 }
 
 export type QuizTakeQuestion = {

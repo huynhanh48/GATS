@@ -285,6 +285,7 @@ async function list(query: ListCoursesQuery, viewer?: AuthUser) {
     instructorId: isInstructor ? viewer?.id : undefined,
     courseIds,
     keyword: query.keyword,
+    sort: query.sort,
     skip: query.skip,
     take: query.take,
     deleted: deletedVisibility,

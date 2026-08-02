@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "viava-harness"))
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values, load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -45,7 +45,15 @@ from servers.rest_api.routers import teaching as teaching_router
 from servers.rest_api.routers import chat as chat_router
 from servers.rest_api.schemas.common import ErrorDetail
 
+# Compose often injects empty AZURE_* from root .env; treat blanks as unset so
+# /app/viava/.env (host run or mounted file) can still supply real values.
 load_dotenv()
+for _key, _value in dotenv_values().items():
+    if _value is None:
+        continue
+    _current = os.environ.get(_key)
+    if _current is None or not str(_current).strip():
+        os.environ[_key] = _value
 
 logging.basicConfig(
     level=logging.INFO,

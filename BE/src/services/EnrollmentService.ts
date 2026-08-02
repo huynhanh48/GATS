@@ -205,9 +205,16 @@ async function exportLearnersCsv(courseId: string, actorUserId: number) {
 
 async function listMine(userId: number) {
   const data = await EnrollmentRepo.listByUser(userId);
+  if (data.length === 0) {
+    return { data: [] };
+  }
+
+  const courses = await CourseRepo.findByIds(data.map((enr) => enr.courseId));
+  const courseById = new Map(courses.map((course) => [course.id, course]));
+
   const result = [];
   for (const enr of data) {
-    const course = await CourseRepo.findById(enr.courseId);
+    const course = courseById.get(enr.courseId);
     if (course) {
       result.push({ ...enr, course });
     }

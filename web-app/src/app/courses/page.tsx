@@ -27,11 +27,23 @@ import {
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Container } from "@/components/layout/Container";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PathApi } from "@/constants/PathApi";
 import apiClient from "@/lib/apiClient";
 import { resolveMediaUrl } from "@/lib/media/url";
 import { theme as designTheme } from "@/lib/theme";
 import type { Course, CourseCategory, PaginationData } from "@/types/course";
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "Mới nhất", api: "newest" },
+  { value: "priceAsc", label: "Giá: Thấp đến Cao", api: "price_asc" },
+  { value: "priceDesc", label: "Giá: Cao đến Thấp", api: "price_desc" },
+] as const;
 
 type CategoriesPayload = {
   data?: CourseCategory[];
@@ -114,8 +126,14 @@ function CoursesPageContent() {
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
 
+  const searchParams = useSearchParams();
+  const keywordFromUrl = searchParams.get("keyword")?.trim() ?? "";
+  const categoryFromUrl = searchParams.get("category")?.trim() ?? "";
+
   const [levelFilter, setLevelFilter] = useState("all");
-  const [productTypeFilter, setProductTypeFilter] = useState("all");
+  const [productTypeFilter, setProductTypeFilter] = useState(
+    categoryFromUrl || "all",
+  );
   const [priceFilter, setPriceFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,8 +141,6 @@ function CoursesPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
-  const searchParams = useSearchParams();
-  const keywordFromUrl = searchParams.get("keyword")?.trim() ?? "";
   const [searchInput, setSearchInput] = useState(keywordFromUrl);
   const [searchQuery, setSearchQuery] = useState(keywordFromUrl);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -146,6 +162,12 @@ function CoursesPageContent() {
     setSearchQuery(keywordFromUrl);
     setCurrentPage(1);
   }, [keywordFromUrl]);
+
+  useEffect(() => {
+    if (!categoryFromUrl) return;
+    setProductTypeFilter(categoryFromUrl);
+    setCurrentPage(1);
+  }, [categoryFromUrl]);
 
   const [openAccordion, setOpenAccordion] = useState<Record<string, boolean>>({
     level: true,
@@ -192,10 +214,9 @@ function CoursesPageContent() {
     if (priceFilter === "paid") params.append("minPrice", "1");
     if (searchQuery) params.append("keyword", searchQuery);
 
-    // MOCK: sort logic can be handled by API if supported, or client side. 
-    // Usually we append `sortBy` to params if API supports it.
-    if (sortBy === "priceAsc") params.append("sort", "price_asc");
-    if (sortBy === "priceDesc") params.append("sort", "price_desc");
+    const sortOpt =
+      SORT_OPTIONS.find((opt) => opt.value === sortBy) ?? SORT_OPTIONS[0];
+    params.append("sort", sortOpt.api);
 
     apiClient
       .get(`${PathApi.courses.list}?${params.toString()}`)
@@ -485,19 +506,43 @@ function CoursesPageContent() {
               </div>
 
               <div className="flex items-center gap-3 self-end sm:self-auto">
-                <span className="text-[1.4rem] font-medium text-slate-500">Sắp xếp:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="cursor-pointer bg-transparent text-[1.5rem] font-bold text-slate-800 outline-none"
-                >
-                  <option value="newest">Mới nhất</option>
-                  <option value="priceAsc">Giá: Thấp đến Cao</option>
-                  <option value="priceDesc">Giá: Cao đến Thấp</option>
-                </select>
+                <span className="text-[1.4rem] font-medium text-slate-500">
+                  Sắp xếp:
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-[1.4rem] font-semibold text-slate-800 outline-none transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-[#ff782d]/40 data-[state=open]:border-[#ff782d]/40 data-[state=open]:bg-orange-50/40"
+                  >
+                    <ArrowUpDown className="h-4 w-4 text-slate-500" />
+                    {SORT_OPTIONS.find((opt) => opt.value === sortBy)?.label ??
+                      "Mới nhất"}
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="min-w-[22rem] rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+                  >
+                    {SORT_OPTIONS.map((opt) => {
+                      const active = sortBy === opt.value;
+                      return (
+                        <DropdownMenuItem
+                          key={opt.value}
+                          onSelect={() => {
+                            setSortBy(opt.value);
+                            setCurrentPage(1);
+                          }}
+                          className={`cursor-pointer rounded-lg px-3 py-2.5 text-[1.4rem] font-medium ${
+                            active
+                              ? "bg-[#ff782d]/10 text-[#ff782d] focus:bg-[#ff782d]/15 focus:text-[#ff782d]"
+                              : "text-slate-700 focus:bg-slate-50 focus:text-slate-900"
+                          }`}
+                        >
+                          {opt.label}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 

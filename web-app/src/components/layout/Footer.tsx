@@ -55,7 +55,7 @@ export function Footer() {
             <h4 className="font-bold text-[#111827] mb-8 text-[1.5rem] uppercase tracking-wider">Chương trình</h4>
             <ul className="space-y-5">
               <li><Link href="/courses" className="text-slate-500 hover:text-[#ff782d] text-[1.4rem] transition-colors">Thiết kế & Đồ hoạ</Link></li>
-              <li><Link href="/courses" className="text-[#ff782d] font-medium text-[1.4rem] transition-colors">Kinh doanh</Link></li>
+              <li><Link href="/courses" className="text-slate-500 hover:text-[#ff782d] text-[1.4rem] transition-colors">Kinh doanh</Link></li>
               <li><Link href="/courses" className="text-slate-500 hover:text-[#ff782d] text-[1.4rem] transition-colors">CNTT & Phần mềm</Link></li>
               <li><Link href="/courses" className="text-slate-500 hover:text-[#ff782d] text-[1.4rem] transition-colors">Ngoại ngữ</Link></li>
               <li><Link href="/courses" className="text-slate-500 hover:text-[#ff782d] text-[1.4rem] transition-colors">Lập trình</Link></li>

@@ -92,7 +92,7 @@ function CheckoutResultContent() {
         {status === "paid" ? (
           <>
             <Link
-              href="/learning"
+              href="/profile?tab=courses"
               className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors"
             >
               Vào học ngay

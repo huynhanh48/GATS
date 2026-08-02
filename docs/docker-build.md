@@ -1,8 +1,20 @@
 # Build & deploy Docker (Web + API + Admin)
 
-> Cập nhật: 22/07/2026  
+> Cập nhật: 02/08/2026  
 > Image gốc: `Dockerfile` (multi-stage) + `docker-compose.yml` service `app`  
-> Chi tiết secrets/OAuth: [`huong-dan-van-hanh-ngay.md`](./huong-dan-van-hanh-ngay.md), mẫu env: [`.env.vps.example`](../.env.vps.example)
+> Chi tiết secrets/OAuth: [`huong-dan-van-hanh-ngay.md`](./huong-dan-van-hanh-ngay.md)  
+> Env mẫu: local [`.env.example`](../.env.example) · VPS [`.env.vps.example`](../.env.vps.example)
+
+## Local vs production API URL
+
+| Môi trường | Compose | `NEXT_PUBLIC_API_URL` / `APP_URL` |
+|---|---|---|
+| **Local** (máy bạn) | `docker-compose.yml` only | Default `http://localhost:3000` — **không** gọi `api.gats.vn` |
+| **Prod VPS** | `docker-compose.yml` + `docker-compose.prod.yml` | Bắt buộc từ `.env`: `https://api.gats.vn` |
+
+Web trên `localhost:3005` dùng same-origin `/api/*`; Next rewrite proxy tới BE loopback `127.0.0.1:3000` (không hardcode prod). Trên `gats.vn`, nginx `/api` → BE trước Next.
+
+Nếu root `.env` còn `NEXT_PUBLIC_API_URL=https://api.gats.vn` từ lần deploy VPS, **sửa lại localhost** (hoặc copy `.env.example`) rồi `up --build`.
 
 ## Ports sau khi lên
 
@@ -16,11 +28,14 @@
 ## Trước khi build (bắt buộc)
 
 1. Docker Desktop **đang chạy**.
-2. Ở **repo root** tạo file `.env` (không commit) từ `.env.vps.example`:
+2. Ở **repo root** tạo file `.env` (không commit):
 
 ```powershell
 cd c:\Users\admin\Documents\CODE\GATS-ACADEMY
-copy .env.vps.example .env
+# Local laptop:
+copy .env.example .env
+# VPS production:
+# copy .env.vps.example .env
 notepad .env
 ```
 
@@ -30,8 +45,8 @@ notepad .env
 |---|---|
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Web client ID — **bake vào JS lúc build** |
 | `GOOGLE_CLIENT_ID` | Cùng giá trị — BE verify `idToken` |
-| `NEXT_PUBLIC_API_URL` | URL API mà **trình duyệt** gọi (vd `https://api.gats.vn`) |
-| `APP_URL` / `FRONTEND_URL` | Link email + CORS |
+| `NEXT_PUBLIC_API_URL` | Local: `http://localhost:3000` · Prod: `https://api.gats.vn` |
+| `APP_URL` / `FRONTEND_URL` | Link email + CORS (cùng quy tắc local/prod) |
 | `JWT_SECRET`, `SEPAY_API_KEY`, S3… | Production secrets (không để mặc định compose) |
 | `AZURE_OPENAI_*` (+ transcribe) | **Bắt buộc** cho `viava-api` — thiếu → pm2 restart loop |
 | `VIAVA_COURSE_GEN_URL` | Default trong container: `http://127.0.0.1:8000` |

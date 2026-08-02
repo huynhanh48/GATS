@@ -1,9 +1,6 @@
 import { Hero } from "./components/sections/Hero";
-import { TopCategories } from "./components/sections/TopCategories";
-import { LogoTicker } from "./components/sections/LogoTicker";
 import { FeatureSection } from "./components/sections/FeatureSection";
 import { PromoSection } from "./components/sections/PromoSection";
-import { GrowUsSection } from "./components/sections/GrowUsSection";
 import { FeaturedCourses } from "./components/sections/FeaturedCourses";
 import { LatestPosts } from "./components/sections/LatestPosts";
 import { Testimonials } from "./components/sections/Testimonials";
@@ -16,10 +13,8 @@ export default function Home() {
     <main className="relative min-h-screen bg-background selection:bg-primary/30">
       <Header />
       <Hero />
-      <TopCategories />
       <FeaturedCourses />
       <PromoSection />
-      {/* <GrowUsSection /> */}
       <FeatureSection />
       <Testimonials />
       <LatestPosts />

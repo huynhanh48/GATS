@@ -18,6 +18,7 @@ import {
   type VerifyEmailInput,
 } from '@src/models/User.model';
 import { type AuthUser, parseAuthUser } from '@src/models/common/types';
+import MediaService from '@src/services/MediaService';
 import {
   assignRoleToUser,
   findByName,
@@ -342,17 +343,53 @@ async function me(userId: number): Promise<UserPublic> {
   return getUserPublic(userId);
 }
 
-async function updateMe(userId: number, data: { userName?: string }): Promise<UserPublic> {
-  // Validate if userName is provided and not empty
-  if (data.userName) {
+async function updateMe(
+  userId: number,
+  data: { userName?: string; avatarUrl?: string | null; coverUrl?: string | null },
+): Promise<UserPublic> {
+  const patch: {
+    userName?: string;
+    avatarUrl?: string | null;
+    coverUrl?: string | null;
+  } = {};
+
+  if (data.userName !== undefined) {
     if (data.userName.length < 3 || data.userName.length > 50) {
-      throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Username must be between 3 and 50 characters');
+      throw new RouteError(
+        HttpStatusCodes.BAD_REQUEST,
+        'Username must be between 3 and 50 characters',
+      );
     }
     const existing = await findByUserName(data.userName);
     if (existing && existing.id !== userId) {
       throw new RouteError(HttpStatusCodes.CONFLICT, Errors.USERNAME_EXISTS);
     }
-    await update(userId, { userName: data.userName });
+    patch.userName = data.userName;
+  }
+
+  if (data.avatarUrl !== undefined) {
+    patch.avatarUrl = data.avatarUrl;
+  }
+  if (data.coverUrl !== undefined) {
+    patch.coverUrl = data.coverUrl;
+  }
+
+  if (Object.keys(patch).length > 0) {
+    await update(userId, patch);
+  }
+  return getUserPublic(userId);
+}
+
+async function uploadProfileImage(
+  userId: number,
+  kind: 'avatar' | 'cover',
+  file: Parameters<typeof MediaService.uploadThumbnail>[0],
+): Promise<UserPublic> {
+  const media = await MediaService.uploadThumbnail(file, userId);
+  if (kind === 'avatar') {
+    await update(userId, { avatarUrl: media.url });
+  } else {
+    await update(userId, { coverUrl: media.url });
   }
   return getUserPublic(userId);
 }
@@ -647,6 +684,7 @@ export default {
   appleLogin,
   me,
   updateMe,
+  uploadProfileImage,
   verifyEmail,
   changePassword,
   forgotPassword,

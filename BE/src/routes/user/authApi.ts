@@ -1,6 +1,10 @@
 import AuthPaths from '@src/common/paths/auth';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import {
+  handleMediaUploadError,
+  thumbnailUploadMiddleware,
+} from '@src/middleware/mediaUploadMiddleware';
 import { simpleRateLimit } from '@src/middleware/simpleRateLimit';
 import { Router } from 'express';
 import authHandlers from './authRouter';
@@ -33,6 +37,34 @@ authRouter.post(
 );
 authRouter.get(AuthPaths.User.Me, errorHandle(authMiddleware), authHandlers.me);
 authRouter.put(AuthPaths.User.Me, errorHandle(authMiddleware), authHandlers.updateMe);
+authRouter.post(
+  AuthPaths.User.Avatar,
+  errorHandle(authMiddleware),
+  (req, res, next) => {
+    thumbnailUploadMiddleware(req, res, (err) => {
+      if (err) {
+        handleMediaUploadError(err, req, res, next);
+        return;
+      }
+      next();
+    });
+  },
+  authHandlers.uploadAvatar,
+);
+authRouter.post(
+  AuthPaths.User.Cover,
+  errorHandle(authMiddleware),
+  (req, res, next) => {
+    thumbnailUploadMiddleware(req, res, (err) => {
+      if (err) {
+        handleMediaUploadError(err, req, res, next);
+        return;
+      }
+      next();
+    });
+  },
+  authHandlers.uploadCover,
+);
 authRouter.post(
   AuthPaths.User.ChangePassword,
   errorHandle(authMiddleware),

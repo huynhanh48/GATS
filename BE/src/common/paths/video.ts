@@ -20,6 +20,9 @@ const VideoPaths = {
   LessonVideo: {
     Get: '/courses/:courseId/lessons/:lessonId/video',
   },
+  LessonPlayback: {
+    Get: '/courses/:courseId/lessons/:lessonId/playback',
+  },
 } as const;
 
 export default VideoPaths;

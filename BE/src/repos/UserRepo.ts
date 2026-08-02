@@ -143,6 +143,8 @@ export async function update(
       | 'providerId'
       | 'onboardingAnswers'
       | 'onboardingCompletedAt'
+      | 'avatarUrl'
+      | 'coverUrl'
     >
   >,
 ): Promise<UserRecord | undefined> {
@@ -186,6 +188,8 @@ export function toPublicUser(user: UserRecord, roles: string[]): UserPublic {
     type: user.type,
     roles,
     isLocked: user.isLocked,
+    avatarUrl: user.avatarUrl ?? null,
+    coverUrl: user.coverUrl ?? null,
   });
 }
 

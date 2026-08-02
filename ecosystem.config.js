@@ -8,8 +8,8 @@
       script: "npm",
       args: "start",
       env: {
-        // Inherit Compose/VPS env; do not force development (cookie Secure, Helmet…).
-        NODE_ENV: "production",
+        // Inherit Compose/VPS: local compose = development; prod overlay = production.
+        NODE_ENV: process.env.NODE_ENV || "production",
       },
     },
     {
@@ -19,7 +19,7 @@
       script: "npm",
       args: "run start:worker",
       env: {
-        NODE_ENV: "production",
+        NODE_ENV: process.env.NODE_ENV || "production",
       },
     },
     {

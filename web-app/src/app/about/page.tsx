@@ -40,7 +40,7 @@ export default function AboutPage() {
             className="text-[3.6rem] md:text-[5.4rem] font-extrabold tracking-tight mb-8 leading-[1.2] text-[#0B272C]"
           >
             Định hình Tương lai cùng <br className="hidden md:block" />
-            <span className="text-[#0070EB]">
+            <span className="text-[#ff782d]">
               GATS Academy
             </span>
           </motion.h1>
@@ -118,14 +118,27 @@ export default function AboutPage() {
             className="bg-card border border-border/50 rounded-3xl overflow-hidden relative group min-h-[400px]"
           >
             <Image
-              src="https://placehold.co/800x800"
-              alt="GATS Vision"
+              src="/images/about/gats-vision.jpg"
+              alt="Học viên công nghệ đang làm việc trên máy tính xách tay"
               fill
-              className="object-cover group-hover:scale-110 transition-transform duration-700"
+              sizes="(min-width: 768px) 33vw, 100vw"
+              className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
             <div className="absolute bottom-0 left-0 p-8">
-              <Lightbulb className="w-10 h-10 text-amber-400 mb-4" />
+              <div className="mb-4 flex items-center gap-2">
+                <Image
+                  src="/logo.svg"
+                  alt="GATS"
+                  width={28}
+                  height={28}
+                  className="object-contain"
+                />
+                <span className="text-sm font-semibold tracking-wide text-[#ff782d]">
+                  GATS Vision
+                </span>
+              </div>
+              <Lightbulb className="w-10 h-10 text-[#ff782d] mb-4" />
               <h3 className="text-2xl font-bold text-white mb-2">Tầm nhìn 2030</h3>
               <p className="text-gray-300">
                 Trở thành học viện công nghệ hàng đầu Đông Nam Á về đào tạo Trí tuệ nhân tạo.

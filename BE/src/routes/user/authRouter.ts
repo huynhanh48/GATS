@@ -15,6 +15,7 @@ import {
   parseLoginInput,
   parseRegisterInput,
   parseResetPasswordInput,
+  parseUpdateMeInput,
   parseVerifyEmailInput,
   verifyEmailSchema,
 } from '@src/models/User.model';
@@ -219,7 +220,32 @@ async function updateMe(req: Request, res: Response) {
   if (!req.authUser) {
     throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
   }
-  const user = await AuthService.updateMe(req.authUser.id, req.body);
+  const input = parseUpdateMeInput(req.body);
+  const user = await AuthService.updateMe(req.authUser.id, input);
+  return res.status(HttpStatusCodes.OK).json({ user });
+}
+
+async function uploadAvatar(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const user = await AuthService.uploadProfileImage(
+    req.authUser.id,
+    'avatar',
+    req.file,
+  );
+  return res.status(HttpStatusCodes.OK).json({ user });
+}
+
+async function uploadCover(req: Request, res: Response) {
+  if (!req.authUser) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Unauthorized');
+  }
+  const user = await AuthService.uploadProfileImage(
+    req.authUser.id,
+    'cover',
+    req.file,
+  );
   return res.status(HttpStatusCodes.OK).json({ user });
 }
 
@@ -386,6 +412,8 @@ export default {
   logout: errorHandle(logout),
   me: errorHandle(me),
   updateMe: errorHandle(updateMe),
+  uploadAvatar: errorHandle(uploadAvatar),
+  uploadCover: errorHandle(uploadCover),
   verifyEmail: errorHandle(verifyEmail),
   verifyEmailByLink: errorHandle(verifyEmailByLink),
   changePassword: errorHandle(changePassword),

@@ -37,6 +37,11 @@ const beVietnamPro = Be_Vietnam_Pro({
 export const metadata: Metadata = {
   title: "GATS Academy - Nền tảng đào tạo AI doanh nghiệp",
   description: "Giải pháp toàn diện của bạn để làm chủ công nghệ tương lai.",
+  icons: {
+    icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
@@ -59,6 +64,7 @@ export default function RootLayout({
         >
           <GoogleOAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}
+            locale="vi"
           >
             <AuthProvider>
               <AuthModalProvider>

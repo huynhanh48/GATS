@@ -300,39 +300,41 @@ export function AuthModal({
 
                 <div className="flex flex-col gap-4">
                   {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
-                    <div className="relative w-full h-[46px] rounded-full border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center cursor-pointer">
-                      <div className="flex items-center gap-3 pointer-events-none z-0">
-                        <GoogleMark className="w-5 h-5" />
-                        <span className="text-[1.4rem] font-medium text-slate-700">Tiếp tục với Google</span>
-                      </div>
-                      <div className="absolute inset-0 z-10 flex items-center justify-center opacity-0 overflow-hidden" aria-hidden>
+                    <div className="relative mx-auto h-[58px] w-full max-w-[400px] overflow-hidden rounded-full">
+                      <div className="absolute inset-0 flex items-center justify-center [&>div]:max-w-full">
                         <GoogleLogin
                           type="standard"
                           theme="outline"
                           size="large"
-                          width="320"
+                          shape="pill"
+                          width="400"
                           text="continue_with"
+                          logo_alignment="center"
                           onSuccess={async (credentialResponse) => {
-                            if (!credentialResponse.credential) {
-                              toast.error("Không nhận được token Google.");
-                              return;
-                            }
-                            setSubmitting(true);
-                            try {
-                              await loginWithGoogle(credentialResponse.credential);
-                              toast.success("Đăng nhập Google thành công!");
-                              onClose();
-                            } catch (error: unknown) {
-                              const err = error as { message?: string; error?: string };
-                              toast.error(err?.message || err?.error || "Đăng nhập Google thất bại!");
-                            } finally {
-                              setSubmitting(false);
-                            }
+                          if (!credentialResponse.credential) {
+                            toast.error("Không nhận được token Google.");
+                            return;
+                          }
+                          setSubmitting(true);
+                          try {
+                            await loginWithGoogle(credentialResponse.credential);
+                            toast.success("Đăng nhập Google thành công!");
+                            onClose();
+                          } catch (error: unknown) {
+                            const err = error as { message?: string; error?: string };
+                            toast.error(err?.message || err?.error || "Đăng nhập Google thất bại!");
+                          } finally {
+                            setSubmitting(false);
+                          }
                           }}
                           onError={() => {
                             toast.error("Google từ chối đăng nhập.");
                           }}
                         />
+                      </div>
+                      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center gap-3 rounded-full border border-slate-200 bg-white text-[1.6rem] font-medium text-slate-800">
+                        <GoogleMark className="h-6 w-6" />
+                        <span>Tiếp tục với Google</span>
                       </div>
                     </div>
                   ) : (

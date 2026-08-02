@@ -5,6 +5,7 @@ import {
   isLessonCompleted,
   type UpsertLessonProgressInput,
 } from '@src/models/LessonProgress.model';
+import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as LessonProgressRepo from '@src/repos/LessonProgressRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
 import CertificateService from '@src/services/CertificateService';
@@ -117,11 +118,30 @@ async function getCourseProgress(userId: number, courseId: string) {
   const completedLessonIds = rows
     .filter((row) => row.isCompleted)
     .map((row) => row.lessonId);
+  const completedSet = new Set(completedLessonIds);
+
+  const sections = await CourseSectionRepo.listByCourse(courseId);
+  const lessonsBySection = await Promise.all(
+    sections.map((section) => LessonRepo.listBySection(section.id)),
+  );
+  let nextLessonId: string | null = null;
+  for (const lessons of lessonsBySection) {
+    const next = lessons.find((lesson) => !completedSet.has(lesson.id));
+    if (next) {
+      nextLessonId = next.id;
+      break;
+    }
+  }
+  if (!nextLessonId) {
+    const firstSectionLessons = lessonsBySection[0] ?? [];
+    nextLessonId = firstSectionLessons[0]?.id ?? null;
+  }
 
   return {
     data: {
       ...aggregate,
       completedLessonIds,
+      nextLessonId,
     },
   };
 }

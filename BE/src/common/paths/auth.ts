@@ -23,6 +23,8 @@ const AuthPaths = {
     NotificationPreferences: '/notification-preferences',
     DailyCheckin: '/daily-checkin',
     Onboarding: '/onboarding',
+    Avatar: '/me/avatar',
+    Cover: '/me/cover',
   },
 } as const;
 

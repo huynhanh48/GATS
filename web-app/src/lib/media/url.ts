@@ -1,11 +1,14 @@
 import { PUBLIC_API_URL } from "@/lib/apiClient";
 
-const INTERNAL_HOST_RE =
-  /^(localhost|127\.0\.0\.1|minio|host\.docker\.internal)(:\d+)?$/i;
+/** Docker-only hostnames the browser cannot resolve — rewrite to public media origin. */
+const DOCKER_INTERNAL_HOST_RE = /^(minio|host\.docker\.internal)$/i;
 
 /**
  * Normalize media URLs from BE (MinIO/S3, relative paths, internal hosts)
  * so cart/checkout `<img>` can load them in production.
+ *
+ * Do NOT rewrite localhost/127.0.0.1 — local MinIO is published on
+ * localhost:9010 and is already browser-reachable.
  */
 export function resolveMediaUrl(
   url: string | null | undefined,
@@ -41,7 +44,7 @@ export function resolveMediaUrl(
 
   try {
     const parsed = new URL(raw);
-    if (INTERNAL_HOST_RE.test(parsed.hostname)) {
+    if (DOCKER_INTERNAL_HOST_RE.test(parsed.hostname)) {
       return joinOrigin(
         getMediaOrigin(),
         `${parsed.pathname}${parsed.search}`,

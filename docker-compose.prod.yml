@@ -1,5 +1,8 @@
 # Production-only strict overrides. Always deploy with:
 # docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+#
+# Requires root `.env` from `.env.vps.example` so browser/API URLs stay
+# https://api.gats.vn (base compose defaults to localhost for local runs).
 services:
   db:
     environment:
@@ -36,6 +39,10 @@ services:
         echo 'buckets ready';
 
   app:
+    build:
+      args:
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:?NEXT_PUBLIC_GOOGLE_CLIENT_ID is required}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
@@ -44,6 +51,8 @@ services:
       EMAIL_PASSWORD: ${EMAIL_PASSWORD:?EMAIL_PASSWORD is required}
       APP_URL: ${APP_URL:?APP_URL is required}
       FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
+      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
       SEPAY_API_KEY: ${SEPAY_API_KEY:?SEPAY_API_KEY is required}
       SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID:-}
       SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY:-}

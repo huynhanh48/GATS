@@ -29,6 +29,8 @@ export const usersTable = pgTable('users', {
   isLocked: boolean('is_locked').notNull().default(false),
   onboardingAnswers: jsonb('onboarding_answers'),
   onboardingCompletedAt: timestamp('onboarding_completed_at'),
+  avatarUrl: varchar('avatar_url', { length: 512 }),
+  coverUrl: varchar('cover_url', { length: 512 }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

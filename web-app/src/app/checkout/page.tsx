@@ -175,6 +175,8 @@ export default function CheckoutPage() {
     "PENDING",
   );
   const [remainingMs, setRemainingMs] = useState<number>(QR_PAYMENT_TTL_MS);
+  const [hasRestoredPendingPayment, setHasRestoredPendingPayment] =
+    useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restoredRef = useRef(false);
   const expiringRef = useRef(false);
@@ -198,7 +200,10 @@ export default function CheckoutPage() {
     restoredRef.current = true;
 
     const pending = readPendingPayment();
-    if (!pending) return;
+    if (!pending) {
+      setHasRestoredPendingPayment(true);
+      return;
+    }
 
     let cancelled = false;
     (async () => {
@@ -248,6 +253,8 @@ export default function CheckoutPage() {
       } catch {
         // Nếu không verify được thì không restore QR cũ (tránh lệch giá khóa học)
         writePendingPayment(null);
+      } finally {
+        if (!cancelled) setHasRestoredPendingPayment(true);
       }
     })();
 
@@ -255,6 +262,25 @@ export default function CheckoutPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (
+      status === "authenticated" &&
+      !isCartLoading &&
+      hasRestoredPendingPayment &&
+      items.length === 0 &&
+      !qrData
+    ) {
+      router.replace("/cart");
+    }
+  }, [
+    status,
+    isCartLoading,
+    hasRestoredPendingPayment,
+    items.length,
+    qrData,
+    router,
+  ]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -406,7 +432,11 @@ export default function CheckoutPage() {
     return () => clearInterval(id);
   }, [qrData?.expiresAt, paymentStatus, abandonQrPayment]);
 
-  if (status === "loading" || isCartLoading) {
+  if (
+    status === "loading" ||
+    isCartLoading ||
+    (status === "authenticated" && !hasRestoredPendingPayment)
+  ) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         Đang tải...
@@ -414,8 +444,10 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0 && !qrData) {
-    router.push("/cart");
+  if (
+    status !== "authenticated" ||
+    (items.length === 0 && !qrData)
+  ) {
     return null;
   }
 

@@ -40,6 +40,11 @@ function clampProgress(value: number) {
   return Math.min(100, Math.max(0, Math.round(value || 0)));
 }
 
+function learnHref(slug: string, nextLessonId?: string | null) {
+  if (nextLessonId) return `/learn/${slug}/${nextLessonId}`;
+  return `/learn/${slug}`;
+}
+
 function getCourseStatus(percent: number) {
   if (percent >= 100) {
     return {
@@ -233,6 +238,11 @@ export default function LearningHubPage() {
                     src={resolveMediaUrl(continueCourse.course.thumbnail)}
                     alt=""
                     className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:transform-none"
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src =
+                        "https://placehold.co/800x450?text=Course";
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:via-transparent lg:to-black/10" />
                 </div>
@@ -271,7 +281,10 @@ export default function LearningHubPage() {
                   </div>
 
                   <Link
-                    href={`/learn/${continueCourse.course.slug}`}
+                    href={learnHref(
+                      continueCourse.course.slug,
+                      continueCourse.progress.nextLessonId,
+                    )}
                     className="mt-6 inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 self-stretch rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition duration-200 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:self-start"
                   >
                     <Play className="h-4 w-4 fill-current" aria-hidden="true" />
@@ -341,7 +354,10 @@ export default function LearningHubPage() {
                   return (
                     <Link
                       key={item.id}
-                      href={`/learn/${item.course.slug}`}
+                      href={learnHref(
+                        item.course.slug,
+                        item.progress.nextLessonId,
+                      )}
                       className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition duration-200 hover:border-primary/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
                     >
                       <div className="relative aspect-video overflow-hidden bg-muted">
@@ -349,6 +365,11 @@ export default function LearningHubPage() {
                           src={resolveMediaUrl(item.course.thumbnail)}
                           alt=""
                           className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.04] motion-reduce:transform-none"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src =
+                              "https://placehold.co/800x450?text=Course";
+                          }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
                         <span

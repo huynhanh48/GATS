@@ -120,5 +120,10 @@ apiRouter.get(
   errorHandle(optionalAuthMiddleware),
   videoHandlers.getByLesson,
 );
+apiRouter.get(
+  VideoPaths.LessonPlayback.Get,
+  errorHandle(optionalAuthMiddleware),
+  videoHandlers.getPlaybackByLesson,
+);
 
 export default apiRouter;

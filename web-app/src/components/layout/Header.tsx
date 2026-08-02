@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, ChevronDown, ShoppingCart, Menu, BookOpen, PenTool, Users, Search } from "lucide-react";
+import { Moon, Sun, ShoppingCart, Menu, BookOpen, PenTool, Users, Search } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useSyncExternalStore } from "react";
 import { Container } from "@/components/layout/Container";
@@ -25,6 +25,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useCart } from "@/components/providers/CartProvider";
+import { resolveMediaUrl } from "@/lib/media/url";
 
 const subscribeToClient = () => () => {};
 
@@ -137,7 +138,6 @@ export function Header() {
               )}
             >
               Chúng tôi
-              <ChevronDown className="ml-1 w-4 h-4 opacity-50" />
             </Link>
           </nav>
 
@@ -162,19 +162,25 @@ export function Header() {
               (status === "authenticated" && user ? (
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger className="flex items-center gap-2 cursor-pointer focus:outline-none">
-                    <div className="w-9 h-9 rounded-full bg-[#ff782d]/10 border border-[#ff782d]/20 flex items-center justify-center font-bold text-[1.4rem] text-[#ff782d] uppercase">
-                      {user.userName.substring(0, 2)}
+                    <div className="relative w-9 h-9 rounded-full bg-[#ff782d]/10 border border-[#ff782d]/20 flex items-center justify-center font-bold text-[1.4rem] text-[#ff782d] uppercase overflow-hidden">
+                      {user.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={resolveMediaUrl(user.avatarUrl)}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        user.userName.substring(0, 2)
+                      )}
                     </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 bg-white shadow-xl rounded-xl border border-slate-100">
                     <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
-                      <Link href="/learning" className="w-full">Học tập</Link>
+                      <Link href="/profile?tab=courses" className="w-full">Học tập</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
                       <Link href="/profile" className="w-full">Hồ sơ cá nhân</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
-                      <Link href="/profile?tab=orders" className="w-full">Lịch sử giao dịch</Link>
                     </DropdownMenuItem>
                     {canTeach && (
                       <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">

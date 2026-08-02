@@ -97,14 +97,14 @@ Dùng khi muốn kiểm thử toàn bộ ứng dụng trong container mà không
 
 **Khởi chạy toàn bộ stack:**
 
-> **Lưu ý:** Lệnh này sẽ boot Backend ở chế độ Production. API sẽ tự động chặn khởi động (crash) nếu phát hiện dùng chung các secret mặc định kém an toàn trong `docker-compose.yml` (như JWT_SECRET, MINIO_ROOT_PASSWORD).
-> Để API chạy được, bạn cần tạo file `.env` ở thư mục gốc (có thể copy từ `.env.vps.example`) và điền các secret an toàn cho `JWT_SECRET`, `EMAIL_PASSWORD`, `MINIO_ROOT_PASSWORD`, `MINIO_SECRET_KEY`.
+> **Lưu ý:** Local dùng API `http://localhost:3000` (mẫu `.env.example`). Không dùng `.env.vps.example` trên laptop — file đó để VPS (`api.gats.vn`).
+> Backend boot `NODE_ENV=production`; cần secret đủ mạnh trong `.env` nếu compose chặn default yếu.
 
 ```powershell
 docker compose -p gats-academy up --build -d
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up -d --build app
 ```
 
-docker compose -p gats-academy -f docker-compose.yml -f [docker-compose.prod](http://docker-compose.prod).yml up -d --build app
 
   
 

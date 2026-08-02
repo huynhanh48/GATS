@@ -2,17 +2,21 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { 
   User, Camera, BookOpen, Award, 
   Settings, Clock, PlayCircle, 
-  ShieldCheck, Mail, LogOut, ChevronRight, Activity, CreditCard
+  ShieldCheck, Mail, LogOut, ChevronRight, Activity, CreditCard, Loader2, Crop
 } from "lucide-react";
 import apiClient from "@/lib/apiClient";
-import { changePasswordRequest } from "@/services/auth.service";
+import {
+  changePasswordRequest,
+  uploadAvatarRequest,
+  uploadCoverRequest,
+} from "@/services/auth.service";
 import { orderApi } from "@/services/cart.service";
 import { fetchMyCertificates, type MyCertificate } from "@/services/certificates.service";
 import { PathApi } from "@/constants/PathApi";
@@ -20,6 +24,9 @@ import Link from "next/link";
 import { Course } from "@/types/course";
 import { toast } from "sonner";
 import { resolveMediaUrl } from "@/lib/media/url";
+import { CourseThumbImage } from "@/components/common/CourseThumbImage";
+import { CoverCropDialog } from "@/components/profile/CoverCropDialog";
+import { COVER_ASPECT_CLASS } from "@/lib/media/coverAspect";
 
 const VN_TZ = "Asia/Ho_Chi_Minh";
 
@@ -53,7 +60,7 @@ function formatVnDate(value: string) {
 }
 
 export default function ProfilePage() {
-  const { user, status, logout } = useAuth();
+  const { user, status, logout, refreshSession } = useAuth();
   const router = useRouter();
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -70,13 +77,24 @@ export default function ProfilePage() {
   const [progressByCourseId, setProgressByCourseId] = useState<
     Record<string, number>
   >({});
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [coverCropSrc, setCoverCropSrc] = useState<string | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       const tab = urlParams.get("tab");
-      if (tab === "orders") {
-        setActiveTab("orders");
+      if (
+        tab === "overview" ||
+        tab === "courses" ||
+        tab === "certificates" ||
+        tab === "settings" ||
+        tab === "orders"
+      ) {
+        setActiveTab(tab);
       }
       const status = urlParams.get("status");
       if (
@@ -148,9 +166,6 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  const profilePhoto = null; 
-  const coverPhoto = "https://placehold.co/800x800";
-
   const orderCounts = {
     all: orders.length,
     pending: orders.filter((o) => o.status === "pending").length,
@@ -176,50 +191,190 @@ export default function ProfilePage() {
     }
   };
 
+  const profilePhoto = user.avatarUrl
+    ? resolveMediaUrl(user.avatarUrl)
+    : null;
+  const coverPhoto = user.coverUrl
+    ? resolveMediaUrl(user.coverUrl)
+    : "https://placehold.co/1200x400?text=Cover";
 
+  const handleAvatarFile = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file ảnh");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatarRequest(file);
+      await refreshSession();
+      toast.success("Đã cập nhật ảnh đại diện");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không thể tải ảnh lên");
+    } finally {
+      setUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
+  const closeCoverCrop = () => {
+    if (coverCropSrc?.startsWith("blob:")) {
+      URL.revokeObjectURL(coverCropSrc);
+    }
+    setCoverCropSrc(null);
+    if (coverInputRef.current) coverInputRef.current.value = "";
+  };
+
+  const handleCoverFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn file ảnh");
+      return;
+    }
+    if (coverCropSrc?.startsWith("blob:")) {
+      URL.revokeObjectURL(coverCropSrc);
+    }
+    setCoverCropSrc(URL.createObjectURL(file));
+    if (coverInputRef.current) coverInputRef.current.value = "";
+  };
+
+  const handleCoverCropConfirm = async (file: File) => {
+    setUploadingCover(true);
+    try {
+      await uploadCoverRequest(file);
+      await refreshSession();
+      toast.success("Đã cập nhật ảnh bìa");
+      closeCoverCrop();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Không thể tải ảnh lên");
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const openRecropExistingCover = async () => {
+    if (!user.coverUrl) {
+      coverInputRef.current?.click();
+      return;
+    }
+    const src = resolveMediaUrl(user.coverUrl);
+    try {
+      // Need a blob URL so canvas crop is not CORS-tainted.
+      const res = await fetch(src);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      if (coverCropSrc?.startsWith("blob:")) {
+        URL.revokeObjectURL(coverCropSrc);
+      }
+      setCoverCropSrc(URL.createObjectURL(blob));
+    } catch {
+      toast.error(
+        "Không tải được ảnh để chỉnh khung. Hãy chọn lại ảnh bìa mới.",
+      );
+      coverInputRef.current?.click();
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background relative pt-24 pb-16">
       <Header />
       
-      {/* Cover Photo */}
-      <div className="w-full h-48 md:h-64 relative bg-muted mt-4 max-w-7xl mx-auto rounded-3xl overflow-hidden px-4 md:px-8 shadow-sm">
-        <Image
+      {/* Cover Photo — aspect must match CoverCropDialog (3:1) */}
+      <div
+        className={`relative mx-auto mt-4 w-full max-w-7xl overflow-hidden rounded-3xl bg-muted shadow-sm ${COVER_ASPECT_CLASS}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={coverPhoto}
-          alt="profile cover"
-          className="h-full w-full object-cover object-center absolute inset-0 rounded-3xl"
-          width={1200}
-          height={300}
+          alt=""
+          className="absolute inset-0 h-full w-full rounded-3xl object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-        <div className="absolute right-8 bottom-6 z-10">
-          <button className="flex items-center justify-center gap-2 rounded-xl bg-black/40 backdrop-blur-md px-4 py-2.5 text-sm font-medium text-white hover:bg-black/60 transition border border-white/10">
-            <Camera className="w-4 h-4" />
-            <span className="hidden sm:inline">Thay đổi ảnh bìa</span>
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
+        {/* top-right so the -mt sidebar/content row does not steal clicks */}
+        <div className="absolute right-4 top-4 z-30 flex flex-wrap justify-end gap-2 md:right-8 md:top-6">
+          <input
+            ref={coverInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={(e) => handleCoverFile(e.target.files?.[0])}
+          />
+          {user.coverUrl ? (
+            <button
+              type="button"
+              disabled={uploadingCover}
+              onClick={() => void openRecropExistingCover()}
+              className="flex items-center justify-center gap-2 rounded-xl bg-black/50 backdrop-blur-md px-4 py-2.5 text-sm font-medium text-white hover:bg-black/70 transition border border-white/10 disabled:opacity-60"
+            >
+              <Crop className="w-4 h-4" />
+              <span className="hidden sm:inline">Chỉnh khung</span>
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={uploadingCover}
+            onClick={() => coverInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 rounded-xl bg-black/50 backdrop-blur-md px-4 py-2.5 text-sm font-medium text-white hover:bg-black/70 transition border border-white/10 disabled:opacity-60"
+          >
+            {uploadingCover ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Camera className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">
+              {uploadingCover ? "Đang tải..." : "Thay đổi ảnh bìa"}
+            </span>
           </button>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-7xl px-4 md:px-8 -mt-16 md:-mt-20 relative z-20 flex flex-col lg:flex-row gap-8">
+      {coverCropSrc ? (
+        <CoverCropDialog
+          open
+          imageSrc={coverCropSrc}
+          saving={uploadingCover}
+          onCancel={closeCoverCrop}
+          onConfirm={handleCoverCropConfirm}
+        />
+      ) : null}
+
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-8 -mt-16 md:-mt-20 relative z-20 flex flex-col lg:flex-row gap-8 pointer-events-none">
         
         {/* Left Sidebar */}
-        <div className="w-full lg:w-1/3 xl:w-1/4">
+        <div className="w-full lg:w-1/3 xl:w-1/4 pointer-events-auto">
           <div className="bg-card border border-border rounded-3xl p-6 shadow-sm sticky top-24">
             <div className="relative mx-auto h-32 w-32 rounded-full bg-card p-1 shadow-md border border-border mb-4">
               <div className="relative flex items-center justify-center h-full w-full bg-muted rounded-full overflow-hidden">
                 {profilePhoto ? (
-                  <Image
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     src={profilePhoto}
-                    fill
-                    className="object-cover"
+                    className="absolute inset-0 h-full w-full object-cover"
                     alt={`${user.userName} profile`}
                   />
                 ) : (
                   <User className="w-12 h-12 text-muted-foreground" />
                 )}
               </div>
-              <button className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-lg border-2 border-card hover:bg-primary/90 transition">
-                <Camera className="w-4 h-4" />
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => void handleAvatarFile(e.target.files?.[0])}
+              />
+              <button
+                type="button"
+                disabled={uploadingAvatar}
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-lg border-2 border-card hover:bg-primary/90 transition disabled:opacity-60"
+                aria-label="Cập nhật ảnh đại diện"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Camera className="w-4 h-4" />
+                )}
               </button>
             </div>
 
@@ -293,7 +448,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Right Content Area */}
-        <div className="w-full lg:w-2/3 xl:w-3/4 mt-8 lg:mt-24 pb-12">
+        <div className="w-full lg:w-2/3 xl:w-3/4 mt-8 lg:mt-24 pb-12 pointer-events-auto">
           
           {/* Overview Tab */}
           {activeTab === "overview" && (
@@ -343,8 +498,8 @@ export default function ProfilePage() {
                   {/* Show the most recent course */}
                   <div className="flex flex-col sm:flex-row gap-6 items-center">
                     <div className="relative w-full sm:w-64 aspect-video rounded-2xl overflow-hidden bg-muted shrink-0 shadow-md">
-                      <Image 
-                        src={resolveMediaUrl(enrollments[0]?.course?.thumbnail)} 
+                      <CourseThumbImage 
+                        src={enrollments[0]?.course?.thumbnail} 
                         alt="Course"
                         fill
                         className="bg-muted p-2 object-contain"
@@ -523,8 +678,8 @@ export default function ProfilePage() {
                     return (
                       <div key={enr.id} className="border border-border rounded-3xl overflow-hidden bg-card hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col group">
                         <div className="relative aspect-video w-full bg-muted overflow-hidden">
-                          <Image 
-                            src={resolveMediaUrl(c.thumbnail)} 
+                          <CourseThumbImage 
+                            src={c.thumbnail} 
                             alt={c.title} 
                             fill 
                             className="bg-muted p-2 object-contain"
@@ -579,7 +734,7 @@ export default function ProfilePage() {
                     Hoàn thành 100% các bài học trong một khóa học để nhận được chứng nhận hoàn thành từ GATS Academy.
                   </p>
                   <Link
-                    href="/learning"
+                    href="/profile?tab=courses"
                     className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
                   >
                     Tiếp tục học ngay

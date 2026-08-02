@@ -10,7 +10,8 @@ COPY web-app/ .
 # NEXT_PUBLIC_* vars are inlined into the client bundle AT BUILD TIME,
 # so they must be passed as build args (see docker-compose.yml build.args).
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
-ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
+# Local-safe default. Prod compose/.env must pass https://api.gats.vn.
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production
@@ -31,7 +32,7 @@ WORKDIR /app/admin-dashboard
 COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
 COPY admin-dashboard/ .
-ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \

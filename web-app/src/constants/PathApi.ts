@@ -28,6 +28,10 @@ export const PathApi = {
     me: `${API_PREFIX}/user/me`,
     /** PUT – auth: member */
     updateMe: `${API_PREFIX}/user/me`,
+    /** POST multipart – auth: member – field: file */
+    uploadAvatar: `${API_PREFIX}/user/me/avatar`,
+    /** POST multipart – auth: member – field: file */
+    uploadCover: `${API_PREFIX}/user/me/cover`,
     /** POST – auth: member */
     changePassword: `${API_PREFIX}/user/change-password`,
     /** POST – auth: public */
@@ -136,6 +140,9 @@ export const PathApi = {
     /** GET - auth: member */
     lessonVideo: (courseId: string, lessonId: string) =>
       `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/video`,
+    /** GET – auth: optional – one-hop lesson → playback URL */
+    lessonPlayback: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/playback`,
   },
 
   quiz: {

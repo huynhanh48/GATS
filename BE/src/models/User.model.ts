@@ -26,6 +26,8 @@ export const userRecordSchema = z.object({
   isLocked: z.boolean().default(false),
   onboardingAnswers: z.unknown().nullable(),
   onboardingCompletedAt: z.coerce.date().nullable(),
+  avatarUrl: z.string().nullable().optional(),
+  coverUrl: z.string().nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -38,7 +40,17 @@ export const userPublicSchema = z.object({
   type: authTypeSchema,
   roles: z.array(z.string()),
   isLocked: z.boolean().optional(),
+  avatarUrl: z.string().nullable().optional(),
+  coverUrl: z.string().nullable().optional(),
 });
+
+export const updateMeSchema = z
+  .object({
+    userName: z.string().min(3).max(50).optional(),
+    avatarUrl: z.string().min(1).max(512).nullable().optional(),
+    coverUrl: z.string().min(1).max(512).nullable().optional(),
+  })
+  .strict();
 
 export const registerSchema = z
   .object({
@@ -154,6 +166,7 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type UpdateMeInput = z.infer<typeof updateMeSchema>;
 
 export function parseRegisterInput(data: unknown): RegisterInput {
   return registerSchema.parse(data);
@@ -177,6 +190,10 @@ export function parseForgotPasswordInput(data: unknown): ForgotPasswordInput {
 
 export function parseResetPasswordInput(data: unknown): ResetPasswordInput {
   return resetPasswordSchema.parse(data);
+}
+
+export function parseUpdateMeInput(data: unknown): UpdateMeInput {
+  return updateMeSchema.parse(data);
 }
 
 export function parseUserPublic(data: unknown): UserPublic {
