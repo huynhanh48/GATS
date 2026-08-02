@@ -86,9 +86,7 @@ export function Header() {
               width={28}
               height={28}
               className="object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
+              priority
             />
             <span className="font-extrabold text-[2.2rem] tracking-tight text-[#111827] font-heading">
               Edu<span className="text-[#ff782d]">Gats</span>
