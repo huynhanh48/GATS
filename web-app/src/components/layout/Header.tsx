@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun, ShoppingCart, Menu, BookOpen, PenTool, Users, Search } from "lucide-react";
@@ -28,6 +27,22 @@ import { useCart } from "@/components/providers/CartProvider";
 import { resolveMediaUrl } from "@/lib/media/url";
 
 const subscribeToClient = () => () => {};
+
+function EduGatsMark() {
+  return (
+    <svg
+      viewBox="0 0 975 1265"
+      aria-hidden="true"
+      className="h-9 w-7 shrink-0 text-[#ff782d]"
+      fill="currentColor"
+    >
+      <path d="M831.151 658.012L932.75 760.012C988.85 816.312 988.65 907.512 932.35 963.612L753.85 1141.41L652.25 1039.41L830.75 861.612C868.55 824.012 881.05 770.612 868.35 722.612C862.05 698.912 849.751 676.612 831.151 658.012Z" />
+      <path d="M143.95 631.113L702.85 1192.21L651.85 1243.01C632.95 1261.81 606.25 1268.01 582.25 1261.51C570.451 1258.31 559.25 1252.11 550.05 1242.81L143.55 834.713C125.05 816.113 112.65 793.713 106.35 770.113C93.6505 722.013 106.15 668.713 143.95 631.113Z" />
+      <path d="M654.25 21.2126C682.35 49.4127 682.25 95.0126 654.05 123.013L143.95 631.113C106.15 668.713 93.6503 722.113 106.35 770.113C112.65 793.813 124.95 816.113 143.55 834.713L41.9503 732.713C-14.1497 676.413 -13.9497 585.213 42.3503 529.113L552.45 21.0127C580.65 -7.08735 626.25 -6.98735 654.25 21.2126Z" />
+      <path d="M754.95 581.512L831.151 658.012C849.651 676.612 862.05 699.012 868.35 722.612C881.05 770.712 868.55 824.012 830.75 861.612L652.95 683.112C643.75 673.912 637.65 662.812 634.45 651.112C627.95 627.012 634.15 600.112 653.15 581.212C681.35 553.112 726.95 553.212 754.95 581.412V581.512Z" />
+    </svg>
+  );
+}
 
 const navLinkBase =
   "flex items-center h-full transition-colors";
@@ -80,14 +95,7 @@ export function Header() {
             href="/"
             className="flex items-center gap-2 hover:opacity-90 transition-opacity pl-2"
           >
-            <Image
-              src="/logo.svg"
-              alt="GATS logo"
-              width={28}
-              height={28}
-              className="object-contain"
-              priority
-            />
+            <EduGatsMark />
             <span className="font-extrabold text-[2.2rem] tracking-tight text-[#111827] font-heading">
               Edu<span className="text-[#ff782d]">Gats</span>
             </span>
