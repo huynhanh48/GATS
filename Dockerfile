@@ -1,5 +1,5 @@
 ﻿# Stage 1: Build Web App
-FROM node:22-alpine AS web-builder
+FROM node:22-bookworm-slim AS web-builder
 WORKDIR /app/web-app
 # Install with --include=dev so build tools (next, etc.) are present even if
 # the host Bake sets NODE_ENV=production. Do NOT leave NODE_ENV=development
@@ -27,7 +27,7 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 3: Build Admin Dashboard
-FROM node:22-alpine AS admin-builder
+FROM node:22-bookworm-slim AS admin-builder
 WORKDIR /app/admin-dashboard
 COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
