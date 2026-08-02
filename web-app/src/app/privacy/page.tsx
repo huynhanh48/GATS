@@ -23,7 +23,7 @@ const sections = [
   { id: "updates", title: "Cập nhật chính sách" },
 ] as const;
 
-const headingClass = "scroll-mt-28 pt-5 text-xl font-bold text-foreground";
+const headingClass = "scroll-mt-28 pt-6 text-2xl font-bold text-foreground";
 
 export default function PrivacyPage() {
   return (
@@ -32,10 +32,17 @@ export default function PrivacyPage() {
       summary="Tài liệu này giải thích dữ liệu nào được xử lý khi bạn sử dụng GATS Academy, lý do xử lý và cách thực hiện các quyền liên quan đến dữ liệu cá nhân."
       sections={sections}
     >
+      <div className="space-y-5 text-[1.6rem] leading-8">
       <p>
         GATS Academy tôn trọng quyền riêng tư và chỉ xử lý dữ liệu trong phạm vi
         cần thiết để cung cấp nền tảng học tập. Chính sách được xây dựng có tham
         chiếu Nghị định 13/2023/NĐ-CP và pháp luật Việt Nam áp dụng.
+      </p>
+      <p>
+        Chúng tôi hướng tới nguyên tắc minh bạch, giới hạn mục đích và giảm thiểu
+        dữ liệu: chỉ thu thập thông tin phù hợp với tính năng người dùng lựa chọn,
+        hạn chế quyền truy cập nội bộ và không sử dụng dữ liệu cho mục đích không
+        tương thích nếu chưa có căn cứ hoặc thông báo cần thiết.
       </p>
 
       <h2 id="scope" className={headingClass}>1. Phạm vi áp dụng</h2>
@@ -56,6 +63,13 @@ export default function PrivacyPage() {
         <li>Nội dung do người dùng tạo: bài viết, bình luận, tin nhắn, tệp tải lên và phản hồi hỗ trợ.</li>
         <li>Dữ liệu kỹ thuật: địa chỉ IP, loại thiết bị, trình duyệt, nhật ký lỗi và mã yêu cầu.</li>
       </ul>
+      <p>
+        Tùy cách sử dụng, dữ liệu còn có thể bao gồm ảnh đại diện, ảnh bìa, lựa chọn
+        ngôn ngữ, lịch sử hỗ trợ và thông tin thiết bị phục vụ bảo mật phiên đăng nhập.
+        GATS Academy không chủ động yêu cầu dữ liệu nhạy cảm không cần thiết cho hoạt
+        động đào tạo; người dùng không nên đưa bí mật cá nhân hoặc bí mật kinh doanh
+        vào bài đăng, phòng chat hay nội dung gửi tới công cụ AI.
+      </p>
 
       <h2 id="sources" className={headingClass}>3. Nguồn thu thập</h2>
       <p>
@@ -105,6 +119,12 @@ export default function PrivacyPage() {
         và sao lưu phù hợp. Không hệ thống nào an toàn tuyệt đối; người dùng cần
         bảo mật thiết bị và thông tin đăng nhập của mình.
       </p>
+      <p>
+        Các biện pháp bảo vệ được xem xét theo mức độ rủi ro và có thể bao gồm giới
+        hạn truy cập quản trị, ghi nhận nhật ký, sao lưu, giám sát lỗi và thu hồi phiên
+        đăng nhập. Khi sử dụng mạng hoặc thiết bị công cộng, bạn nên đăng xuất sau khi
+        hoàn tất và liên hệ hỗ trợ ngay nếu nhận thấy hoạt động không phải do mình thực hiện.
+      </p>
 
       <h2 id="rights" className={headingClass}>9. Quyền của người dùng</h2>
       <p>
@@ -112,6 +132,13 @@ export default function PrivacyPage() {
         phản đối, rút lại sự đồng ý hoặc xóa dữ liệu. Một số dữ liệu giao dịch
         có thể tiếp tục được lưu khi pháp luật yêu cầu. Gửi yêu cầu tại{" "}
         <Link href="/data-request">trang yêu cầu dữ liệu</Link>.
+      </p>
+      <p>
+        Để bảo vệ chủ tài khoản, chúng tôi có thể yêu cầu xác minh danh tính trước
+        khi xử lý. Phản hồi sẽ được thực hiện trong thời gian hợp lý tùy tính chất và
+        phạm vi yêu cầu. Nếu chưa thể đáp ứng toàn bộ, GATS Academy sẽ giải thích lý
+        do, chẳng hạn nghĩa vụ lưu chứng từ giao dịch, phòng chống gian lận hoặc bảo
+        vệ quyền và lợi ích hợp pháp của người khác.
       </p>
 
       <h2 id="children" className={headingClass}>10. Dữ liệu trẻ em</h2>
@@ -134,6 +161,7 @@ export default function PrivacyPage() {
         đổi. Phiên bản và ngày hiệu lực mới sẽ được hiển thị trên trang này;
         thay đổi quan trọng có thể được thông báo trong ứng dụng hoặc qua email.
       </p>
+      </div>
     </LegalPageShell>
   );
 }

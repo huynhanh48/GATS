@@ -21,7 +21,7 @@ const sections = [
   { id: "appeal", title: "Khiếu nại quyết định" },
 ] as const;
 
-const headingClass = "scroll-mt-28 pt-5 text-xl font-bold text-foreground";
+const headingClass = "scroll-mt-28 pt-6 text-2xl font-bold text-foreground";
 
 export default function RefundPage() {
   return (
@@ -30,9 +30,16 @@ export default function RefundPage() {
       summary="Khóa học trả phí có thể đủ điều kiện hoàn tiền trong 7 ngày kể từ khi thanh toán thành công nếu hệ thống ghi nhận bạn chưa hoàn thành quá 20% nội dung."
       sections={sections}
     >
+      <div className="space-y-5 text-[1.6rem] leading-8">
       <p>
         Chính sách này nhằm cân bằng quyền lợi học viên với việc bảo vệ nội dung
         số khỏi sử dụng và sao chép sau khi mua.
+      </p>
+      <p>
+        Mỗi yêu cầu được xem xét dựa trên dữ liệu đơn hàng, thời điểm thanh toán,
+        tiến độ thực tế và lịch sử sử dụng tài khoản. Việc gửi yêu cầu không đồng
+        nghĩa khoản hoàn được tự động chấp thuận; GATS Academy sẽ thông báo kết quả
+        sau khi hoàn tất xác minh các điều kiện liên quan.
       </p>
 
       <h2 id="scope" className={headingClass}>1. Phạm vi áp dụng</h2>
@@ -56,6 +63,12 @@ export default function RefundPage() {
         Tiến độ được tính theo bài học, video, bài đọc, bài kiểm tra và hoạt động
         đã hoàn thành trong hệ thống. Nhật ký truy cập có thể được sử dụng để
         kiểm tra trường hợp tải, xem hoặc hoàn thành nội dung bất thường.
+      </p>
+      <p>
+        Tiến độ hiển thị trên hồ sơ là nguồn tham khảo chính. Trong trường hợp đồng
+        bộ chậm hoặc dữ liệu có dấu hiệu sai lệch, chúng tôi có thể đối chiếu thời
+        lượng xem, bài đã mở, kết quả kiểm tra và nhật ký kỹ thuật trước khi đưa ra
+        quyết định cuối cùng.
       </p>
 
       <h2 id="exceptions" className={headingClass}>4. Trường hợp không áp dụng</h2>
@@ -96,6 +109,12 @@ export default function RefundPage() {
         lý trong 7–14 ngày làm việc. Thời gian tiền về phụ thuộc ngân hàng và
         phương thức thanh toán.
       </p>
+      <p>
+        Thời gian trên không bao gồm ngày nghỉ, thời gian chờ người dùng bổ sung
+        thông tin hoặc thời gian ngân hàng xác minh chủ tài khoản. Khoản hoàn thông
+        thường được chuyển về nguồn hoặc tài khoản phù hợp đã được xác minh; chúng
+        tôi có thể từ chối chuyển đến người không liên quan đến giao dịch ban đầu.
+      </p>
 
       <h2 id="access" className={headingClass}>9. Quyền truy cập sau hoàn tiền</h2>
       <p>
@@ -110,6 +129,12 @@ export default function RefundPage() {
         từ khi nhận thông báo và cung cấp bằng chứng bổ sung. GATS Academy sẽ
         xem xét lại trên cơ sở dữ liệu giao dịch và tiến độ hệ thống.
       </p>
+      <p>
+        Nội dung khiếu nại cần nêu rõ điểm chưa đồng ý và tài liệu mới cần được xem
+        xét. Việc xem xét lại không làm thay đổi quyền truy cập đã bị tạm khóa để
+        bảo toàn dữ liệu trong thời gian xử lý, trừ khi GATS Academy có thông báo khác.
+      </p>
+      </div>
     </LegalPageShell>
   );
 }

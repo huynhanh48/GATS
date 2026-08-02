@@ -18,7 +18,7 @@ const sections = [
   { id: "support", title: "Tra soát và hỗ trợ" },
 ] as const;
 
-const headingClass = "scroll-mt-28 pt-5 text-xl font-bold text-foreground";
+const headingClass = "scroll-mt-28 pt-6 text-2xl font-bold text-foreground";
 
 export default function PaymentPolicyPage() {
   return (
@@ -27,6 +27,14 @@ export default function PaymentPolicyPage() {
       summary="Chính sách mô tả cách tạo đơn, chuyển khoản, đối soát qua thông báo giao dịch và cấp quyền truy cập khóa học."
       sections={sections}
     >
+      <div className="space-y-5 text-[1.6rem] leading-8">
+      <p>
+        Chính sách này giúp người dùng hiểu rõ từng bước từ khi chọn khóa học,
+        tạo đơn hàng, thực hiện chuyển khoản đến khi hệ thống ghi nhận thanh toán
+        và mở quyền học. Người dùng nên đọc kỹ thông tin hiển thị tại trang thanh
+        toán và chỉ sử dụng tài khoản nhận tiền chính thức của GATS Academy.
+      </p>
+
       <h2 id="prices" className={headingClass}>1. Giá và đơn vị tiền tệ</h2>
       <p>
         Giá hiển thị tại bước thanh toán là giá áp dụng cho đơn hàng tại thời
@@ -38,6 +46,11 @@ export default function PaymentPolicyPage() {
         Mỗi đơn có mã riêng, số tiền và thời hạn thanh toán. Đơn chờ quá thời
         hạn hiển thị có thể bị hủy tự động; không chuyển tiền theo thông tin của
         đơn đã hết hạn.
+      </p>
+      <p>
+        Việc thêm hoặc loại bỏ khóa học, áp dụng coupon hay thay đổi chương trình
+        ưu đãi có thể làm tổng tiền thay đổi. Nếu thông tin đơn không còn đúng với
+        nhu cầu, hãy tạo đơn mới thay vì tự điều chỉnh số tiền hoặc nội dung chuyển khoản.
       </p>
 
       <h2 id="bank-transfer" className={headingClass}>3. Chuyển khoản ngân hàng</h2>
@@ -51,6 +64,12 @@ export default function PaymentPolicyPage() {
         Hệ thống có thể nhận thông báo giao dịch từ dịch vụ đối soát như SePay.
         Đơn chỉ chuyển sang thành công khi mã tham chiếu, số tiền và trạng thái
         giao dịch đáp ứng quy tắc đối soát.
+      </p>
+      <p>
+        Thời gian cập nhật thường phụ thuộc tốc độ xử lý của ngân hàng và nhà cung
+        cấp đối soát. Trong thời gian chờ, người dùng không nên chuyển khoản lần hai.
+        Nếu tài khoản đã bị trừ tiền nhưng trạng thái chưa đổi, hãy lưu lại biên nhận
+        và chờ một khoảng thời gian hợp lý trước khi gửi yêu cầu hỗ trợ.
       </p>
 
       <h2 id="mismatch" className={headingClass}>5. Sai nội dung hoặc số tiền</h2>
@@ -85,6 +104,12 @@ export default function PaymentPolicyPage() {
         Khi cần hỗ trợ, cung cấp email tài khoản và mã đơn hàng. Thời gian tra
         soát phụ thuộc ngân hàng, dịch vụ đối soát và mức độ đầy đủ của chứng từ.
       </p>
+      <p>
+        Chứng từ nên thể hiện thời gian, số tiền, tài khoản nhận và mã giao dịch;
+        người dùng cần che số dư, mã OTP và các thông tin không liên quan. Kết quả
+        tra soát sẽ được gửi qua kênh liên hệ gắn với tài khoản nhằm hạn chế giả mạo.
+      </p>
+      </div>
     </LegalPageShell>
   );
 }

@@ -904,8 +904,8 @@ export default function CourseDetailPage({
               ) : null}
 
               {activeTab === "reviews" ? (
-                <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center">
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="order-2 rounded-2xl border border-slate-200 bg-white p-5 text-center">
                     {course.rating != null && course.ratingCount > 0 ? (
                       <>
                         <p className="text-[3.2rem] font-bold leading-none text-[#111827]">
@@ -939,7 +939,7 @@ export default function CourseDetailPage({
                     )}
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                  <div className="order-1 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
                     <h3 className="text-[1.8rem] font-bold text-[#111827]">
                       {hasExistingReview
                         ? "Cập nhật đánh giá của bạn"
