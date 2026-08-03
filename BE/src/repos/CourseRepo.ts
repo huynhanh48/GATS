@@ -4,8 +4,10 @@ import {
   count,
   desc,
   eq,
+  gte,
   ilike,
   inArray,
+  lte,
   ne,
   or,
   sql,
@@ -134,6 +136,8 @@ export async function findMany(options: {
   level?: string;
   categoryId?: string;
   instructorId?: number;
+  minPrice?: number;
+  maxPrice?: number;
   courseIds?: string[];
   keyword?: string;
   sort?: CourseListSort;
@@ -158,6 +162,13 @@ export async function findMany(options: {
   if (options.instructorId !== undefined) {
     conditions.push(eq(coursesTable.instructorId, options.instructorId));
   }
+  const effectivePrice = sql`COALESCE(${coursesTable.salePrice}, ${coursesTable.price})`;
+  if (options.minPrice !== undefined) {
+    conditions.push(gte(effectivePrice, options.minPrice));
+  }
+  if (options.maxPrice !== undefined) {
+    conditions.push(lte(effectivePrice, options.maxPrice));
+  }
   if (options.courseIds) {
     conditions.push(inArray(coursesTable.id, options.courseIds));
   }
@@ -175,7 +186,6 @@ export async function findMany(options: {
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   // Effective storefront price: sale when set, else list price.
-  const effectivePrice = sql`COALESCE(${coursesTable.salePrice}, ${coursesTable.price})`;
   const orderByClause =
     options.sort === 'price_asc'
       ? [asc(effectivePrice), desc(coursesTable.createdAt)]

@@ -113,6 +113,7 @@ async function attachPublicList(
   const [
     categoryMap,
     tagMap,
+    authors,
     enrollmentMap,
     reviewMap,
     reviewDistributionMap,
@@ -121,12 +122,23 @@ async function attachPublicList(
   ] = await Promise.all([
     CategoryRepo.findByCourseIds(courses.map((course) => course.id)),
     CourseTagRepo.findByCourseIds(courses.map((course) => course.id)),
+    UserRepo.findByIds(
+      courses
+        .map((course) => course.instructorId)
+        .filter((id): id is number => id !== null),
+    ),
     EnrollmentRepo.countActiveByCourses(courseIds),
     CourseReviewRepo.getStatsByCourses(courseIds),
     CourseReviewRepo.getRatingDistributionByCourses(courseIds),
     CourseSectionRepo.countByCourses(courseIds),
     LessonRepo.getStatsByCourses(courseIds),
   ]);
+  const authorMap = new Map(
+    authors.map((author) => [
+      author.id,
+      { id: author.id, userName: author.userName },
+    ]),
+  );
   return courses.map((course) => {
     const reviewStats = reviewMap.get(course.id);
     const lessonStats = lessonMap.get(course.id);
@@ -136,6 +148,9 @@ async function attachPublicList(
       categoryMap.get(course.id) ?? null,
       tagMap.get(course.id) ?? [],
       ),
+      author: course.instructorId
+        ? (authorMap.get(course.instructorId) ?? null)
+        : null,
       stats: {
         enrollmentCount: enrollmentMap.get(course.id) ?? 0,
         ratingCount: reviewStats?.ratingCount ?? 0,
@@ -282,7 +297,9 @@ async function list(query: ListCoursesQuery, viewer?: AuthUser) {
     status: effectiveStatus,
     level: query.level,
     categoryId,
-    instructorId: isInstructor ? viewer?.id : undefined,
+    instructorId: isInstructor ? viewer?.id : query.instructorId,
+    minPrice: query.minPrice,
+    maxPrice: query.maxPrice,
     courseIds,
     keyword: query.keyword,
     sort: query.sort,

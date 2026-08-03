@@ -103,6 +103,7 @@ Dùng khi muốn kiểm thử toàn bộ ứng dụng trong container mà không
 ```powershell
 docker compose -p gats-academy up --build -d
 image.png
+docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up -d --build app
 ```
 
 

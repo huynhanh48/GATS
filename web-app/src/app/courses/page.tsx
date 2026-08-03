@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -122,6 +122,7 @@ export default function CoursesPage() {
 
 function CoursesPageContent() {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [filterCourses, setFilterCourses] = useState<Course[]>([]);
   const [latestCourses, setLatestCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<CourseCategory[]>([]);
   const [pagination, setPagination] = useState<PaginationData | null>(null);
@@ -135,6 +136,7 @@ function CoursesPageContent() {
     categoryFromUrl || "all",
   );
   const [priceFilter, setPriceFilter] = useState("all");
+  const [instructorFilter, setInstructorFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -144,7 +146,7 @@ function CoursesPageContent() {
   const [searchInput, setSearchInput] = useState(keywordFromUrl);
   const [searchQuery, setSearchQuery] = useState(keywordFromUrl);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const reviewCounts = courses.reduce<Record<number, number>>(
+  const reviewCounts = filterCourses.reduce<Record<number, number>>(
     (counts, course) => {
       for (let rating = 1; rating <= 5; rating += 1) {
         counts[rating] =
@@ -154,6 +156,54 @@ function CoursesPageContent() {
       return counts;
     },
     {},
+  );
+  const categoryCounts = useMemo(
+    () =>
+      filterCourses.reduce<Record<string, number>>((counts, course) => {
+        const slug = course.category?.slug;
+        if (slug) counts[slug] = (counts[slug] ?? 0) + 1;
+        return counts;
+      }, {}),
+    [filterCourses],
+  );
+  const instructors = useMemo(() => {
+    const byId = new Map<number, { id: number; name: string; count: number }>();
+    filterCourses.forEach((course) => {
+      if (!course.author) return;
+      const current = byId.get(course.author.id);
+      byId.set(course.author.id, {
+        id: course.author.id,
+        name: course.author.userName,
+        count: (current?.count ?? 0) + 1,
+      });
+    });
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, "vi"));
+  }, [filterCourses]);
+  const priceCounts = useMemo(
+    () =>
+      filterCourses.reduce(
+        (counts, course) => {
+          const effectivePrice = course.salePrice ?? course.price;
+          if (effectivePrice === 0) counts.free += 1;
+          else counts.paid += 1;
+          counts.all += 1;
+          return counts;
+        },
+        { all: 0, free: 0, paid: 0 },
+      ),
+    [filterCourses],
+  );
+  const levelCounts = useMemo(
+    () =>
+      filterCourses.reduce(
+        (counts, course) => {
+          counts[course.level] += 1;
+          counts.all += 1;
+          return counts;
+        },
+        { all: 0, beginner: 0, intermediate: 0, advanced: 0 },
+      ),
+    [filterCourses],
   );
 
   useEffect(() => {
@@ -195,6 +245,29 @@ function CoursesPageContent() {
         setLatestCourses(payload.data ?? []);
       })
       .catch(console.error);
+
+    const loadFilterCourses = async () => {
+      const firstResponse = await apiClient.get(
+        `${PathApi.courses.list}?page=1&limit=100&status=published`,
+      );
+      const firstPayload = firstResponse as unknown as CoursesListPayload;
+      const totalPages = firstPayload.pagination?.totalPages ?? 1;
+      const remaining = await Promise.all(
+        Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) =>
+          apiClient.get(
+            `${PathApi.courses.list}?page=${index + 2}&limit=100&status=published`,
+          ),
+        ),
+      );
+      setFilterCourses([
+        ...(firstPayload.data ?? []),
+        ...remaining.flatMap(
+          (response) =>
+            (response as unknown as CoursesListPayload).data ?? [],
+        ),
+      ]);
+    };
+    loadFilterCourses().catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -210,6 +283,7 @@ function CoursesPageContent() {
 
     if (levelFilter !== "all") params.append("level", levelFilter);
     if (productTypeFilter !== "all") params.append("category", productTypeFilter);
+    if (instructorFilter !== "all") params.append("instructorId", instructorFilter);
     if (priceFilter === "free") params.append("maxPrice", "0");
     if (priceFilter === "paid") params.append("minPrice", "1");
     if (searchQuery) params.append("keyword", searchQuery);
@@ -239,7 +313,7 @@ function CoursesPageContent() {
     return () => {
       active = false;
     };
-  }, [levelFilter, productTypeFilter, priceFilter, sortBy, currentPage, searchQuery]);
+  }, [levelFilter, productTypeFilter, instructorFilter, priceFilter, sortBy, currentPage, searchQuery]);
 
   const filterContent = (
     <div className="space-y-8">
@@ -272,7 +346,11 @@ function CoursesPageContent() {
                 </div>
                 <span>{opt.name === "Tất cả" ? "Tất cả" : opt.name}</span>
               </div>
-              <span className="text-[1.4rem] text-slate-400">{opt.courseCount ?? 15}</span>
+              <span className="text-[1.4rem] text-slate-400">
+                {opt.slug === "all"
+                  ? filterCourses.length
+                  : (categoryCounts[opt.slug] ?? 0)}
+              </span>
             </label>
           ))}
         </div>
@@ -284,15 +362,24 @@ function CoursesPageContent() {
           Giảng viên
         </h3>
         <div className="space-y-4">
-          {["Kenny White", "John Doe"].map((instructor) => (
+          {instructors.map((instructor) => (
             <label
-              key={instructor}
+              key={instructor.id}
               className="group flex cursor-pointer items-center justify-between text-[1.5rem] font-medium text-slate-600 transition-colors hover:text-[#111827]"
             >
               <div className="flex items-center gap-3">
                 <div className="relative flex h-5 w-5 items-center justify-center rounded border border-slate-300 bg-white transition-colors group-hover:border-[#ff782d]">
                   <input
                     type="checkbox"
+                    checked={instructorFilter === String(instructor.id)}
+                    onChange={() => {
+                      setInstructorFilter((current) =>
+                        current === String(instructor.id)
+                          ? "all"
+                          : String(instructor.id),
+                      );
+                      setCurrentPage(1);
+                    }}
                     className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   />
                   <div className="pointer-events-none absolute inset-0 hidden bg-[#ff782d] peer-checked:block rounded" />
@@ -300,11 +387,14 @@ function CoursesPageContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span>{instructor}</span>
+                <span>{instructor.name}</span>
               </div>
-              <span className="text-[1.4rem] text-slate-400">15</span>
+              <span className="text-[1.4rem] text-slate-400">{instructor.count}</span>
             </label>
           ))}
+          {instructors.length === 0 && (
+            <p className="text-[1.4rem] text-slate-400">Chưa có giảng viên</p>
+          )}
         </div>
       </div>
 
@@ -337,7 +427,9 @@ function CoursesPageContent() {
                 </div>
                 <span>{opt.label === "Tất cả" ? "Tất cả" : opt.label === "Miễn phí" ? "Miễn phí" : "Trả phí"}</span>
               </div>
-              <span className="text-[1.4rem] text-slate-400">15</span>
+              <span className="text-[1.4rem] text-slate-400">
+                {priceCounts[opt.value]}
+              </span>
             </label>
           ))}
         </div>
@@ -411,7 +503,9 @@ function CoursesPageContent() {
                 </div>
                 <span>{opt.label}</span>
               </div>
-              <span className="text-[1.4rem] text-slate-400">15</span>
+              <span className="text-[1.4rem] text-slate-400">
+                {levelCounts[opt.value]}
+              </span>
             </label>
           ))}
         </div>
