@@ -56,6 +56,11 @@ import responseMeta from './middleware/responseMeta';
 const app = express();
 assertProductionConfiguration();
 
+// Rich-text posts can legitimately exceed Express' 100 KB default once the
+// editor serializes headings, links and formatting as HTML. Keep a finite
+// application-level cap even though nginx allows larger media uploads.
+const REQUEST_BODY_LIMIT = '2mb';
+
 // **** Middleware **** //
 
 // Exactly one trusted reverse-proxy hop (nginx) terminates TLS in production.
@@ -66,8 +71,8 @@ if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
 // Basic middleware
 app.use(requestContext);
 app.use(responseMeta);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT }));
 app.use(cookieParser());
 app.use(
   cors({
@@ -147,6 +152,28 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
     res.statusCode === 429 || res.statusCode === 503 ? '5' : undefined;
   if (retryAfter) {
     res.setHeader('Retry-After', retryAfter);
+  }
+
+  const requestError = err as Error & { status?: number; type?: string };
+  if (
+    requestError.status === 413 ||
+    requestError.type === 'entity.too.large'
+  ) {
+    const message =
+      'Nội dung gửi lên quá lớn. Vui lòng giữ tổng dữ liệu dưới 2 MB.';
+    return res.status(413).json({
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message,
+        details: { maxSize: REQUEST_BODY_LIMIT },
+        retryable: false,
+      },
+      message,
+      meta: {
+        requestId: res.locals.requestId,
+        serverTime: new Date().toISOString(),
+      },
+    });
   }
 
   if (isHttpException(err)) {
