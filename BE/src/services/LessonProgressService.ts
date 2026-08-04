@@ -37,9 +37,12 @@ async function upsert(
     userId,
     lessonId,
   );
+  // Quiz lessons complete only via quiz pass (syncQuizResult), never from watch %.
+  const completedFromWatch =
+    lesson.type !== 'quiz' && isLessonCompleted(percent);
   // Đã hoàn thành thì không hạ xuống incomplete khi lưu tiến độ xem lại
   const completed =
-    isLessonCompleted(percent) || Boolean(existing?.isCompleted);
+    completedFromWatch || Boolean(existing?.isCompleted);
 
   const progress = await LessonProgressRepo.upsert({
     userId,

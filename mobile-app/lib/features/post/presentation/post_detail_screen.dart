@@ -9,6 +9,7 @@ import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/post/presentation/widgets/post_card.dart';
+import 'package:gats_academy/features/post/presentation/widgets/post_rich_body.dart';
 
 class PostDetailScreen extends StatefulWidget {
   const PostDetailScreen({
@@ -184,13 +185,15 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                       ),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                Text(
-                  canReadFull ? post.body : post.previewExcerpt,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        height: 1.55,
-                        color: gats.textPrimary,
+                canReadFull
+                    ? PostRichBody(content: post.body)
+                    : Text(
+                        post.previewExcerpt,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              height: 1.55,
+                              color: gats.textPrimary,
+                            ),
                       ),
-                ),
                 if (!canReadFull) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Container(

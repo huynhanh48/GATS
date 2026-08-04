@@ -166,6 +166,8 @@ class CourseCatalogLoader {
               durationMinutes: e['durationMinutes'] as int,
               isPreview: e['isPreview'] as bool? ?? false,
               locked: e['locked'] as bool? ?? false,
+              type: e['type'] as String? ?? 'video',
+              content: e['content'] as String?,
             ),
           )
           .toList(),

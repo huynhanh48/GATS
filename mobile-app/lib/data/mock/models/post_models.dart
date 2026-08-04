@@ -49,9 +49,16 @@ class CommunityPost {
   final bool isPublished;
 
   String get previewExcerpt {
-    final trimmed = body.trim();
-    if (trimmed.length <= 160) return trimmed;
-    return '${trimmed.substring(0, 157)}...';
+    // Strip HTML/markdown markers for list cards.
+    var plain = body.trim();
+    plain = plain
+        .replaceAll(RegExp(r'<[^>]*>', multiLine: true), ' ')
+        .replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .replaceAll('&nbsp;', ' ')
+        .trim();
+    if (plain.length <= 160) return plain;
+    return '${plain.substring(0, 157)}...';
   }
 
   String get badgeLabel => switch (scope) {

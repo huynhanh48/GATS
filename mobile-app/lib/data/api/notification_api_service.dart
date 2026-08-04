@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/network/api_client.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
-import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/notifications/data/mock_notifications.dart';
 
 abstract final class NotificationApiPaths {
@@ -103,12 +102,9 @@ abstract final class NotificationApiService {
     final data = json['data'];
     if (data is! List) return const [];
     final user = await AuthPrefs.currentUser();
-    final isStaff =
-        user?.role == UserRole.admin || user?.role == UserRole.mentor;
     final me = user?.id;
     final rows = data.whereType<Map>().map(Map<String, dynamic>.from).toList();
     final filtered = rows.where((e) {
-      if (isStaff) return true;
       final type = e['type']?.toString();
       if (type != null && _adminFeedTypes.contains(type)) return false;
       final uid = e['userId'];
@@ -118,7 +114,7 @@ abstract final class NotificationApiService {
     }).toList();
     // #region agent log
     debugPrint(
-      'NotificationApiService.list isStaff=$isStaff raw=${rows.length} '
+      'NotificationApiService.list raw=${rows.length} '
       'filtered=${filtered.length} types=${filtered.take(8).map((e) => e['type']).toList()}',
     );
     // #endregion

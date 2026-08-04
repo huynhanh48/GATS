@@ -15,13 +15,14 @@ class QuizTakeScreen extends StatefulWidget {
   final String quizId;
   final String? title;
 
-  static Future<void> open(
+  /// Returns submit result when the user finishes (or null if closed without submit).
+  static Future<QuizSubmitResult?> open(
     BuildContext context, {
     required String quizId,
     String? title,
   }) {
-    return Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    return Navigator.of(context).push<QuizSubmitResult>(
+      MaterialPageRoute<QuizSubmitResult>(
         builder: (_) => QuizTakeScreen(quizId: quizId, title: title),
       ),
     );
@@ -140,29 +141,39 @@ class _QuizTakeScreenState extends State<QuizTakeScreen> {
     final gats = context.gatsColors;
     final title = widget.title ?? _quiz?.title ?? 'Quiz';
 
-    return Scaffold(
-      backgroundColor: gats.background,
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: gats.surface,
-        surfaceTintColor: Colors.transparent,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        Navigator.pop(context, _result);
+      },
+      child: Scaffold(
+        backgroundColor: gats.background,
+        appBar: AppBar(
+          title: Text(title),
+          backgroundColor: gats.surface,
+          surfaceTintColor: Colors.transparent,
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+                ? _ErrorBody(message: _error!, onRetry: _load)
+                : _result != null
+                    ? _ResultBody(
+                        result: _result!,
+                        onDone: () => Navigator.pop(context, _result),
+                      )
+                    : _QuizBody(
+                        quiz: _quiz!,
+                        selectedAnswerIds: _selectedAnswerIds,
+                        textControllers: _textControllers,
+                        submitting: _submitting,
+                        onSelect: (qid, aid) {
+                          setState(() => _selectedAnswerIds[qid] = aid);
+                        },
+                        onSubmit: _submit,
+                      ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? _ErrorBody(message: _error!, onRetry: _load)
-              : _result != null
-                  ? _ResultBody(result: _result!, onDone: () => Navigator.pop(context))
-                  : _QuizBody(
-                      quiz: _quiz!,
-                      selectedAnswerIds: _selectedAnswerIds,
-                      textControllers: _textControllers,
-                      submitting: _submitting,
-                      onSelect: (qid, aid) {
-                        setState(() => _selectedAnswerIds[qid] = aid);
-                      },
-                      onSubmit: _submit,
-                    ),
     );
   }
 }

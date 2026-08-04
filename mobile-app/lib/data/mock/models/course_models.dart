@@ -57,6 +57,7 @@ class CourseLecture {
     this.isPreview = false,
     this.locked = false,
     this.type = 'video',
+    this.content,
   });
 
   final String id;
@@ -69,9 +70,13 @@ class CourseLecture {
   final bool locked;
   /// BE `lesson_type`: video | text | quiz | assignment | …
   final String type;
+  /// HTML/markdown nội dung bài (BE trả khi đã unlock).
+  final String? content;
 
   bool get isQuiz => type == 'quiz';
   bool get isAssignment => type == 'assignment';
+  bool get isVideo => type == 'video' || type.isEmpty;
+  bool get isText => type == 'text';
 }
 
 class CourseQuiz {

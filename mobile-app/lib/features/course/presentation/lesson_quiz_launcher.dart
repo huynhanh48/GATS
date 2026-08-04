@@ -6,7 +6,8 @@ import 'package:gats_academy/features/course/presentation/quiz_take_screen.dart'
 
 /// Quiz gắn lesson — load byLesson rồi dùng màn [QuizTakeScreen].
 abstract final class LessonQuizLauncher {
-  static Future<void> open(
+  /// Returns `true` if passed, `false` if submitted but not passed, `null` if closed without result.
+  static Future<bool?> open(
     BuildContext context, {
     required String courseId,
     required String lessonId,
@@ -19,19 +20,20 @@ abstract final class LessonQuizLauncher {
         messenger.showSnackBar(
           const SnackBar(content: Text('Vui lòng đăng nhập.')),
         );
-        return;
+        return null;
       }
       final quiz = await QuizApiService.byLesson(
         courseId: courseId,
         lessonId: lessonId,
         token: token,
       );
-      if (!context.mounted) return;
-      await QuizTakeScreen.open(
+      if (!context.mounted) return null;
+      final result = await QuizTakeScreen.open(
         context,
         quizId: quiz.id,
         title: title ?? quiz.title,
       );
+      return result?.passed;
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(
@@ -40,6 +42,7 @@ abstract final class LessonQuizLauncher {
           ),
         ),
       );
+      return null;
     }
   }
 }

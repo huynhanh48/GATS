@@ -7,8 +7,22 @@ import {
   updateAiCoachSessionSchema,
   addAiCoachMessageSchema,
 } from '@src/schemas/ai-coach-schemas';
+import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
+import { RouteError } from '@src/common/utils/route-errors';
+import { chatWithViava } from '@src/services/viava/ViavaClient';
 
 export class AiCoachService {
+  public async chat(query: string, domains?: string[]) {
+    const result = await chatWithViava({ query, domains });
+    if (!result) {
+      throw new RouteError(
+        HttpStatusCodes.BAD_GATEWAY,
+        'AI Coach tạm thời không phản hồi. Vui lòng thử lại.',
+      );
+    }
+    return result;
+  }
+
   /**
    * Get all active sessions for a user
    */

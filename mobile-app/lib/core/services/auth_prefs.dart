@@ -129,7 +129,6 @@ abstract final class AuthPrefs {
       final token = await accessToken();
       if (token == null || token.isEmpty) return null;
       final methodName = prefs.getString(_methodKey);
-      final roleName = prefs.getString(_roleKey);
       final userId = prefs.getString(_userIdKey);
       if (userId == null || userId.isEmpty) return null;
       return AuthUser(
@@ -140,10 +139,7 @@ abstract final class AuthPrefs {
           (m) => m.name == methodName,
           orElse: () => AuthMethod.email,
         ),
-        role: UserRole.values.firstWhere(
-          (r) => r.name == roleName,
-          orElse: () => UserRole.user,
-        ),
+        role: UserRole.user,
       );
     } on PlatformException catch (e) {
       _useMemoryFallback(e);

@@ -6,6 +6,7 @@ import {
   createAiCoachSessionSchema,
   updateAiCoachSessionSchema,
   addAiCoachMessageSchema,
+  chatAiCoachSchema,
 } from '@src/schemas/ai-coach-schemas';
 import aiCoachService from '@src/services/ai-coach-service';
 
@@ -16,6 +17,12 @@ function authUserId(req: Request): number {
 async function getSessions(req: Request, res: Response) {
   const sessions = await aiCoachService.getSessions(authUserId(req));
   return res.status(HttpStatusCodes.OK).json({ data: sessions });
+}
+
+async function chat(req: Request, res: Response) {
+  const parsed = chatAiCoachSchema.parse(req.body);
+  const result = await aiCoachService.chat(parsed.query, parsed.domains);
+  return res.status(HttpStatusCodes.OK).json({ data: result });
 }
 
 async function createSession(req: Request, res: Response) {
@@ -55,6 +62,7 @@ async function addMessage(req: Request, res: Response) {
 }
 
 export default {
+  chat,
   getSessions,
   createSession,
   getSessionDetails,

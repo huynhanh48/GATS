@@ -139,22 +139,11 @@ class PostStore extends ChangeNotifier {
     required String? userId,
     required UserRole role,
   }) {
-    if (!post.isPublished && role != UserRole.admin) {
-      if (role == UserRole.mentor && post.authorId == userId) return true;
-      return false;
-    }
+    if (!post.isPublished) return false;
     if (post.scope == PostScope.global) return true;
 
     final courseId = post.courseId;
     if (courseId == null) return false;
-    if (role == UserRole.admin) return true;
-
-    final course = CourseModule.repository.getCourse(courseId);
-    if (course != null &&
-        role == UserRole.mentor &&
-        course.isManagedBy(userId)) {
-      return true;
-    }
     return CourseModule.repository.isOwned(courseId, userId, role: role);
   }
 

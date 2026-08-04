@@ -5,6 +5,12 @@ import aiCoachHandlers from './aiCoachRouter';
 
 const apiRouter = Router();
 
+apiRouter.post(
+  '/chat',
+  errorHandle(authMiddleware),
+  errorHandle(aiCoachHandlers.chat)
+);
+
 apiRouter.get(
   '/',
   errorHandle(authMiddleware),

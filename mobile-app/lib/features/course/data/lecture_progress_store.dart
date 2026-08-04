@@ -116,6 +116,25 @@ class LectureProgressStore extends ChangeNotifier {
     }
   }
 
+  /// Keep lesson list in sync when curriculum arrives after first paint.
+  void replaceLectures(List<CourseLecture> lectures) {
+    final next = List<CourseLecture>.of(lectures);
+    if (_sameLectureIds(_lectures, next)) return;
+    _lectures = next;
+    notifyListeners();
+  }
+
+  static bool _sameLectureIds(List<CourseLecture> a, List<CourseLecture> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id || a[i].isPublished != b[i].isPublished) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   Future<void> retrySync() async {
     final userId = _userId;
     final courseId = _courseId;
@@ -128,6 +147,42 @@ class LectureProgressStore extends ChangeNotifier {
     );
   }
 
+  /// After BE syncQuizResult (quiz passed): optimistic local complete + refresh.
+  Future<void> applyQuizPassed(String lectureId) async {
+    final userId = _userId;
+    final courseId = _courseId;
+    if (userId == null || courseId == null) return;
+
+    if (!_completed.contains(lectureId)) {
+      _completed.add(lectureId);
+      await _persistCache();
+      _syncCourseProgress();
+      notifyListeners();
+    }
+
+    final token = await AuthPrefs.accessToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final remote = await ProgressApiService.getCourseProgress(
+        courseId: courseId,
+        token: token,
+      );
+      _completed
+        ..clear()
+        ..addAll(remote.completedLessonIds);
+      await _persistCache();
+      CourseModule.repository.setUserProgress(
+        courseId,
+        userId,
+        remote.fraction,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('LectureProgressStore: applyQuizPassed refresh failed — $e');
+    }
+  }
+
   Future<void> markComplete(String lectureId) async {
     final userId = _userId;
     final courseId = _courseId;
@@ -137,11 +192,6 @@ class LectureProgressStore extends ChangeNotifier {
       return;
     }
 
-    final token = await AuthPrefs.accessToken();
-    if (token == null || token.isEmpty) {
-      throw StateError('Chưa đăng nhập — không thể cập nhật tiến độ.');
-    }
-
     CourseLecture? lecture;
     for (final l in _lectures) {
       if (l.id == lectureId) {
@@ -149,6 +199,18 @@ class LectureProgressStore extends ChangeNotifier {
         break;
       }
     }
+    // Quiz/assignment complete only via submit flows (web parity).
+    if (lecture != null && (lecture.isQuiz || lecture.isAssignment)) {
+      throw StateError(
+        'Bài quiz/assignment chỉ hoàn thành khi nộp bài đạt yêu cầu.',
+      );
+    }
+
+    final token = await AuthPrefs.accessToken();
+    if (token == null || token.isEmpty) {
+      throw StateError('Chưa đăng nhập — không thể cập nhật tiến độ.');
+    }
+
     final durationSeconds =
         ((lecture?.durationMinutes ?? 0) * 60).clamp(100, 24 * 3600);
 

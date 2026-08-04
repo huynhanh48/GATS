@@ -19,3 +19,8 @@ export const addAiCoachMessageSchema = z.object({
   isUser: z.boolean(),
   timestamp: z.string().datetime().optional(),
 });
+
+export const chatAiCoachSchema = z.object({
+  query: z.string().trim().min(1).max(4000),
+  domains: z.array(z.string().trim().min(1)).max(20).optional(),
+});

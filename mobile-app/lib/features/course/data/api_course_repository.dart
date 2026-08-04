@@ -144,9 +144,6 @@ final class ApiCourseRepository extends ChangeNotifier
   List<CourseItem> listOwned(
       {String? userId, UserRole role = UserRole.user}) {
     if (userId == null) return [];
-    if (role == UserRole.admin) {
-      return listPublished(userId: userId, role: role);
-    }
     return listEnrolled(userId: userId, role: role);
   }
 
@@ -154,7 +151,6 @@ final class ApiCourseRepository extends ChangeNotifier
   bool isOwned(String courseId, String? userId,
       {UserRole role = UserRole.user}) {
     if (userId == null) return false;
-    if (role == UserRole.admin) return true;
     return _enrolledByUser[courseId]?.contains(userId) ?? false;
   }
 
@@ -266,11 +262,6 @@ final class ApiCourseRepository extends ChangeNotifier
     required String? userId,
     required UserRole role,
   }) {
-    if (role == UserRole.admin) return true;
-    if (role == UserRole.mentor && userId != null &&
-        course.isManagedBy(userId)) {
-      return true;
-    }
     return isOwned(course.id, userId, role: role);
   }
 

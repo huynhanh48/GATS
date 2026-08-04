@@ -92,6 +92,10 @@ async function applyEvent(
   );
 
   if (event.type === 'completed') {
+    // Quiz: ignore client "completed" events — only syncQuizResult may complete.
+    const allowCompleteFromEvent = lesson.type !== 'quiz';
+    const isCompleted =
+      allowCompleteFromEvent || Boolean(existing?.isCompleted);
     await LessonProgressRepo.upsert({
       userId,
       courseId,
@@ -102,11 +106,15 @@ async function applyEvent(
         existing?.watchedSeconds ?? 0,
       ),
       durationSeconds: existing?.durationSeconds ?? lesson.duration ?? null,
-      percent: 100,
-      isCompleted: true,
-      completedAt: existing?.completedAt ?? occurredAt,
+      percent: isCompleted ? 100 : (existing?.percent ?? 0),
+      isCompleted,
+      completedAt: isCompleted
+        ? (existing?.completedAt ?? occurredAt)
+        : null,
     });
-    void maybeIssueCertificate(userId, courseId);
+    if (isCompleted) {
+      void maybeIssueCertificate(userId, courseId);
+    }
     return { eventId: event.eventId, status: 'applied' as const };
   }
 

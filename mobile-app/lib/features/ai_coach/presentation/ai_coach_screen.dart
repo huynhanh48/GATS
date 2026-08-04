@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_assets.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
+import 'package:gats_academy/core/network/api_exception.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/floating_nav_bar.dart';
 import 'package:gats_academy/features/ai_coach/data/ai_coach_store.dart';
+import 'package:gats_academy/features/ai_coach/data/ai_coach_api_service.dart';
 import 'package:gats_academy/features/ai_coach/models/ai_coach_session.dart';
 import 'package:gats_academy/features/ai_coach/presentation/widgets/ai_coach_session_sheet.dart';
 
@@ -52,9 +54,9 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     AiCoachSession? active;
     if (activeId != null && activeId.isNotEmpty) {
       active = sessions.cast<AiCoachSession?>().firstWhere(
-            (s) => s?.id == activeId,
-            orElse: () => null,
-          );
+        (s) => s?.id == activeId,
+        orElse: () => null,
+      );
     }
     if (active == null && sessions.isNotEmpty) {
       active = sessions.first;
@@ -140,13 +142,29 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     });
     _scrollToEnd();
 
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    AiChatMessage aiMsg;
+    try {
+      final token = await AuthPrefs.accessToken();
+      if (token == null || token.isEmpty) {
+        throw StateError('Bạn cần đăng nhập để sử dụng AI Coach.');
+      }
+      final answer = await AiCoachApiService.chat(
+        token: token,
+        query: trimmedText,
+      );
+      aiMsg = AiChatMessage.create(text: answer, isUser: false);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _isTyping = false);
+      final message = error is ApiException
+          ? error.message
+          : 'AI Coach tạm thời không phản hồi. Vui lòng thử lại.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      return;
+    }
     if (!mounted) return;
-
-    final aiMsg = AiChatMessage.create(
-      text: AppStrings.aiCoachMockReply,
-      isUser: false,
-    );
     final finalMsgs = [...session.messages, aiMsg];
     final updatedSession = session.copyWith(
       messages: finalMsgs,
@@ -270,98 +288,107 @@ class _WelcomeHero extends StatelessWidget {
   final ValueChanged<String> onPrompt;
 
   static List<_Suggestion> _suggestions(BuildContext context) => [
-        _Suggestion(
-          AppStrings.aiQuickAskLearnNext,
-          Icons.school_rounded,
-          const [Color(0xFF3D8FEF), Color(0xFF7C3AED)],
-        ),
-        _Suggestion(
-          AppStrings.aiQuickAskExplainAi,
-          Icons.lightbulb_rounded,
-          const [Color(0xFFFF9A56), Color(0xFFFF7622)],
-        ),
-        _Suggestion(
-          AppStrings.aiQuickAskScheduleToday,
-          Icons.calendar_month_rounded,
-          const [Color(0xFF10B981), Color(0xFF059669)],
-        ),
-        _Suggestion(
-          AppStrings.aiQuickAskPromptQuiz,
-          Icons.quiz_rounded,
-          const [Color(0xFFEC4899), Color(0xFF8B5CF6)],
-        ),
-      ];
+    _Suggestion(AppStrings.aiQuickAskLearnNext, Icons.school_rounded, const [
+      Color(0xFF3D8FEF),
+      Color(0xFF7C3AED),
+    ]),
+    _Suggestion(AppStrings.aiQuickAskExplainAi, Icons.lightbulb_rounded, const [
+      Color(0xFFFF9A56),
+      Color(0xFFFF7622),
+    ]),
+    _Suggestion(
+      AppStrings.aiQuickAskScheduleToday,
+      Icons.calendar_month_rounded,
+      const [Color(0xFF10B981), Color(0xFF059669)],
+    ),
+    _Suggestion(AppStrings.aiQuickAskPromptQuiz, Icons.quiz_rounded, const [
+      Color(0xFFEC4899),
+      Color(0xFF8B5CF6),
+    ]),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
     final suggestions = _suggestions(context);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: AppSpacing.md),
-          const _CoachAvatar(size: 96),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            AppStrings.coachWelcomeCardTitle,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxHeight < 520;
+        final horizontalPadding = compact ? AppSpacing.md : AppSpacing.lg;
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            compact ? AppSpacing.xs : AppSpacing.sm,
+            horizontalPadding,
+            AppSpacing.md,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: compact ? AppSpacing.xs : AppSpacing.md),
+              _CoachAvatar(size: compact ? 72 : 92),
+              SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
+              Text(
+                AppStrings.coachWelcomeCardTitle,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontSize: compact ? 19 : null,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
                   color: gats.textPrimary,
                 ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            child: Text(
-              AppStrings.coachWelcomeCardBody,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? 0 : AppSpacing.sm,
+                ),
+                child: Text(
+                  AppStrings.coachWelcomeCardBody,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: compact ? 13 : null,
                     color: gats.textSecondary,
-                    height: 1.45,
+                    height: compact ? 1.35 : 1.45,
                   ),
-              textAlign: TextAlign.center,
-            ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
+              Text(
+                AppStrings.aiQuickAskTitle,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: gats.textSecondary,
+                  letterSpacing: 0.2,
+                ),
+              ),
+              SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: suggestions.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: compact ? AppSpacing.sm : AppSpacing.md,
+                  crossAxisSpacing: compact ? AppSpacing.sm : AppSpacing.md,
+                  childAspectRatio: compact ? 1.72 : 1.4,
+                ),
+                itemBuilder: (context, i) {
+                  final s = suggestions[i];
+                  return _SuggestionTile(
+                    suggestion: s,
+                    compact: compact,
+                    onTap: () => onPrompt(s.label),
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
-            AppStrings.aiQuickAskTitle,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: gats.textSecondary,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: suggestions.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 1.28,
-            ),
-            itemBuilder: (context, i) {
-              final s = suggestions[i];
-              return _SuggestionTile(
-                suggestion: s,
-                onTap: () => onPrompt(s.label),
-              );
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -475,9 +502,14 @@ class _CoachAvatarState extends State<_CoachAvatar>
 }
 
 class _SuggestionTile extends StatelessWidget {
-  const _SuggestionTile({required this.suggestion, required this.onTap});
+  const _SuggestionTile({
+    required this.suggestion,
+    required this.compact,
+    required this.onTap,
+  });
 
   final _Suggestion suggestion;
+  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -497,13 +529,13 @@ class _SuggestionTile extends StatelessWidget {
             boxShadow: gats.isStarry ? null : AppShadows.card,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: compact ? 32 : 36,
+                  height: compact ? 32 : 36,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: suggestion.gradientColors,
@@ -512,7 +544,11 @@ class _SuggestionTile extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: Icon(suggestion.icon, color: Colors.white, size: 18),
+                  child: Icon(
+                    suggestion.icon,
+                    color: Colors.white,
+                    size: compact ? 17 : 18,
+                  ),
                 ),
                 const Spacer(),
                 Text(
@@ -521,7 +557,7 @@ class _SuggestionTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontSize: compact ? 12 : 13,
                     height: 1.25,
                     color: gats.textPrimary,
                   ),
@@ -555,7 +591,11 @@ class _ChatBody extends StatelessWidget {
     return ListView.builder(
       controller: scrollController,
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.sm),
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       itemCount: messages.length + (isTyping ? 1 : 0),
       itemBuilder: (context, index) {
         if (isTyping && index == messages.length) {
@@ -575,10 +615,7 @@ class _ChatBody extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 
 class _AnimatedChatBubble extends StatefulWidget {
-  const _AnimatedChatBubble({
-    required this.message,
-    this.isLatest = false,
-  });
+  const _AnimatedChatBubble({required this.message, this.isLatest = false});
 
   final AiChatMessage message;
   final bool isLatest;
@@ -614,13 +651,13 @@ class _AnimatedChatBubbleState extends State<_AnimatedChatBubble>
   @override
   Widget build(BuildContext context) {
     return SlideTransition(
-      position: Tween<Offset>(
-        begin: Offset(widget.message.isUser ? 0.2 : -0.2, 0.15),
-        end: Offset.zero,
-      ).animate(CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutCubic,
-      )),
+      position:
+          Tween<Offset>(
+            begin: Offset(widget.message.isUser ? 0.2 : -0.2, 0.15),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+          ),
       child: FadeTransition(
         opacity: CurvedAnimation(parent: _controller, curve: Curves.easeOut),
         child: _ChatBubble(message: widget.message),
@@ -657,8 +694,9 @@ class _UserBubble extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 14, left: 48),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints:
-            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
+        ),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
@@ -724,8 +762,10 @@ class _CoachBubble extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: gats.surface,
                     borderRadius: const BorderRadius.only(
@@ -766,10 +806,14 @@ class _CoachBubble extends StatelessWidget {
                       _ReactionPill(icon: Icons.thumb_up_rounded, onTap: () {}),
                       const SizedBox(width: 6),
                       _ReactionPill(
-                          icon: Icons.thumb_down_rounded, onTap: () {}),
+                        icon: Icons.thumb_down_rounded,
+                        onTap: () {},
+                      ),
                       const SizedBox(width: 6),
                       _ReactionPill(
-                          icon: Icons.content_copy_rounded, onTap: () {}),
+                        icon: Icons.content_copy_rounded,
+                        onTap: () {},
+                      ),
                     ],
                   ),
                 ),
@@ -958,9 +1002,7 @@ class _ChatInputBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: gats.surface.withValues(alpha: gats.isStarry ? 0.88 : 1),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
-                border: Border.all(
-                  color: gats.divider.withValues(alpha: 0.7),
-                ),
+                border: Border.all(color: gats.divider.withValues(alpha: 0.7)),
                 boxShadow: gats.isStarry
                     ? null
                     : [
@@ -985,10 +1027,7 @@ class _ChatInputBar extends StatelessWidget {
                     vertical: 13,
                   ),
                 ),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: gats.textPrimary,
-                ),
+                style: TextStyle(fontSize: 14, color: gats.textPrimary),
                 onSubmitted: onSend,
               ),
             ),

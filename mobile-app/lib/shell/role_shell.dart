@@ -5,11 +5,9 @@ import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/theme/gats_main_app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/features/auth/models/auth_user.dart';
-import 'package:gats_academy/features/auth/models/user_role.dart';
-import 'package:gats_academy/shell/admin_shell.dart';
 import 'package:gats_academy/shell/main_shell.dart';
-import 'package:gats_academy/shell/mentor_shell.dart';
 
+/// Mobile app is learner-only. Admin / instructor use the web admin dashboard.
 class RoleShell extends StatefulWidget {
   const RoleShell({super.key});
 
@@ -40,19 +38,11 @@ class _RoleShellState extends State<RoleShell> {
 
   @override
   Widget build(BuildContext context) {
-    final role = _user?.role ?? UserRole.user;
-
     if (_user == null) {
       return const GatsMainAppTheme(
         child: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
-
-    final shell = switch (role) {
-      UserRole.admin => const AdminShell(),
-      UserRole.mentor => const MentorShell(),
-      UserRole.user => const MainShell(),
-    };
 
     return PopScope(
       canPop: false,
@@ -60,7 +50,7 @@ class _RoleShellState extends State<RoleShell> {
         if (didPop) return;
         SystemNavigator.pop();
       },
-      child: GatsMainAppTheme(child: shell),
+      child: const GatsMainAppTheme(child: MainShell()),
     );
   }
 }

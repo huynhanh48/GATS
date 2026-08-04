@@ -27,6 +27,7 @@ class _LearnExtrasPanelState extends State<LearnExtrasPanel> {
   List<LessonQuestionDto> _questions = const [];
   final _noteController = TextEditingController();
   final _questionController = TextEditingController();
+  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -178,45 +179,113 @@ class _LearnExtrasPanelState extends State<LearnExtrasPanel> {
       );
     }
 
+    return Container(
+      decoration: BoxDecoration(
+        color: gats.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: gats.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            child: Row(
+              children: [
+                _ExtrasTab(
+                  icon: Icons.edit_note_rounded,
+                  label: 'Ghi chú',
+                  count: _notes.length,
+                  selected: _selectedTab == 0,
+                  onTap: () => setState(() => _selectedTab = 0),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _ExtrasTab(
+                  icon: Icons.forum_outlined,
+                  label: 'Hỏi đáp',
+                  count: _questions.length,
+                  selected: _selectedTab == 1,
+                  onTap: () => setState(() => _selectedTab = 1),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _ExtrasTab(
+                  icon: Icons.bookmark_outline_rounded,
+                  label: 'Đã lưu',
+                  count: _bookmarks.length,
+                  selected: _selectedTab == 2,
+                  onTap: () => setState(() => _selectedTab = 2),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: switch (_selectedTab) {
+              0 => _buildNotes(gats),
+              1 => _buildQuestions(gats),
+              _ => _buildBookmarks(gats),
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotes(GatsThemeExtension gats) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Ghi chú & Q&A',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 15,
-            color: gats.textPrimary,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
         TextField(
           controller: _noteController,
           minLines: 1,
           maxLines: 3,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _addNote(),
           decoration: InputDecoration(
-            hintText: 'Thêm ghi chú…',
-            border: const OutlineInputBorder(),
+            labelText: 'Ghi chú cho bài học này',
+            hintText: 'Viết điều bạn muốn ghi nhớ…',
+            prefixIcon: const Icon(Icons.edit_note_rounded),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.add),
+              tooltip: 'Lưu ghi chú',
+              icon: const Icon(Icons.add_circle_rounded),
               onPressed: _addNote,
             ),
           ),
         ),
-        if (_notes.isNotEmpty) ...[
+        if (_notes.isEmpty)
+          _EmptyExtras(
+            icon: Icons.lightbulb_outline_rounded,
+            text: 'Ghi lại ý chính để xem lại nhanh trên mọi thiết bị.',
+            color: gats.lavenderAccent,
+          )
+        else ...[
           const SizedBox(height: AppSpacing.sm),
           ..._notes.take(3).map(
-                (n) => ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(n.content, maxLines: 2, overflow: TextOverflow.ellipsis),
+                (note) => ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  minTileHeight: 52,
+                  leading: Icon(
+                    Icons.notes_rounded,
+                    color: gats.lavenderAccent,
+                  ),
+                  title: Text(
+                    note.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18),
+                    tooltip: 'Xóa ghi chú',
+                    icon: const Icon(Icons.delete_outline_rounded),
                     onPressed: () async {
                       final token = await _token();
                       if (token == null) return;
                       await LearnExtrasApiService.deleteNote(
-                        noteId: n.id,
+                        noteId: note.id,
                         token: token,
                       );
                       await _load();
@@ -225,46 +294,178 @@ class _LearnExtrasPanelState extends State<LearnExtrasPanel> {
                 ),
               ),
         ],
-        const SizedBox(height: AppSpacing.sm),
-        OutlinedButton.icon(
-          onPressed: _addBookmark,
-          icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-          label: Text('Bookmark (${_bookmarks.length})'),
-        ),
-        const SizedBox(height: AppSpacing.md),
+      ],
+    );
+  }
+
+  Widget _buildQuestions(GatsThemeExtension gats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         TextField(
           controller: _questionController,
           minLines: 1,
           maxLines: 3,
+          textInputAction: TextInputAction.send,
+          onSubmitted: (_) => _ask(),
           decoration: InputDecoration(
-            hintText: 'Đặt câu hỏi…',
-            border: const OutlineInputBorder(),
+            labelText: 'Hỏi về nội dung bài học',
+            hintText: 'Nhập câu hỏi của bạn…',
+            prefixIcon: const Icon(Icons.help_outline_rounded),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.send),
+              tooltip: 'Gửi câu hỏi',
+              icon: const Icon(Icons.send_rounded),
               onPressed: _ask,
             ),
           ),
         ),
-        if (_questions.isNotEmpty) ...[
+        if (_questions.isEmpty)
+          _EmptyExtras(
+            icon: Icons.forum_outlined,
+            text: 'Chưa có câu hỏi nào cho bài học này.',
+            color: gats.lavenderAccent,
+          )
+        else ...[
           const SizedBox(height: AppSpacing.sm),
           ..._questions.take(5).map(
-                (q) => ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
+                (question) => ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  minTileHeight: 56,
                   leading: Icon(
-                    q.isResolved ? Icons.check_circle : Icons.help_outline,
-                    size: 18,
-                    color: q.isResolved
-                        ? gats.lavenderAccent
-                        : gats.textSecondary,
+                    question.isResolved
+                        ? Icons.check_circle_rounded
+                        : Icons.help_outline_rounded,
+                    color: question.isResolved
+                        ? AppColors.success
+                        : AppColors.accent,
                   ),
-                  title: Text(q.content, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  subtitle: q.userName != null ? Text(q.userName!) : null,
+                  title: Text(
+                    question.content,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    question.isResolved
+                        ? 'Đã được giải đáp'
+                        : (question.userName ?? 'Đang chờ giải đáp'),
+                  ),
                 ),
               ),
         ],
-        const SizedBox(height: AppSpacing.md),
       ],
+    );
+  }
+
+  Widget _buildBookmarks(GatsThemeExtension gats) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 48,
+          child: FilledButton.icon(
+            onPressed: _addBookmark,
+            icon: const Icon(Icons.bookmark_add_rounded),
+            label: const Text('Lưu bài học này'),
+          ),
+        ),
+        _EmptyExtras(
+          icon: _bookmarks.isEmpty
+              ? Icons.bookmark_border_rounded
+              : Icons.bookmarks_rounded,
+          text: _bookmarks.isEmpty
+              ? 'Lưu bài học để quay lại nhanh khi cần ôn tập.'
+              : 'Bạn đã lưu ${_bookmarks.length} dấu trang cho bài học này.',
+          color: gats.lavenderAccent,
+        ),
+      ],
+    );
+  }
+}
+
+class _ExtrasTab extends StatelessWidget {
+  const _ExtrasTab({
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final int count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final gats = context.gatsColors;
+    final color = selected ? gats.lavenderAccent : gats.textSecondary;
+    return Expanded(
+      child: Material(
+        color: selected
+            ? gats.lavenderAccent.withValues(alpha: 0.12)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: SizedBox(
+            height: 52,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 19, color: color),
+                const SizedBox(height: 3),
+                Text(
+                  '$label ($count)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyExtras extends StatelessWidget {
+  const _EmptyExtras({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+      child: Column(
+        children: [
+          Icon(icon, size: 28, color: color.withValues(alpha: 0.7)),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.4,
+              color: context.gatsColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

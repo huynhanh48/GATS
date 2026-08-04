@@ -377,14 +377,10 @@ abstract final class AuthApiService {
     };
   }
 
+  /// Mobile is learner-only; admin/instructor manage content on web admin.
   static UserRole _mapRole(String? type, List<String> roles) {
-    if (roles.contains('admin')) return UserRole.admin;
-    if (roles.contains('mentor')) return UserRole.mentor;
-    return switch (type?.toLowerCase()) {
-      'mentor' => UserRole.mentor,
-      'admin' => UserRole.admin,
-      _ => UserRole.user,
-    };
+    // Keep params for call-site compatibility; always learner on mobile.
+    return UserRole.user;
   }
 
   static String _networkHint() =>
