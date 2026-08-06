@@ -6,12 +6,15 @@ import { PathApi } from "@/constants/PathApi";
 import { resolveMediaUrl } from "@/lib/media/url";
 import type { Course, CourseCategory } from "@/types/course";
 
-function apiOrigin() {
-  return (
-    process.env.NEXT_PUBLIC_API_URL ||
-    process.env.API_REWRITE_ORIGIN ||
-    "http://127.0.0.1:3000"
-  ).replace(/\/$/, "");
+function getApiOrigins(): string[] {
+  const origins: string[] = [];
+  if (process.env.INTERNAL_API_URL) origins.push(process.env.INTERNAL_API_URL);
+  if (process.env.NEXT_PUBLIC_API_URL) origins.push(process.env.NEXT_PUBLIC_API_URL);
+  if (process.env.API_REWRITE_ORIGIN) origins.push(process.env.API_REWRITE_ORIGIN);
+  origins.push("http://be:3000");
+  origins.push("https://api.gats.vn");
+  origins.push("http://127.0.0.1:3000");
+  return Array.from(new Set(origins.map((o) => o.replace(/\/$/, ""))));
 }
 
 function formatPrice(price: number, salePrice?: number | null) {
@@ -32,30 +35,33 @@ function categoryIcon(index: number) {
 }
 
 export async function FeaturedCourses() {
-  const base = apiOrigin();
+  const origins = getApiOrigins();
   let courses: Course[] = [];
   let categories: CourseCategory[] = [];
 
-  try {
-    const [coursesRes, categoriesRes] = await Promise.all([
-      fetch(`${base}${PathApi.courses.list}?take=6&skip=0&status=published`, {
-        next: { revalidate: 60 },
-      }),
-      fetch(`${base}${PathApi.categories.list}?type=course`, {
-        next: { revalidate: 60 },
-      }),
-    ]);
+  for (const base of origins) {
+    try {
+      const [coursesRes, categoriesRes] = await Promise.all([
+        fetch(`${base}${PathApi.courses.list}?take=6&skip=0&status=published`, {
+          next: { revalidate: 60 },
+        }),
+        fetch(`${base}${PathApi.categories.list}?type=course`, {
+          next: { revalidate: 60 },
+        }),
+      ]);
 
-    if (coursesRes.ok) {
-      const payload = await coursesRes.json();
-      courses = payload.data || [];
+      if (coursesRes.ok) {
+        const payload = await coursesRes.json();
+        courses = payload.data || [];
+      }
+      if (categoriesRes.ok) {
+        const payload = await categoriesRes.json();
+        categories = (payload.data || []).slice(0, 10);
+      }
+      if (courses.length > 0) break;
+    } catch {
+      // try next origin candidate
     }
-    if (categoriesRes.ok) {
-      const payload = await categoriesRes.json();
-      categories = (payload.data || []).slice(0, 10);
-    }
-  } catch (error) {
-    console.error("Failed to fetch courses/categories:", error);
   }
 
   return (

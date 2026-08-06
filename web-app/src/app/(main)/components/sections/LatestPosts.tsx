@@ -9,18 +9,46 @@ import { AnimatedContent } from "@/components/react-bits";
 import { Container } from "@/components/layout/Container";
 import { LatestPostsSlider } from "./LatestPostsSlider";
 
+function getApiOrigins(): string[] {
+  const origins: string[] = [];
+  if (process.env.INTERNAL_API_URL) origins.push(process.env.INTERNAL_API_URL);
+  if (process.env.NEXT_PUBLIC_API_URL) origins.push(process.env.NEXT_PUBLIC_API_URL);
+  if (process.env.API_REWRITE_ORIGIN) origins.push(process.env.API_REWRITE_ORIGIN);
+  origins.push("http://be:3000");
+  origins.push("https://api.gats.vn");
+  origins.push("http://127.0.0.1:3000");
+  return Array.from(new Set(origins.map((o) => o.replace(/\/$/, ""))));
+}
+
 export async function LatestPosts() {
   let posts: Post[] = [];
   let error = false;
+  const origins = getApiOrigins();
 
-  try {
-    const response = await apiClient.get(PathApi.posts.list, {
-      params: { take: "6", skip: "0", status: "published" },
-    });
-    const payload = response as unknown as { data?: Post[] };
-    posts = payload.data ?? [];
-  } catch (err) {
-    error = true;
+  for (const base of origins) {
+    try {
+      const res = await fetch(`${base}${PathApi.posts.list}?take=6&skip=0&status=published`, {
+        next: { revalidate: 60 },
+      });
+      if (res.ok) {
+        const payload = await res.json();
+        posts = payload.data || [];
+        if (posts.length > 0) break;
+      }
+    } catch {
+      // try next origin candidate
+    }
+  }
+  if (posts.length === 0) {
+    try {
+      const response = await apiClient.get(PathApi.posts.list, {
+        params: { take: "6", skip: "0", status: "published" },
+      });
+      const payload = response as unknown as { data?: Post[] };
+      posts = payload.data ?? [];
+    } catch {
+      error = true;
+    }
   }
 
   return (
