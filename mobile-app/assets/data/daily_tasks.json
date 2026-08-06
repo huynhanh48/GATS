@@ -1,4 +1,5 @@
 {
+  "_comment": "Legacy catalog — DailyScreen goals are now API-derived (due flashcards / next lesson / coach). Kept for quiz experiments / fallback tooling.",
   "tasks": [
     {
       "id": "flashcard",

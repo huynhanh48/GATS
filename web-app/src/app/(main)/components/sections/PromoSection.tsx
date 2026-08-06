@@ -1,74 +1,55 @@
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-const stats = [
-  { value: "25K+", label: "Học viên tham gia" },
-  { value: "899+", label: "Chương trình đào tạo" },
-  { value: "158", label: "Chuyên gia AI" },
-  { value: "100%", label: "Tỉ lệ hài lòng" },
-];
+import { ArrowRight, Building, Award, Users, BookOpen } from "lucide-react";
 
 export function PromoSection() {
   return (
-    <section className="w-full py-16 bg-white">
-      <Container size="xl" className="flex flex-col gap-24">
+    <section className="w-full py-24 bg-[#FAF8F5] text-[#0B0F17] border-t border-amber-200/60">
+      <Container size="xl" className="flex flex-col gap-16">
         
-        {/* Banner Section */}
-        <div className="relative w-full rounded-[2rem] overflow-hidden bg-linear-to-r from-[#d1fae5] via-[#f3e8ff] to-[#fee2e2] px-12 py-16 md:p-24 flex flex-col md:flex-row items-center justify-between">
-          
+        {/* European Enterprise Banner (Warm Light Amber Style) */}
+        <div className="relative w-full rounded-3xl overflow-hidden bg-linear-to-r from-[#FF6B00] via-[#FF8800] to-[#E05E00] text-white p-10 md:p-16 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8 border-4 border-white">
+          {/* Ambient Glow */}
+          <div className="absolute top-0 right-0 size-[450px] bg-white/10 rounded-full blur-3xl pointer-events-none" />
+
           {/* Left Content */}
-          <div className="relative z-10 max-w-[48rem] flex flex-col items-start gap-4">
-            <p className="text-[1.4rem] font-bold text-slate-600 uppercase tracking-wide">
-              Sẵn sàng làm chủ
-            </p>
-            <h2 className="text-[3.6rem] font-bold text-[#111827] font-heading leading-tight">
-              Công Nghệ Trí Tuệ Nhân Tạo
+          <div className="relative z-10 max-w-2xl flex flex-col items-start gap-4">
+            <span className="text-[1.2rem] font-bold text-amber-200 uppercase tracking-wider bg-white/20 px-3.5 py-1 rounded-md backdrop-blur-md border border-white/30 font-mono">
+              GIẢI PHÁP ĐÀO TẠO &amp; CHUYỂN ĐỔI SỐ B2B
+            </span>
+            <h2 className="text-[3.2rem] sm:text-[4.2rem] font-heading font-extrabold text-white leading-tight">
+              Sẵn Sàng Kiến Tạo Lợi Thế Cạnh Tranh Với AI?
             </h2>
-            <p className="text-[1.6rem] text-slate-600 leading-relaxed mb-4">
-              Nâng tầm kỹ năng và kiến tạo lợi thế cạnh tranh với chương trình đào tạo chuyên sâu từ GATS Academy.
+            <p className="text-[1.6rem] text-white/95 leading-relaxed font-normal mb-4">
+              GATS Academy đồng hành cùng doanh nghiệp từ việc khảo sát năng lực, thiết kế lộ trình đào tạo riêng biệt đến kiểm thử đo lường chỉ số ROI rõ ràng.
             </p>
-            <Button
-              asChild
-              className="rounded-full px-10 h-[4.8rem] text-[1.6rem] font-bold bg-[#ff782d] hover:bg-[#e66a26] text-white shadow-lg transition-all hover:scale-105"
-            >
-              <Link href="/courses">
-                Khám phá ngay
-              </Link>
-            </Button>
-          </div>
-
-          {/* Right Floating Icons (Hidden on mobile for better view, visible on md and up) */}
-          <div className="relative w-[50%] h-full hidden md:block z-0 min-h-[300px]">
-             <img src="/images/ads-on/icon-1.svg" className="absolute top-[10%] left-[5%] w-[6rem] animate-[bounce_6s_infinite]" alt="" />
-             <img src="/images/ads-on/icon-2.svg" className="absolute top-[5%] left-[30%] w-[7rem] animate-[bounce_5s_infinite]" alt="" />
-             <img src="/images/ads-on/icon-3.svg" className="absolute top-[20%] right-[25%] w-[6rem] animate-[bounce_7s_infinite]" alt="" />
-             <img src="/images/ads-on/icon-4.svg" className="absolute top-[5%] right-[5%] w-[5rem] animate-[bounce_6s_infinite]" alt="" />
-             
-             <img src="/images/ads-on/icon-5.svg" className="absolute bottom-[15%] left-[15%] w-[6rem] animate-[bounce_5s_infinite]" alt="" />
-             <img src="/images/ads-on/icon-6.svg" className="absolute bottom-[5%] left-[40%] w-[7rem] animate-[bounce_8s_infinite]" alt="" />
-             <img src="/images/ads-on/icon-7.svg" className="absolute bottom-[20%] right-[35%] w-[6rem] animate-[bounce_4s_infinite]" alt="" />
-             <img src="/images/ads-on/icon-8.svg" className="absolute bottom-[10%] right-[5%] w-[8rem] animate-[bounce_7s_infinite]" alt="" />
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {stats.map((stat, index) => (
-            <div 
-              key={index}
-              className="flex flex-col items-center justify-center p-12 bg-[#f8f9fa] rounded-[2rem] transition-transform duration-300 hover:-translate-y-2"
-            >
-              <h3 className="text-[4.2rem] font-black text-[#ff782d] font-heading mb-4 leading-none">
-                {stat.value}
-              </h3>
-              <p className="text-[1.6rem] font-bold text-[#111827]">
-                {stat.label}
-              </p>
+            <div className="flex flex-wrap gap-4">
+              <Button
+                asChild
+                className="rounded-xl px-8 h-13 text-[1.5rem] font-extrabold bg-white hover:bg-slate-100 text-[#FF6B00] shadow-2xl transition-all border-none cursor-pointer"
+              >
+                <Link href="/courses" className="flex items-center gap-2.5">
+                  <span>Đăng ký tư vấn Enterprise</span>
+                  <ArrowRight className="size-4 text-[#FF6B00]" />
+                </Link>
+              </Button>
             </div>
-          ))}
-        </div>
+          </div>
 
+          {/* Right Highlight Badge Card */}
+          <div className="relative z-10 w-full md:w-auto bg-white/15 backdrop-blur-xl rounded-2xl p-6 border border-white/30 max-w-sm shrink-0">
+            <div className="text-[1.2rem] font-bold text-amber-200 mb-2 uppercase tracking-wide">
+              Bảo Chứng Chất Lượng GATS
+            </div>
+            <p className="text-[1.4rem] text-white leading-normal mb-4 font-normal italic">
+              &quot;Giúp doanh nghiệp đo lường chỉ số ROI chuyển đổi số rõ ràng ngay trong quý đầu tiên triển khai.&quot;
+            </p>
+            <div className="text-[1.2rem] font-bold text-white/80">
+              — Đội ngũ Cố vấn Châu Âu &amp; GATS Academy
+            </div>
+          </div>
+        </div>
       </Container>
     </section>
   );

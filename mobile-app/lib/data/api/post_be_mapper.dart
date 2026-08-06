@@ -27,6 +27,18 @@ abstract final class PostBeMapper {
 
     final status = json['status'] as String? ?? 'published';
 
+    String? categoryId;
+    String? categoryName;
+    String? categorySlug;
+    final category = json['category'];
+    if (category is Map) {
+      categoryId = category['id']?.toString();
+      categoryName = category['name']?.toString();
+      categorySlug = category['slug']?.toString();
+    } else {
+      categoryId = json['categoryId']?.toString();
+    }
+
     return CommunityPost(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
@@ -38,6 +50,9 @@ abstract final class PostBeMapper {
       coverImage: MediaUrl.resolve(json['thumbnail'] as String?),
       publishedAt: publishedAt,
       isPublished: status == 'published',
+      categoryId: categoryId,
+      categoryName: categoryName,
+      categorySlug: categorySlug,
     );
   }
 

@@ -49,3 +49,7 @@ abstract final class PostApiPaths {
       '/api/posts/$postId/comments/$commentId/like';
   static String like(String postId) => '/api/posts/$postId/like';
 }
+
+abstract final class CategoryApiPaths {
+  static const list = '/api/categories';
+}

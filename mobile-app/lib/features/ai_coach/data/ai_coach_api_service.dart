@@ -1,6 +1,9 @@
 import 'package:gats_academy/core/network/api_client.dart';
 
 abstract final class AiCoachApiService {
+  /// RAG + LLM thường > 20s; dùng timeout riêng dài hơn API mặc định.
+  static const chatTimeout = Duration(seconds: 90);
+
   static Future<String> chat({
     required String token,
     required String query,
@@ -9,6 +12,7 @@ abstract final class AiCoachApiService {
     final response = await ApiClient.post(
       '/api/ai-coach/chat',
       token: token,
+      timeout: chatTimeout,
       body: {
         'query': query,
         if (domains != null && domains.isNotEmpty) 'domains': domains,

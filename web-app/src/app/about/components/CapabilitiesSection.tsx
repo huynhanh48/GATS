@@ -30,7 +30,9 @@ export function CapabilitiesSection() {
             modules={[Autoplay, Pagination]}
             spaceBetween={24}
             slidesPerView={1}
-            loop={true}
+            // loop + native img lazy = cloned slides often show broken images
+            loop={experts.length > 3}
+            watchSlidesProgress
             autoplay={{ delay: 4000, disableOnInteraction: false }}
             pagination={{ clickable: true }}
             breakpoints={{
@@ -39,20 +41,21 @@ export function CapabilitiesSection() {
             }}
             className="!pb-16"
           >
-            {experts.map((expert) => (
-              <SwiperSlide key={expert.name} className="h-auto">
+            {experts.map((expert, index) => (
+              <SwiperSlide key={`${expert.name}-${index}`} className="h-auto">
                 <div className="group h-full rounded-2xl overflow-hidden bg-white border border-slate-200 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:border-transparent">
-                  {/* Ảnh chuyên gia */}
                   <div className="aspect-[4/3] overflow-hidden bg-slate-100">
+                    {/* Eager load: Swiper clones slides; lazy loading breaks clones */}
                     <img
                       src={expert.src}
                       alt={`Chân dung ${expert.name}`}
-                      loading="lazy"
+                      width={640}
+                      height={480}
+                      decoding="async"
                       className="h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
 
-                  {/* Thông tin */}
                   <div className="p-8">
                     <h3 className="text-[2rem] font-bold text-[#111827] leading-snug transition-colors group-hover:text-primary">
                       {expert.name}

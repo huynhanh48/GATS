@@ -8,16 +8,21 @@ abstract final class PostApiService {
   static Future<List<CommunityPost>> listPublished({
     String? token,
     int page = 1,
-    int limit = 20,
+    int limit = 50,
+    String? categorySlug,
   }) async {
+    final query = <String, String>{
+      'page': '$page',
+      'limit': '$limit',
+      'status': 'published',
+    };
+    if (categorySlug != null && categorySlug.isNotEmpty) {
+      query['category'] = categorySlug;
+    }
     final json = await ApiClient.get(
       PostApiPaths.list,
       token: token,
-      query: {
-        'page': '$page',
-        'limit': '$limit',
-        'status': 'published',
-      },
+      query: query,
     );
     final data = json['data'];
     if (data is! List) return [];

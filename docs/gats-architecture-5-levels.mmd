@@ -1,0 +1,134 @@
+%%{init: {"theme":"base","look":"classic","layout":"elk","flowchart":{"curve":"basis","nodeSpacing":46,"rankSpacing":64,"htmlLabels":true},"themeCSS":".cluster-label foreignObject{overflow:visible!important}.cluster-label div,.cluster-label span,.cluster-label p{overflow:visible!important;white-space:nowrap!important;padding-right:6px!important}","themeVariables":{"background":"#07101F","fontFamily":"Arial, sans-serif","fontSize":"16px","primaryColor":"#111C2E","primaryTextColor":"#F8FAFC","primaryBorderColor":"#64748B","lineColor":"#94A3B8","textColor":"#F8FAFC","clusterBkg":"#0B1628","clusterBorder":"#334155","edgeLabelBackground":"#07101F"}}}%%
+flowchart TB
+
+%% =========================================================
+%% TÁC NHÂN
+%% =========================================================
+QT["Quản trị viên<br/><small>Quản trị hệ thống</small>"]
+SV["Học viên<br/><small>Web / Mobile</small>"]
+GV["Giảng viên<br/><small>Quản lý nội dung</small>"]
+
+%% =========================================================
+%% CẤP 1 - KÊNH TRUY CẬP
+%% =========================================================
+subgraph ACCESS["KÊNH TRUY CẬP"]
+direction LR
+    ADMIN["Admin Dashboard<br/><small>admin.gats.vn<br/>Admin: toàn quyền · Giảng viên: /course</small>"]
+    MOBILE["Mobile học viên<br/><small>Flutter · iOS / Android</small>"]
+    WEB["Web học tập<br/><small>gats.vn</small>"]
+end
+
+%% =========================================================
+%% CẤP 2 - CỔNG TRUY CẬP
+%% =========================================================
+subgraph GATEWAY["CỔNG TRUY CẬP"]
+direction LR
+    NGINX["NGINX<br/><small>TLS 80/443 · Reverse Proxy · Domain Routing</small>"]
+end
+
+%% =========================================================
+%% CẤP 3 - ỨNG DỤNG VÀ NGHIỆP VỤ
+%% =========================================================
+subgraph BUSINESS["NGHIỆP VỤ LÕI"]
+direction TB
+    subgraph BACKEND["BACKEND EXPRESS :3000"]
+    direction LR
+        API["API Core<br/><small>REST · Auth middleware</small>"]
+        AUTH["Người dùng<br/><small>Xác thực · Phân quyền</small>"]
+        LEARNING["Khóa học và Học tập<br/><small>Tiến độ · Quiz · Chứng chỉ</small>"]
+        COMMERCE["Thương mại<br/><small>Giỏ hàng · Đơn hàng · Thanh toán</small>"]
+        CONTENT["Nội dung và Media<br/><small>Bài viết · Upload · Playback</small>"]
+        NOTIFY["Thông báo<br/><small>Email · Push · Thiết bị</small>"]
+    end
+    VIAVA["Viava AI<br/><small>FastAPI :8000<br/>Quiz · Coach · Flashcard</small>"]
+end
+
+%% =========================================================
+%% CẤP 4 VÀ 5 - HAI KHỐI SONG SONG
+%% =========================================================
+subgraph DATA["DỮ LIỆU VÀ HẠ TẦNG"]
+direction LR
+    DEPLOY["VPS · Docker Compose<br/><small>app (PM2) · nginx · db · redis · minio</small>"]
+    MINIO[("MinIO<br/><small>Ảnh · Tài liệu</small>")]
+    PG[("PostgreSQL<br/><small>Dữ liệu nghiệp vụ</small>")]
+    S3[("Video Object Storage<br/><small>S3-compatible · Long Vân / MinIO</small>")]
+end
+
+subgraph PROCESS["XỬ LÝ NỀN"]
+direction LR
+    REDIS["Redis / BullMQ<br/><small>Cache · Hàng đợi</small>"]
+    WORKER["Video Worker<br/><small>FFmpeg · HLS</small>"]
+end
+
+%% =========================================================
+%% DỊCH VỤ BÊN NGOÀI - THU GỌN
+%% =========================================================
+subgraph EXTERNAL["DỊCH VỤ BÊN NGOÀI"]
+direction LR
+    GOOGLE["Google OAuth"]
+    SEPAY["SePay"]
+    MESSAGE["FCM / SMTP"]
+    AISERVICE["Azure OpenAI · Tavily · Qdrant"]
+end
+
+%% Vai trò đi vào đúng kênh truy cập
+QT --> ADMIN
+SV --> WEB
+SV --> MOBILE
+GV --> ADMIN
+
+%% Tất cả kênh truy cập đều đi qua cổng bảo mật
+ADMIN --> NGINX
+MOBILE --> NGINX
+WEB --> NGINX
+
+%% Cổng truy cập phân phối yêu cầu đến tầng nghiệp vụ
+NGINX --> API
+NGINX --> VIAVA
+
+%% Các nghiệp vụ là module của cùng Backend Express, không phải microservice riêng
+API --> AUTH
+API --> LEARNING
+API --> COMMERCE
+API --> CONTENT
+API --> NOTIFY
+API --> VIAVA
+
+%% Dữ liệu và xử lý nền
+API --> PG
+API --> REDIS
+CONTENT --> MINIO
+CONTENT --> S3
+CONTENT --> REDIS
+REDIS --> WORKER
+WORKER --> S3
+
+%% Tích hợp bên ngoài
+API -.-> GOOGLE
+COMMERCE -.-> SEPAY
+NOTIFY -.-> MESSAGE
+VIAVA -.-> AISERVICE
+
+%% =========================================================
+%% GIAO DIỆN ĐƠN SẮC, TƯƠNG PHẢN CAO
+%% =========================================================
+classDef actor fill:#111C2E,stroke:#60A5FA,color:#F8FAFC,stroke-width:2px
+classDef node fill:#111C2E,stroke:#64748B,color:#F8FAFC,stroke-width:1.4px
+classDef gateway fill:#172554,stroke:#38BDF8,color:#F8FAFC,stroke-width:2.2px
+classDef store fill:#102033,stroke:#60A5FA,color:#F8FAFC,stroke-width:1.5px
+classDef external fill:#111827,stroke:#475569,color:#E2E8F0,stroke-width:1.2px
+
+class QT,SV,GV actor
+class ADMIN,MOBILE,WEB,API,AUTH,LEARNING,COMMERCE,CONTENT,NOTIFY,VIAVA,REDIS,WORKER node
+class NGINX gateway
+class MINIO,PG,S3 store
+class DEPLOY external
+class GOOGLE,SEPAY,MESSAGE,AISERVICE external
+
+style ACCESS fill:#0B1628,stroke:#334155,stroke-width:1.4px,color:#E2E8F0
+style GATEWAY fill:#0B1628,stroke:#334155,stroke-width:1.4px,color:#E2E8F0
+style BUSINESS fill:#0B1628,stroke:#334155,stroke-width:1.4px,color:#E2E8F0
+style BACKEND fill:#0D1A2D,stroke:#475569,stroke-width:1.2px,color:#CBD5E1
+style DATA fill:#0B1628,stroke:#334155,stroke-width:1.4px,color:#E2E8F0
+style PROCESS fill:#0B1628,stroke:#334155,stroke-width:1.4px,color:#E2E8F0
+style EXTERNAL fill:#0B1628,stroke:#334155,stroke-width:1.4px,color:#E2E8F0

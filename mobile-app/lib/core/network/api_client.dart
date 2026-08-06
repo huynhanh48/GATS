@@ -48,7 +48,7 @@ abstract final class ApiClient {
       'X-App-Version': '1.0.0',
       'X-Device-Id': await deviceId(),
       'X-Locale': Platform.localeName,
-      'X-Timezone': DateTime.now().timeZoneName,
+      'X-Timezone': _ianaTimezone(),
     };
     if (token != null && token.isNotEmpty) {
       headers['Authorization'] = 'Bearer $token';
@@ -77,6 +77,7 @@ abstract final class ApiClient {
     Map<String, dynamic>? body,
     String? token,
     Map<String, String>? headers,
+    Duration? timeout,
   }) {
     return _send(
       method: 'POST',
@@ -84,6 +85,7 @@ abstract final class ApiClient {
       token: token,
       body: body,
       headers: headers,
+      timeout: timeout,
     );
   }
 
@@ -137,7 +139,9 @@ abstract final class ApiClient {
     Map<String, dynamic>? body,
     Map<String, String>? query,
     Map<String, String>? headers,
+    Duration? timeout,
   }) async {
+    final requestTimeout = timeout ?? ApiConfig.timeout;
     Future<http.Response> doRequest(String? authToken) async {
       final h = await _headers(token: authToken, extra: headers);
       final uri = _uri(path, query);
@@ -158,14 +162,14 @@ abstract final class ApiClient {
       }
     }
 
-    var response = await doRequest(token).timeout(ApiConfig.timeout);
+    var response = await doRequest(token).timeout(requestTimeout);
     if (response.statusCode == 401 &&
         token != null &&
         token.isNotEmpty &&
         path != AuthApiPaths.refresh) {
       final renewed = await _tryRefresh();
       if (renewed != null) {
-        response = await doRequest(renewed).timeout(ApiConfig.timeout);
+        response = await doRequest(renewed).timeout(requestTimeout);
       }
     }
     return _decodeObject(response);
@@ -250,6 +254,19 @@ abstract final class ApiClient {
       if (value is String && value.isNotEmpty) return value;
     }
     return null;
+  }
+
+  /// Prefer IANA zone for BE date bucketing; fall back for VN devices.
+  static String _ianaTimezone() {
+    final name = DateTime.now().timeZoneName;
+    if (name.contains('/')) return name;
+    // Android often returns "ICT" / "SE Asia Standard Time"
+    if (name == 'ICT' ||
+        name.toLowerCase().contains('indochina') ||
+        name.toLowerCase().contains('se asia')) {
+      return 'Asia/Ho_Chi_Minh';
+    }
+    return 'Asia/Ho_Chi_Minh';
   }
 
   static String _uuidV4() {

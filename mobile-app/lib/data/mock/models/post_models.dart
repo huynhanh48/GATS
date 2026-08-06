@@ -2,6 +2,22 @@ import 'package:gats_academy/features/auth/models/user_role.dart';
 
 enum PostScope { global, course }
 
+enum PostFeedSort { newest, oldest, titleAsc }
+
+class PostCategory {
+  const PostCategory({
+    required this.id,
+    required this.name,
+    required this.slug,
+    this.postCount = 0,
+  });
+
+  final String id;
+  final String name;
+  final String slug;
+  final int postCount;
+}
+
 class PostComment {
   const PostComment({
     required this.id,
@@ -33,6 +49,9 @@ class CommunityPost {
     this.courseId,
     this.coverImage,
     this.isPublished = true,
+    this.categoryId,
+    this.categoryName,
+    this.categorySlug,
   });
 
   final String id;
@@ -47,6 +66,9 @@ class CommunityPost {
   final String? coverImage;
   final DateTime publishedAt;
   final bool isPublished;
+  final String? categoryId;
+  final String? categoryName;
+  final String? categorySlug;
 
   String get previewExcerpt {
     // Strip HTML/markdown markers for list cards.
@@ -61,16 +83,23 @@ class CommunityPost {
     return '${plain.substring(0, 157)}...';
   }
 
-  String get badgeLabel => switch (scope) {
-        PostScope.global => 'GATS',
-        PostScope.course => 'Khóa học',
-      };
+  String get badgeLabel {
+    final cat = categoryName?.trim();
+    if (cat != null && cat.isNotEmpty) return cat;
+    return switch (scope) {
+      PostScope.global => 'GATS',
+      PostScope.course => 'Khóa học',
+    };
+  }
 
   CommunityPost copyWith({
     String? title,
     String? body,
     String? coverImage,
     bool? isPublished,
+    String? categoryId,
+    String? categoryName,
+    String? categorySlug,
   }) {
     return CommunityPost(
       id: id,
@@ -84,6 +113,9 @@ class CommunityPost {
       coverImage: coverImage ?? this.coverImage,
       publishedAt: publishedAt,
       isPublished: isPublished ?? this.isPublished,
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      categorySlug: categorySlug ?? this.categorySlug,
     );
   }
 }

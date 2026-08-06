@@ -70,15 +70,29 @@ abstract final class GatsNotificationService {
 
   static Future<void> _configureLocalTimeZone() async {
     if (_timezoneReady) return;
+    tz_data.initializeTimeZones();
     try {
-      tz_data.initializeTimeZones();
       final name = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(name));
+      try {
+        tz.setLocalLocation(tz.getLocation(name));
+      } catch (_) {
+        // Một số máy trả "GMT+07:00" thay vì IANA — app VN-first.
+        final fallback = DateTime.now().timeZoneOffset.inHours == 7
+            ? 'Asia/Ho_Chi_Minh'
+            : 'UTC';
+        debugPrint(
+          'GatsNotificationService: unknown TZ "$name", using $fallback',
+        );
+        tz.setLocalLocation(tz.getLocation(fallback));
+      }
       _timezoneReady = true;
     } catch (e) {
-      debugPrint('GatsNotificationService: timezone fallback UTC ($e)');
-      tz_data.initializeTimeZones();
-      tz.setLocalLocation(tz.UTC);
+      debugPrint('GatsNotificationService: timezone fallback Asia/Ho_Chi_Minh ($e)');
+      try {
+        tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
+      } catch (_) {
+        tz.setLocalLocation(tz.UTC);
+      }
       _timezoneReady = true;
     }
   }
@@ -212,18 +226,67 @@ abstract final class GatsNotificationService {
       importance: Importance.high,
       priority: Priority.high,
     );
-    const iosDetails = DarwinNotificationDetails();
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    await _plugin.zonedSchedule(
-      _dailyReminderNotificationId,
-      AppStrings.dailyReminderTitle,
-      AppStrings.dailyReminderBody,
-      scheduled,
-      details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
+    Future<void> schedule(AndroidScheduleMode mode) {
+      return _plugin.zonedSchedule(
+        _dailyReminderNotificationId,
+        AppStrings.dailyReminderTitle,
+        AppStrings.dailyReminderBody,
+        scheduled,
+        details,
+        androidScheduleMode: mode,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: '/daily',
+      );
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      try {
+        await android?.requestExactAlarmsPermission();
+      } catch (e) {
+        debugPrint('GatsNotificationService: exact alarm permission — $e');
+      }
+    }
+
+    try {
+      await schedule(AndroidScheduleMode.exactAllowWhileIdle);
+    } catch (e) {
+      debugPrint('GatsNotificationService: exact schedule failed, inexact — $e');
+      await schedule(AndroidScheduleMode.inexactAllowWhileIdle);
+    }
+
+    debugPrint(
+      'GatsNotificationService: daily reminder at '
+      '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} '
+      '(next ${scheduled.toIso8601String()})',
     );
+  }
+
+  /// Returns whether notification permission is currently usable.
+  static Future<bool> hasSystemPermission() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final android = _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      return await android?.areNotificationsEnabled() ?? true;
+    }
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final ios = _plugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>();
+      final settings = await ios?.checkPermissions();
+      return settings?.isEnabled ?? false;
+    }
+    return true;
   }
 
   static Future<void> cancelDailyReminder() async {

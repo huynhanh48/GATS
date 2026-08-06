@@ -32,7 +32,7 @@ export function LatestPostsSlider({ posts }: { posts: Post[] }) {
             href={`/posts/${post.slug}`}
             className="group block h-full rounded-2xl outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
           >
-            <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white border border-slate-200 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] group-hover:border-transparent">
+            <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white border border-amber-200/80 shadow-lg shadow-amber-950/5 transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:border-[#FF6B00]">
               {/* Thumbnail */}
               <div className="aspect-[4/3] overflow-hidden bg-slate-100">
                 {post.thumbnail ? (
@@ -44,19 +44,19 @@ export function LatestPostsSlider({ posts }: { posts: Post[] }) {
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-slate-300">
-                    <FileText className="size-12" aria-hidden="true" />
+                    <FileText className="size-12 text-[#FF6B00]" aria-hidden="true" />
                   </div>
                 )}
               </div>
               
               {/* Content */}
               <div className="p-8 flex flex-col flex-1">
-                <h3 className="line-clamp-2 text-[2rem] font-bold text-[#111827] leading-snug transition-colors group-hover:text-[#ff7622]">
+                <h3 className="line-clamp-2 text-[2rem] font-bold text-[#0B0F17] leading-snug transition-colors group-hover:text-[#FF6B00]">
                   {post.title}
                 </h3>
                 
-                <div className="mt-4 flex items-center gap-2 text-[1.4rem] text-slate-500">
-                  <Calendar className="size-4 text-[#ff7622]" />
+                <div className="mt-4 flex items-center gap-2 text-[1.4rem] text-slate-500 font-medium">
+                  <Calendar className="size-4 text-[#FF6B00]" />
                   <span>{new Date(post.publishedAt || post.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                 </div>
                 

@@ -376,6 +376,20 @@ async function dailyCheckinClaim(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function learningChartsGet(req: Request, res: Response) {
+  const LearningChartsService = (
+    await import('@src/services/LearningChartsService')
+  ).default;
+  const daysRaw = Number(req.query.days);
+  const days = Number.isFinite(daysRaw) ? daysRaw : 7;
+  const result = await LearningChartsService.getCharts(
+    req.authUser!.id,
+    req.get('x-timezone') ?? undefined,
+    days,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function getOnboarding(req: Request, res: Response) {
   const { findById } = await import('@src/repos/UserRepo');
   const user = await findById(req.authUser!.id);
@@ -426,6 +440,7 @@ export default {
   putNotificationPreferences: errorHandle(putNotificationPreferences),
   dailyCheckinGet: errorHandle(dailyCheckinGet),
   dailyCheckinClaim: errorHandle(dailyCheckinClaim),
+  learningChartsGet: errorHandle(learningChartsGet),
   getOnboarding: errorHandle(getOnboarding),
   putOnboarding: errorHandle(putOnboarding),
 } as const;

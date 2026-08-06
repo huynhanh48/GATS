@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun, ShoppingCart, Menu, BookOpen, PenTool, Users, Search } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ShoppingCart, Menu, BookOpen, PenTool, Users, Search, Building2 } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { Container } from "@/components/layout/Container";
 import { SearchModal } from "@/components/layout/SearchModal";
@@ -33,7 +32,7 @@ function EduGatsMark() {
     <svg
       viewBox="0 0 975 1265"
       aria-hidden="true"
-      className="h-9 w-7 shrink-0 text-[#ff782d]"
+      className="h-8 w-6 shrink-0 text-[#FF6B00]"
       fill="currentColor"
     >
       <path d="M831.151 658.012L932.75 760.012C988.85 816.312 988.65 907.512 932.35 963.612L753.85 1141.41L652.25 1039.41L830.75 861.612C868.55 824.012 881.05 770.612 868.35 722.612C862.05 698.912 849.751 676.612 831.151 658.012Z" />
@@ -45,9 +44,9 @@ function EduGatsMark() {
 }
 
 const navLinkBase =
-  "flex items-center h-full transition-colors";
-const navLinkActive = "text-[#ff782d] bg-[#f8f9fa]";
-const navLinkInactive = "hover:text-[#ff782d]";
+  "flex items-center h-full font-semibold transition-colors border-b-2 border-transparent text-slate-700 dark:text-slate-200";
+const navLinkActive = "text-[#FF6B00] border-[#FF6B00] font-bold";
+const navLinkInactive = "hover:text-[#FF6B00]";
 
 function isNavActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -56,7 +55,6 @@ function isNavActive(pathname: string, href: string) {
 
 export function Header() {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(
     subscribeToClient,
     () => true,
@@ -75,39 +73,53 @@ export function Header() {
   const canTeach = Boolean(
     user?.roles?.includes("instructor") || user?.roles?.includes("admin"),
   );
+
   const teachingHref =
-    process.env.NEXT_PUBLIC_ADMIN_URL ||
-    (mounted &&
-    typeof window !== "undefined" &&
+    user &&
+    (typeof window !== "undefined" &&
     window.location.hostname === "localhost"
       ? "http://localhost:9000/course"
       : "https://admin.gats.vn/course");
 
   return (
-    <header className="fixed top-0 left-0 w-full bg-white border-b border-border/10 z-50 shadow-sm" style={{ zIndex: designTheme.zIndex.sticky }}>
+    <header className="fixed top-0 left-0 w-full bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 z-50 transition-colors" style={{ zIndex: designTheme.zIndex.sticky }}>
+      {/* Meeting 4/8 Top Bar: Live Q&A Announcement (Vibrant Amber Style) */}
+      <div className="bg-linear-to-r from-[#FF6B00] to-[#FF8800] text-white text-[1.2rem] py-1.5 px-4 hidden sm:block border-b border-amber-600">
+        <Container size="xl" className="flex items-center justify-between font-medium">
+          <div className="flex items-center gap-2">
+            <span className="flex size-2 rounded-full bg-white animate-pulse" />
+            <span>Lịch Hỏi Đáp Online Trực Tiếp: <strong>20:00 Thứ 5 Hàng Tuần</strong> cùng Chuyên Gia</span>
+          </div>
+          <div className="flex items-center gap-4 text-white/90 text-[1.1rem]">
+            <span>Hotline Hỗ Trợ: <strong className="text-white">1900 633 888</strong></span>
+            <span>·</span>
+            <span className="text-white font-extrabold underline">Miễn Phí Khóa AI Cơ Bản</span>
+          </div>
+        </Container>
+      </div>
+
       <Container size="xl">
         <div 
           className="flex items-center justify-between"
           style={{ height: designTheme.layout.headerHeight }}
         >
-          {/* Logo */}
+          {/* Logo in Vibrant Amber */}
           <Link
             href="/"
-            className="flex items-center gap-2 hover:opacity-90 transition-opacity pl-2"
+            className="flex items-center gap-2.5 hover:opacity-95 transition-opacity"
           >
             <EduGatsMark />
-            <span className="font-extrabold text-[2.2rem] tracking-tight text-[#111827] font-heading">
-              Edu<span className="text-[#ff782d]">Gats</span>
+            <span className="font-heading font-extrabold text-[2.2rem] tracking-tight text-[#0B0F17] dark:text-white">
+              GATS <span className="text-[#FF6B00] font-sans text-[1.8rem] font-bold">Academy</span>
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center text-[1.5rem] font-bold text-[#111827] h-full ml-10">
+          <nav className="hidden md:flex items-center text-[1.5rem] h-full ml-8 gap-8">
             <Link
               href="/"
               className={cn(
                 navLinkBase,
-                "px-8",
                 isNavActive(pathname, "/") ? navLinkActive : navLinkInactive,
               )}
             >
@@ -117,7 +129,6 @@ export function Header() {
               href="/courses"
               className={cn(
                 navLinkBase,
-                "px-6",
                 isNavActive(pathname, "/courses") ? navLinkActive : navLinkInactive,
               )}
             >
@@ -128,7 +139,6 @@ export function Header() {
               href="/posts"
               className={cn(
                 navLinkBase,
-                "px-6",
                 isNavActive(pathname, "/posts") ? navLinkActive : navLinkInactive,
               )}
             >
@@ -139,36 +149,43 @@ export function Header() {
               href="/about"
               className={cn(
                 navLinkBase,
-                "px-6",
                 isNavActive(pathname, "/about") ? navLinkActive : navLinkInactive,
               )}
             >
-              Chúng tôi
+              Về Chúng Tôi
             </Link>
           </nav>
 
           {/* Right Section */}
-          <div className="flex items-center gap-6 pr-2">
-            {/* Theme Toggle & Cart */}
-            <div className="hidden sm:flex items-center gap-2">
-              <Link href="/cart" className="relative flex items-center justify-center w-9 h-9 rounded-full text-slate-600 hover:bg-slate-100 transition-colors">
-                <ShoppingCart className="w-[1.6rem] h-[1.6rem]" />
-                {items.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#ff782d] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                    {items.length}
-                  </span>
-                )}
-              </Link>
+          <div className="flex items-center gap-4">
+            {/* Search Button */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 hover:text-[#FF6B00] dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Tìm kiếm"
+            >
+              <Search className="w-[1.8rem] h-[1.8rem]" />
+            </button>
 
-              {/* Dark mode toggle — hidden for now */}
-            </div>
+            <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
 
-            {/* Auth */}
+            {/* Cart */}
+            <Link href="/cart" className="relative flex items-center justify-center w-9 h-9 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 hover:text-[#FF6B00] dark:hover:bg-slate-800 transition-colors">
+              <ShoppingCart className="w-[1.8rem] h-[1.8rem]" />
+              {items.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#FF6B00] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {items.length}
+                </span>
+              )}
+            </Link>
+
+            {/* Auth / Enterprise Portal Button */}
             {sessionReady &&
               (status === "authenticated" && user ? (
                 <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger className="flex items-center gap-2 cursor-pointer focus:outline-none">
-                    <div className="relative w-9 h-9 rounded-full bg-[#ff782d]/10 border border-[#ff782d]/20 flex items-center justify-center font-bold text-[1.4rem] text-[#ff782d] uppercase overflow-hidden">
+                  <DropdownMenuTrigger className="flex items-center gap-2 cursor-pointer focus:outline-none ml-2">
+                    <div className="relative w-9 h-9 rounded-full bg-[#FF6B00]/10 border border-[#FF6B00]/20 flex items-center justify-center font-bold text-[1.4rem] text-[#FF6B00] uppercase overflow-hidden">
                       {user.avatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -181,12 +198,12 @@ export function Header() {
                       )}
                     </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 bg-white shadow-xl rounded-xl border border-slate-100">
+                  <DropdownMenuContent align="end" className="w-52 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-slate-200 dark:border-slate-800">
                     <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
                       <Link href="/profile?tab=courses" className="w-full">Học tập</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
-                      <Link href="/profile" className="w-full">Hồ sơ cá nhân</Link>
+                      <Link href="/profile" className="w-full">Cổng Khách Hàng</Link>
                     </DropdownMenuItem>
                     {canTeach && (
                       <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
@@ -195,45 +212,34 @@ export function Header() {
                     )}
                     <DropdownMenuItem
                       onClick={() => void handleLogout()}
-                      className="text-red-500 focus:bg-red-50 cursor-pointer text-[1.4rem]"
+                      className="text-red-500 focus:bg-red-50 dark:focus:bg-red-950/50 cursor-pointer text-[1.4rem]"
                     >
                       Đăng xuất
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <button
+                <Button
                   onClick={() => openAuthModal("login")}
-                  className="hidden md:block text-[1.5rem] font-bold text-[#111827] hover:text-[#ff782d] transition-colors"
+                  className="bg-[#FF6B00] hover:bg-[#e05e00] text-white rounded-lg px-6 h-10 text-[1.4rem] font-bold transition-all shadow-md shadow-[#FF6B00]/20 border-none cursor-pointer"
                 >
-                  Login / Register
-                </button>
+                  <Building2 className="size-4 mr-1.5" />
+                  Cổng Khách Hàng
+                </Button>
               ))}
-
-            {/* Search Button */}
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              className="flex items-center justify-center w-10 h-10 rounded-full border border-[#ff782d] text-[#ff782d] hover:bg-[#ff782d] hover:text-white transition-colors"
-              aria-label="Tìm kiếm"
-            >
-              <Search className="w-[1.6rem] h-[1.6rem]" />
-            </button>
-
-            <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
 
             {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center">
               <Sheet>
                 <SheetTrigger asChild>
-                  <button className="flex items-center justify-center w-10 h-10 text-slate-800 hover:bg-slate-100 rounded-full">
+                  <button className="flex items-center justify-center w-9 h-9 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
                     <Menu className="w-6 h-6" />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-[85vw] max-w-sm flex flex-col p-0">
+                <SheetContent side="right" className="w-[85vw] max-w-sm flex flex-col p-0 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                   <SheetTitle className="sr-only">Menu</SheetTitle>
-                  <div className="p-6 border-b border-border">
-                    <h3 className="font-bold text-[2rem] text-foreground">Edu<span className="text-[#ff782d]">Gats</span></h3>
+                  <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                    <span className="font-heading font-bold text-[2rem] text-slate-900 dark:text-white">GATS <span className="text-[#FF6B00] font-sans">Academy</span></span>
                   </div>
                   <div className="flex-1 overflow-y-auto p-4 space-y-2">
                     <Link
@@ -241,8 +247,8 @@ export function Header() {
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
                         isNavActive(pathname, "/")
-                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
-                          : "hover:bg-slate-50 font-semibold",
+                          ? "bg-[#FF6B00]/10 text-[#FF6B00] font-semibold"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium",
                       )}
                     >
                       Trang chủ
@@ -252,8 +258,8 @@ export function Header() {
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
                         isNavActive(pathname, "/courses")
-                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
-                          : "hover:bg-slate-50 font-semibold",
+                          ? "bg-[#FF6B00]/10 text-[#FF6B00] font-semibold"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium",
                       )}
                     >
                       <BookOpen className="w-5 h-5 text-slate-400" /> Khoá học
@@ -263,8 +269,8 @@ export function Header() {
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
                         isNavActive(pathname, "/posts")
-                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
-                          : "hover:bg-slate-50 font-semibold",
+                          ? "bg-[#FF6B00]/10 text-[#FF6B00] font-semibold"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium",
                       )}
                     >
                       <PenTool className="w-5 h-5 text-slate-400" /> Bài viết
@@ -274,17 +280,17 @@ export function Header() {
                       className={cn(
                         "flex items-center gap-3 p-4 rounded-lg text-[1.6rem]",
                         isNavActive(pathname, "/about")
-                          ? "bg-[#f8f9fa] text-[#ff782d] font-bold"
-                          : "hover:bg-slate-50 font-semibold",
+                          ? "bg-[#FF6B00]/10 text-[#FF6B00] font-semibold"
+                          : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium",
                       )}
                     >
-                      <Users className="w-5 h-5 text-slate-400" /> Chúng tôi
+                      <Users className="w-5 h-5 text-slate-400" /> Về Chúng Tôi
                     </Link>
                   </div>
-                  <div className="p-6 border-t border-border">
+                  <div className="p-6 border-t border-slate-200 dark:border-slate-800">
                     {(!sessionReady || status === "anonymous") && (
-                      <Button onClick={() => openAuthModal("login")} className="w-full bg-[#ff782d] hover:bg-[#e0661a] text-white text-[1.6rem] h-12">
-                        Login / Register
+                      <Button onClick={() => openAuthModal("login")} className="w-full bg-[#FF6B00] hover:bg-[#e05e00] text-white text-[1.6rem] h-12 rounded-lg font-semibold border-none cursor-pointer">
+                        Cổng Khách Hàng / Đăng Nhập
                       </Button>
                     )}
                   </div>

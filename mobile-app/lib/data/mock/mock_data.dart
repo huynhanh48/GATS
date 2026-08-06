@@ -65,19 +65,58 @@ class DailyTask {
     required this.id,
     required this.title,
     required this.isDone,
+    this.subtitle,
     this.deckId,
     this.courseId,
     this.quizId,
+    this.lessonId,
     this.type,
+    this.targetCount,
+    this.progressCount,
   });
 
   final String id;
   final String title;
+  final String? subtitle;
   final bool isDone;
   final String? deckId;
   final String? courseId;
   final String? quizId;
+  final String? lessonId;
   final String? type;
+  final int? targetCount;
+  final int? progressCount;
+
+  bool get isFlashcard => type == 'flashcard' || id == 'flashcard';
+  bool get isRead => type == 'read' || id == 'read';
+  bool get isCoach => type == 'coach' || id == 'coach';
+
+  DailyTask copyWith({
+    String? title,
+    String? subtitle,
+    bool? isDone,
+    String? deckId,
+    String? courseId,
+    String? quizId,
+    String? lessonId,
+    String? type,
+    int? targetCount,
+    int? progressCount,
+  }) {
+    return DailyTask(
+      id: id,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      isDone: isDone ?? this.isDone,
+      deckId: deckId ?? this.deckId,
+      courseId: courseId ?? this.courseId,
+      quizId: quizId ?? this.quizId,
+      lessonId: lessonId ?? this.lessonId,
+      type: type ?? this.type,
+      targetCount: targetCount ?? this.targetCount,
+      progressCount: progressCount ?? this.progressCount,
+    );
+  }
 }
 
 class RoutineStep {
@@ -114,20 +153,6 @@ class BadgeItem {
   final String name;
   final IconData icon;
   final bool isUnlocked;
-}
-
-class HubProgress {
-  const HubProgress({
-    required this.level,
-    required this.currentXp,
-    required this.xpToNextLevel,
-    required this.certXpRequired,
-  });
-
-  final int level;
-  final int currentXp;
-  final int xpToNextLevel;
-  final int certXpRequired;
 }
 
 class FlashcardItem {
@@ -423,12 +448,27 @@ abstract final class MockData {
   static const staticDailyTasks = [
     DailyTask(
       id: 'flashcard',
-      title: 'Ôn lại 5 flashcard Prompt cơ bản',
+      title: 'Ôn flashcard hôm nay',
+      subtitle: 'Thẻ đến hạn từ khóa học của bạn',
       isDone: false,
-      deckId: 'deck-prompt',
+      type: 'flashcard',
+      targetCount: 5,
+      progressCount: 0,
     ),
-    DailyTask(id: 'read', title: 'Hoàn thành bài đọc: AI trong Excel', isDone: false),
-    DailyTask(id: 'coach', title: 'Chat 1 câu hỏi với AI Coach', isDone: false),
+    DailyTask(
+      id: 'read',
+      title: 'Học bài tiếp theo',
+      subtitle: 'Từ khóa đang học',
+      isDone: false,
+      type: 'read',
+    ),
+    DailyTask(
+      id: 'coach',
+      title: 'Hỏi AI Coach 1 câu',
+      subtitle: 'Gửi một tin nhắn để hoàn thành',
+      isDone: false,
+      type: 'coach',
+    ),
   ];
 
   static const routineSteps = [
@@ -531,17 +571,58 @@ abstract final class MockData {
 
   static const badges = [
     BadgeItem(name: 'Khởi đầu', icon: Icons.eco_outlined, isUnlocked: true),
-    BadgeItem(name: '7 ngày liên tiếp', icon: Icons.local_fire_department_outlined, isUnlocked: true),
+    BadgeItem(
+      name: '7 ngày liên tiếp',
+      icon: Icons.local_fire_department_outlined,
+      isUnlocked: true,
+    ),
+    BadgeItem(name: '14 ngày streak', icon: Icons.whatshot_outlined, isUnlocked: false),
+    BadgeItem(name: '30 ngày streak', icon: Icons.local_fire_department, isUnlocked: false),
+    BadgeItem(name: '60 ngày streak', icon: Icons.fireplace_outlined, isUnlocked: false),
+    BadgeItem(name: '100 ngày streak', icon: Icons.celebration_outlined, isUnlocked: false),
+    BadgeItem(name: 'Buổi sáng siêng năng', icon: Icons.wb_sunny_outlined, isUnlocked: true),
+    BadgeItem(name: 'Cú đêm học bài', icon: Icons.nightlight_round, isUnlocked: false),
+    BadgeItem(name: 'Học cuối tuần', icon: Icons.weekend_outlined, isUnlocked: false),
+    BadgeItem(name: 'Học 3 buổi/ngày', icon: Icons.timelapse_outlined, isUnlocked: false),
     BadgeItem(name: 'Quiz master', icon: Icons.track_changes, isUnlocked: false),
+    BadgeItem(name: 'Quiz 10/10', icon: Icons.verified_outlined, isUnlocked: false),
+    BadgeItem(name: 'Quiz 50 lần', icon: Icons.quiz_outlined, isUnlocked: false),
+    BadgeItem(name: 'Không sai câu nào', icon: Icons.done_all_outlined, isUnlocked: false),
+    BadgeItem(name: 'Flashcard 50 thẻ', icon: Icons.style_outlined, isUnlocked: true),
+    BadgeItem(name: 'Flashcard 200 thẻ', icon: Icons.collections_bookmark_outlined, isUnlocked: false),
+    BadgeItem(name: 'Flashcard 500 thẻ', icon: Icons.library_books_outlined, isUnlocked: false),
+    BadgeItem(name: 'Ôn thẻ đúng giờ', icon: Icons.alarm_on_outlined, isUnlocked: false),
+    BadgeItem(name: 'Bài học đầu tiên', icon: Icons.menu_book_outlined, isUnlocked: true),
+    BadgeItem(name: 'Hoàn thành 5 bài', icon: Icons.auto_stories_outlined, isUnlocked: false),
+    BadgeItem(name: 'Hoàn thành 20 bài', icon: Icons.chrome_reader_mode_outlined, isUnlocked: false),
+    BadgeItem(name: 'Hoàn thành khóa', icon: Icons.school_outlined, isUnlocked: false),
+    BadgeItem(name: '2 khóa hoàn thành', icon: Icons.cast_for_education_outlined, isUnlocked: false),
     BadgeItem(name: 'Chuyên gia AI', icon: Icons.emoji_events_outlined, isUnlocked: false),
+    BadgeItem(name: 'AI Coach bạn thân', icon: Icons.psychology_outlined, isUnlocked: true),
+    BadgeItem(name: 'Hỏi Coach 10 lần', icon: Icons.forum_outlined, isUnlocked: false),
+    BadgeItem(name: 'Hỏi Coach 50 lần', icon: Icons.record_voice_over_outlined, isUnlocked: false),
+    BadgeItem(name: 'Gợi ý từ Coach', icon: Icons.lightbulb_outline, isUnlocked: false),
+    BadgeItem(name: 'Điểm danh 7 ngày', icon: Icons.event_available_outlined, isUnlocked: true),
+    BadgeItem(name: 'Điểm danh 30 ngày', icon: Icons.calendar_month_outlined, isUnlocked: false),
+    BadgeItem(name: 'Mục tiêu ngày đủ', icon: Icons.flag_outlined, isUnlocked: true),
+    BadgeItem(name: 'Routine hoàn hảo', icon: Icons.account_tree_outlined, isUnlocked: false),
+    BadgeItem(name: 'XP 500', icon: Icons.bolt_outlined, isUnlocked: true),
+    BadgeItem(name: 'XP 2000', icon: Icons.flash_on_outlined, isUnlocked: false),
+    BadgeItem(name: 'XP 5000', icon: Icons.electric_bolt_outlined, isUnlocked: false),
+    BadgeItem(name: 'Level 5', icon: Icons.military_tech_outlined, isUnlocked: false),
+    BadgeItem(name: 'Level 10', icon: Icons.workspace_premium_outlined, isUnlocked: false),
+    BadgeItem(name: 'Level 20', icon: Icons.diamond_outlined, isUnlocked: false),
+    BadgeItem(name: 'Người chia sẻ', icon: Icons.share_outlined, isUnlocked: false),
+    BadgeItem(name: 'Bình luận đầu', icon: Icons.chat_bubble_outline, isUnlocked: false),
+    BadgeItem(name: 'Bài viết đầu', icon: Icons.article_outlined, isUnlocked: false),
+    BadgeItem(name: 'Chứng chỉ đầu tiên', icon: Icons.card_membership_outlined, isUnlocked: false),
+    BadgeItem(name: '3 chứng chỉ', icon: Icons.workspace_premium, isUnlocked: false),
+    BadgeItem(name: 'Nộp bài tập', icon: Icons.assignment_turned_in_outlined, isUnlocked: false),
+    BadgeItem(name: 'Video xem xong', icon: Icons.play_circle_outline, isUnlocked: true),
+    BadgeItem(name: 'Ghi chú chăm chỉ', icon: Icons.edit_note_outlined, isUnlocked: false),
+    BadgeItem(name: 'Tải tài liệu', icon: Icons.download_outlined, isUnlocked: false),
+    BadgeItem(name: 'Thử thách tuần', icon: Icons.sports_esports_outlined, isUnlocked: false),
   ];
-
-  static const hubProgress = HubProgress(
-    level: 3,
-    currentXp: 240,
-    xpToNextLevel: 500,
-    certXpRequired: 500,
-  );
 
   static FlashcardDeck? deckById(String id) {
     for (final deck in flashcardDecks) {

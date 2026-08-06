@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
+import 'package:gats_academy/core/navigation/main_shell_tab_controller.dart';
 import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
 import 'package:gats_academy/features/notifications/presentation/notifications_screen.dart';
+import 'package:gats_academy/shell/main_shell.dart';
 
 /// Handles allowlisted deep links from local/FCM notification payloads.
 /// Allowed prefixes (match BE DeviceService): gats://, /course/, /courses/, /home, /notifications
@@ -23,6 +25,12 @@ abstract final class NotificationDeepLink {
 
     if (path == '/home' || path == '/') {
       Navigator.of(ctx).popUntil((r) => r.isFirst);
+      return;
+    }
+
+    if (path == '/daily' || path.startsWith('/daily')) {
+      Navigator.of(ctx).popUntil((r) => r.isFirst);
+      MainShellTabController.instance.goTo(MainShellTabs.daily);
       return;
     }
 

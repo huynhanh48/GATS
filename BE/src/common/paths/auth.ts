@@ -22,6 +22,7 @@ const AuthPaths = {
     DeviceById: '/devices/:deviceId',
     NotificationPreferences: '/notification-preferences',
     DailyCheckin: '/daily-checkin',
+    LearningCharts: '/learning-charts',
     Onboarding: '/onboarding',
     Avatar: '/me/avatar',
     Cover: '/me/cover',

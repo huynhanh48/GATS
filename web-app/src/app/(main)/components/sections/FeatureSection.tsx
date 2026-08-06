@@ -1,70 +1,93 @@
 "use client";
 
-import { Bot, BrainCircuit, Network, Sparkles } from "lucide-react";
-import { SectionHeader } from "@/components/ted/section-header";
+import { Bot, BrainCircuit, Network, Sparkles, ArrowRight } from "lucide-react";
 import { SpotlightCard, AnimatedContent } from "@/components/react-bits";
 import { Container } from "@/components/layout/Container";
+import Link from "next/link";
 
-const features = [
+const pillars = [
   {
     icon: BrainCircuit,
-    title: "AI Productivity & Prompting",
-    tagline: "Tăng 3x tốc độ công việc",
+    title: "1. AI Productivity & Prompting",
+    tagline: "Tăng 3x Hiệu Suất",
     description:
-      "Làm chủ nghệ thuật viết Prompt nâng cao và làm việc cùng trợ lý AI chuyên biệt theo từng ngành nghề.",
-    accent: "border-[#ff782d]/30 text-[#ff782d] bg-[#ff782d]/10",
+      "Làm chủ nghệ thuật viết Prompt chuyên sâu và chuẩn hóa các trợ lý AI chuyên biệt theo từng bài toán thực tế phòng ban.",
+    badgeColor: "bg-[#0265FF]/10 text-[#0265FF] border-[#0265FF]/20",
   },
   {
     icon: Network,
-    title: "Workflow Automation",
-    tagline: "Tự động hóa 80% tác vụ",
+    title: "2. Workflow Automation",
+    tagline: "Tự Động Hóa 80%",
     description:
-      "Kết nối n8n, Make và API để cắt giảm triệt để các thao tác thủ công lặp đi lặp lại trong doanh nghiệp.",
-    accent: "border-[#ff782d]/30 text-[#ff782d] bg-[#ff782d]/10",
+      "Kết nối Make, n8n và các hệ thống API doanh nghiệp nhằm cắt giảm triệt để các tác vụ thủ công lặp đi lặp lại.",
+    badgeColor: "bg-[#0265FF]/10 text-[#0265FF] border-[#0265FF]/20",
   },
   {
     icon: Bot,
-    title: "AI Agent Development",
-    tagline: "Tác nhân tự chủ thông minh",
+    title: "3. AI Agent Development",
+    tagline: "Tác Nhân Tự Chủ EU",
     description:
-      "Thiết kế AI Agent có khả năng tự lập kế hoạch, truy vấn dữ liệu nội bộ và ra quyết định độc lập.",
-    accent: "border-[#ff782d]/30 text-[#ff782d] bg-[#ff782d]/10",
+      "Thiết kế AI Agent thông minh có khả năng tự lập kế hoạch, phân tích dữ liệu nội bộ và phối hợp xử lý quy trình phức tạp.",
+    badgeColor: "bg-[#0265FF]/10 text-[#0265FF] border-[#0265FF]/20",
   },
   {
     icon: Sparkles,
-    title: "Business Transformation",
-    tagline: "Chuẩn hóa cho phòng ban",
+    title: "4. Business Transformation",
+    tagline: "Cam Kết ROI Rõ Ràng",
     description:
-      "Xây dựng lộ trình ứng dụng AI từ cấp quản lý đến nhân sự, đo lường ROI chuyển đổi số rõ ràng.",
-    accent: "border-[#ff782d]/30 text-[#ff782d] bg-[#ff782d]/10",
+      "Xây dựng chiến lược chuyển đổi số đồng bộ từ cấp quản lý đến nhân sự, đo lường chỉ số ROI doanh nghiệp minh bạch.",
+    badgeColor: "bg-[#FF6B00]/10 text-[#FF6B00] border-[#FF6B00]/20",
   },
 ];
 
 export function FeatureSection() {
   return (
-    <section className="relative w-full bg-white py-20 sm:py-24">
-      <Container>
+    <section className="relative w-full bg-[#FFFDF9] text-[#0B0F17] py-24 border-t border-amber-200/60">
+      <Container size="xl">
+        {/* Section Header */}
+        <div className="flex flex-col items-center text-center max-w-3xl mx-auto mb-16">
+          <span className="text-[1.2rem] font-bold text-[#FF6B00] uppercase tracking-wider mb-3 bg-[#FF6B00]/10 px-3.5 py-1 rounded-full border border-[#FF6B00]/20 font-mono">
+            KHUNG NĂNG LỰC DOANH NGHIỆP
+          </span>
+          <h2 className="text-[3.2rem] sm:text-[4.2rem] font-heading font-extrabold text-[#0B0F17] leading-tight mb-4">
+            4 Trụ Cột Đào Tạo AI Cấp Doanh Nghiệp
+          </h2>
+          <p className="text-[1.6rem] text-slate-600 font-normal leading-relaxed">
+            Chương trình được chuẩn hóa giúp các tổ chức bứt phá năng suất vận hành và tối ưu chi phí.
+          </p>
+        </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {features.map((feature, idx) => {
-            const Icon = feature.icon;
+        {/* Pillars Bento Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {pillars.map((pillar, index) => {
+            const IconComponent = pillar.icon;
             return (
-              <AnimatedContent key={feature.title} distance={30} delay={idx * 0.1}>
-                <SpotlightCard className="p-6 sm:p-8 bg-[#f8f9fa] border border-slate-100 rounded-[2rem]">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex rounded-2xl bg-[#ff782d]/10 p-3.5 text-[#ff782d]">
-                      <Icon className="size-6" aria-hidden="true" />
-                    </span>
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${feature.accent}`}>
-                      {feature.tagline}
-                    </span>
+              <AnimatedContent key={pillar.title} distance={30} delay={index * 0.1}>
+                <SpotlightCard className="p-8 sm:p-10 rounded-2xl bg-white border border-amber-200/80 hover:border-[#FF6B00]/60 transition-colors flex flex-col justify-between shadow-lg shadow-amber-950/5">
+                  <div>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="size-14 rounded-xl bg-[#0265FF]/10 text-[#0265FF] flex items-center justify-center border border-[#0265FF]/20">
+                        <IconComponent className="size-7 text-[#0265FF]" />
+                      </div>
+                      <span className="px-3 py-1 rounded-md bg-[#FF6B00]/10 text-[#FF6B00] border border-[#FF6B00]/20 text-[1.2rem] font-bold font-mono">
+                        {pillar.tagline}
+                      </span>
+                    </div>
+
+                    <h3 className="text-[2.2rem] font-heading font-extrabold text-[#0B0F17] mb-3">
+                      {pillar.title}
+                    </h3>
+                    <p className="text-[1.5rem] text-slate-600 leading-relaxed font-normal mb-6">
+                      {pillar.description}
+                    </p>
                   </div>
-                  <h3 className="mt-6 text-2xl font-bold font-heading text-foreground">
-                    {feature.title}
-                  </h3>
-                  <p className="mt-3 leading-relaxed text-muted-foreground font-sans">
-                    {feature.description}
-                  </p>
+
+                  <div className="mt-8 pt-4 border-t border-slate-100">
+                    <Link href="/courses" className="inline-flex items-center gap-1.5 text-[1.3rem] font-bold text-[#0265FF] hover:text-[#0052cc] transition-colors group">
+                      <span>Xem lộ trình chi tiết</span>
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </div>
                 </SpotlightCard>
               </AnimatedContent>
             );
@@ -74,3 +97,4 @@ export function FeatureSection() {
     </section>
   );
 }
+

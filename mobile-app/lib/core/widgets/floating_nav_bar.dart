@@ -7,12 +7,15 @@ class FloatingNavDestination {
     required this.selectedIcon,
     required this.label,
     this.badgeLabel,
+    this.badgeTooltip,
   });
 
   final IconData icon;
   final IconData selectedIcon;
   final String label;
   final String? badgeLabel;
+  /// Explains what the badge count means (e.g. remaining daily goals).
+  final String? badgeTooltip;
 }
 
 /// Bottom nav dạng pill nổi — icon + label, item chọn có nền oval xám nhạt.
@@ -179,11 +182,22 @@ class _FloatingNavItem extends StatelessWidget {
 
     final iconWidget = destination.badgeLabel != null
         ? Badge(
-            label: Text(destination.badgeLabel!, style: const TextStyle(fontSize: 10)),
+            label: Text(
+              destination.badgeLabel!,
+              style: const TextStyle(fontSize: 10),
+            ),
             backgroundColor: AppColors.accent,
             child: Icon(icon, size: 22, color: textColor),
           )
         : Icon(icon, size: 22, color: textColor);
+
+    final labeledIcon = destination.badgeTooltip != null &&
+            destination.badgeLabel != null
+        ? Tooltip(
+            message: destination.badgeTooltip!,
+            child: iconWidget,
+          )
+        : iconWidget;
 
     return Material(
       color: Colors.transparent,
@@ -193,7 +207,7 @@ class _FloatingNavItem extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: selected ? selectedFill : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -201,14 +215,17 @@ class _FloatingNavItem extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              iconWidget,
+              labeledIcon,
               const SizedBox(height: AppSpacing.xs),
-              Text(
-                destination.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: labelStyle,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  destination.label,
+                  maxLines: 1,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
+                  style: labelStyle,
+                ),
               ),
             ],
           ),

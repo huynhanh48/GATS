@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:gats_academy/features/ai_coach/data/ai_coach_store.dart';
 import 'package:gats_academy/features/ai_coach/data/ai_coach_api_service.dart';
 import 'package:gats_academy/features/ai_coach/models/ai_coach_session.dart';
 import 'package:gats_academy/features/ai_coach/presentation/widgets/ai_coach_session_sheet.dart';
+import 'package:gats_academy/features/ai_coach/presentation/widgets/coach_message_body.dart';
+import 'package:gats_academy/features/daily/data/daily_tasks_controller.dart';
 
 class AiCoachScreen extends StatefulWidget {
   const AiCoachScreen({super.key});
@@ -142,7 +145,6 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     });
     _scrollToEnd();
 
-    AiChatMessage aiMsg;
     try {
       final token = await AuthPrefs.accessToken();
       if (token == null || token.isEmpty) {
@@ -152,33 +154,56 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
         token: token,
         query: trimmedText,
       );
-      aiMsg = AiChatMessage.create(text: answer, isUser: false);
-    } catch (error) {
+      final aiMsg = AiChatMessage.create(text: answer, isUser: false);
+      final finalMsgs = [...session.messages, aiMsg];
+      final updatedSession = session.copyWith(
+        messages: finalMsgs,
+        updatedAt: DateTime.now(),
+      );
+      await AiCoachStore.saveSession(_userId, updatedSession);
+      await DailyTasksController.instance.markCoachDoneToday();
+
       if (!mounted) return;
-      setState(() => _isTyping = false);
-      final message = error is ApiException
-          ? error.message
-          : 'AI Coach tạm thời không phản hồi. Vui lòng thử lại.';
+      setState(() {
+        _activeSession = updatedSession;
+        _messages = List.from(updatedSession.messages);
+      });
+      _scrollToEnd();
+    } catch (error) {
+      final message = _coachErrorMessage(error);
+      final errMsg = AiChatMessage.create(text: message, isUser: false);
+      final finalMsgs = [...session.messages, errMsg];
+      final updatedSession = session.copyWith(
+        messages: finalMsgs,
+        updatedAt: DateTime.now(),
+      );
+      await AiCoachStore.saveSession(_userId, updatedSession);
+      if (!mounted) return;
+      setState(() {
+        _activeSession = updatedSession;
+        _messages = List.from(updatedSession.messages);
+      });
+      _scrollToEnd();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
-      return;
+    } finally {
+      if (mounted) setState(() => _isTyping = false);
     }
-    if (!mounted) return;
-    final finalMsgs = [...session.messages, aiMsg];
-    final updatedSession = session.copyWith(
-      messages: finalMsgs,
-      updatedAt: DateTime.now(),
-    );
-    await AiCoachStore.saveSession(_userId, updatedSession);
+  }
 
-    if (!mounted) return;
-    setState(() {
-      _activeSession = updatedSession;
-      _messages = List.from(updatedSession.messages);
-      _isTyping = false;
-    });
-    _scrollToEnd();
+  String _coachErrorMessage(Object error) {
+    if (error is TimeoutException) {
+      return 'AI Coach trả lời hơi lâu — mạng hoặc máy chủ đang bận. Thử gửi lại nhé.';
+    }
+    if (error is ApiException) return error.message;
+    if (error is StateError) return error.message;
+    if (error is FormatException) {
+      return error.message.isNotEmpty
+          ? error.message
+          : 'AI Coach không trả về nội dung.';
+    }
+    return 'AI Coach tạm thời không phản hồi. Vui lòng thử lại.';
   }
 
   void _scrollToEnd() {
@@ -201,24 +226,27 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
 
     final hasConversation = _messages.isNotEmpty;
 
-    return Column(
-      children: [
-        _buildSessionHeader(context),
-        Expanded(
-          child: !hasConversation
-              ? _WelcomeHero(onPrompt: _sendMessage)
-              : _ChatBody(
-                  messages: _messages,
-                  isTyping: _isTyping,
-                  scrollController: _scrollController,
-                ),
-        ),
-        _ChatInputBar(
-          controller: _controller,
-          isTyping: _isTyping,
-          onSend: _sendMessage,
-        ),
-      ],
+    return Material(
+      color: Colors.transparent,
+      child: Column(
+        children: [
+          _buildSessionHeader(context),
+          Expanded(
+            child: !hasConversation
+                ? _WelcomeHero(onPrompt: _sendMessage)
+                : _ChatBody(
+                    messages: _messages,
+                    isTyping: _isTyping,
+                    scrollController: _scrollController,
+                  ),
+          ),
+          _ChatInputBar(
+            controller: _controller,
+            isTyping: _isTyping,
+            onSend: _sendMessage,
+          ),
+        ],
+      ),
     );
   }
 
@@ -717,14 +745,7 @@ class _UserBubble extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          message.text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            height: 1.45,
-          ),
-        ),
+        child: CoachMessageBody(text: message.text, onPrimary: true),
       ),
     );
   }
@@ -787,14 +808,7 @@ class _CoachBubble extends StatelessWidget {
                             ),
                           ],
                   ),
-                  child: Text(
-                    message.text,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: gats.textPrimary,
-                    ),
-                  ),
+                  child: CoachMessageBody(text: message.text),
                 ),
 
                 // Reactions
@@ -812,7 +826,18 @@ class _CoachBubble extends StatelessWidget {
                       const SizedBox(width: 6),
                       _ReactionPill(
                         icon: Icons.content_copy_rounded,
-                        onTap: () {},
+                        onTap: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: message.text),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đã sao chép tin nhắn'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),

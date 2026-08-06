@@ -8,8 +8,10 @@ import 'package:gats_academy/core/widgets/section_card.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
 import 'package:gats_academy/data/api/certificate_api_service.dart';
 import 'package:gats_academy/data/mock/mock_data.dart';
+import 'package:gats_academy/features/hub/data/learning_charts_controller.dart';
+import 'package:gats_academy/features/hub/data/learning_charts_models.dart';
 import 'package:gats_academy/features/hub/presentation/widgets/achievement_timeline.dart';
-import 'package:gats_academy/features/hub/presentation/widgets/leaderboard_section.dart';
+import 'package:gats_academy/features/hub/presentation/widgets/learning_charts_section.dart';
 
 class HubScreen extends StatelessWidget {
   const HubScreen({super.key});
@@ -17,8 +19,7 @@ class HubScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final progress = MockData.hubProgress;
-    final rankTitle = MockData.rankTitle(progress.level);
+    final charts = LearningChartsController.instance;
 
     return GatsThemedScaffold(
       appBar: AppBar(
@@ -52,7 +53,19 @@ class HubScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          _XpLevelCard(progress: progress, rankTitle: rankTitle),
+          ListenableBuilder(
+            listenable: charts,
+            builder: (context, _) {
+              final progress = charts.hubProgress;
+              return _XpLevelCard(
+                key: ValueKey('xp_${progress.level}_${progress.currentXp}'),
+                progress: progress,
+                rankTitle: MockData.rankTitle(progress.level),
+              );
+            },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          const LearningChartsSection(),
           const SizedBox(height: AppSpacing.xl),
           Text(
             AppStrings.hubBadgesTitle,
@@ -76,13 +89,6 @@ class HubScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            AppStrings.homeLeaderboard,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          const LeaderboardSection(),
-          const SizedBox(height: AppSpacing.xl),
-          Text(
             AppStrings.hubAchievements,
             style: Theme.of(context).textTheme.titleMedium,
           ),
@@ -97,6 +103,7 @@ class HubScreen extends StatelessWidget {
 }
 class _XpLevelCard extends StatefulWidget {
   const _XpLevelCard({
+    super.key,
     required this.progress,
     required this.rankTitle,
   });

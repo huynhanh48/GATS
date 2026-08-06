@@ -283,6 +283,8 @@ export async function chatWithViava(options: {
         query: options.query,
         domains: options.domains?.length ? options.domains : null,
       }),
+      // Keep under mobile coach timeout (90s) so the app gets a clean error.
+      signal: AbortSignal.timeout(75_000),
     })) as { answer?: string; references?: string[] };
 
     const answer =

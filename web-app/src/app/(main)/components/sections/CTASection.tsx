@@ -313,25 +313,12 @@ export function CTASection() {
       : null;
 
   return (
-    <section className="relative z-20 w-full overflow-hidden">
-      {/* Full-bleed Aurora mesh (ui-ux-pro-max: Aurora UI + conversion CTA) */}
-      <div className="relative isolate min-h-[28rem] w-full sm:min-h-[30rem]">
+    <section className="relative z-20 w-full overflow-hidden bg-linear-to-r from-[#FF6B00] via-[#FF8800] to-[#E05E00] text-white py-16 sm:py-20 lg:py-24 shadow-2xl border-t border-amber-600">
+      <div className="relative isolate w-full">
+        {/* Subtle Ambient Glow */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-[#071525]"
-        />
-        <div
-          aria-hidden
-          className="cta-aurora absolute inset-0 opacity-90 motion-reduce:animate-none"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(7,21,37,0.55)_70%,rgba(7,21,37,0.92)_100%)]"
-        />
-        {/* Hairline top — soft section join, not a boxed frame */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent"
+          className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15)_0%,transparent_70%)] pointer-events-none"
         />
 
         <Container className="relative flex flex-col items-center justify-center py-16 text-center sm:py-20 lg:py-24">

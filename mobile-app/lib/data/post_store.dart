@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/data/api/category_api_service.dart';
 import 'package:gats_academy/data/api/post_api_service.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
@@ -12,24 +13,33 @@ class PostStore extends ChangeNotifier {
 
   List<CommunityPost> _posts = [];
   List<PostComment> _comments = [];
+  List<PostCategory> _categories = [];
   bool _syncing = false;
 
   List<CommunityPost> get posts =>
       List.unmodifiable(_posts.where((post) => post.isPublished));
   List<CommunityPost> get allPosts => List.unmodifiable(_posts);
+  List<PostCategory> get categories => List.unmodifiable(_categories);
   bool get isSyncing => _syncing;
 
-  Future<void> syncFromApi({String? focusPostId}) async {
+  Future<void> syncFromApi({String? focusPostId, String? categorySlug}) async {
     if (_syncing) return;
     _syncing = true;
     notifyListeners();
     try {
       final token = await AuthPrefs.accessToken();
-      _posts = await PostApiService.listPublished(token: token);
+      // Always load full published feed; UI filters by categorySlug.
+      final results = await Future.wait([
+        PostApiService.listPublished(token: token),
+        CategoryApiService.listPostCategories(token: token),
+      ]);
+      _posts = results[0] as List<CommunityPost>;
+      _categories = results[1] as List<PostCategory>;
       if (focusPostId != null && focusPostId.isNotEmpty) {
         await loadComments(focusPostId);
         try {
-          final detail = await PostApiService.getById(focusPostId, token: token);
+          final detail =
+              await PostApiService.getById(focusPostId, token: token);
           if (detail != null) {
             final index = _posts.indexWhere((post) => post.id == focusPostId);
             if (index >= 0) {
@@ -47,6 +57,16 @@ class PostStore extends ChangeNotifier {
     } finally {
       _syncing = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> loadCategories() async {
+    try {
+      final token = await AuthPrefs.accessToken();
+      _categories = await CategoryApiService.listPostCategories(token: token);
+      notifyListeners();
+    } catch (error) {
+      debugPrint('PostStore: loadCategories failed — $error');
     }
   }
 
@@ -111,10 +131,43 @@ class PostStore extends ChangeNotifier {
   List<CommunityPost> feedForUser({
     required String? userId,
     required UserRole role,
-    int limit = 6,
+    int? limit = 6,
+    String? categorySlug,
+    String? searchQuery,
+    PostScope? scope,
+    PostFeedSort sort = PostFeedSort.newest,
   }) {
-    final published = posts.toList()
-      ..sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+    var published = posts.toList();
+
+    if (categorySlug != null && categorySlug.isNotEmpty) {
+      published =
+          published.where((p) => p.categorySlug == categorySlug).toList();
+    }
+    if (scope != null) {
+      published = published.where((p) => p.scope == scope).toList();
+    }
+    final q = searchQuery?.trim().toLowerCase();
+    if (q != null && q.isNotEmpty) {
+      published = published.where((p) {
+        return p.title.toLowerCase().contains(q) ||
+            p.body.toLowerCase().contains(q) ||
+            p.authorName.toLowerCase().contains(q) ||
+            (p.categoryName?.toLowerCase().contains(q) ?? false);
+      }).toList();
+    }
+
+    switch (sort) {
+      case PostFeedSort.newest:
+        published.sort((a, b) => b.publishedAt.compareTo(a.publishedAt));
+      case PostFeedSort.oldest:
+        published.sort((a, b) => a.publishedAt.compareTo(b.publishedAt));
+      case PostFeedSort.titleAsc:
+        published.sort(
+          (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+        );
+    }
+
+    if (limit == null) return published;
     return published.take(limit).toList();
   }
 

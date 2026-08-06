@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
@@ -22,8 +23,6 @@ class RoutineEditorScreen extends StatefulWidget {
 class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
   late RoutineWorkflow _workflow;
   String? _selectedNodeId;
-  String? _connectingFromId;
-  Offset? _pendingPointer;
   bool _isDraggingNode = false;
   int _idCounter = 100;
 
@@ -36,12 +35,15 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
 
   String _nextId() => 'n${_idCounter++}';
 
+  RoutineNode? _nodeById(String id) {
+    for (final n in _workflow.nodes) {
+      if (n.id == id) return n;
+    }
+    return null;
+  }
+
   void _selectNode(String? id) {
-    setState(() {
-      _selectedNodeId = id;
-      _connectingFromId = null;
-      _pendingPointer = null;
-    });
+    setState(() => _selectedNodeId = id);
   }
 
   void _moveNode(String nodeId, Offset delta) {
@@ -56,40 +58,178 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
     });
   }
 
-  void _onOutputTap(String nodeId) {
-    setState(() {
-      _connectingFromId = nodeId;
-      _selectedNodeId = nodeId;
-      _pendingPointer = _workflow.nodes.firstWhere((n) => n.id == nodeId).outputPort;
-    });
-  }
-
-  void _onInputTap(String nodeId) {
-    if (_connectingFromId == null || _connectingFromId == nodeId) return;
+  void _connectNodes(String fromId, String toId) {
+    if (fromId == toId) return;
+    final to = _nodeById(toId);
+    if (to == null || to.type == RoutineNodeType.trigger) return;
     final exists = _workflow.connections.any(
-      (c) => c.fromNodeId == _connectingFromId && c.toNodeId == nodeId,
+      (c) => c.fromNodeId == fromId && c.toNodeId == toId,
     );
-    if (exists) {
-      setState(() {
-        _connectingFromId = null;
-        _pendingPointer = null;
-      });
-      return;
-    }
+    if (exists) return;
     setState(() {
       _workflow = _workflow.copyWith(
         connections: [
           ..._workflow.connections,
           RoutineConnection(
             id: 'c${_idCounter++}',
-            fromNodeId: _connectingFromId!,
-            toNodeId: nodeId,
+            fromNodeId: fromId,
+            toNodeId: toId,
           ),
         ],
       );
-      _connectingFromId = null;
-      _pendingPointer = null;
+      _selectedNodeId = fromId;
     });
+  }
+
+  void _disconnectNodes(String fromId, String toId) {
+    setState(() {
+      _workflow = _workflow.copyWith(
+        connections: _workflow.connections
+            .where((c) => !(c.fromNodeId == fromId && c.toNodeId == toId))
+            .toList(),
+      );
+    });
+  }
+
+  Future<void> _showConnectSheet(String fromId) async {
+    final from = _nodeById(fromId);
+    if (from == null) return;
+
+    HapticFeedback.mediumImpact();
+    setState(() => _selectedNodeId = fromId);
+
+    final gats = context.gatsColors;
+    final targets = _workflow.nodes
+        .where(
+          (n) => n.id != fromId && n.type != RoutineNodeType.trigger,
+        )
+        .toList();
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: gats.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: gats.divider,
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                  ),
+                ),
+                Text(
+                  AppStrings.routineConnectFrom(from.title),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  AppStrings.routineConnectToHint,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: gats.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                if (targets.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                    child: Center(
+                      child: Text(
+                        AppStrings.routineConnectEmpty,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: gats.textSecondary,
+                            ),
+                      ),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.sizeOf(context).height * 0.45,
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: targets.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final target = targets[index];
+                        final template =
+                            RoutineNodeCatalog.templateFor(target.type);
+                        final color = template?.color ?? AppColors.primary;
+                        final connected = _workflow.connections.any(
+                          (c) =>
+                              c.fromNodeId == fromId &&
+                              c.toNodeId == target.id,
+                        );
+                        return ListTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            side: BorderSide(
+                              color: connected
+                                  ? color.withValues(alpha: 0.5)
+                                  : gats.divider,
+                            ),
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: color.withValues(alpha: 0.15),
+                            child: Icon(
+                              template?.icon ?? Icons.circle,
+                              color: color,
+                              size: 20,
+                            ),
+                          ),
+                          title: Text(target.title),
+                          subtitle: Text(
+                            connected
+                                ? AppStrings.routineDisconnect
+                                : target.subtitle,
+                          ),
+                          trailing: Icon(
+                            connected
+                                ? Icons.link_off_rounded
+                                : Icons.arrow_forward_rounded,
+                            color: connected ? AppColors.accent : color,
+                          ),
+                          onTap: () {
+                            Navigator.pop(context);
+                            if (connected) {
+                              _disconnectNodes(fromId, target.id);
+                            } else {
+                              _connectNodes(fromId, target.id);
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _deleteNode(String id) {
@@ -101,10 +241,6 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
             .toList(),
       );
       if (_selectedNodeId == id) _selectedNodeId = null;
-      if (_connectingFromId == id) {
-        _connectingFromId = null;
-        _pendingPointer = null;
-      }
     });
   }
 
@@ -130,18 +266,27 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(AppStrings.routineAddNode, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  AppStrings.routineAddNode,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: RoutineNodeCatalog.templates.map((template) {
-                    final hasTrigger = _workflow.nodes.any((n) => n.type == RoutineNodeType.trigger);
-                    if (template.type == RoutineNodeType.trigger && hasTrigger) {
+                    final hasTrigger = _workflow.nodes
+                        .any((n) => n.type == RoutineNodeType.trigger);
+                    if (template.type == RoutineNodeType.trigger &&
+                        hasTrigger) {
                       return const SizedBox.shrink();
                     }
                     return ActionChip(
-                      avatar: Icon(template.icon, size: 18, color: template.color),
+                      avatar: Icon(
+                        template.icon,
+                        size: 18,
+                        color: template.color,
+                      ),
                       label: Text(template.label),
                       onPressed: () {
                         Navigator.pop(context);
@@ -162,7 +307,10 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
     final bounds = WorkflowCanvasLayout.boundsFor(_workflow.nodes);
     final offset = Offset(
       bounds.left + 24 + (_workflow.nodes.length * 20) % 180,
-      bounds.top + 24 + (_workflow.nodes.length * 36) % math.max(bounds.height - RoutineNode.nodeHeight - 48, 80),
+      bounds.top +
+          24 +
+          (_workflow.nodes.length * 36) %
+              math.max(bounds.height - RoutineNode.nodeHeight - 48, 80),
     );
     setState(() {
       _workflow = _workflow.copyWith(
@@ -182,78 +330,50 @@ class _RoutineEditorScreenState extends State<RoutineEditorScreen> {
     });
   }
 
-  bool get _canvasPanEnabled => !_isDraggingNode && _connectingFromId == null;
-
   @override
   Widget build(BuildContext context) {
     final canvasSize = WorkflowCanvasLayout.canvasSizeFor(_workflow.nodes);
     final editorWidth = canvasSize.width < 900 ? 900.0 : canvasSize.width + 120;
-    final editorHeight = canvasSize.height < 600 ? 600.0 : canvasSize.height + 120;
+    final editorHeight =
+        canvasSize.height < 600 ? 600.0 : canvasSize.height + 120;
 
     return GatsThemedScaffold(
       appBar: AppBar(
         title: Text(AppStrings.routineEditorTitle),
         actions: [
-          if (_selectedNodeId != null)
+          if (_selectedNodeId != null) ...[
             IconButton(
+              tooltip: AppStrings.routineConnectAction,
+              icon: const Icon(Icons.link_rounded),
+              onPressed: () => _showConnectSheet(_selectedNodeId!),
+            ),
+            IconButton(
+              tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
               icon: const Icon(Icons.delete_outline_rounded),
               onPressed: () => _deleteNode(_selectedNodeId!),
             ),
+          ],
           TextButton(onPressed: _save, child: Text(AppStrings.routineSave)),
         ],
       ),
       body: Column(
         children: [
-          if (_connectingFromId != null)
-            Material(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
-                child: Row(
-                  children: [
-                    const Icon(Icons.link_rounded, color: AppColors.accent, size: 18),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        AppStrings.routineConnectHint,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.accent),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => setState(() {
-                        _connectingFromId = null;
-                        _pendingPointer = null;
-                      }),
-                      child: Text(AppStrings.routineCancelConnect),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           Expanded(
             child: InteractiveViewer(
               boundaryMargin: const EdgeInsets.all(120),
               minScale: 0.6,
               maxScale: 1.6,
-              panEnabled: _canvasPanEnabled,
-              scaleEnabled: _connectingFromId == null,
+              panEnabled: !_isDraggingNode,
               child: WorkflowCanvas(
                 workflow: _workflow,
                 readOnly: false,
                 selectedNodeId: _selectedNodeId,
-                connectingFromId: _connectingFromId,
-                pendingPointer: _pendingPointer,
                 minWidth: editorWidth,
                 minHeight: editorHeight,
                 onCanvasTap: () => _selectNode(null),
-                onCanvasPanUpdate: _connectingFromId != null
-                    ? (details) => setState(() => _pendingPointer = details.localPosition)
-                    : null,
                 onSelectNode: _selectNode,
-                onDeleteNode: _deleteNode,
+                onConnectNode: _showConnectSheet,
                 onMoveNode: _moveNode,
-                onOutputTap: _onOutputTap,
-                onInputTap: _onInputTap,
                 onDragStart: () => setState(() => _isDraggingNode = true),
                 onDragEnd: () => setState(() => _isDraggingNode = false),
               ),

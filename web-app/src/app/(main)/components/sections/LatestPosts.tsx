@@ -24,21 +24,24 @@ export async function LatestPosts() {
   }
 
   return (
-    <section className="w-full bg-white py-20 sm:py-24 overflow-hidden">
+    <section className="w-full bg-[#FAF8F5] text-[#0B0F17] py-24 border-t border-amber-200/60 overflow-hidden">
       <Container>
         {/* Header Section */}
         <AnimatedContent distance={25}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
-              <h2 className="text-[3.2rem] md:text-[3.8rem] font-bold text-[#111827] font-heading leading-tight">
+              <span className="text-[1.2rem] font-bold text-[#FF6B00] uppercase tracking-wider mb-2 font-mono bg-[#FF6B00]/10 px-3.5 py-1 rounded-full border border-[#FF6B00]/20 inline-block">
+                TIN TỨC &amp; KIẾN THỨC
+              </span>
+              <h2 className="text-[3.2rem] md:text-[3.8rem] font-bold text-[#0B0F17] font-heading leading-tight mt-2">
                 Bài Viết Mới Nhất
               </h2>
-              <p className="mt-2 text-[1.6rem] text-slate-500">
+              <p className="mt-2 text-[1.6rem] text-slate-600 font-medium">
                 Cập nhật kiến thức và xu hướng AI
               </p>
             </div>
             <Link href="/posts">
-              <Button variant="outline" className="rounded-full border-slate-300 text-[1.4rem] font-semibold text-[#111827] hover:bg-slate-50 px-8 py-6">
+              <Button variant="outline" className="rounded-full border-slate-300 bg-white text-[1.4rem] font-bold text-[#0B0F17] hover:bg-slate-50 px-8 py-6 shadow-xs">
                 Tất cả bài viết
               </Button>
             </Link>

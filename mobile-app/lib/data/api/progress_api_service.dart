@@ -7,12 +7,14 @@ class CourseProgressDto {
     required this.totalLessons,
     required this.percent,
     required this.completedLessonIds,
+    this.nextLessonId,
   });
 
   final int completedLessons;
   final int totalLessons;
   final int percent;
   final List<String> completedLessonIds;
+  final String? nextLessonId;
 
   /// 0.0‥1.0 for UI / repository.
   double get fraction => (percent / 100).clamp(0.0, 1.0);
@@ -26,6 +28,7 @@ class CourseProgressDto {
       completedLessonIds: ids is List
           ? ids.map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
           : const [],
+      nextLessonId: json['nextLessonId']?.toString(),
     );
   }
 }
@@ -78,6 +81,7 @@ abstract final class ProgressApiService {
       totalLessons: 0,
       percent: 0,
       completedLessonIds: [],
+      nextLessonId: null,
     );
   }
 

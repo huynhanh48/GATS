@@ -121,6 +121,11 @@ authRouter.post(
   authHandlers.dailyCheckinClaim,
 );
 authRouter.get(
+  AuthPaths.User.LearningCharts,
+  errorHandle(authMiddleware),
+  authHandlers.learningChartsGet,
+);
+authRouter.get(
   AuthPaths.User.Onboarding,
   errorHandle(authMiddleware),
   authHandlers.getOnboarding,

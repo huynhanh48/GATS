@@ -45,40 +45,43 @@ class AppLocalizationsVi extends AppLocalizations {
   String get onboardingTitlePurpose => 'Mục đích học là gì?';
 
   @override
-  String get onboardingTitleReminder => 'Nhắc học mỗi ngày';
+  String get onboardingTitleReminder => 'Chọn giờ nhắc học';
 
   @override
   String get onboardingSubtitleReminder =>
-      'Chúng tôi sẽ nhắc bạn đúng giờ — có thể đổi trong Cài đặt';
+      'Mỗi ngày app sẽ nhắc bạn học đúng giờ này. Đổi lại bất cứ lúc nào trong Cài đặt.';
 
   @override
   String get onboardingCoachReminder =>
-      'Kiên trì mỗi ngày quan trọng hơn học dồn! Chọn giờ phù hợp với bạn nhé.';
+      'Chọn khung giờ bạn thường rảnh — học đều mỗi ngày dễ hơn học dồn.';
 
   @override
-  String get onboardingReminderEnable => 'Bật nhắc nhở hàng ngày';
+  String get onboardingReminderEnable => 'Nhận nhắc học mỗi ngày';
 
   @override
-  String get onboardingReminderNoThanks => 'Không, cảm ơn';
+  String get onboardingReminderPickTime => 'Bạn muốn được nhắc lúc mấy giờ?';
 
   @override
-  String get onboardingReminderContinue => 'Tiếp tục';
+  String get onboardingReminderNoThanks => 'Để sau';
+
+  @override
+  String get onboardingReminderContinue => 'Lưu giờ nhắc';
 
   @override
   String ackReminderEcho(String time) {
-    return 'Nhắc lúc $time — hẹn gặp bạn!';
+    return 'Đã hẹn nhắc lúc $time — giữ streak nhé!';
   }
 
   @override
   String get ackReminderSkippedEcho =>
-      'Không sao — bạn có thể bật nhắc nhở sau trong Cài đặt.';
+      'Không sao — bạn có thể bật nhắc học bất cứ lúc nào trong Cài đặt.';
 
   @override
   String get dailyReminderTitle => 'GATS Academy';
 
   @override
   String get dailyReminderBody =>
-      'Đến giờ học rồi! Điểm danh và giữ streak nhé.';
+      'Đến giờ học rồi! Mở app, điểm danh và giữ streak nhé.';
 
   @override
   String get onboardingSubtitleLanguage => 'Bạn có thể đổi lại trong Cài đặt';
@@ -874,6 +877,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navDaily => 'Hàng ngày';
 
   @override
+  String navDailyBadgeTooltip(int count) {
+    return 'Còn $count mục tiêu hôm nay';
+  }
+
+  @override
   String get navLibrary => 'Thư viện';
 
   @override
@@ -995,13 +1003,31 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get routineEditorHint =>
-      'Kéo node · Chạm cổng phải để nối · Giữ để xóa';
+      'Kéo để di chuyển · Giữ node để nối · Xóa bằng nút thùng rác';
 
   @override
-  String get routineConnectHint => 'Chạm cổng trái của node đích để nối';
+  String get routineConnectHint => 'Chọn node đích để nối';
 
   @override
   String get routineCancelConnect => 'Hủy';
+
+  @override
+  String routineConnectFrom(String title) {
+    return 'Nối từ \"$title\"';
+  }
+
+  @override
+  String get routineConnectToHint => 'Chọn node muốn nối tới';
+
+  @override
+  String get routineConnectEmpty =>
+      'Chưa có node khác để nối. Thêm node trước.';
+
+  @override
+  String get routineDisconnect => 'Gỡ nối';
+
+  @override
+  String get routineConnectAction => 'Nối';
 
   @override
   String get routinePreviewSubtitle => 'Workflow học tập cá nhân — kiểu n8n';
@@ -1065,6 +1091,49 @@ class AppLocalizationsVi extends AppLocalizations {
   String get hubBadgesTitle => 'Huy hiệu';
 
   @override
+  String get hubChartsTitle => 'Thống kê học tập';
+
+  @override
+  String get hubChartsSubtitle =>
+      '7 ngày gần nhất — phút học, XP và phân bổ hoạt động';
+
+  @override
+  String get hubChartsWeeklyTitle => 'Phút học mỗi ngày';
+
+  @override
+  String get hubChartsXpTitle => 'XP kiếm được';
+
+  @override
+  String get hubChartsMixTitle => 'Phân bổ hoạt động';
+
+  @override
+  String get hubChartsWeekTotal => 'Tổng tuần';
+
+  @override
+  String get hubChartsWeekAvg => 'Trung bình/ngày';
+
+  @override
+  String hubChartsMinutes(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
+  String get hubChartsMixLessons => 'Bài học';
+
+  @override
+  String get hubChartsMixFlashcards => 'Flashcard';
+
+  @override
+  String get hubChartsMixQuiz => 'Quiz';
+
+  @override
+  String get hubChartsMixCoach => 'Coach';
+
+  @override
+  String get hubChartsEmpty =>
+      'Chưa có hoạt động trong 7 ngày — học bài, ôn thẻ hoặc điểm danh để thấy biểu đồ.';
+
+  @override
   String get hubCertTitle => 'Chứng chỉ';
 
   @override
@@ -1089,6 +1158,25 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsLanguage => 'Ngôn ngữ';
+
+  @override
+  String get settingsDailyReminder => 'Nhắc học hàng ngày';
+
+  @override
+  String get settingsDailyReminderSubtitle =>
+      'Thông báo hệ thống đúng giờ bạn chọn';
+
+  @override
+  String get settingsDailyReminderTime => 'Giờ nhắc';
+
+  @override
+  String get settingsDailyReminderPermissionDenied =>
+      'Cần cho phép thông báo trong Cài đặt hệ thống để nhận nhắc học.';
+
+  @override
+  String settingsDailyReminderSaved(String time) {
+    return 'Đã lên lịch nhắc học lúc $time';
+  }
 
   @override
   String get settingsDarkMode => 'Giao diện tối';
@@ -1132,8 +1220,7 @@ class AppLocalizationsVi extends AppLocalizations {
       'Đã đăng xuất. Khởi động lại app để về màn hình chính.';
 
   @override
-  String get settingsReplaySuccess =>
-      'Đã reset onboarding. Khởi động lại app để xem lại flow.';
+  String get settingsReplaySuccess => 'Đang mở lại luồng onboarding…';
 
   @override
   String get tagOfficeAi => 'AI cho công sở';
@@ -1511,6 +1598,41 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get postFeedEmpty => 'Chưa có bài viết';
+
+  @override
+  String get postSearchHint => 'Tìm bài viết, tác giả...';
+
+  @override
+  String get postSearchEmpty => 'Không tìm thấy bài viết phù hợp';
+
+  @override
+  String postSearchResultCount(int count) {
+    return '$count bài viết';
+  }
+
+  @override
+  String get postFilterScope => 'Phạm vi';
+
+  @override
+  String get postFilterSort => 'Sắp xếp';
+
+  @override
+  String get postSortNewest => 'Mới nhất';
+
+  @override
+  String get postSortOldest => 'Cũ nhất';
+
+  @override
+  String get postSortTitle => 'A–Z';
+
+  @override
+  String get postScopeGlobal => 'GATS';
+
+  @override
+  String get postScopeCourse => 'Khóa học';
+
+  @override
+  String get postClearFilters => 'Xóa bộ lọc';
 
   @override
   String get postSeeAll => 'Xem tất cả';
