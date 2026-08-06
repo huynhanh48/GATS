@@ -75,11 +75,12 @@ export function Header() {
   );
 
   const teachingHref =
-    user &&
-    (typeof window !== "undefined" &&
-    window.location.hostname === "localhost"
-      ? "http://localhost:9000/course"
-      : "https://admin.gats.vn/course");
+    user
+      ? (typeof window !== "undefined" &&
+        window.location.hostname === "localhost"
+          ? "http://localhost:9000/course"
+          : "https://admin.gats.vn/course")
+      : undefined;
 
   return (
     <header className="fixed top-0 left-0 w-full bg-white/95 dark:bg-[#0B0F17]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800 z-50 transition-colors" style={{ zIndex: designTheme.zIndex.sticky }}>
@@ -207,7 +208,7 @@ export function Header() {
                     </DropdownMenuItem>
                     {canTeach && (
                       <DropdownMenuItem asChild className="cursor-pointer text-[1.4rem]">
-                        <a href={teachingHref} className="w-full">Khu vực giảng dạy</a>
+                        <a href={teachingHref ?? undefined} className="w-full">Khu vực giảng dạy</a>
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
