@@ -313,12 +313,21 @@ export function CTASection() {
       : null;
 
   return (
-    <section className="relative z-20 w-full overflow-hidden bg-linear-to-r from-[#FF6B00] via-[#FF8800] to-[#E05E00] text-white py-16 sm:py-20 lg:py-24 shadow-2xl border-t border-amber-600">
+    <section className="relative z-20 w-full overflow-hidden bg-slate-950 text-white py-16 sm:py-20 lg:py-24 shadow-2xl border-t border-white/10">
+      {/* Full-Bleed Background Image Layer (Humans Working & AI Technology Interaction) */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-1000 transform scale-102"
+        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1920&auto=format&fit=crop&q=80')" }}
+      />
+
+      {/* Dark Ambient Gradient Overlay for 100% Contrast & High Readability */}
+      <div className="absolute inset-0 bg-linear-to-r from-[#0B0F17]/95 via-[#0B0F17]/85 to-[#FF6B00]/40 pointer-events-none" />
+
       <div className="relative isolate w-full">
         {/* Subtle Ambient Glow */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15)_0%,transparent_70%)] pointer-events-none"
+          className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,107,0,0.15)_0%,transparent_70%)] pointer-events-none"
         />
 
         <Container className="relative flex flex-col items-center justify-center py-16 text-center sm:py-20 lg:py-24">
