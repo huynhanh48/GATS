@@ -10,6 +10,7 @@ import { QrCode, CheckCircle2, Copy, Tag, X } from "lucide-react";
 import { orderApi, couponApi, type CouponPreview } from "@/services/cart.service";
 import { resolveMediaUrl } from "@/lib/media/url";
 import { toast } from "sonner";
+import "./checkout.css";
 
 type QrPaymentState = {
   /** Có thể null nếu provider QR lỗi — vẫn thanh toán bằng thông tin CK */
@@ -618,7 +619,7 @@ export default function CheckoutPage() {
 
   if (qrData) {
     return (
-      <main className="min-h-screen bg-background relative flex flex-col">
+      <main className="edubost-payment-sheet min-h-screen bg-background relative flex flex-col">
         {/* Full-screen payment sheet — avoid floating Header overlapping the invoice */}
         <div className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-sm overflow-y-auto">
           <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
@@ -795,7 +796,7 @@ export default function CheckoutPage() {
     <main className="body_wrap">
       <Header />
       <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Thanh toán</h1><p className="breadcrumb__desc">Hoàn tất đăng ký chương trình của bạn</p></div></div></section>
-      <section className="contact_section section_space" style={{ backgroundColor: "#F1F1E9" }}><div className="container">
+      <section className="contact_section edubost-checkout section_space"><div className="container">
 
         <div className="row mt-none-30">
           <div className="col-lg-7 mt-30">

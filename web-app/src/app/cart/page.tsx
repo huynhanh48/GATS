@@ -2,11 +2,10 @@
 
 import { useCart } from "@/components/providers/CartProvider";
 import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
-import { Container } from "@/components/layout/Container";
 import Link from "next/link";
 import { Trash2, ArrowRight, ShoppingCart } from "lucide-react";
 import { resolveMediaUrl } from "@/lib/media/url";
-import { theme as designTheme } from "@/lib/theme";
+import "./cart.css";
 
 export default function CartPage() {
   const { items, totalAmount, isLoading, removeFromCart } = useCart();
@@ -19,14 +18,14 @@ export default function CartPage() {
         <div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Giỏ hàng</h1><p className="breadcrumb__desc">Kiểm tra các chương trình bạn đã chọn</p></div></div>
       </section>
 
-      <section className="course-single pt-120 pb-120"><div className="container">
+      <section className="course-single edubost-cart pt-120 pb-120"><div className="container">
           <div className="section-title mb-60"><span className="sub-title">Chương trình đã chọn</span><h2 className="title">Giỏ hàng của bạn</h2></div>
 
           {isLoading ? (
             <div className="text-center py-12 text-muted-foreground">Đang tải giỏ hàng...</div>
           ) : items.length === 0 ? (
-            <div className="mission-vission-item text-center">
-              <div className="flex justify-center mb-6">
+            <div className="cart-empty-state mission-vission-item text-center">
+              <div className="cart-empty-state__icon flex justify-center mb-6">
                 <ShoppingCart className="w-24 h-24 text-muted-foreground/50" strokeWidth={1.5} />
               </div>
               <h2 className="text-xl font-bold mb-2">Giỏ hàng trống</h2>

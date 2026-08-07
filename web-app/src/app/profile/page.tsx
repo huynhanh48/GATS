@@ -26,6 +26,7 @@ import { resolveMediaUrl } from "@/lib/media/url";
 import { CourseThumbImage } from "@/components/common/CourseThumbImage";
 import { CoverCropDialog } from "@/components/profile/CoverCropDialog";
 import { COVER_ASPECT_CLASS } from "@/lib/media/coverAspect";
+import "./profile.css";
 
 const VN_TZ = "Asia/Ho_Chi_Minh";
 
@@ -195,7 +196,7 @@ export default function ProfilePage() {
     : null;
   const coverPhoto = user.coverUrl
     ? resolveMediaUrl(user.coverUrl)
-    : "https://placehold.co/1200x400?text=Cover";
+    : "/edubost-reference/img/bg/breadcrumb_bg.jpg";
 
   const handleAvatarFile = async (file: File | undefined) => {
     if (!file) return;
@@ -278,7 +279,7 @@ export default function ProfilePage() {
     <main className="body_wrap">
       <Header />
       <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Tài khoản của tôi</h1><p className="breadcrumb__desc">Quản lý hồ sơ, khóa học và lịch sử giao dịch</p></div></div></section>
-      <section className="team-single pt-120 pb-110" style={{ backgroundColor: "#F1F1E9" }}><div className="container"><div className="team-single__inner">
+      <section className="team-single edubost-profile pt-120 pb-110"><div className="container"><div className="team-single__inner">
       
       {/* Cover Photo — aspect must match CoverCropDialog (3:1) */}
       <div
@@ -530,7 +531,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       <Link href={`/learn/${enrollments[0]?.course?.slug}`} className="inline-block">
-                        <button className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25">
+                        <button className="profile-course-cta bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25">
                           Học tiếp
                         </button>
                       </Link>
@@ -706,7 +707,7 @@ export default function ProfilePage() {
                             </div>
                             
                             <Link href={`/learn/${c.slug}`} className="block">
-                              <button className="w-full bg-muted/50 text-foreground hover:bg-primary hover:text-primary-foreground font-bold py-2.5 rounded-xl transition-colors">
+                              <button className="profile-course-cta w-full bg-muted/50 text-foreground hover:bg-primary hover:text-primary-foreground font-bold py-2.5 rounded-xl transition-colors">
                                 {percent > 0 ? "Học tiếp" : "Bắt đầu học"}
                               </button>
                             </Link>

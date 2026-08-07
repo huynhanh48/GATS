@@ -11,14 +11,15 @@ import { resolveMediaUrl } from "@/lib/media/url";
 import { theme as designTheme } from "@/lib/theme";
 import type { Course } from "@/types/course";
 import type { Post } from "@/types/post";
+import "./search-modal.css";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
-type CoursesPayload = { data?: Course[] };
-type PostsPayload = { data?: Post[] };
+type CoursesPayload = { data?: Course[]; courses?: Course[] };
+type PostsPayload = { data?: Post[]; posts?: Post[] };
 
 export function SearchModal({ open, onOpenChange }: Props) {
   const router = useRouter();
@@ -83,8 +84,8 @@ export function SearchModal({ open, onOpenChange }: Props) {
         if (!active) return;
         const coursePayload = coursesRes as unknown as CoursesPayload;
         const postPayload = postsRes as unknown as PostsPayload;
-        setCourses(coursePayload.data ?? []);
-        setPosts(postPayload.data ?? []);
+        setCourses(coursePayload.data ?? coursePayload.courses ?? []);
+        setPosts(postPayload.data ?? postPayload.posts ?? []);
       })
       .catch((err) => {
         console.error(err);
@@ -129,7 +130,7 @@ export function SearchModal({ open, onOpenChange }: Props) {
 
   return (
     <div
-      className="fixed inset-0 flex items-start justify-center px-4 pt-[12vh] sm:pt-[14vh]"
+      className="edubost-search-modal fixed inset-0 flex items-start justify-center"
       style={{ zIndex: designTheme.zIndex.modal ?? 100 }}
       role="dialog"
       aria-modal="true"
@@ -137,18 +138,21 @@ export function SearchModal({ open, onOpenChange }: Props) {
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/45 supports-backdrop-filter:backdrop-blur-[2px]"
+        className="edubost-search-backdrop absolute inset-0 bg-black/55"
         aria-label="Đóng tìm kiếm"
         onClick={close}
       />
 
-      <div className="relative z-10 w-full max-w-[720px]">
+      <div className="edubost-search-panel relative z-10 w-full">
+        <button type="button" className="edubost-search-close" aria-label="Đóng tìm kiếm" onClick={close}>
+          <X aria-hidden="true" />
+        </button>
         <h2 id={titleId} className="sr-only">
           Tìm kiếm
         </h2>
 
         <form
-          className="flex items-center gap-0 rounded-full border border-slate-200 bg-white pl-6 pr-1.5 shadow-[0_12px_40px_rgba(0,0,0,0.18)]"
+          className="edubost-search-form flex items-center gap-0"
           onSubmit={(e) => {
             e.preventDefault();
             submitSearch();
@@ -159,7 +163,7 @@ export function SearchModal({ open, onOpenChange }: Props) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Tìm theo tên"
+            placeholder="Tìm kiếm ..."
             className="h-14 flex-1 bg-transparent text-[1.6rem] text-[#111827] outline-none placeholder:text-slate-400 sm:h-16 sm:text-[1.7rem]"
             autoComplete="off"
             enterKeyHint="search"
@@ -171,7 +175,7 @@ export function SearchModal({ open, onOpenChange }: Props) {
                 setQuery("");
                 inputRef.current?.focus();
               }}
-              className="mr-1 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              className="edubost-search-clear mr-1 flex h-10 w-10 items-center justify-center text-slate-400 hover:text-slate-600"
               aria-label="Xóa từ khóa"
             >
               <X className="h-5 w-5" />
@@ -179,18 +183,16 @@ export function SearchModal({ open, onOpenChange }: Props) {
           ) : null}
           <button
             type="submit"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1a1a1a] text-white transition-colors hover:bg-[#333] sm:h-12 sm:w-12"
+            className="edubost-search-submit flex h-12 w-12 shrink-0 items-center justify-center text-slate-400 transition-colors hover:text-[#60060f]"
             aria-label="Tìm kiếm"
           >
             <Search className="h-5 w-5" strokeWidth={2.25} />
           </button>
         </form>
 
-        <div className="mt-3 max-h-[min(60vh,480px)] overflow-y-auto rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_48px_rgba(0,0,0,0.14)]">
+        <div className="edubost-search-results mt-3 max-h-[min(48vh,420px)] overflow-y-auto bg-white">
           {!hasQuery ? (
-            <p className="px-6 py-8 text-center text-[1.4rem] text-slate-500">
-              Nhập tên khóa học hoặc bài viết để tìm kiếm
-            </p>
+            null
           ) : loading ? (
             <p className="px-6 py-8 text-center text-[1.4rem] text-slate-500">
               Đang tìm…

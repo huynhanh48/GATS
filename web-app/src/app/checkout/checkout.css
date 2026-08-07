@@ -1,0 +1,108 @@
+.edubost-checkout { background: #f7f6f0; }
+.edubost-checkout .contact_form {
+  padding: 34px;
+  border: 1px solid #ddd6d0;
+  border-radius: 0;
+  background: #fff;
+}
+.edubost-checkout .contact_form .title,
+.edubost-checkout .course-sidebar__title {
+  margin-bottom: 28px;
+  color: #170006;
+  font-family: Recoleta, serif;
+  font-size: 30px;
+  line-height: 1.2;
+}
+.edubost-checkout .input_title {
+  display: block;
+  margin-bottom: 9px;
+  color: #170006;
+  font-size: 15px;
+  font-weight: 700;
+}
+.edubost-checkout .form-control,
+.edubost-checkout input {
+  min-height: 50px;
+  border-radius: 0 !important;
+  border-color: #d8d1cb;
+  background: #fff;
+}
+.edubost-checkout .form-control:focus,
+.edubost-checkout input:focus {
+  border-color: #60060f !important;
+  box-shadow: 0 0 0 3px rgba(96,6,15,.12) !important;
+  outline: 0;
+}
+.edubost-checkout .mission-vission-item {
+  min-height: 84px;
+  padding: 18px 20px;
+  border: 2px solid #60060f;
+  border-radius: 0;
+  background: rgba(96,6,15,.035);
+}
+.edubost-checkout .mission-vission-item svg { color: #60060f !important; }
+.edubost-checkout .course-sidebar {
+  position: sticky;
+  top: 105px;
+  padding: 34px;
+  border: 1px solid #ddd6d0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 10px 10px 0 #fdb714;
+}
+.edubost-checkout .course-sidebar .space-y-4 > div { padding-bottom: 14px; border-bottom: 1px solid #eee8e3; }
+.edubost-checkout .course-sidebar .space-y-4 > div:last-child { border-bottom: 0; }
+.edubost-checkout .course-sidebar img {
+  width: 100%;
+  height: 100%;
+  padding: 0 !important;
+  object-fit: cover !important;
+}
+.edubost-checkout .course-sidebar [class*="text-primary"] { color: #60060f !important; }
+.edubost-checkout .course-sidebar button { min-height: 44px; }
+.edubost-checkout .course-sidebar .thm-btn {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  background: #60060f;
+  color: #fff;
+  font-weight: 800;
+}
+.edubost-checkout .course-sidebar .thm-btn:hover { background: #4b040c; color: #fff; }
+.edubost-checkout .course-sidebar .thm-btn:disabled { cursor: not-allowed; opacity: .65; }
+
+.edubost-payment-sheet > .fixed { background: rgba(247,246,240,.97); }
+.edubost-payment-sheet .max-w-md {
+  max-width: 520px;
+  border-radius: 0 !important;
+  border-color: #d8d1cb;
+  box-shadow: 10px 10px 0 #fdb714 !important;
+}
+.edubost-payment-sheet h2 { color: #170006; font-family: Recoleta, serif; font-size: 32px; }
+.edubost-payment-sheet button { min-height: 44px; }
+.edubost-payment-sheet button[class*="bg-primary"] {
+  border-radius: 0 !important;
+  background: #60060f !important;
+  color: #fff !important;
+}
+.edubost-payment-sheet button[class*="bg-primary"]:hover { background: #4b040c !important; }
+.edubost-payment-sheet [class*="text-primary"] { color: #60060f !important; }
+.edubost-payment-sheet [class*="rounded-3xl"],
+.edubost-payment-sheet [class*="rounded-2xl"],
+.edubost-payment-sheet [class*="rounded-xl"] { border-radius: 6px; }
+
+@media (max-width: 991px) {
+  .edubost-checkout .course-sidebar { position: static; margin-top: 8px; box-shadow: 7px 7px 0 #fdb714; }
+}
+@media (max-width: 575px) {
+  .edubost-checkout { padding-top: 65px; padding-bottom: 65px; }
+  .edubost-checkout .contact_form,
+  .edubost-checkout .course-sidebar { padding: 24px 18px; }
+  .edubost-checkout .contact_form .title,
+  .edubost-checkout .course-sidebar__title { font-size: 26px; margin-bottom: 22px; }
+  .edubost-payment-sheet .max-w-md { padding: 22px; box-shadow: 6px 6px 0 #fdb714 !important; }
+  .edubost-payment-sheet img.w-64 { width: 220px; height: 220px; }
+}

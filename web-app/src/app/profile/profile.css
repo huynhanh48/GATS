@@ -1,0 +1,103 @@
+.edubost-profile {
+  background: #f7f6f0;
+  color: #170006;
+}
+.edubost-profile .team-single__inner { max-width: 1290px; margin: 0 auto; }
+.edubost-profile .team-single__image {
+  min-height: 300px;
+  border: 1px solid rgba(96,6,15,.16);
+  border-radius: 14px;
+  box-shadow: 10px 10px 0 #fdb714;
+}
+.edubost-profile .team-single__image > img { border-radius: 13px !important; }
+.edubost-profile .team-single__info { align-items: flex-start; }
+.edubost-profile .course-sidebar {
+  padding: 30px 24px;
+  border: 1px solid #dfd9d2;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 8px 8px 0 #60060f;
+}
+.edubost-profile .course-sidebar__title {
+  margin-bottom: 7px;
+  color: #170006;
+  font-family: Recoleta, serif;
+  font-size: 30px;
+  line-height: 1.15;
+}
+.edubost-profile h1,
+.edubost-profile h2,
+.edubost-profile h3,
+.edubost-profile h4 { font-family: Recoleta, serif; color: #170006; }
+.edubost-profile [class*="rounded-3xl"],
+.edubost-profile [class*="rounded-2xl"],
+.edubost-profile [class*="rounded-xl"] { border-radius: 6px; }
+.edubost-profile [class*="shadow-sm"],
+.edubost-profile [class*="shadow-lg"] { box-shadow: none; }
+.edubost-profile .course-sidebar button { min-height: 46px; text-align: left; }
+.edubost-profile .course-sidebar button[class*="bg-primary"] {
+  background: #60060f !important;
+  color: #fff !important;
+}
+.edubost-profile .course-sidebar button:not([class*="bg-primary"]):hover {
+  background: rgba(96,6,15,.07) !important;
+  color: #60060f !important;
+}
+.edubost-profile [class*="bg-card"][class*="border"] {
+  border-color: #dfd9d2;
+  border-radius: 0;
+  background: #fff;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.edubost-profile [class*="bg-card"][class*="border"]:hover {
+  border-color: #60060f;
+  box-shadow: 6px 6px 0 #fdb714;
+  transform: translate(-2px,-2px);
+}
+.edubost-profile input,
+.edubost-profile select,
+.edubost-profile textarea {
+  border-radius: 0 !important;
+  border-color: #d8d1cb !important;
+  background: #fff !important;
+}
+.edubost-profile input:focus,
+.edubost-profile select:focus,
+.edubost-profile textarea:focus {
+  border-color: #60060f !important;
+  box-shadow: 0 0 0 3px rgba(96,6,15,.12) !important;
+  outline: 0;
+}
+.edubost-profile button[class*="bg-primary"],
+.edubost-profile a[class*="bg-primary"] {
+  border-radius: 0 !important;
+  background: #60060f !important;
+  color: #fff !important;
+}
+.edubost-profile button[class*="bg-primary"]:hover,
+.edubost-profile a[class*="bg-primary"]:hover { background: #4b040c !important; }
+.edubost-profile .profile-course-cta {
+  min-height: 52px;
+  border-radius: 0 !important;
+  background: #60060f !important;
+  color: #fff !important;
+}
+.edubost-profile .profile-course-cta:hover,
+.edubost-profile .profile-course-cta:focus-visible {
+  background: #4b040c !important;
+  color: #fff !important;
+}
+
+@media (max-width: 991px) {
+  .edubost-profile { padding-top: 80px; padding-bottom: 80px; }
+  .edubost-profile .team-single__image { min-height: 230px; box-shadow: 7px 7px 0 #fdb714; }
+  .edubost-profile .course-sidebar { position: static; box-shadow: 6px 6px 0 #60060f; }
+  .edubost-profile .team-single__info { margin-top: 38px; }
+}
+@media (max-width: 575px) {
+  .edubost-profile { padding-top: 55px; padding-bottom: 60px; }
+  .edubost-profile .team-single__image { min-height: 170px; border-radius: 8px; }
+  .edubost-profile .team-single__image > img { border-radius: 7px !important; }
+  .edubost-profile .course-sidebar { padding: 24px 18px; }
+  .edubost-profile .course-sidebar__title { font-size: 25px; }
+}

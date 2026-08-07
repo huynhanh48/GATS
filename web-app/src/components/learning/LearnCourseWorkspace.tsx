@@ -586,7 +586,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                         navigateLesson(lesson.id);
                         setSidebarOpen(false);
                       }}
-                      className={`relative flex min-h-12 w-full cursor-pointer items-start gap-3 px-4 py-2.5 text-left text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${
+                      className={`relative flex min-h-12 w-full cursor-pointer items-start gap-3 px-4 py-2.5 text-left text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? "eb-lesson-active" : ""} ${done ? "eb-lesson-done" : ""} ${
                         active
                           ? mobile
                             ? "rounded-xl bg-primary/10 font-semibold text-primary"
@@ -826,7 +826,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                   type="button"
                   onClick={() => void markComplete()}
                   disabled={!activeLessonId}
-                  className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition duration-200 hover:bg-primary/90 disabled:opacity-40"
+                  className="eb-complete-button inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition duration-200 hover:bg-primary/90 disabled:opacity-40"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Hoàn thành

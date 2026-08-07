@@ -156,7 +156,7 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
               type="button"
               onClick={() => void handleAddNote()}
               disabled={noteSaving || !noteInput.trim()}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              className="eb-note-save rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
               {noteSaving ? "Đang lưu..." : "Lưu ghi chú"}
             </button>

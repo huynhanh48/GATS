@@ -33,6 +33,7 @@ import {
 import Link from "next/link";
 import { VideoPlayerModal } from "@/components/common/VideoPlayerModal";
 import { resolveMediaUrl } from "@/lib/media/url";
+import "./course-detail.css";
 
 type TabId = "overview" | "curriculum" | "instructor" | "faqs" | "reviews";
 
@@ -537,7 +538,7 @@ export default function CourseDetailPage({
         </div></div>
       </section>
 
-      <section className="course-single pt-120">
+      <section className="course-single edubost-course-detail pt-120">
         <div className="container">
           <div className="course-single-image">
             <img src={resolveMediaUrl(course.thumbnail, "") || "/edubost-reference/img/course/course_single.jpg"} alt={course.title} />
@@ -554,7 +555,7 @@ export default function CourseDetailPage({
       </section>
 
       {/* Main content + overlapping sidebar */}
-      <Container size="xl" className="relative flex-1 pb-24 -mt-[5.4rem]">
+      <Container size="xl" className="edubost-course-layout relative flex-1 pb-24 -mt-[5.4rem]">
         <div className="lg:flex lg:gap-10 lg:items-start">
           {/* Left column */}
           <div className="lg:w-[62%] min-w-0">
@@ -870,7 +871,7 @@ export default function CourseDetailPage({
 
               {activeTab === "reviews" ? (
                 <div className="grid grid-cols-1 gap-6">
-                  <div className="order-2 rounded-2xl border border-slate-200 bg-white p-5 text-center">
+                  <div className="course-review-summary order-2 rounded-2xl border border-slate-200 bg-white p-5 text-center">
                     {course.rating != null && course.ratingCount > 0 ? (
                       <>
                         <p className="text-[3.2rem] font-bold leading-none text-[#111827]">
@@ -904,7 +905,7 @@ export default function CourseDetailPage({
                     )}
                   </div>
 
-                  <div className="order-1 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+                  <div className="course-review-form order-1 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
                     <h3 className="text-[1.8rem] font-bold text-[#111827]">
                       {hasExistingReview
                         ? "Cập nhật đánh giá của bạn"
@@ -961,7 +962,7 @@ export default function CourseDetailPage({
                         }
                         rows={4}
                         placeholder="Chia sẻ điều bạn thích hoặc góp ý để khóa học tốt hơn…"
-                        className="w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-[1.4rem] leading-6 text-[#111827] outline-none transition placeholder:text-slate-400 focus:border-[#ff782d] focus:ring-4 focus:ring-orange-100"
+                        className="course-review-textarea w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-[1.4rem] leading-6 text-[#111827] outline-none transition placeholder:text-slate-400 focus:border-[#ff782d] focus:ring-4 focus:ring-orange-100"
                       />
                       <span className="mt-1 block text-right text-[1.2rem] text-slate-400">
                         {reviewContent.length}/2000
@@ -982,7 +983,7 @@ export default function CourseDetailPage({
                       type="button"
                       onClick={() => void handleReviewSubmit()}
                       disabled={reviewSaving || (isAuthenticated && (!isEnrolled || reviewRating < 1))}
-                      className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#ff782d] px-5 py-2.5 text-[1.4rem] font-bold text-white transition hover:bg-[#e9661f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="course-review-submit inline-flex min-h-11 items-center justify-center rounded-xl bg-[#ff782d] px-5 py-2.5 text-[1.4rem] font-bold text-white transition hover:bg-[#e9661f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-orange-200 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {reviewSaving
                         ? "Đang gửi…"
@@ -1104,7 +1105,7 @@ export default function CourseDetailPage({
                   type="button"
                   disabled={enrolling && isFreeCourse && !isEnrolled}
                   onClick={() => void handlePrimaryCta()}
-                  className="w-full h-[5.2rem] rounded-full bg-[#ff782d] hover:bg-[#e0661a] text-white text-[1.6rem] font-bold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="course-primary-cta w-full h-[5.2rem] rounded-full bg-[#ff782d] hover:bg-[#e0661a] text-white text-[1.6rem] font-bold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {primaryCtaLabel}
                 </button>
@@ -1119,7 +1120,7 @@ export default function CourseDetailPage({
                         // CartProvider already toasts
                       }
                     }}
-                    className="w-full h-[4.8rem] rounded-full border-2 border-[#ff782d] text-[#ff782d] text-[1.5rem] font-bold hover:bg-[#ff782d]/5 transition-colors"
+                    className="course-cart-cta w-full h-[4.8rem] rounded-full border-2 border-[#ff782d] text-[#ff782d] text-[1.5rem] font-bold hover:bg-[#ff782d]/5 transition-colors"
                   >
                     Thêm vào giỏ hàng
                   </button>

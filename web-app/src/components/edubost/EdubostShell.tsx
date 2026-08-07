@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ShoppingCart, User, X } from "lucide-react";
+import { User, X } from "lucide-react";
 import { EdubostOriginalStyles } from "./EdubostOriginalStyles";
 import { SearchModal } from "@/components/layout/SearchModal";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
@@ -47,6 +47,16 @@ export function EdubostHeader() {
   const { openAuthModal } = useAuthModal();
   const { items } = useCart();
 
+  useEffect(() => {
+    if (status !== "anonymous" || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("auth") !== "login") return;
+    params.delete("auth");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+    openAuthModal("login");
+  }, [status, openAuthModal]);
+
   const canTeach = Boolean(
     user?.roles?.includes("instructor") || user?.roles?.includes("admin"),
   );
@@ -72,8 +82,92 @@ export function EdubostHeader() {
         #xb-header-area .header-top_wrap { background-color: #60060f !important; }
         #xb-header-area .header-top { background-color: #60060f !important; }
         #xb-header-area .header-top, #xb-header-area .header-top a, #xb-header-area .header-top p { color: #fff !important; }
+        #xb-header-area .xb-help_desk { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; white-space: nowrap; }
+        #xb-header-area .xb-help_desk img { display: block; flex: 0 0 auto; }
+        #xb-header-area .xb-help_desk p { display: block; margin: 0; line-height: 30px; }
         #xb-header-area .xb-header { background: #fff !important; }
         #xb-header-area .language_dropdown { display: none !important; }
+        #xb-header-area .header-right { display: flex; align-items: center; flex-wrap: nowrap; gap: 0 !important; }
+        #xb-header-area .header-search-btn {
+          min-height: 42px;
+          margin-right: 16px;
+          padding: 0 18px 0 0 !important;
+          position: relative;
+          color: #170006 !important;
+          font-size: 16px;
+          white-space: nowrap;
+        }
+        #xb-header-area .header-search-btn::after {
+          content: "";
+          position: absolute;
+          top: 50%;
+          right: 0;
+          width: 1px;
+          height: 32px;
+          background: #d0c4c4;
+          transform: translateY(-50%);
+        }
+        #xb-header-area .header-search-btn span { font-size: 16px !important; font-weight: 400 !important; }
+        #xb-header-area .edubost-header-cart {
+          width: 42px;
+          height: 42px;
+          padding: 0 !important;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0 !important;
+          color: #170006 !important;
+        }
+        #xb-header-area .edubost-header-cart:hover { color: #60060f !important; }
+        #xb-header-area .edubost-header-cart > i { font-size: 22px; line-height: 1; }
+        #xb-header-area .edubost-cart-count {
+          display: flex !important;
+          min-width: 17px;
+          height: 17px;
+          padding: 0 4px;
+          background: #60060f !important;
+          font-size: 10px;
+          line-height: 17px;
+        }
+        #xb-header-area .edubost-header-profile { margin-left: 10px; }
+        #xb-header-area .edubost-header-profile > div {
+          width: 44px !important;
+          height: 44px !important;
+          border: 0 !important;
+        }
+        #xb-header-area .edubost-header-login {
+          min-width: 112px;
+          height: 44px;
+          margin-left: 10px;
+          padding: 0 20px;
+          border-radius: 4px !important;
+          background: #60060f !important;
+          color: #fff !important;
+          font-size: 15px;
+        }
+        #xb-header-area .edubost-header-login:hover { background: #4b040c !important; }
+        .edubost-profile-menu {
+          width: 246px !important;
+          padding: 8px !important;
+          border: 1px solid #eee !important;
+          border-radius: 8px !important;
+          background: #fff !important;
+          box-shadow: 0 12px 32px rgba(23,6,15,.14) !important;
+        }
+        .edubost-profile-menu [role="menuitem"] {
+          min-height: 46px;
+          display: flex;
+          align-items: center;
+          gap: 11px;
+          padding: 11px 12px !important;
+          border-radius: 6px !important;
+          color: #170006 !important;
+          font-size: 15px;
+          font-weight: 600;
+        }
+        .edubost-profile-menu [role="menuitem"]:hover,
+        .edubost-profile-menu [role="menuitem"]:focus { background: rgba(96,6,15,.07) !important; color: #60060f !important; }
+        .edubost-profile-menu [role="menuitem"] i { width: 18px; color: #60060f; text-align: center; font-size: 17px; }
         #xb-header-area .main-menu > ul > li > a { color: #170006 !important; }
         #xb-header-area .main-menu > ul > li.active > a,
         #xb-header-area .main-menu > ul > li > a:hover { color: #60060f !important; }
@@ -88,6 +182,15 @@ export function EdubostHeader() {
         @media (max-width: 991px) {
           #xb-header-area .header-right { display: flex !important; align-items: center; gap: 12px; }
           #xb-header-area .main-menu__wrap { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          #xb-header-area .header-top { display: flex; align-items: center; min-height: 62px; }
+          #xb-header-area .xb-info { display: none !important; }
+          #xb-header-area .header-search-btn { margin-right: 8px; padding-right: 10px !important; }
+          #xb-header-area .header-search-btn span { display: none !important; }
+          #xb-header-area .edubost-header-cart { width: 38px; height: 38px; }
+          #xb-header-area .edubost-header-profile { margin-left: 6px; }
+          #xb-header-area .edubost-header-profile > div { width: 40px !important; height: 40px !important; }
         }
       `}</style>
       <header
@@ -131,7 +234,7 @@ export function EdubostHeader() {
             <div className="header__wrap ul_li_between">
               <div className="header-logo">
                 <Link href="/">
-                  <img src={img("logo/logo.svg")} alt="GATS Academy" />
+                  <img src={img("logo/logo-gats.svg")} alt="EDUGATS" />
                 </Link>
               </div>
               <div className="main-menu__wrap ul_li navbar navbar-expand-lg">
@@ -161,18 +264,23 @@ export function EdubostHeader() {
                   className="header-search-btn cursor-pointer bg-transparent border-0 p-0 text-slate-700 hover:text-[#FF6B00] transition-colors flex items-center gap-1.5"
                   aria-label="Tìm kiếm khóa học"
                 >
-                  <i className="far fa-search text-base" />
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                    <path d="M10.5 3.75H15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M10.5 6H12.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M15.75 8.625C15.75 12.5625 12.5625 15.75 8.625 15.75C4.6875 15.75 1.5 12.5625 1.5 8.625C1.5 4.6875 4.6875 1.5 8.625 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16.5 16.5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                   <span className="hidden xl:inline text-sm font-medium">Tìm kiếm</span>
                 </button>
 
                 <Link
                   href="/cart"
-                  className="relative flex items-center justify-center p-2 rounded-lg text-slate-700 dark:text-slate-200 hover:text-[#FF6B00] transition-colors"
+                  className="edubost-header-cart relative flex items-center justify-center p-2 rounded-lg text-slate-700 dark:text-slate-200 hover:text-[#FF6B00] transition-colors"
                   aria-label="Giỏ hàng"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <i className="far fa-shopping-cart" aria-hidden="true" />
                   {items.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-[#FF6B00] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    <span className="edubost-cart-count absolute -top-1 -right-1 bg-[#FF6B00] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                       {items.length}
                     </span>
                   )}
@@ -218,9 +326,11 @@ export function EdubostHeader() {
                   )}
                 </div>
 
-                {status === "authenticated" && user ? (
+                {status === "loading" ? (
+                  <div className="w-11 h-11 ml-[10px] invisible" aria-hidden="true" />
+                ) : status === "authenticated" && user ? (
                   <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger className="flex items-center gap-2 cursor-pointer focus:outline-none">
+                    <DropdownMenuTrigger className="edubost-header-profile flex items-center gap-2 cursor-pointer focus:outline-none">
                       <div className="relative w-11 h-11 rounded-full bg-[#60060f] flex items-center justify-center text-white overflow-hidden">
                         {user.avatarUrl ? (
                           <img
@@ -235,13 +345,16 @@ export function EdubostHeader() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-48 bg-white dark:bg-slate-900 z-50"
+                      className="edubost-profile-menu z-50"
                     >
                       <DropdownMenuItem asChild>
-                        <Link href="/profile?tab=courses">Khóa học của tôi</Link>
+                        <Link href="/profile"><i className="far fa-user-circle" /><span>Hồ sơ cá nhân</span></Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/profile">Hồ sơ cá nhân</Link>
+                        <Link href="/profile?tab=courses"><i className="far fa-book-open" /><span>Khóa học của tôi</span></Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/cart"><i className="far fa-shopping-cart" /><span>Giỏ hàng</span></Link>
                       </DropdownMenuItem>
                       {canTeach && teachingHref && (
                         <DropdownMenuItem asChild>
@@ -250,7 +363,7 @@ export function EdubostHeader() {
                             target="_blank"
                             rel="noopener noreferrer"
                           >
-                            Trang quản trị / Giảng dạy
+                            <i className="far fa-shield-check" /><span>Trang quản trị / Giảng dạy</span>
                           </a>
                         </DropdownMenuItem>
                       )}
@@ -258,7 +371,7 @@ export function EdubostHeader() {
                         onClick={() => logout()}
                         className="text-red-600 cursor-pointer"
                       >
-                        Đăng xuất
+                        <i className="far fa-sign-out" /><span>Đăng xuất</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -266,7 +379,7 @@ export function EdubostHeader() {
                   <button
                     type="button"
                   onClick={() => openAuthModal("login")}
-                    className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white bg-[#FF6B00] hover:bg-[#e05e00] transition-colors cursor-pointer"
+                    className="edubost-header-login hidden sm:inline-flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer"
                   >
                     <User className="w-4 h-4" />
                     Đăng nhập
@@ -302,7 +415,7 @@ export function EdubostHeader() {
               <div className="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800">
                 <Link href="/" onClick={() => setMobileMenuOpen(false)}>
                   <img
-                    src={img("logo/logo.svg")}
+                    src={img("logo/logo-gats.svg")}
                     alt="GATS Academy"
                     className="h-8"
                   />
@@ -407,7 +520,7 @@ export function EdubostFooter() {
                   <div className="xb-item--logo mb-30">
                     <Link href="/">
                       <img
-                        src={img("logo/logo_white.svg")}
+                        src={img("logo/logo-gats-white.svg")}
                         alt="GATS Academy"
                       />
                     </Link>
