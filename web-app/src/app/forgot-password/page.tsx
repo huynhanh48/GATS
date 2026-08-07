@@ -3,8 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 import { forgotPasswordRequest } from "@/services/auth.service";
 
 export default function ForgotPasswordPage() {
@@ -31,44 +30,47 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background pt-28 pb-20">
+    <main className="body_wrap">
       <Header />
-      <div className="max-w-md mx-auto px-4">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Quên mật khẩu</h1>
-        <p className="text-muted-foreground mb-8">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Quên mật khẩu</h1><p className="breadcrumb__desc">Khôi phục quyền truy cập tài khoản GATS Academy</p></div></div></section>
+      <section className="contact_section section_space" style={{ backgroundColor: "#F1F1E9" }}><div className="container"><div className="row justify-content-center"><div className="col-lg-6"><div className="contact_form mb-0">
+        <h2 className="title">Khôi phục mật khẩu</h2>
+        <p className="content">
           Nhập email đã đăng ký để nhận link đặt lại mật khẩu.
         </p>
 
         {sent ? (
-          <div className="rounded-2xl border border-border bg-card p-6 space-y-4">
+          <div className="mission-vission-item">
             <p className="text-sm leading-relaxed">
               Nếu địa chỉ email hợp lệ, bạn sẽ nhận được hướng dẫn trong vài phút.
               Hãy kiểm tra cả hộp thư spam.
             </p>
-            <Link href="/" className="text-primary font-semibold hover:underline text-sm">
+            <Link href="/" className="thm-btn">
               Về trang chủ
             </Link>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit}><div className="form-group">
+            <label className="input_title" htmlFor="forgot-email">Email</label>
             <input
+              id="forgot-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email của bạn"
-              className="w-full h-12 px-4 rounded-xl bg-card border border-border text-foreground"
+              className="form-control"
               autoComplete="email"
             />
-            <button
+            </div><button
               type="submit"
               disabled={submitting}
-              className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 disabled:opacity-50"
+              className="thm-btn"
             >
               {submitting ? "Đang gửi..." : "Gửi link đặt lại"}
             </button>
           </form>
         )}
-      </div>
+      </div></div></div></div></section>
       <Footer />
     </main>
   );

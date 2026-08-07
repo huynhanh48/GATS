@@ -8,8 +8,7 @@ import { useAuth, useAuthModal } from "@/hooks/useAuth";
 import { useCart } from "@/components/providers/CartProvider";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 import { Container } from "@/components/layout/Container";
 import { theme as designTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -528,64 +527,30 @@ export default function CourseDetailPage({
   ];
 
   return (
-    <main className="relative flex min-h-screen flex-col justify-between bg-white overflow-hidden">
+    <main className="body_wrap">
       <Header />
 
-      {/* Breadcrumb — flush under fixed header */}
-      <div
-        className="w-full bg-[#f8f9fa] py-4 border-b border-border/10"
-        style={{
-          marginTop: `calc(${designTheme.layout.headerHeight} + 1px)`,
-        }}
-      >
-        <Container size="xl">
-          <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2 flex-wrap">
-            <Link href="/" className="hover:text-[#ff782d] transition-colors">
-              Trang chủ
-            </Link>
-            <span>›</span>
-            <Link
-              href="/courses"
-              className="hover:text-[#ff782d] transition-colors"
-            >
-              Khóa học
-            </Link>
-            <span>›</span>
-            <span className="text-slate-800 truncate max-w-[40rem]">
-              {course.title}
-            </span>
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}>
+        <div className="container"><div className="breadcrumb__content text-center">
+          <h1 className="breadcrumb__title">Chi tiết khóa học</h1>
+          <p className="breadcrumb__desc">Khám phá chương trình đào tạo toàn diện</p>
+        </div></div>
+      </section>
+
+      <section className="course-single pt-120">
+        <div className="container">
+          <div className="course-single-image">
+            <img src={resolveMediaUrl(course.thumbnail, "") || "/edubost-reference/img/course/course_single.jpg"} alt={course.title} />
           </div>
-        </Container>
-      </div>
-
-      {/* Dark hero */}
-      <section className="w-full bg-[#111827] text-white pt-12 pb-28 md:pb-32">
-        <Container size="xl">
-          <div className="lg:w-[62%] flex flex-col gap-6">
-            <div className="flex flex-wrap items-center gap-3 text-[1.3rem]">
-              <span className="inline-flex items-center rounded-full bg-white/10 px-4 py-1.5 text-slate-200 font-medium">
-                {course.categoryName}
-              </span>
-              <span className="text-slate-400">
-                bởi{" "}
-                <span className="text-white font-semibold">{course.author}</span>
-              </span>
+          <div className="course-single-content mt-60">
+            <div className="course-meta mt-none-30 ul_li mb-35">
+              <div className="course-meta-item mt-30"><div className="course-meta-author ul_li"><div className="xb-item--avatar"><img src="/edubost-reference/img/course/avatar.png" alt="" /></div><div className="xb-item--holder"><span className="xb-item--title">Giảng viên</span><h3 className="xb-item--desig">{course.author}</h3></div></div></div>
+              <div className="course-meta-item mt-30"><span className="xb-item--title">Danh mục</span><h3 className="xb-item--desig">{course.categoryName}</h3></div>
+              <div className="course-meta-item mt-30"><span className="xb-item--title">Thông tin</span><h3 className="xb-item--desig">{course.studentsLabel} · {course.lessonsLabel}</h3></div>
             </div>
-
-            <h1 className="text-[2.8rem] md:text-[3.6rem] lg:text-[4rem] font-bold leading-[1.35] font-heading tracking-tight">
-              {course.title}
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[1.35rem] text-slate-200">
-              {metaItems.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <Icon className="size-4 text-[#ff782d] shrink-0" />
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
+            <h2>{course.title}</h2>
           </div>
-        </Container>
+        </div>
       </section>
 
       {/* Main content + overlapping sidebar */}
@@ -1095,7 +1060,7 @@ export default function CourseDetailPage({
 
           {/* Right sidebar — overlaps dark hero */}
           <div className="lg:w-[38%] relative z-20 mt-8 lg:mt-0">
-            <div className="lg:absolute lg:top-[-14rem] lg:right-0 lg:w-full bg-white shadow-xl border border-slate-100 rounded-2xl overflow-hidden flex flex-col">
+            <div className="eb-enroll-card lg:absolute lg:top-[-14rem] lg:right-0 lg:w-full bg-white border border-slate-100 overflow-hidden flex flex-col">
               <button
                 type="button"
                 onClick={() => {

@@ -89,12 +89,16 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiRewriteOrigin}/api/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [
+        {
+          source: "/api/:path*",
+          destination: `${apiRewriteOrigin}/api/:path*`,
+        },
+      ],
+      fallback: [],
+    };
   },
 };
 

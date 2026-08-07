@@ -1,11 +1,9 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
+import { EdubostHeader as Header, EdubostFooter as Footer } from '@/components/edubost/EdubostShell';
 import { Container } from '@/components/layout/Container';
 import Link from 'next/link';
 import Image from 'next/image';
-import { theme as designTheme } from '@/lib/theme';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
@@ -15,27 +13,10 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen bg-background selection:bg-primary/30 relative flex flex-col">
+    <main className="body_wrap">
       <Header />
-
-      <div className="w-full flex flex-col flex-1 relative z-10 bg-white min-h-[calc(100vh)]">
-        {/* Breadcrumb Area */}
-        <div
-          className="w-full bg-[#f8f9fa] py-4 border-b border-border/10"
-          style={{
-            marginTop: `calc(${designTheme.layout.headerHeight} + 1px)`,
-          }}
-        >
-          <Container size="xl">
-            <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2">
-              <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
-              <span>›</span>
-              <span className="text-slate-800">Lỗi 404</span>
-            </div>
-          </Container>
-        </div>
-
-        <Container size="xl" className="py-12 md:py-20 flex flex-col items-center justify-center flex-1 min-h-[calc(100vh-160px)]">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Lỗi 404</h1><p className="breadcrumb__desc">Không tìm thấy trang bạn yêu cầu</p></div></div></section>
+      <section className="about pt-120 pb-120"><div className="container text-center">
 
           <div className="relative w-full max-w-4xl aspect-[16/9] md:aspect-[21/9] lg:aspect-[2.5/1] mb-12 mt-8">
             <Image
@@ -48,18 +29,13 @@ export default function NotFound() {
             />
           </div>
 
-          <div className="text-center">
+          <div className="about-content text-center">
             <p className="text-[1.6rem] text-slate-500 mb-8 max-w-2xl mx-auto">
               Trang bạn đang tìm kiếm có thể đã bị xóa, thay đổi tên, hoặc hiện tại không khả dụng.
             </p>
-            <Link href="/">
-              <Button size="lg" className="bg-[#FF7622] hover:bg-[#FF7622]/90 text-white rounded-full px-8 text-[1.4rem] font-semibold h-14">
-                Quay lại Trang chủ
-              </Button>
-            </Link>
+            <Link href="/" className="thm-btn">Quay lại Trang chủ <span><i className="far fa-arrow-right" /></span></Link>
           </div>
-        </Container>
-      </div>
+      </div></section>
 
       <Footer />
     </main>

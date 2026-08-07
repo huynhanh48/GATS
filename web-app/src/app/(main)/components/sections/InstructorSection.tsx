@@ -4,7 +4,12 @@ import { Container } from "@/components/layout/Container";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const brandBadges = ["VIỆN KINH TẾ SỐ", "HIỆP HỘI AI VN", "DX ALLIANCE", "NIC PARTNER", "GATS ENTERPRISE"];
+const partnerLogos = [
+  { name: "Viện Kinh Tế Số VCCI", src: "/images/partners/vcci.svg" },
+  { name: "Đối Tác AI FPT", src: "/images/partners/fpt.svg" },
+  { name: "Microsoft Enterprise AI", src: "/images/partners/microsoft.svg" },
+  { name: "Google Cloud AI Partner", src: "/images/partners/google.svg" },
+];
 
 const mentorsList = [
   {
@@ -181,18 +186,21 @@ export function InstructorSection() {
                 </AnimatePresence>
               </div>
 
-              {/* Tổ Chức & Thương Hiệu Đồng Hành */}
               <div className="w-full pt-6 border-t border-slate-200">
                 <h4 className="text-[1.4rem] font-bold text-slate-500 uppercase tracking-wider mb-4">
                   Đơn Vị &amp; Thương Hiệu Đồng Hành
                 </h4>
                 <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
-                  {brandBadges.map((badge, idx) => (
+                  {partnerLogos.map((logo, idx) => (
                     <div
                       key={idx}
-                      className="px-4 py-2 rounded-xl bg-white border border-amber-200/80 text-slate-700 font-mono text-[1.2rem] font-bold uppercase tracking-wider shadow-xs hover:border-[#FF6B00] hover:text-[#FF6B00] transition-colors"
+                      className="px-4 py-2 rounded-xl bg-white border border-amber-200/80 shadow-xs flex items-center justify-center"
                     >
-                      🏆 {badge}
+                      <img
+                        src={logo.src}
+                        alt={logo.name}
+                        className="h-7 w-auto object-contain"
+                      />
                     </div>
                   ))}
                 </div>

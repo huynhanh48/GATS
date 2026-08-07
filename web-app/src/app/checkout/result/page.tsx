@@ -9,8 +9,7 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 
 type ResultStatus = "paid" | "pending" | "expired" | "failed" | "cancelled";
 
@@ -72,14 +71,14 @@ function CheckoutResultContent() {
   const Icon = copy.icon;
 
   return (
-    <div className="max-w-lg mx-auto text-center space-y-6">
+    <div className="mission-vission-item text-center">
       <div
         className={`mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center ${copy.tone}`}
       >
         <Icon className="w-8 h-8" />
       </div>
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">{copy.title}</h1>
+        <h1 className="xb-item--title">{copy.title}</h1>
         <p className="text-muted-foreground leading-relaxed">{copy.description}</p>
         {orderId ? (
           <p className="text-xs text-muted-foreground font-mono pt-2">
@@ -93,13 +92,13 @@ function CheckoutResultContent() {
           <>
             <Link
               href="/profile?tab=courses"
-              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors"
+              className="thm-btn"
             >
               Vào học ngay
             </Link>
             <Link
               href="/profile?tab=orders"
-              className="px-6 py-3 rounded-xl border border-border font-semibold hover:bg-muted/50 transition-colors"
+              className="thm-btn"
             >
               Xem đơn hàng
             </Link>
@@ -108,13 +107,13 @@ function CheckoutResultContent() {
           <>
             <Link
               href="/cart"
-              className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors"
+              className="thm-btn"
             >
               Quay lại giỏ hàng
             </Link>
             <Link
               href="/contact"
-              className="px-6 py-3 rounded-xl border border-border font-semibold hover:bg-muted/50 transition-colors"
+              className="thm-btn"
             >
               Liên hệ hỗ trợ
             </Link>
@@ -127,9 +126,10 @@ function CheckoutResultContent() {
 
 export default function CheckoutResultPage() {
   return (
-    <main className="min-h-screen bg-background pt-28 pb-20">
+    <main className="body_wrap">
       <Header />
-      <div className="max-w-3xl mx-auto px-4">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Kết quả thanh toán</h1><p className="breadcrumb__desc">Trạng thái đăng ký chương trình của bạn</p></div></div></section>
+      <section className="mission-vission pt-120 pb-120"><div className="container"><div className="row justify-content-center"><div className="col-lg-7">
         <Suspense
           fallback={
             <p className="text-center text-muted-foreground">Đang tải...</p>
@@ -137,7 +137,7 @@ export default function CheckoutResultPage() {
         >
           <CheckoutResultContent />
         </Suspense>
-      </div>
+      </div></div></div></section>
       <Footer />
     </main>
   );

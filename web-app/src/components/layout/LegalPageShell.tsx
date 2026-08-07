@@ -1,124 +1,39 @@
 import Link from "next/link";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostFooter as Footer, EdubostHeader as Header } from "@/components/edubost/EdubostShell";
 
-export type LegalSection = {
-  id: string;
-  title: string;
-};
+export type LegalSection = { id: string; title: string };
 
 const legalNavigation = [
-  { href: "/terms", label: "Điều khoản" },
-  { href: "/privacy", label: "Quyền riêng tư" },
-  { href: "/refund", label: "Hoàn tiền" },
-  { href: "/payment-policy", label: "Thanh toán" },
-  { href: "/cookies", label: "Cookie" },
-  { href: "/community-guidelines", label: "Cộng đồng" },
-  { href: "/acceptable-use", label: "Sử dụng chấp nhận được" },
-  { href: "/data-request", label: "Yêu cầu dữ liệu" },
+  ["/terms", "Điều khoản"], ["/privacy", "Quyền riêng tư"],
+  ["/refund", "Hoàn tiền"], ["/payment-policy", "Thanh toán"],
+  ["/cookies", "Cookie"], ["/community-guidelines", "Cộng đồng"],
+  ["/acceptable-use", "Sử dụng chấp nhận được"], ["/data-request", "Yêu cầu dữ liệu"],
 ] as const;
 
-export function LegalPageShell({
-  title,
-  summary,
-  effectiveDate = "23/07/2026",
-  version = "1.0",
-  sections = [],
-  children,
-}: {
-  title: string;
-  summary?: string;
-  effectiveDate?: string;
-  version?: string;
-  sections?: readonly LegalSection[];
-  children: React.ReactNode;
+export function LegalPageShell({ title, summary, effectiveDate = "23/07/2026", version = "1.0", sections = [], children }: {
+  title: string; summary?: string; effectiveDate?: string; version?: string;
+  sections?: readonly LegalSection[]; children: React.ReactNode;
 }) {
   return (
-    <main className="relative min-h-screen bg-background">
+    <main className="body_wrap">
       <Header />
-      <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6">
-        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-(--shadow-card) md:p-8">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-brand-primary">
-            GATS Academy · Tài liệu pháp lý
-          </p>
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-            {title}
-          </h1>
-          {summary ? (
-            <p className="mt-4 max-w-3xl leading-relaxed text-muted-foreground">
-              {summary}
-            </p>
-          ) : null}
-          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-            <span>Hiệu lực: {effectiveDate}</span>
-            <span>Phiên bản: {version}</span>
-          </div>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="space-y-5 lg:sticky lg:top-24 lg:self-start">
-            {sections.length > 0 ? (
-              <nav
-                aria-label="Mục lục"
-                className="rounded-2xl border border-border bg-card p-4"
-              >
-                <p className="mb-3 text-sm font-bold text-foreground">Mục lục</p>
-                <ol className="space-y-2 text-sm">
-                  {sections.map((section, index) => (
-                    <li key={section.id}>
-                      <a
-                        href={`#${section.id}`}
-                        className="block rounded-lg px-2 py-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {index + 1}. {section.title}
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-              </nav>
-            ) : null}
-            <nav
-              aria-label="Các chính sách khác"
-              className="rounded-2xl border border-border bg-card p-4"
-            >
-              <p className="mb-3 text-sm font-bold text-foreground">
-                Chính sách liên quan
-              </p>
-              <div className="flex flex-wrap gap-2 lg:flex-col">
-                {legalNavigation.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="text-sm text-muted-foreground hover:text-brand-primary"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-          </aside>
-
-          <article className="min-w-0 rounded-2xl border border-border bg-card p-6 shadow-(--shadow-card) md:p-8">
-            <div className="mb-8 rounded-xl border border-secondary/30 bg-secondary/10 p-4 text-sm leading-relaxed text-foreground">
-              Tài liệu này là bản dự thảo vận hành, cần được rà soát pháp lý và
-              xác nhận thông tin pháp nhân trước khi công bố chính thức.
-            </div>
-            <div className="prose prose-neutral max-w-none space-y-4 leading-relaxed text-muted-foreground dark:prose-invert">
-              {children}
-            </div>
-            <div className="mt-12 border-t border-border pt-6 text-sm text-muted-foreground">
-              Cần hỗ trợ hoặc muốn gửi khiếu nại?{" "}
-              <Link
-                href="/contact"
-                className="font-semibold text-brand-primary hover:underline"
-              >
-                Liên hệ GATS Academy
-              </Link>
-              .
-            </div>
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}>
+        <div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">{title}</h1><p className="breadcrumb__desc">{summary || "Tài liệu và chính sách của GATS Academy"}</p></div></div>
+      </section>
+      <section className="blog_details_section section_space" style={{ backgroundColor: "#F1F1E9" }}>
+        <div className="container"><div className="row mt-none-30">
+          <article className="col-lg-8 mt-30">
+            <div className="post_meta_wrap mb-4"><ul className="post_meta unordered_list"><li><i className="far fa-calendar" /> Hiệu lực: {effectiveDate}</li><li><i className="far fa-file-alt" /> Phiên bản: {version}</li></ul></div>
+            <h2 className="details_item_title">{title}</h2>
+            <div className="details_item_content prose prose-neutral max-w-none">{children}</div>
+            <div className="post_meta_wrap mt-60"><p>Cần hỗ trợ hoặc muốn gửi khiếu nại? <Link href="/contact">Liên hệ GATS Academy</Link>.</p></div>
           </article>
-        </div>
-      </div>
+          <div className="col-lg-4 mt-30"><aside className="blog_sidebar">
+            {sections.length ? <div className="sidebar_widget"><h3 className="sidebar_widget_title">Mục lục</h3><ul className="category_list_block unordered_list_block">{sections.map((section, index) => <li key={section.id}><a href={`#${section.id}`} className="ul_li_between"><span>{index + 1}. {section.title}</span><i className="far fa-arrow-right" /></a></li>)}</ul></div> : null}
+            <div className="sidebar_widget"><h3 className="sidebar_widget_title">Chính sách liên quan</h3><ul className="category_list_block unordered_list_block">{legalNavigation.map(([href, label]) => <li key={href}><Link href={href} className="ul_li_between"><span>{label}</span><i className="far fa-arrow-right" /></Link></li>)}</ul></div>
+          </aside></div>
+        </div></div>
+      </section>
       <Footer />
     </main>
   );

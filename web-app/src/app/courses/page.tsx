@@ -19,13 +19,10 @@ import {
   Layers3,
   Star,
   Search,
-  LayoutGrid,
-  List,
   X,
 } from "lucide-react";
 
-import { Footer } from "@/components/layout/Footer";
-import { Header } from "@/components/layout/Header";
+import { EdubostFooter as Footer, EdubostHeader as Header } from "@/components/edubost/EdubostShell";
 import { Container } from "@/components/layout/Container";
 import {
   DropdownMenu,
@@ -36,8 +33,8 @@ import {
 import { PathApi } from "@/constants/PathApi";
 import apiClient from "@/lib/apiClient";
 import { resolveMediaUrl } from "@/lib/media/url";
-import { theme as designTheme } from "@/lib/theme";
 import type { Course, CourseCategory, PaginationData } from "@/types/course";
+import "./courses-catalog.css";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Mới nhất", api: "newest" },
@@ -105,7 +102,7 @@ export default function CoursesPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#f8f9fa] pt-28">
+        <main className="eb-page min-h-screen bg-[#f8f9fa]">
           <Header />
           <Container size="xl">
             <p className="py-20 text-center text-[1.6rem] text-slate-500">
@@ -142,7 +139,6 @@ function CoursesPageContent() {
   const itemsPerPage = 6;
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [searchInput, setSearchInput] = useState(keywordFromUrl);
   const [searchQuery, setSearchQuery] = useState(keywordFromUrl);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -316,7 +312,7 @@ function CoursesPageContent() {
   }, [levelFilter, productTypeFilter, instructorFilter, priceFilter, sortBy, currentPage, searchQuery]);
 
   const filterContent = (
-    <div className="space-y-8">
+    <div className="course-filter">
       {/* Category Filter */}
       <div>
         <h3 className="text-[2rem] font-bold text-[#111827] font-heading mb-6">
@@ -514,31 +510,20 @@ function CoursesPageContent() {
   );
 
   return (
-    <main className="relative flex min-h-screen flex-col justify-between bg-white overflow-hidden">
+    <main className="body_wrap">
       <Header />
 
-      {/* Breadcrumb Area */}
-      <div
-        className="w-full bg-[#f8f9fa] py-4 border-b border-border/10"
-        style={{
-          marginTop: `calc(${designTheme.layout.headerHeight} + 1px)`,
-        }}
-      >
-        <Container size="xl">
-          <div className="text-[1.3rem] font-medium text-slate-500 flex items-center gap-2">
-            <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
-            <span>›</span>
-            <span className="text-slate-800">Tất cả khóa học</span>
-          </div>
-        </Container>
-      </div>
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}>
+        <div className="container"><div className="breadcrumb__content text-center">
+          <h1 className="breadcrumb__title">Tất cả khóa học</h1>
+          <p className="breadcrumb__desc">Khám phá lộ trình AI và Enterprise Workflow thực chiến</p>
+        </div></div>
+      </section>
 
-      <Container size="xl" className="flex-1 pb-24 pt-10">
+      <section className="courses pt-120 pb-120"><div className="container">
         {/* Header row: Title + Search & View Toggle */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
-          <h1 className="text-[2.8rem] md:text-[3.2rem] font-bold text-[#111827] font-heading">
-            Tất cả khóa học
-          </h1>
+          <div className="section-title"><span className="sub-title">Chương trình đào tạo</span><h2 className="title">Khóa học dành cho bạn</h2></div>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1">
               <input
@@ -566,18 +551,6 @@ function CoursesPageContent() {
             </div>
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setViewMode("grid")}
-                className={`hidden md:flex w-[4rem] h-[4rem] rounded-full items-center justify-center transition-colors ${viewMode === 'grid' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
-              >
-                <LayoutGrid className="w-[1.8rem] h-[1.8rem]" />
-              </button>
-              <button 
-                onClick={() => setViewMode("list")}
-                className={`hidden md:flex w-[4rem] h-[4rem] rounded-full items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
-              >
-                <List className="w-[1.8rem] h-[1.8rem]" />
-              </button>
-              <button 
                 onClick={() => setIsMobileFilterOpen(true)}
                 className={`md:hidden w-[4rem] h-[4rem] rounded-full flex items-center justify-center transition-colors ${isMobileFilterOpen ? 'bg-primary text-white shadow-md' : 'bg-white border border-slate-200 text-slate-400 hover:text-primary'}`}
               >
@@ -587,9 +560,9 @@ function CoursesPageContent() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+        <div className="course-catalog-layout">
           {/* Main Course List (Left) */}
-          <div className="flex-1 space-y-8 min-w-0">
+          <div className="course-catalog-main space-y-8">
             <div className="flex flex-col justify-between gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center">
               <div className="text-[1.5rem] font-medium text-slate-500">
                 Tìm thấy{" "}
@@ -640,7 +613,7 @@ function CoursesPageContent() {
               </div>
             </div>
 
-            <div className={viewMode === "list" ? "flex flex-col gap-8" : "grid grid-cols-1 md:grid-cols-2 gap-8"}>
+            <div className="row mt-none-30">
               {errorMsg && (
                 <div
                   role="alert"
@@ -658,50 +631,32 @@ function CoursesPageContent() {
                 courses.map((course, idx) => {
                   const ui = getUIProps(course);
                   return (
-                    <Link
-                      href={`/courses/${course.slug}`}
-                      key={course.id}
-                      className="group block h-full"
-                    >
+                    <div className="col-lg-6 col-md-6 mt-30" key={course.id}>
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: idx * 0.05 }}
-                        className={
-                          viewMode === "list"
-                            ? "flex flex-col md:flex-row items-stretch bg-white border border-slate-200 rounded-[2rem] overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] group-hover:border-transparent h-full"
-                            : "flex flex-col bg-white border border-slate-200 rounded-[2rem] overflow-hidden transition-all duration-300 group-hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] group-hover:border-transparent h-full"
-                        }
+                        className="program-item"
                       >
                         {/* Thumbnail */}
-                        <div className={
-                          viewMode === "list"
-                            ? "relative w-full md:w-[260px] lg:w-[280px] shrink-0 aspect-[4/3] md:aspect-auto bg-slate-100 overflow-hidden"
-                            : "relative w-full aspect-[4/3] shrink-0 bg-slate-100 overflow-hidden"
-                        }>
-                          <div className="absolute top-4 left-4 z-10 bg-[#111827] text-white text-[1.2rem] font-bold px-3 py-1 rounded">
-                            {course.category?.name || "Khóa học"}
-                          </div>
+                        <div className="xb-item--img">
+                          <Link href={`/courses/${course.slug}`} aria-label={`Xem khóa học ${course.title}`}>
                           {course.thumbnail ? (
                             <img
                               src={resolveMediaUrl(course.thumbnail)}
                               alt={course.title}
-                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
                           ) : null}
+                          </Link>
                         </div>
 
                         {/* Content */}
-                        <div className="p-6 md:p-8 flex flex-col flex-1">
-                          <p className="text-[1.3rem] text-slate-500 mb-2">
-                            bởi <span className="font-bold text-[#111827]">GATS Academy</span>
-                          </p>
-                          <h3 className="text-[2rem] md:text-[2.2rem] font-bold text-[#111827] font-heading leading-snug group-hover:text-[#ff782d] transition-colors mb-3 line-clamp-2">
-                            {course.title}
-                          </h3>
+                        <div className="xb-item--holder">
+                          <div className="xb-item--degre">{course.category?.name || "Khóa học"}</div>
+                          <h3 className="xb-item--title border-effect-2"><Link href={`/courses/${course.slug}`}>{course.title}</Link></h3>
 
                           {/* Course statistics from the API */}
-                          <div className="flex flex-wrap items-center gap-4 text-[1.3rem] text-slate-500 mb-4">
+                          <div className="xb-item--meta ul_li">
                             <div className="flex items-center gap-1.5">
                               <Layers3 className="w-4 h-4 text-[#ff782d]" />
                               <span className="font-medium">
@@ -734,7 +689,7 @@ function CoursesPageContent() {
                             </div>
                           </div>
 
-                          <div className="mt-auto">
+                          <div className="xb-item--bottom ul_li_between">
                             <hr className="border-slate-100 mb-4" />
                             <div className="flex items-center justify-between">
                               <div className="flex items-baseline gap-2">
@@ -753,14 +708,12 @@ function CoursesPageContent() {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[1.4rem] font-bold text-[#111827] group-hover:text-[#ff782d] transition-colors">
-                                Xem chi tiết
-                              </span>
+                              <span className="xb-item--link"><Link href={`/courses/${course.slug}`}>đăng ký ngay <i className="far fa-arrow-right" /></Link></span>
                             </div>
                           </div>
                         </div>
                       </motion.div>
-                    </Link>
+                    </div>
                   );
                 })
               )}
@@ -819,11 +772,11 @@ function CoursesPageContent() {
           </div>
 
           {/* Sidebar Filters (Right) - Desktop Only */}
-          <div className="hidden md:block w-full md:w-[240px] lg:w-[280px] shrink-0">
+          <aside className="course-catalog-sidebar">
             {filterContent}
-          </div>
+          </aside>
         </div>
-      </Container>
+      </div></section>
 
       {/* Mobile Filters Drawer */}
       <AnimatePresence>

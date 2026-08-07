@@ -1,8 +1,7 @@
 "use client";
 
 import { Container } from "@/components/layout/Container";
-import { Check, X, Layers, Cpu, ShieldCheck, Zap } from "lucide-react";
-import { SpotlightCard } from "@/components/react-bits";
+import { Check, X } from "lucide-react";
 
 export function WorkflowDifferentiator() {
   return (
@@ -60,12 +59,12 @@ export function WorkflowDifferentiator() {
           </div>
 
           {/* Card 2: GATS Enterprise Workflow (Our Superior Model) */}
-          <SpotlightCard className="p-8 rounded-2xl bg-linear-to-b from-white to-[#EFF6FF] dark:from-slate-900 dark:to-slate-900/90 border-2 border-[#0265FF] flex flex-col justify-between shadow-xl shadow-[#0265FF]/10">
+          <div className="p-8 rounded-2xl bg-linear-to-b from-white to-[#EFF6FF] dark:from-slate-900 dark:to-slate-900/90 border-2 border-[#0265FF] flex flex-col justify-between shadow-xl shadow-[#0265FF]/10">
             <div>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="size-10 rounded-xl bg-[#0265FF] text-white flex items-center justify-center font-bold shadow-md shadow-[#0265FF]/20">
-                    <Zap className="size-5" />
+                    <Check className="size-5" />
                   </div>
                   <div>
                     <h3 className="text-[1.8rem] font-heading font-extrabold text-[#0B0F17] dark:text-white">
@@ -98,7 +97,7 @@ export function WorkflowDifferentiator() {
                 </li>
               </ul>
             </div>
-          </SpotlightCard>
+          </div>
         </div>
       </Container>
     </section>

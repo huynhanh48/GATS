@@ -13,8 +13,7 @@ import {
   Play,
   RotateCcw,
 } from "lucide-react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveMediaUrl } from "@/lib/media/url";
 import {
@@ -189,12 +188,12 @@ export default function LearningHubPage() {
   if (status === "loading" || loading) return <LearningSkeleton />;
 
   return (
-    <main className="min-h-screen bg-background pt-24 text-foreground">
+    <main className="body_wrap">
       <Header />
-
-      <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10 lg:px-8">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Học tập của tôi</h1><p className="breadcrumb__desc">Tiếp tục hành trình học tập cùng GATS Academy</p></div></div></section>
+      <section className="courses pt-120 pb-120"><div className="container">
         <header className="mb-8 sm:mb-10">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          <h1 className="title">
             Học tập của tôi
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:text-base">
@@ -231,7 +230,7 @@ export default function LearningHubPage() {
               Tiếp tục học
             </h2>
 
-            <article className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition duration-200 hover:border-primary/30 hover:shadow-md motion-reduce:transition-none">
+            <article className="program-item">
               <div className="grid lg:grid-cols-[1.25fr_1fr]">
                 <div className="relative aspect-video overflow-hidden bg-muted lg:aspect-auto lg:min-h-72">
                   <img
@@ -346,7 +345,7 @@ export default function LearningHubPage() {
             </div>
 
             {filteredItems.length > 0 ? (
-              <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="row mt-none-30">
                 {filteredItems.map((item) => {
                   const percent = clampProgress(item.progress.percent);
                   const courseStatus = getCourseStatus(percent);
@@ -358,9 +357,9 @@ export default function LearningHubPage() {
                         item.course.slug,
                         item.progress.nextLessonId,
                       )}
-                      className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition duration-200 hover:border-primary/35 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+                      className="col-lg-4 col-md-6 mt-30"
                     >
-                      <div className="relative aspect-video overflow-hidden bg-muted">
+                      <div className="program-item"><div className="xb-item--img">
                         <img
                           src={resolveMediaUrl(item.course.thumbnail)}
                           alt=""
@@ -385,8 +384,8 @@ export default function LearningHubPage() {
                           Vào học
                         </span>
                       </div>
-                      <div className="p-4">
-                        <h3 className="line-clamp-2 text-base font-semibold leading-snug transition-colors group-hover:text-primary">
+                      <div className="xb-item--holder">
+                        <h3 className="xb-item--title border-effect-2">
                           {item.course.title}
                         </h3>
                         <div className="mt-4">
@@ -413,7 +412,7 @@ export default function LearningHubPage() {
                             />
                           </div>
                         </div>
-                      </div>
+                      </div></div>
                     </Link>
                   );
                 })}
@@ -434,7 +433,7 @@ export default function LearningHubPage() {
             )}
           </section>
         ) : null}
-      </div>
+      </div></section>
 
       <Footer />
     </main>

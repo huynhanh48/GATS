@@ -1,8 +1,7 @@
 "use client";
 
 import { useCart } from "@/components/providers/CartProvider";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
@@ -793,18 +792,18 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background relative pt-24 pb-16">
+    <main className="body_wrap">
       <Header />
-      <div className="mx-auto w-full max-w-6xl px-4 mt-8">
-        <h1 className="text-3xl font-bold text-foreground mb-8">Thanh toán</h1>
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Thanh toán</h1><p className="breadcrumb__desc">Hoàn tất đăng ký chương trình của bạn</p></div></div></section>
+      <section className="contact_section section_space" style={{ backgroundColor: "#F1F1E9" }}><div className="container">
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-7 space-y-8">
-            <section className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-6">Thông tin liên hệ</h2>
+        <div className="row mt-none-30">
+          <div className="col-lg-7 mt-30">
+            <section className="contact_form mb-30">
+              <h2 className="title">Thông tin liên hệ</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5 text-foreground">
+                <div className="form-group">
+                  <label className="input_title">
                     Họ và tên
                   </label>
                   <input
@@ -814,7 +813,7 @@ export default function CheckoutPage() {
                       setName(e.target.value);
                       if (nameError) setNameError("");
                     }}
-                    className={`w-full rounded-xl border bg-background px-4 py-2.5 outline-none focus:ring-1 transition-colors ${
+                    className={`form-control ${
                       nameError
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : "border-border focus:border-primary focus:ring-primary"
@@ -825,8 +824,8 @@ export default function CheckoutPage() {
                     <p className="text-red-500 text-sm mt-1.5">{nameError}</p>
                   ) : null}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5 text-foreground">
+                <div className="form-group">
+                  <label className="input_title">
                     Số điện thoại
                   </label>
                   <input
@@ -836,7 +835,7 @@ export default function CheckoutPage() {
                       setPhone(e.target.value);
                       if (phoneError) setPhoneError("");
                     }}
-                    className={`w-full rounded-xl border bg-background px-4 py-2.5 outline-none focus:ring-1 transition-colors ${
+                    className={`form-control ${
                       phoneError
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : "border-border focus:border-primary focus:ring-primary"
@@ -850,10 +849,10 @@ export default function CheckoutPage() {
               </div>
             </section>
 
-            <section className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-bold mb-6">Phương thức thanh toán</h2>
+            <section className="contact_form mb-0">
+              <h2 className="title">Phương thức thanh toán</h2>
               <div className="space-y-3">
-                <label className="flex items-center p-4 border rounded-xl border-primary bg-primary/5 ring-1 ring-primary">
+                <label className="mission-vission-item ul_li">
                   <QrCode className="w-6 h-6 mr-4 text-primary" />
                   <div className="flex-1">
                     <h3 className="font-bold">Quét mã QR Ngân hàng</h3>
@@ -871,9 +870,9 @@ export default function CheckoutPage() {
             </section>
           </div>
 
-          <div className="lg:col-span-5">
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm sticky top-24">
-              <h2 className="text-xl font-bold mb-6">Chi tiết đơn hàng</h2>
+          <div className="col-lg-5 mt-30">
+            <div className="course-sidebar">
+              <h2 className="course-sidebar__title">Chi tiết đơn hàng</h2>
 
               <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2">
                 {items.map((item) => (
@@ -987,7 +986,7 @@ export default function CheckoutPage() {
               <button
                 onClick={handleCheckout}
                 disabled={isSubmitting}
-                className="w-full bg-primary text-primary-foreground py-3.5 rounded-xl font-bold text-lg flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="thm-btn"
               >
                 {isSubmitting
                   ? "Đang xử lý..."
@@ -1013,7 +1012,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div></section>
       <Footer />
     </main>
   );

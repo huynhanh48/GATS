@@ -32,7 +32,7 @@ export function AIScienceBanner() {
       <Container size="xl" className="relative z-10 w-full">
         <div className="max-w-3xl flex flex-col items-start space-y-6">
           {/* Top Sub-tag Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#FF6B00]/20 text-[#FF6B00] text-[1.2rem] font-bold font-mono uppercase tracking-wider backdrop-blur-md border border-[#FF6B00]/30 shadow-lg">
+          <div className="inline-flex items-center gap-2 text-[#FF6B00] text-[1.2rem] font-bold font-mono uppercase tracking-wider">
             <Sparkles className="size-4 text-[#FF6B00]" />
             <span>Khai Phá Sức Mạnh Trí Tuệ Nhân Tạo</span>
           </div>
@@ -40,7 +40,7 @@ export function AIScienceBanner() {
           {/* Main Title */}
           <h2 className="text-[3.8rem] sm:text-[5rem] md:text-[5.6rem] font-heading font-extrabold text-white leading-[1.1] tracking-tight drop-shadow-lg">
             AI Is No Longer <br />
-            <span className="text-[#FF6B00] underline decoration-[#FF6B00]/40 underline-offset-8">
+            <span className="text-[#FF6B00]">
               Science Fiction.
             </span>
           </h2>

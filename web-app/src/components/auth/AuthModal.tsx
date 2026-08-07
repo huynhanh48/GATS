@@ -1,4 +1,5 @@
 "use client";
+import "@/components/edubost/edubost-auth-modal.css";
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -139,7 +140,7 @@ export function AuthModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-              className="w-full max-w-lg max-h-[calc(100vh-120px)] overflow-y-auto overflow-x-hidden bg-white rounded-2xl shadow-2xl pointer-events-auto relative border border-slate-200"
+              className="eb-auth-modal w-full max-w-lg max-h-[calc(100vh-120px)] overflow-y-auto overflow-x-hidden bg-white pointer-events-auto relative border border-slate-200"
             >
               <button
                 onClick={onClose}

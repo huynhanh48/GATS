@@ -64,7 +64,7 @@ export function MemberPerksSection() {
 
             <h2 className="text-[3.6rem] sm:text-[4.6rem] lg:text-[5.2rem] font-heading font-extrabold text-white leading-[1.1] tracking-tight drop-shadow-lg">
               Gói Hội Viên: Học Nâng Cao <br />
-              <span className="text-[#FF6B00] underline decoration-[#FF6B00]/40 underline-offset-8">
+              <span className="text-[#FF6B00]">
                 + Tặng Bộ Công Cụ AI
               </span>
             </h2>

@@ -4,8 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 import { 
   User, Camera, BookOpen, Award, 
   Settings, Clock, PlayCircle, 
@@ -276,12 +275,14 @@ export default function ProfilePage() {
   };
 
   return (
-    <main className="min-h-screen bg-background relative pt-24 pb-16">
+    <main className="body_wrap">
       <Header />
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Tài khoản của tôi</h1><p className="breadcrumb__desc">Quản lý hồ sơ, khóa học và lịch sử giao dịch</p></div></div></section>
+      <section className="team-single pt-120 pb-110" style={{ backgroundColor: "#F1F1E9" }}><div className="container"><div className="team-single__inner">
       
       {/* Cover Photo — aspect must match CoverCropDialog (3:1) */}
       <div
-        className={`relative mx-auto mt-4 w-full max-w-7xl overflow-hidden rounded-3xl bg-muted shadow-sm ${COVER_ASPECT_CLASS}`}
+        className={`team-single__image pos-rel overflow-hidden ${COVER_ASPECT_CLASS}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -338,11 +339,11 @@ export default function ProfilePage() {
         />
       ) : null}
 
-      <div className="mx-auto w-full max-w-7xl px-4 md:px-8 -mt-16 md:-mt-20 relative z-20 flex flex-col lg:flex-row gap-8 pointer-events-none">
+      <div className="team-single__info mt-60 flex flex-col lg:flex-row gap-8 pointer-events-none">
         
         {/* Left Sidebar */}
         <div className="w-full lg:w-1/3 xl:w-1/4 pointer-events-auto">
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm sticky top-24">
+          <div className="course-sidebar sticky top-24">
             <div className="relative mx-auto h-32 w-32 rounded-full bg-card p-1 shadow-md border border-border mb-4">
               <div className="relative flex items-center justify-center h-full w-full bg-muted rounded-full overflow-hidden">
                 {profilePhoto ? (
@@ -379,7 +380,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-foreground mb-1">{user.userName}</h1>
+              <h1 className="course-sidebar__title">{user.userName}</h1>
               <p className="text-muted-foreground text-sm flex items-center justify-center gap-1">
                 <Mail className="w-3.5 h-3.5" />
                 {user.email}
@@ -918,6 +919,7 @@ export default function ProfilePage() {
         </div>
       </div>
       
+      </div></div></section>
       <Footer />
     </main>
   );

@@ -187,45 +187,23 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
     : '';
 
   return (
-    <div className="w-full flex flex-col relative z-10 bg-white">
-      {/* Breadcrumb Area */}
-      <div
-        className="w-full bg-[#f8f9fa] py-4 border-b border-border/10"
-        style={{
-          marginTop: `calc(${designTheme.layout.headerHeight} + 1px)`,
-        }}
-      >
-        <Container size="xl">
-          <div className="text-[1.3rem] font-medium text-slate-500 flex items-center flex-wrap gap-2">
-            <Link href="/" className="hover:text-primary transition-colors">Trang chủ</Link>
-            <span>›</span>
-            <Link href="/posts" className="hover:text-primary transition-colors">Bài viết</Link>
-            {post.category?.name && (
-              <>
-                <span>›</span>
-                <Link
-                  href={`/posts?category=${post.category.slug || post.category.id}`}
-                  className="hover:text-primary transition-colors"
-                >
-                  {post.category.name}
-                </Link>
-              </>
-            )}
-            <span>›</span>
-            <span className="text-slate-800 max-w-[180px] truncate sm:max-w-[280px] block" title={post.title}>{post.title}</span>
-          </div>
-        </Container>
-      </div>
+    <div className="body_wrap">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}>
+        <div className="container"><div className="breadcrumb__content text-center">
+          <h1 className="breadcrumb__title">Chi tiết bài viết</h1>
+          <p className="breadcrumb__desc">Phân tích chuyên sâu và kiến thức ứng dụng từ GATS Academy</p>
+        </div></div>
+      </section>
 
-      <Container size="xl" className="py-12 md:py-16">
+      <section className="blog_details_section section_space" style={{ backgroundColor: "#F1F1E9" }}><div className="container">
         
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
+        <div className="row mt-none-30">
           
           {/* Main Content Column */}
-          <div className="flex-1 flex flex-col min-w-0">
+          <article className="col-lg-8 mt-30">
             
             {/* Title & Meta */}
-            <h1 className="text-[3rem] md:text-[4rem] font-bold text-[#111827] leading-tight font-heading mb-6">
+            <h1 className="details_item_title">
               {post.title}
             </h1>
             
@@ -245,7 +223,7 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
             </div>
 
             {/* Thumbnail */}
-            <div className="w-full relative aspect-video md:aspect-[21/9] rounded-[2rem] overflow-hidden mb-12 bg-slate-100">
+            <div className="details_item_image">
               {post.thumbnail ? (
                 <Image
                   src={post.thumbnail}
@@ -355,10 +333,10 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
 
             {/* Comments Section */}
             <PostComments postId={post.id} />
-          </div>
+          </article>
 
           {/* Sidebar */}
-          <BlogSidebar tocContent={
+          <div className="col-lg-4 mt-30"><BlogSidebar tocContent={
             hasHeadings ? (
               <div className="hidden lg:block mb-10">
                 <button 
@@ -400,10 +378,10 @@ export const PostDetailClient = ({ slug }: PostDetailClientProps) => {
                 </AnimatePresence>
               </div>
             ) : undefined
-          } />
+          } /></div>
 
         </div>
-      </Container>
+      </div></section>
     </div>
   );
 };

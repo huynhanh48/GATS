@@ -1,4 +1,5 @@
 "use client";
+import "@/components/edubost/edubost-receipt.css";
 
 export type OrderReceiptData = {
   orderId: string;
@@ -65,12 +66,12 @@ export function OrderReceiptView({ receipt, backHref }: Props) {
   const subtotal = receipt.items.reduce((sum, i) => sum + i.lineTotal, 0);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-4 flex flex-wrap items-center gap-2 print:hidden">
+    <div className="container pt-120 pb-120">
+      <div className="ul_li mb-30 print:hidden">
         {backHref ? (
           <a
             href={backHref}
-            className="rounded-xl border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+            className="thm-btn"
           >
             ← Quay lại
           </a>
@@ -78,7 +79,7 @@ export function OrderReceiptView({ receipt, backHref }: Props) {
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+          className="thm-btn"
         >
           In hóa đơn
         </button>
@@ -86,13 +87,13 @@ export function OrderReceiptView({ receipt, backHref }: Props) {
 
       <article
         id="receipt-print"
-        className="rounded-3xl border border-border bg-card p-6 text-foreground shadow-sm print:border-0 print:shadow-none sm:p-8"
+        className="course-single-content mission-vission-item"
       >
         <header className="border-b border-border pb-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Biên lai thanh toán
           </p>
-          <h1 className="mt-1 text-2xl font-bold">{receipt.seller.name}</h1>
+          <h1 className="details_item_title">{receipt.seller.name}</h1>
           <div className="mt-2 space-y-0.5 text-sm text-muted-foreground">
             {receipt.seller.address ? <p>{receipt.seller.address}</p> : null}
             {receipt.seller.email ? <p>{receipt.seller.email}</p> : null}
@@ -125,7 +126,7 @@ export function OrderReceiptView({ receipt, backHref }: Props) {
         </div>
 
         <section className="mt-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          <h2 className="details_item_info_title">
             Người mua
           </h2>
           <div className="mt-2 space-y-0.5 text-sm">
@@ -140,7 +141,7 @@ export function OrderReceiptView({ receipt, backHref }: Props) {
         </section>
 
         <section className="mt-6">
-          <table className="w-full text-left text-sm">
+          <table>
             <thead>
               <tr className="border-b border-border text-xs uppercase text-muted-foreground">
                 <th className="py-2 pr-2 font-medium">Nội dung</th>

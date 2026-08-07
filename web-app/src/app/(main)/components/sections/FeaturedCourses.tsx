@@ -42,7 +42,7 @@ export async function FeaturedCourses() {
   for (const base of origins) {
     try {
       const [coursesRes, categoriesRes] = await Promise.all([
-        fetch(`${base}${PathApi.courses.list}?take=6&skip=0&status=published`, {
+        fetch(`${base}${PathApi.courses.list}?take=4&skip=0&status=published&orderBy=enrollmentCount`, {
           next: { revalidate: 60 },
         }),
         fetch(`${base}${PathApi.categories.list}?type=course`, {
@@ -67,26 +67,16 @@ export async function FeaturedCourses() {
   return (
     <section className="w-full py-24 bg-[#FAF8F5] text-[#0B0F17] border-t border-amber-200/60">
       <Container size="xl">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-12 gap-6">
-          <div className="flex flex-col gap-2">
-            <span className="text-[1.2rem] font-bold text-[#FF6B00] uppercase tracking-wider bg-[#FF6B00]/10 px-3.5 py-1 rounded-full border border-[#FF6B00]/20 w-fit font-mono">
-              HỆ THỐNG ĐÀO TẠO THỰC CHIẾN
-            </span>
-            <h2 className="text-[3.6rem] font-extrabold text-[#0B0F17] font-heading">
-              Chương Trình Đào Tạo &amp; Chứng Nhận GATS
-            </h2>
-            <p className="text-[1.6rem] text-slate-600 font-medium">
-              Từ lộ trình AI Cơ bản miễn phí đến Lớp Offline &amp; Workflow Doanh nghiệp
-            </p>
-          </div>
-
-          <Button
-            asChild
-            variant="outline"
-            className="rounded-xl px-8 h-[4.2rem] text-[1.5rem] font-bold border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
-          >
-            <Link href="/courses">Tất cả khóa học</Link>
-          </Button>
+        <div className="flex flex-col mb-12 gap-3">
+          <span className="text-[1.2rem] font-bold text-[#FF6B00] uppercase tracking-wider bg-[#FF6B00]/10 px-3.5 py-1 rounded-full border border-[#FF6B00]/20 w-fit font-mono">
+            HỆ THỐNG ĐÀO TẠO THỰC CHIẾN
+          </span>
+          <h2 className="text-[3.6rem] font-extrabold text-[#0B0F17] font-heading">
+            Chương Trình Đào Tạo &amp; Chứng Nhận GATS
+          </h2>
+          <p className="text-[1.6rem] text-slate-600 font-medium">
+            Từ lộ trình AI Cơ bản miễn phí đến Lớp Offline &amp; Workflow Doanh nghiệp
+          </p>
         </div>
 
         {/* Meeting 4/8 Directive Filter Tabs */}
@@ -150,6 +140,10 @@ export async function FeaturedCourses() {
         ) : null}
 
         <div>
+          {/* Sub-heading for course cards */}
+          <h3 className="text-[2.4rem] font-extrabold text-[#0B0F17] font-heading mb-8">
+            Các Khóa Học Tiêu Biểu
+          </h3>
           {courses.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-12 text-slate-500">
               <h3 className="text-2xl font-bold mb-2">
@@ -158,7 +152,7 @@ export async function FeaturedCourses() {
               <p>Vui lòng quay lại sau để xem các chương trình mới.</p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-6 md:grid-cols-4">
               {courses.map((course) => {
                 const isFree = course.price <= 0;
                 const onSale = hasSale(course.price, course.salePrice);
@@ -186,9 +180,6 @@ export async function FeaturedCourses() {
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
-                      <div className="absolute top-4 left-4 bg-[#0B0F17] text-white text-[1.1rem] font-bold px-3 py-1 rounded-md shadow-md">
-                        {tag}
-                      </div>
                       <div className="absolute top-4 right-4 bg-[#FF6B00] text-white text-[1.1rem] font-extrabold px-2.5 py-1 rounded-md shadow-md">
                         Chứng Nhận GATS
                       </div>
@@ -251,6 +242,30 @@ export async function FeaturedCourses() {
               })}
             </div>
           )}
+
+          {/* Edubost Bottom Certificate CTA Banner (xb-cta) */}
+          <div className="mt-16 p-8 sm:p-12 rounded-3xl bg-[#0B0F17] text-white border border-white/10 shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="absolute -right-10 -bottom-10 size-[300px] bg-[#FF6B00]/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10 max-w-2xl">
+              <span className="text-[1.2rem] font-bold text-[#FF6B00] font-mono uppercase tracking-wider block mb-2">
+                BẢO CHỨNG ĐẦU RA UY TÍN
+              </span>
+              <h3 className="text-[2.4rem] sm:text-[3rem] font-heading font-extrabold text-white leading-tight">
+                Nhận Chứng Nhận Chuẩn GATS Uy Tín &amp; Giá Trị Pháp Lý Toàn Quốc
+              </h3>
+            </div>
+            <div className="relative z-10 flex flex-wrap items-center gap-4 shrink-0">
+              <Link
+                href="/courses"
+                className="px-8 py-4 rounded-2xl bg-[#FF6B00] hover:bg-[#e05e00] text-white font-extrabold text-[1.5rem] shadow-xl shadow-[#FF6B00]/30 transition-all cursor-pointer"
+              >
+                Đăng Ký Khóa Học
+              </Link>
+              <div className="px-6 py-4 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md text-white font-mono font-bold text-[1.4rem]">
+                Hotline: +84 (024) 8888-6868
+              </div>
+            </div>
+          </div>
         </div>
       </Container>
     </section>
