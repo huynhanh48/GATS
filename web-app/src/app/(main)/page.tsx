@@ -28,14 +28,14 @@ async function loadHomeData(): Promise<{ courses: Course[]; categories: CourseCa
   for (const origin of apiOrigins()) {
     try {
       const [courseResponse, categoryResponse, postResponse] = await Promise.all([
-        fetch(`${origin}/api/courses?status=published&page=1&limit=6`, { next: { revalidate: 60 } }),
+        fetch(`${origin}/api/courses?status=published&page=1&limit=100`, { next: { revalidate: 60 } }),
         fetch(`${origin}/api/categories?type=course`, { next: { revalidate: 60 } }),
         fetch(`${origin}/api/posts?status=published&page=1&limit=5`, { next: { revalidate: 60 } }),
       ]);
       if (!courseResponse.ok || !categoryResponse.ok) continue;
       const [coursePayload, categoryPayload, postPayload] = await Promise.all([courseResponse.json(), categoryResponse.json(), postResponse.ok ? postResponse.json() : null]);
       return {
-        courses: Array.isArray(coursePayload.data) ? coursePayload.data.slice(0, 6) : [],
+        courses: selectFeaturedCourses(Array.isArray(coursePayload.data) ? coursePayload.data : []),
         categories: Array.isArray(categoryPayload.data) ? categoryPayload.data.slice(0, 8) : [],
         posts: Array.isArray(postPayload?.data) ? postPayload.data.slice(0, 5) : [],
       };
@@ -44,6 +44,23 @@ async function loadHomeData(): Promise<{ courses: Course[]; categories: CourseCa
     }
   }
   return { courses: [], categories: [], posts: [] };
+}
+
+/** Selects the six published courses with the strongest learner demand. */
+function selectFeaturedCourses(courses: Course[]): Course[] {
+  return [...courses]
+    .sort((left, right) => {
+      const enrollmentDifference =
+        (right.stats?.enrollmentCount ?? 0) - (left.stats?.enrollmentCount ?? 0);
+      if (enrollmentDifference !== 0) return enrollmentDifference;
+
+      const ratingDifference =
+        (right.stats?.ratingCount ?? 0) - (left.stats?.ratingCount ?? 0);
+      if (ratingDifference !== 0) return ratingDifference;
+
+      return left.title.localeCompare(right.title, "vi");
+    })
+    .slice(0, 6);
 }
 
 function formatPrice(course: Course) {
@@ -104,7 +121,7 @@ export default async function HomePage() {
       <section className="program pos-rel pt-115"><div className="container">
         <div className="pro-top ul_li_between mb-40"><div className="section-title mb-20"><span className="sub-title">Hệ thống đào tạo thực chiến</span><h2 className="title">Chương Trình Nổi Bật</h2></div><div className="pro-btn mb-20"><Link className="thm-btn thm-btn--stroke-black" href="/courses">xem tất cả chương trình <span><i className="far fa-book-open" /></span></Link></div></div>
         {courses.length ? <div className="row mt-none-60">
-          {courses.map((course, index) => <div className="col-lg-4 col-md-6 mt-60" key={course.id}><div className="xb-program__wrapper">
+          {courses.slice(0, 6).map((course, index) => <div className="col-lg-4 col-md-6 mt-60" key={course.id}><div className="xb-program__wrapper">
             <div className="xb-item--img text-center"><Link href={`/courses/${course.slug}`}><img src={resolveMediaUrl(course.thumbnail, asset(`program/pro-img0${(index % 6) + 1}.png`))} alt={course.title} /></Link></div>
             <div className="xb-item--holder"><div className="xb-item--deprt ul_li_between"><span className="xb-item--group"># {course.category?.name ?? "Khóa học"}</span><div className="xb-item--rating"><i className="fas fa-star" /><span>{course.stats?.averageRating?.toFixed(1) ?? "Chưa đánh giá"}</span></div></div>
               <h2 className="xb-item--title border-effect-2"><Link href={`/courses/${course.slug}`}>{course.title}</Link></h2>

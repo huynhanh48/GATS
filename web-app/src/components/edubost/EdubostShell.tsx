@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, X, ArrowUp } from "lucide-react";
+import { User, X, ArrowUp, Menu } from "lucide-react";
 import { EdubostOriginalStyles } from "./EdubostOriginalStyles";
 import { SearchModal } from "@/components/layout/SearchModal";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
 import { useCart } from "@/components/providers/CartProvider";
 import { resolveMediaUrl } from "@/lib/media/url";
+import drawerStyles from "./MobileDrawer.module.css";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -42,6 +43,22 @@ export function EdubostHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("Tiếng Việt");
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileMenuOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMenuOpen]);
 
   // Sticky header animation states
   const [isSticky, setIsSticky] = useState(false);
@@ -108,10 +125,11 @@ export function EdubostHeader() {
           --color-secondary: #60060f;
           --color-violet: #60060f;
         }
-        body, .body_wrap, main { overflow: visible !important; }
+        html, body { max-width: 100%; overflow-x: clip !important; }
+        .body_wrap { max-width: 100%; overflow-x: clip !important; }
         #xb-header-area.header-area { background: #fff !important; border: 0 !important; box-shadow: none !important; }
-        #xb-header-area .header-top_wrap { background-color: #60060f !important; }
-        #xb-header-area .header-top { background-color: #60060f !important; }
+        #xb-header-area .header-top_wrap { width: 100%; background-color: #60060f !important; }
+        #xb-header-area .header-top { background-color: transparent !important; }
         #xb-header-area .header-top, #xb-header-area .header-top a, #xb-header-area .header-top p { color: #fff !important; }
         #xb-header-area .xb-help_desk { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; white-space: nowrap; }
         #xb-header-area .xb-help_desk img { display: block; flex: 0 0 auto; }
@@ -202,7 +220,7 @@ export function EdubostHeader() {
         #xb-header-area .main-menu > ul > li > a { color: #170006 !important; }
         #xb-header-area .main-menu > ul > li.active > a,
         #xb-header-area .main-menu > ul > li > a:hover { color: #60060f !important; }
-        @media (min-width: 992px) {
+        @media (min-width: 1024px) {
           #xb-header-area .main-menu__wrap { display: flex !important; }
           #xb-header-area .main-menu.collapse {
             display: flex !important;
@@ -210,18 +228,26 @@ export function EdubostHeader() {
           }
           #xb-header-area .header-bar-mobile { display: none !important; }
         }
-        @media (max-width: 991px) {
-          #xb-header-area .header-right { display: flex !important; align-items: center; gap: 12px; }
+        @media (max-width: 1023px) {
+          #xb-header-area .header-right { display: flex !important; align-items: center; gap: 10px; }
           #xb-header-area .main-menu__wrap { display: none !important; }
+          #xb-header-area .header-bar-mobile { display: flex !important; align-items: center; visibility: visible !important; opacity: 1 !important; }
+          #xb-header-area .xb-nav-mobile { display: flex !important; align-items: center; justify-content: center; opacity: 1 !important; }
         }
         @media (max-width: 767px) {
+          #xb-header-area { width: 100%; max-width: 100%; overflow-x: clip; }
+          #xb-header-area .container { width: 100%; max-width: 100%; }
           #xb-header-area .header-top { display: flex; align-items: center; min-height: 62px; }
+          #xb-header-area .header__wrap { width: 100%; flex-wrap: nowrap; gap: 8px; }
+          #xb-header-area .header-logo { min-width: 0; flex: 1 1 auto; }
+          #xb-header-area .header-logo img { display: block; width: clamp(168px, 45vw, 230px); height: auto !important; }
+          #xb-header-area .header-right { min-width: 0; flex: 0 0 auto; }
           #xb-header-area .xb-info { display: none !important; }
-          #xb-header-area .header-search-btn { margin-right: 8px; padding-right: 10px !important; }
+          #xb-header-area .header-search-btn { margin-right: 4px; padding-right: 6px !important; }
           #xb-header-area .header-search-btn span { display: none !important; }
           #xb-header-area .edubost-header-cart { width: 38px; height: 38px; }
-          #xb-header-area .edubost-header-profile { margin-left: 6px; }
-          #xb-header-area .edubost-header-profile > div { width: 40px !important; height: 40px !important; }
+          #xb-header-area .edubost-header-profile { margin-left: 4px; }
+          #xb-header-area .edubost-header-profile > div { width: 38px !important; height: 38px !important; }
         }
       `}</style>
       <header
@@ -368,74 +394,77 @@ export function EdubostHeader() {
                   )}
                 </div>
 
-                {status === "loading" ? (
-                  <div className="w-11 h-11 ml-[10px] invisible" aria-hidden="true" />
-                ) : status === "authenticated" && user ? (
-                  <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger className="edubost-header-profile flex items-center gap-2 cursor-pointer focus:outline-none">
-                      <div className="relative w-11 h-11 rounded-full bg-[#60060f] flex items-center justify-center text-white overflow-hidden">
-                        {user.avatarUrl ? (
-                          <img
-                            src={resolveMediaUrl(user.avatarUrl)}
-                            alt=""
-                            className="absolute inset-0 h-full w-full object-cover"
-                          />
-                        ) : (
-                          <User className="w-5 h-5" />
-                        )}
-                      </div>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="edubost-profile-menu z-50"
-                    >
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile"><i className="far fa-user-circle" /><span>Hồ sơ cá nhân</span></Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile?tab=courses"><i className="far fa-book-open" /><span>Khóa học của tôi</span></Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/cart"><i className="far fa-shopping-cart" /><span>Giỏ hàng</span></Link>
-                      </DropdownMenuItem>
-                      {canTeach && teachingHref && (
-                        <DropdownMenuItem asChild>
-                          <a
-                            href={teachingHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <i className="far fa-shield-check" /><span>Trang quản trị / Giảng dạy</span>
-                          </a>
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() => logout()}
-                        className="text-red-600 cursor-pointer"
+                {/* Profile Dropdown / Login Button (Desktop Only: hidden lg:flex) */}
+                <div className="hidden lg:flex items-center ml-2">
+                  {status === "loading" ? (
+                    <div className="w-11 h-11 ml-[10px] invisible" aria-hidden="true" />
+                  ) : status === "authenticated" && user ? (
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger className="edubost-header-profile flex items-center gap-2 cursor-pointer focus:outline-none">
+                        <div className="relative w-11 h-11 rounded-full bg-[#60060f] flex items-center justify-center text-white overflow-hidden shadow-sm">
+                          {user.avatarUrl ? (
+                            <img
+                              src={resolveMediaUrl(user.avatarUrl)}
+                              alt=""
+                              className="absolute inset-0 h-full w-full object-cover"
+                            />
+                          ) : (
+                            <User className="w-5 h-5" />
+                          )}
+                        </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="edubost-profile-menu z-50"
                       >
-                        <i className="far fa-sign-out" /><span>Đăng xuất</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <button
-                    type="button"
-                  onClick={() => openAuthModal("login")}
-                    className="edubost-header-login hidden sm:inline-flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer"
-                  >
-                    <User className="w-4 h-4" />
-                    Đăng nhập
-                  </button>
-                )}
+                        <DropdownMenuItem asChild>
+                          <Link href="/profile"><i className="far fa-user-circle" /><span>Hồ sơ cá nhân</span></Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/profile?tab=courses"><i className="far fa-book-open" /><span>Khóa học của tôi</span></Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/cart"><i className="far fa-shopping-cart" /><span>Giỏ hàng</span></Link>
+                        </DropdownMenuItem>
+                        {canTeach && teachingHref && (
+                          <DropdownMenuItem asChild>
+                            <a
+                              href={teachingHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <i className="far fa-shield-check" /><span>Trang quản trị / Giảng dạy</span>
+                            </a>
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() => logout()}
+                          className="text-red-600 cursor-pointer"
+                        >
+                          <i className="far fa-sign-out" /><span>Đăng xuất</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openAuthModal("login")}
+                      className="edubost-header-login inline-flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors cursor-pointer"
+                    >
+                      <User className="w-4 h-4" />
+                      Đăng nhập
+                    </button>
+                  )}
+                </div>
 
-                <div className="header-bar-mobile side-menu lg:hidden flex items-center">
+                <div className="header-bar-mobile side-menu lg:hidden flex items-center shrink-0">
                   <button
                     type="button"
                     onClick={() => setMobileMenuOpen(true)}
-                    className="xb-nav-mobile cursor-pointer bg-transparent border-0 p-2 text-slate-800 dark:text-white flex items-center justify-center"
+                    className="xb-nav-mobile cursor-pointer bg-transparent border-0 p-1.5 text-[#170006] dark:text-white flex items-center justify-center hover:opacity-80 transition-opacity"
                     aria-label="Mở danh mục"
                   >
-                    <i className="fal fa-bars text-xl" />
+                    <Menu className="w-6 h-6 text-[#170006] dark:text-white" />
                   </button>
                 </div>
               </div>
@@ -447,20 +476,26 @@ export function EdubostHeader() {
 
       <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
 
+      {/* Mobile Drawer Navigation Modal */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
+        <div className={`fixed inset-0 z-50 flex lg:hidden ${drawerStyles.root}`}>
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="relative ml-auto w-full max-w-xs bg-white dark:bg-[#0B0F17] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto z-10">
-            <div>
-              <div className="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800">
+          <div
+            className={`relative ml-auto bg-white dark:bg-[#0B0F17] shadow-2xl z-10 ${drawerStyles.panel}`}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu điều hướng"
+          >
+            <div className={drawerStyles.main}>
+              <div className={`flex items-center justify-between border-b border-slate-100 dark:border-slate-800 ${drawerStyles.header}`}>
                 <Link href="/" onClick={() => setMobileMenuOpen(false)}>
                   <img
                     src={img("logo/logo-gats.svg")}
                     alt="GATS Academy"
-                    className="h-8"
+                    className={drawerStyles.logo}
                   />
                 </Link>
                 <button
@@ -473,42 +508,118 @@ export function EdubostHeader() {
                 </button>
               </div>
 
-              <nav className="mt-6 flex flex-col gap-4 text-base font-semibold">
+              {/* Navigation Links with Explicit Non-Blue Colors */}
+              <nav className={`flex flex-col font-semibold mobile-drawer-nav ${drawerStyles.nav}`}>
+                <style>{`
+                  .mobile-drawer-nav a, .mobile-drawer-nav a:visited, .mobile-drawer-nav a:link {
+                    text-decoration: none !important;
+                  }
+                `}</style>
                 {navItems.map((item) => {
                   const active = isNavActive(pathname, item.href);
                   return (
-                    <div key={item.label} className="flex flex-col gap-2">
-                      <Link
-                        href={item.href}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`py-1.5 transition-colors ${
-                          active
-                            ? "text-[#FF6B00] font-bold"
-                            : "text-slate-800 dark:text-slate-200 hover:text-[#FF6B00]"
-                        }`}
-                      >
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      style={{
+                        color: active ? "#FF6B00" : "#170006",
+                        backgroundColor: active ? "rgba(255, 107, 0, 0.1)" : undefined,
+                      }}
+                      className={`${drawerStyles.navLink} rounded-xl transition-all flex items-center justify-between ${
+                        active
+                          ? "!font-bold"
+                          : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span className={active ? "!text-[#FF6B00]" : "!text-[#170006] dark:!text-slate-100"}>
                         {item.label}
-                      </Link>
-                    </div>
+                      </span>
+                      <i className={`far fa-chevron-right text-xs ${active ? "!text-[#FF6B00]" : "text-slate-400 opacity-60"}`} />
+                    </Link>
                   );
                 })}
               </nav>
             </div>
 
-            <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-3">
-              {status !== "authenticated" && (
+            {/* Profile Section & Auth Action inside Mobile Menu Drawer */}
+            <div className={`border-t border-slate-100 dark:border-slate-800 flex flex-col ${drawerStyles.footer}`}>
+              {status === "authenticated" && user ? (
+                <div className={`bg-[#170006] text-white rounded-2xl flex flex-col shadow-lg ${drawerStyles.accountCard}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-11 h-11 rounded-full bg-[#60060f] flex items-center justify-center text-white overflow-hidden shrink-0 border-2 border-white/20">
+                      {user.avatarUrl ? (
+                        <img
+                          src={resolveMediaUrl(user.avatarUrl)}
+                          alt=""
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0 overflow-hidden">
+                      <h4 className={`font-bold text-white truncate ${drawerStyles.userName}`}>{user.userName}</h4>
+                      <p className="text-xs text-slate-300 truncate">{user.email}</p>
+                    </div>
+                  </div>
+
+                  <div className={`grid grid-cols-2 gap-2 pt-2 border-t border-white/15 font-semibold ${drawerStyles.accountLinks}`}>
+                    <Link
+                      href="/profile"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                    >
+                      <i className="far fa-user-circle text-[#FF6B00]" />
+                      <span>Hồ sơ</span>
+                    </Link>
+                    <Link
+                      href="/profile?tab=courses"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all"
+                    >
+                      <i className="far fa-book-open text-[#FF6B00]" />
+                      <span>Khóa học</span>
+                    </Link>
+                  </div>
+
+                  {canTeach && teachingHref && (
+                    <a
+                      href={teachingHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 py-2 px-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all"
+                    >
+                      <i className="far fa-shield-check text-[#FF6B00]" />
+                      <span>Trang giảng dạy</span>
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className={`w-full mt-1 rounded-xl font-bold text-red-300 bg-red-950/50 hover:bg-red-900/70 border border-red-800/40 flex items-center justify-center gap-2 transition-all cursor-pointer ${drawerStyles.logout}`}
+                  >
+                    <i className="far fa-sign-out" />
+                    Đăng xuất
+                  </button>
+                </div>
+              ) : (
                 <button
                   type="button"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     openAuthModal("login");
                   }}
-                  className="w-full py-2.5 rounded-lg font-semibold text-center text-white bg-[#FF6B00] hover:bg-[#e05e00] transition-colors"
+                  className="w-full py-3 rounded-xl font-bold text-center text-white bg-[#FF6B00] hover:bg-[#e05e00] shadow-md transition-all cursor-pointer"
                 >
                   Đăng nhập / Đăng ký
                 </button>
               )}
-              <div className="text-xs text-slate-500 text-center">
+              <div className={`text-xs text-slate-500 text-center ${drawerStyles.hotline}`}>
                 Hotline hỗ trợ:{" "}
                 <strong className="text-slate-800 dark:text-slate-200">
                   1900 633 888

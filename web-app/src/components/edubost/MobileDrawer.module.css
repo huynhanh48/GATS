@@ -1,0 +1,122 @@
+.root {
+  padding-left: 10px;
+}
+
+.panel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: min(360px, calc(100vw - 10px));
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  border-radius: 20px 0 0 20px;
+}
+
+.main {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.header {
+  min-height: 112px;
+  padding: 22px 20px;
+}
+
+.logo {
+  display: block;
+  width: min(236px, 68vw);
+  height: auto !important;
+  max-height: 62px;
+}
+
+.nav {
+  gap: 6px;
+  padding: 20px;
+}
+
+.navLink {
+  min-height: 56px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.footer {
+  gap: 10px;
+  padding: 14px 20px max(14px, env(safe-area-inset-bottom));
+  background: #fff;
+}
+
+.accountCard {
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+}
+
+.userName {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.accountLinks {
+  font-size: 12px;
+}
+
+.accountLinks a {
+  min-width: 0;
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.logout {
+  min-height: 44px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.hotline {
+  line-height: 1.45;
+}
+
+:global(.dark) .footer {
+  background: #0b0f17;
+}
+
+@media (max-height: 700px) {
+  .header {
+    min-height: 86px;
+    padding-block: 14px;
+  }
+
+  .logo {
+    max-height: 52px;
+  }
+
+  .nav {
+    padding-block: 12px;
+  }
+
+  .navLink {
+    min-height: 46px;
+  }
+
+  .hotline {
+    display: none;
+  }
+}
+
+@media (max-width: 350px) {
+  .header,
+  .nav,
+  .footer {
+    padding-inline: 14px;
+  }
+
+  .accountLinks {
+    grid-template-columns: 1fr;
+  }
+}

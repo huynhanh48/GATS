@@ -119,10 +119,77 @@ export default function AboutPage() {
               <span className="sub-title">Khám phá GATS</span>
               <h2 className="title">GATS Academy qua những con số</h2>
             </div>
-            <div className="row mt-none-30">
-              <div className="col-lg-4 mt-30"><div className="clg-fanfact"><div className="xb-fanfact_item clr-gray"><span className="xb-item--number">10+</span><span className="xb-item--contant">Năm kinh nghiệm<br />đào tạo và cố vấn</span></div><div className="xb-fanfact_wrap mt-30"><div className="fanfact-img"><img src={asset("fanfact/fanfact-img01.png")} alt="" /></div><div className="xb-fanfact_item"><span className="xb-item--number">91%</span><span className="xb-item--contant">Học viên hoàn thành các bài thực hành trong lộ trình</span></div></div></div></div>
-              <div className="col-lg-4 mt-30"><div className="clg-fanfact"><div className="xb-fanfact_wrap clr-primary mb-30"><div className="fanfact-img"><img src={asset("fanfact/fanfact-img02.png")} alt="" /></div><div className="xb-fanfact_item"><span className="xb-item--number">90%</span><span className="xb-item--contant">Nội dung tập trung vào tình huống và dự án thực tế</span></div></div><div className="xb-fanfact_item clr-heading"><span className="xb-item--number">24/7</span><span className="xb-item--contant">Truy cập nội dung học tập trên mọi thiết bị</span></div></div></div>
-              <div className="col-lg-4 mt-30"><div className="clg-fanfact"><div className="xb-fanfact_item clr-violate"><span className="xb-item--number">AI + Workflow</span><span className="xb-item--contant">Học công cụ song song với quy trình triển khai</span></div><div className="xb-fanfact_wrap clr-gray mt-30"><div className="fanfact-img"><img src={asset("fanfact/fanfact-img03.png")} alt="" /></div><div className="xb-fanfact_item"><span className="xb-item--number">100%</span><span className="xb-item--contant">Lộ trình hướng đến khả năng áp dụng vào công việc</span></div></div></div></div>
+            <div className="row mt-none-30 items-stretch">
+              {/* Column 1 */}
+              <div className="col-lg-4 mt-30 flex flex-col">
+                <div className="clg-fanfact flex flex-col justify-between h-full w-full">
+                  <div className="xb-fanfact_item clr-gray h-[190px] flex flex-col justify-center">
+                    <span className="xb-item--number text-[50px] font-bold leading-none mb-3 text-white">10+</span>
+                    <span className="xb-item--contant text-[18px] font-bold leading-snug text-white">
+                      Năm kinh nghiệm<br />đào tạo và cố vấn
+                    </span>
+                  </div>
+                  <div className="xb-fanfact_wrap mt-30 overflow-hidden rounded-[10px]">
+                    <div className="fanfact-img h-[180px] overflow-hidden">
+                      <img src={asset("fanfact/fanfact-img01.png")} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="xb-fanfact_item p-7">
+                      <span className="xb-item--number text-[50px] font-bold leading-none mb-3 text-white">91%</span>
+                      <span className="xb-item--contant text-[18px] font-bold leading-snug text-white">
+                        Học viên hoàn thành các bài thực hành trong lộ trình
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 2 */}
+              <div className="col-lg-4 mt-30 flex flex-col">
+                <div className="clg-fanfact flex flex-col justify-between h-full w-full">
+                  <div className="xb-fanfact_wrap clr-primary mb-30 overflow-hidden rounded-[10px]">
+                    <div className="fanfact-img h-[180px] overflow-hidden">
+                      <img src={asset("fanfact/fanfact-img02.png")} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="xb-fanfact_item p-7">
+                      <span className="xb-item--number text-[50px] font-bold leading-none mb-3 text-white">90%</span>
+                      <span className="xb-item--contant text-[18px] font-bold leading-snug text-white">
+                        Nội dung tập trung vào tình huống và dự án thực tế
+                      </span>
+                    </div>
+                  </div>
+                  <div className="xb-fanfact_item clr-heading h-[190px] flex flex-col justify-center">
+                    <span className="xb-item--number text-[50px] font-bold leading-none mb-3 text-white">24/7</span>
+                    <span className="xb-item--contant text-[18px] font-bold leading-snug text-white">
+                      Truy cập nội dung học tập trên mọi thiết bị
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 3 */}
+              <div className="col-lg-4 mt-30 flex flex-col">
+                <div className="clg-fanfact flex flex-col justify-between h-full w-full">
+                  <div className="xb-fanfact_item clr-violate h-[190px] flex flex-col justify-center">
+                    <span className="xb-item--number text-[32px] sm:text-[36px] font-bold leading-tight mb-2 text-white whitespace-nowrap">
+                      AI + Workflow
+                    </span>
+                    <span className="xb-item--contant text-[18px] font-bold leading-snug text-white">
+                      Học công cụ song song với quy trình triển khai
+                    </span>
+                  </div>
+                  <div className="xb-fanfact_wrap clr-gray mt-30 overflow-hidden rounded-[10px]">
+                    <div className="fanfact-img h-[180px] overflow-hidden">
+                      <img src={asset("fanfact/fanfact-img03.png")} alt="" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="xb-fanfact_item p-7">
+                      <span className="xb-item--number text-[50px] font-bold leading-none mb-3 text-white">100%</span>
+                      <span className="xb-item--contant text-[18px] font-bold leading-snug text-white">
+                        Lộ trình hướng đến khả năng áp dụng vào công việc
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>

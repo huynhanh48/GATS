@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EdubostFooter, EdubostHeader } from "@/components/edubost/EdubostShell";
 import { EdubostOriginalStyles } from "@/components/edubost/EdubostOriginalStyles";
+import "./contact.css";
 
 export const metadata: Metadata = {
   title: "Liên hệ | GATS Academy",
@@ -66,7 +67,7 @@ export default function ContactPage() {
                 ["sms-edit.svg", "Gửi Email", "Trao đổi cùng đội ngũ GATS", "support@gatsacademy.com"],
                 ["location-add.svg", "Địa điểm", "Gặp trực tiếp theo lịch hẹn", "GATS Academy, Việt Nam"],
               ].map(([icon, title, description, value]) => (
-                <div className="col-lg-3 col-md-6 col-sm-6 mt-30" key={title}>
+                <div className="contact-info-column col-lg-3 col-md-6 col-sm-6 mt-30" key={title}>
                   <div className="contact_iconbox">
                     <div className="iconbox_icon"><img src={asset(`icon/${icon}`)} alt="" /></div>
                     <div className="iconbox_content"><h2 className="iconbox_title">{title}</h2><p>{description}</p><h3>{value}</h3></div>

@@ -790,7 +790,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                 </p>
               ) : null}
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2">
+            <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto">
               <button
                 type="button"
                 onClick={() => goRelative(-1)}
@@ -826,7 +826,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                   type="button"
                   onClick={() => void markComplete()}
                   disabled={!activeLessonId}
-                  className="eb-complete-button inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition duration-200 hover:bg-primary/90 disabled:opacity-40"
+                  className="eb-complete-button ml-auto inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition duration-200 hover:bg-primary/90 disabled:opacity-40 sm:ml-0"
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Hoàn thành

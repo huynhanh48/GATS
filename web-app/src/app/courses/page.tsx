@@ -708,7 +708,7 @@ function CoursesPageContent() {
                                   </span>
                                 )}
                               </div>
-                              <span className="xb-item--link"><Link href={`/courses/${course.slug}`}>đăng ký ngay <i className="far fa-arrow-right" /></Link></span>
+                              <span className="xb-item--link"><Link href={`/courses/${course.slug}`}>đăng ký ngay</Link></span>
                             </div>
                           </div>
                         </div>

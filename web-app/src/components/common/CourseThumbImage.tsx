@@ -1,10 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { resolveMediaUrl } from "@/lib/media/url";
 
-const FALLBACK = "https://placehold.co/800x450?text=Course";
+const FALLBACK = "/edubost-reference/img/course/course_single.jpg";
 
 type Props = {
   src: string | null | undefined;
@@ -16,36 +15,30 @@ type Props = {
   sizes?: string;
 };
 
-/** next/image with resolveMediaUrl + placehold fallback on load error. */
+/** Standard <img> wrapper with resolveMediaUrl + graceful local fallback on error (avoids Next.js /_next/image origin restrictions). */
 export function CourseThumbImage({
   src,
   alt,
   fill,
-  width,
-  height,
   className,
-  sizes,
 }: Props) {
   const resolved = resolveMediaUrl(src, FALLBACK);
-  const [failed, setFailed] = useState(false);
+  const [imgSrc, setImgSrc] = useState(resolved || FALLBACK);
 
   useEffect(() => {
-    setFailed(false);
-  }, [resolved]);
-
-  const current = failed ? FALLBACK : resolved;
+    setImgSrc(resolveMediaUrl(src, FALLBACK) || FALLBACK);
+  }, [src]);
 
   return (
-    <Image
-      src={current}
-      alt={alt}
-      fill={fill}
-      width={fill ? undefined : width}
-      height={fill ? undefined : height}
-      sizes={sizes}
-      className={className}
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={imgSrc}
+      alt={alt || "Hình ảnh khóa học"}
+      className={fill ? `absolute inset-0 w-full h-full object-cover ${className || ""}` : className}
       onError={() => {
-        if (!failed) setFailed(true);
+        if (imgSrc !== FALLBACK) {
+          setImgSrc(FALLBACK);
+        }
       }}
     />
   );

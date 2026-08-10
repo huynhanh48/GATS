@@ -340,18 +340,18 @@ export default function ProfilePage() {
         />
       ) : null}
 
-      <div className="team-single__info mt-60 flex flex-col lg:flex-row gap-8 pointer-events-none">
+      <div className="team-single__info profile-layout flex flex-col lg:flex-row gap-8 pointer-events-none">
         
         {/* Left Sidebar */}
-        <div className="w-full lg:w-1/3 xl:w-1/4 pointer-events-auto">
-          <div className="course-sidebar sticky top-24">
-            <div className="relative mx-auto h-32 w-32 rounded-full bg-card p-1 shadow-md border border-border mb-4">
-              <div className="relative flex items-center justify-center h-full w-full bg-muted rounded-full overflow-hidden">
+        <div className="profile-sidebar-column w-full lg:w-1/3 xl:w-1/4 pointer-events-auto">
+          <div className="course-sidebar profile-identity-card sticky top-24">
+            <div className="profile-avatar-shell relative mx-auto">
+              <div className="profile-avatar-media relative flex items-center justify-center overflow-hidden">
                 {profilePhoto ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={profilePhoto}
-                    className="absolute inset-0 h-full w-full object-cover"
+                    className="profile-avatar-image"
                     alt={`${user.userName} profile`}
                   />
                 ) : (
@@ -369,7 +369,7 @@ export default function ProfilePage() {
                 type="button"
                 disabled={uploadingAvatar}
                 onClick={() => avatarInputRef.current?.click()}
-                className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-lg border-2 border-card hover:bg-primary/90 transition disabled:opacity-60"
+                className="profile-avatar-action absolute bg-primary text-primary-foreground hover:bg-primary/90 transition disabled:opacity-60"
                 aria-label="Cập nhật ảnh đại diện"
               >
                 {uploadingAvatar ? (

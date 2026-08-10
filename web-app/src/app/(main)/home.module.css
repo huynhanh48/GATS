@@ -169,6 +169,10 @@
     padding-top: 36px;
   }
 
+  .home :global(.hero .xb-hero-img) {
+    transform: none;
+  }
+
   .home :global(.hero .section-title .title) {
     font-size: 42px;
   }

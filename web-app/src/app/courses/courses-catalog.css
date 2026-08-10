@@ -71,5 +71,9 @@
 
 @media (max-width: 767px) {
   .courses .program-item .xb-item--holder { min-height: 0; }
-  .courses .program-item .xb-item--bottom > div { align-items: flex-start; flex-direction: column; }
+  .courses .program-item .xb-item--bottom > div {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+  }
 }
