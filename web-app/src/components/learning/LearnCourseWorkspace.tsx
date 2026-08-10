@@ -124,8 +124,21 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   const [reloadKey, setReloadKey] = useState(0);
   const [themeMounted, setThemeMounted] = useState(false);
 
-  const lastSavedRef = useRef(0);
-  const lastTickRef = useRef({ watched: 0, duration: 0 });
+  const lastSavedRef = useRef(new Map<string, number>());
+  const progressInFlightRef = useRef(new Set<string>());
+  const lastTickRef = useRef<{
+    watched: number;
+    duration: number;
+    courseId: string | null;
+    lessonId: string | null;
+    videoId: string | null;
+  }>({
+    watched: 0,
+    duration: 0,
+    courseId: null,
+    lessonId: null,
+    videoId: null,
+  });
   const loadRequestRef = useRef(0);
   const pendingPlaybackUrlRef = useRef("");
   const lessons = useMemo(() => flattenLessons(sections), [sections]);
@@ -313,8 +326,14 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
     // Không clear playbackUrl → tránh unmount HLS giữa chừng (canceled m3u8)
     setResumeAt(0);
     setResumePrompt(null);
-    lastSavedRef.current = 0;
-    lastTickRef.current = { watched: 0, duration: 0 };
+    lastSavedRef.current.set(lesson.id, 0);
+    lastTickRef.current = {
+      watched: 0,
+      duration: 0,
+      courseId: course.id,
+      lessonId: lesson.id,
+      videoId: null,
+    };
 
     try {
       if ((lesson.type || "video").toLowerCase() === "video") {
@@ -390,42 +409,91 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   }, [activeLessonId, course?.id]);
 
   const saveProgress = useEffectEvent(
-    async (watched: number, duration: number, force = false) => {
-      if (!course?.id || !activeLessonId) return;
-      if (!force && watched - lastSavedRef.current < 8) return;
-      lastSavedRef.current = watched;
+    async (
+      watched: number,
+      duration: number,
+      force = false,
+      target?: {
+        courseId: string | null;
+        lessonId: string | null;
+        videoId: string | null;
+      },
+    ) => {
+      const courseId = target?.courseId ?? course?.id ?? null;
+      const lessonId = target?.lessonId ?? activeLessonId;
+      const progressVideoId = target?.videoId ?? videoId;
+      if (!courseId || !lessonId || watched <= 0 || duration <= 0) return;
+
+      const lastSaved = lastSavedRef.current.get(lessonId) ?? 0;
+
+      // Pause, ended and effect cleanup may report the same second repeatedly.
+      // Never send an unchanged or older snapshot, even for a forced flush.
+      if (watched <= lastSaved) return;
+      if (!force && watched - lastSaved < 8) return;
+      if (progressInFlightRef.current.has(lessonId)) return;
+
+      progressInFlightRef.current.add(lessonId);
+      lastSavedRef.current.set(lessonId, watched);
       try {
-        const res: any = await upsertLessonProgress(course.id, activeLessonId, {
+        const res: any = await upsertLessonProgress(courseId, lessonId, {
           watched_seconds: watched,
           duration_seconds: duration > 0 ? duration : undefined,
-          video_id: videoId ?? undefined,
+          video_id: progressVideoId ?? undefined,
         });
         if (res?.data?.isCompleted) {
-          setCompletedIds((prev) => new Set(prev).add(activeLessonId));
+          const wasCompleted = completedIds.has(lessonId);
+          setCompletedIds((prev) => {
+            if (prev.has(lessonId)) return prev;
+            const next = new Set(prev);
+            next.add(lessonId);
+            return next;
+          });
+          // Course progress only changes materially when a lesson first completes.
+          if (!wasCompleted) await refreshCourseProgress(courseId);
         }
-        await refreshCourseProgress(course.id);
       } catch {
-        // silent
+        // Allow the same snapshot to be retried after a transient failure, but do
+        // not roll back a newer snapshot that may already have been scheduled.
+        if (lastSavedRef.current.get(lessonId) === watched) {
+          lastSavedRef.current.set(lessonId, lastSaved);
+        }
+      } finally {
+        progressInFlightRef.current.delete(lessonId);
       }
     },
   );
 
   useEffect(() => {
     return () => {
-      const { watched, duration } = lastTickRef.current;
-      if (watched > 0 && duration > 0) {
-        void saveProgress(watched, duration, true);
+      const tick = lastTickRef.current;
+      if (tick.watched > 0 && tick.duration > 0) {
+        void saveProgress(tick.watched, tick.duration, true, tick);
       }
     };
-  }, [activeLessonId, saveProgress]);
+    // Effect Events always read the latest implementation and must not be a
+    // dependency. This cleanup should run only when changing lessons/unmounting.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLessonId]);
 
   const handleTimeUpdate = (watched: number, duration: number) => {
-    lastTickRef.current = { watched, duration };
+    lastTickRef.current = {
+      watched,
+      duration,
+      courseId: course?.id ?? null,
+      lessonId: activeLessonId,
+      videoId,
+    };
     void saveProgress(watched, duration, false);
   };
 
   const handlePauseSave = (watched: number, duration: number) => {
-    lastTickRef.current = { watched, duration };
+    lastTickRef.current = {
+      watched,
+      duration,
+      courseId: course?.id ?? null,
+      lessonId: activeLessonId,
+      videoId,
+    };
     void saveProgress(watched, duration, true);
   };
 
