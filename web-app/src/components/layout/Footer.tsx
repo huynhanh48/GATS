@@ -48,7 +48,7 @@ export function Footer() {
               HOTLINE CHÍNH THỨC
             </div>
             <div className="text-[2.6rem] font-heading font-extrabold text-[#FF6B00]">
-              +84 (024) 8888-6868
+              090 1876888
             </div>
           </div>
         </div>

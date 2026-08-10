@@ -41,7 +41,7 @@ export default function ContactPage() {
                     </div></div>
                     <div className="col-12"><div className="form-group">
                       <label className="input_title" htmlFor="input_phone">Số điện thoại</label>
-                      <input id="input_phone" className="form-control" type="tel" name="phone" placeholder="(+84) 888 888 888" />
+                      <input id="input_phone" className="form-control" type="tel" name="phone" placeholder="090 1876888" />
                     </div></div>
                     <div className="col-12"><div className="form-group">
                       <label className="input_title" htmlFor="input_textarea">Nhu cầu tư vấn</label>
@@ -62,8 +62,8 @@ export default function ContactPage() {
             <div className="contact_info_box_inner pt-110"><h2 className="text-center">GATS Academy có thể hỗ trợ bạn</h2></div>
             <div className="contact_info_box row mt-none-30">
               {[
-                ["call-calling.svg", "Tư vấn chương trình", "Thứ Hai – Thứ Sáu, 8:00 – 17:00", "(+84) 888 888 888"],
-                ["call-calling.svg", "Hỗ trợ học viên", "Hỗ trợ tài khoản và khóa học", "(+84) 888 888 888"],
+                ["call-calling.svg", "Tư vấn chương trình", "Thứ Hai – Thứ Sáu, 8:00 – 17:00", "090 1876888"],
+                ["call-calling.svg", "Hỗ trợ học viên", "Hỗ trợ tài khoản và khóa học", "090 1876888"],
                 ["sms-edit.svg", "Gửi Email", "Trao đổi cùng đội ngũ GATS", "support@gatsacademy.com"],
                 ["location-add.svg", "Địa điểm", "Gặp trực tiếp theo lịch hẹn", "GATS Academy, Việt Nam"],
               ].map(([icon, title, description, value]) => (

@@ -144,7 +144,7 @@ export default async function HomePage() {
               đăng ký ngay <span><img src={asset("icon/learning.png")} alt="" /></span>
             </Link>
             <span className="mt-20">
-              <img src={asset("icon/calling-icon.png")} alt="" /> (+84) 888 888 888
+              <img src={asset("icon/calling-icon.png")} alt="" /> 090 1876888
             </span>
           </div>
         </div>

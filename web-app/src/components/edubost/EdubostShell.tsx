@@ -260,7 +260,7 @@ export function EdubostHeader() {
               <div className="xb-help_desk">
                 <img src={img("icon/hero_top-icon.png")} alt="" />
                 <p>
-                  Tư vấn: <span>+1 (415) 555-0132</span>
+                  Tư vấn: <span>090 1876888</span>
                 </p>
               </div>
               <div className="xb-info">
@@ -622,7 +622,7 @@ export function EdubostHeader() {
               <div className={`text-xs text-slate-500 text-center ${drawerStyles.hotline}`}>
                 Hotline hỗ trợ:{" "}
                 <strong className="text-slate-800 dark:text-slate-200">
-                  1900 633 888
+                  090 1876888
                 </strong>
               </div>
             </div>
@@ -680,7 +680,7 @@ export function EdubostFooter() {
             </div>
             <div className="xb-item--contact mt-30">
               <span>hoặc gọi hotline hỗ trợ</span>
-              <h3>(+84) 888 888 888</h3>
+              <h3>090 1876888</h3>
             </div>
           </div>
         </div>
