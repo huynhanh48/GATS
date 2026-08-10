@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, X } from "lucide-react";
+import { User, X, ArrowUp } from "lucide-react";
 import { EdubostOriginalStyles } from "./EdubostOriginalStyles";
 import { SearchModal } from "@/components/layout/SearchModal";
 import { useAuth, useAuthModal } from "@/hooks/useAuth";
@@ -42,6 +42,37 @@ export function EdubostHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState("Tiếng Việt");
+
+  // Sticky header animation states
+  const [isSticky, setIsSticky] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > 120) {
+        setIsSticky(true);
+        if (currentScrollY > lastScrollY && currentScrollY > 180) {
+          // Scrolling DOWN -> Slide UP & Hide
+          setIsVisible(false);
+        } else if (currentScrollY < lastScrollY) {
+          // Scrolling UP -> Slide DOWN & Show
+          setIsVisible(true);
+        }
+      } else {
+        setIsSticky(false);
+        setIsVisible(true);
+      }
+
+      lastScrollY = currentScrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const { user, logout, status } = useAuth();
   const { openAuthModal } = useAuthModal();
@@ -229,7 +260,18 @@ export function EdubostHeader() {
             </div>
           </div>
         </div>
-        <div className="xb-header">
+        {/* Main Sticky Animated Header */}
+        <div
+          className={`xb-header ${
+            isSticky
+              ? `fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-md transition-all duration-300 transform ${
+                  isVisible
+                    ? "translate-y-0 opacity-100"
+                    : "-translate-y-full opacity-0 pointer-events-none"
+                }`
+              : "relative bg-white"
+          }`}
+        >
           <div className="container">
             <div className="header__wrap ul_li_between">
               <div className="header-logo">
@@ -400,6 +442,7 @@ export function EdubostHeader() {
             </div>
           </div>
         </div>
+        {isSticky && <div className="h-[80px] w-full pointer-events-none" aria-hidden="true" />}
       </header>
 
       <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
@@ -480,6 +523,24 @@ export function EdubostHeader() {
 }
 
 export function EdubostFooter() {
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <footer
       className="footer bg_img pos-rel pt-20"
@@ -599,6 +660,17 @@ export function EdubostFooter() {
           </div>
         </div>
       </div>
+
+      {/* Floating Scroll-to-Top Button matching user image */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed right-6 bottom-6 z-50 size-12 rounded-[12px] bg-[#60060f] text-white flex items-center justify-center shadow-2xl border border-white/10 hover:bg-[#48040b] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer ${
+          showScrollTop ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+        aria-label="Cuộn lên đầu trang"
+      >
+        <ArrowUp className="size-6 text-white stroke-[2.5]" />
+      </button>
     </footer>
   );
 }

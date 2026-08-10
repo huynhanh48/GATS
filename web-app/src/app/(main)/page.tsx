@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { EdubostFooter, EdubostHeader } from "@/components/edubost/EdubostShell";
+import { HomeEvents } from "@/components/edubost/HomeEvents";
+import { CampusCarousel } from "@/components/edubost/CampusCarousel";
 import { resolveMediaUrl } from "@/lib/media/url";
 import type { Course, CourseCategory } from "@/types/course";
 import type { Post } from "@/types/post";
+import { FanfactSlider } from "./components/sections/FanfactSlider";
+import { BlogSection } from "./components/sections/BlogSection";
 import styles from "./home.module.css";
 
 export const revalidate = 60;
@@ -74,19 +78,7 @@ export default async function HomePage() {
         <Link className="thm-btn thm-btn--stroke-white sec-btn" href="/contact">tư vấn cùng chuyên gia <span><i className="far fa-comments" /></span></Link>
       </div></div>
 
-      {posts.length > 0 ? <section className="blog pt-115 pb-120 bg_img" style={{ backgroundImage: `url(${asset("bg/news_bg01.jpg")})` }}><div className="container">
-        <div className="blog-sec-top ul_li_between"><div className="section-title mb-40"><span className="sub-title">Tin Tức &amp; Tri Thức AI</span><h2 className="title">Cập Nhật Công Nghệ AI</h2></div><div className="xb-topic"><Link className="thm-btn thm-btn--stroke-black" href="/posts">Tất cả bài viết</Link></div></div>
-        <div className="row justify-content-center">
-          <div className="col-lg-3 col-md-8"><div className="xb-blog__left">
-            {posts.slice(0, 2).map((post, index) => <article className="xb-blog pos-rel mt-20" key={post.id}><div className="xb-item--img"><Link href={`/posts/${post.slug}`}><img src={resolveMediaUrl(post.thumbnail, asset(index === 0 ? "news/news-img01.jpg" : "news/news-img02.png"))} alt={post.title} /></Link></div><div className="xb-item--holder"><span className="xb-item--cta"># {post.category?.name ?? "AI"}</span><h2 className="xb-item--title border-effect-2"><Link href={`/posts/${post.slug}`}>{post.title}</Link></h2></div></article>)}
-          </div></div>
-          {posts[2] ? <div className="col-lg-6 col-md-8"><article className="xb-blog chn-margin pos-rel mt-20"><div className="xb-item--img"><Link href={`/posts/${posts[2].slug}`}><img src={resolveMediaUrl(posts[2].thumbnail, asset("news/news-img03.png"))} alt={posts[2].title} /></Link></div><div className="xb-item--holder"><span className="xb-item--cta"># {posts[2].category?.name ?? "Tri thức AI"}</span><h2 className="xb-item--title border-effect"><Link href={`/posts/${posts[2].slug}`}>{posts[2].title}</Link></h2><div className="xb-item--meta ul_li"><span><i className="far fa-user" /> {posts[2].author?.userName ?? "EDUGATS"}</span><span><i className="far fa-clock" /> {new Date(posts[2].publishedAt ?? posts[2].createdAt).toLocaleDateString("vi-VN")}</span><span><i className="far fa-comment" /> {posts[2].commentCount ?? 0}</span></div></div></article></div> : null}
-          <div className="col-lg-3 col-md-8"><div className="xb-blog__right">
-            {posts.slice(3, 5).map((post, index) => <article className="xb-blog mr-left pos-rel mt-20" key={post.id}><div className="xb-item--img"><Link href={`/posts/${post.slug}`}><img src={resolveMediaUrl(post.thumbnail, asset(`news/news-img0${index + 3}.png`))} alt={post.title} /></Link></div><div className="xb-item--holder"><span className="xb-item--cta"># {post.category?.name ?? "AI"}</span><h2 className="xb-item--title border-effect-2"><Link href={`/posts/${post.slug}`}>{post.title}</Link></h2></div></article>)}
-          </div></div>
-        </div>
-        <div className="xb-btn text-center pt-60"><Link className="thm-btn" href="/posts">xem tất cả bài viết <span className="icon"><i className="far fa-arrow-right" /></span></Link></div>
-      </div></section> : null}
+      <BlogSection posts={posts} />
 
       <section className="department pt-115 pb-200 pos-rel">
         <div className="container">
@@ -107,15 +99,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="fanfact pos-rel"><div className="container"><div className="fanfact-wrapper">
-        <div className={`${styles.staticSwiper} fanfact-slider swiper-container`}><div className="swiper-wrapper"><div className="swiper-slide swiper-slide-active">
-          <div className="xb-fanfact__wrapper pos-rel">
-            <div className="xb-item--img"><img src={asset("feature/feature-img01.png")} alt="Đào tạo EDUGATS" /></div>
-            <h2 className="xb-item--title">đào tạo thực chiến tạo nên <br /> kết quả khác biệt</h2>
-            <div className="xb-item--holder"><h3 className="xb-item--number">15+</h3><h2 className="xb-item--text">Năm Kinh Nghiệm Cố Vấn</h2><p className="xb-item--content">Chương trình được xây dựng từ bài toán vận hành thực tế của cá nhân và doanh nghiệp, giúp học viên ứng dụng AI vào công việc thay vì chỉ dừng ở lý thuyết.</p></div>
-          </div>
-        </div></div></div>
-      </div></div></section>
+      <FanfactSlider />
 
       <section className="program pos-rel pt-115"><div className="container">
         <div className="pro-top ul_li_between mb-40"><div className="section-title mb-20"><span className="sub-title">Hệ thống đào tạo thực chiến</span><h2 className="title">Chương Trình Nổi Bật</h2></div><div className="pro-btn mb-20"><Link className="thm-btn thm-btn--stroke-black" href="/courses">xem tất cả chương trình <span><i className="far fa-book-open" /></span></Link></div></div>
@@ -129,19 +113,27 @@ export default async function HomePage() {
             </div>
           </div></div>)}
         </div> : <p className={styles.empty}>Chương trình đang được cập nhật.</p>}
-        <div className="xb-cta bg_img mt-120 pos-rel" style={{ backgroundImage: `url(${asset("bg/pro-banner.png")})` }}><h2 className="mb-15">Nhận Chứng Nhận Kỹ Năng AI Thực Chiến Từ EDUGATS</h2><div className="xb-btn xb-cta-btn ul_li"><Link className="thm-btn btn-yellow mt-20" href="/courses">đăng ký ngay <span><img src={asset("icon/learning.png")} alt="" /></span></Link><span className="mt-20"><img src={asset("icon/calling-icon.png")} alt="" /> (+84) 888 888 888</span></div></div>
+        <div
+          className="xb-cta bg_img mt-[140px] mb-[60px] pos-rel transition-transform duration-300"
+          style={{
+            backgroundImage: `url(${asset("bg/pro-banner.png")})`,
+            transform: "scale(1.2)",
+            transformOrigin: "center",
+          }}
+        >
+          <h2 className="mb-15">Nhận Chứng Nhận Kỹ Năng AI Thực Chiến Từ EDUGATS</h2>
+          <div className="xb-btn xb-cta-btn ul_li">
+            <Link className="thm-btn btn-yellow mt-20" href="/courses">
+              đăng ký ngay <span><img src={asset("icon/learning.png")} alt="" /></span>
+            </Link>
+            <span className="mt-20">
+              <img src={asset("icon/calling-icon.png")} alt="" /> (+84) 888 888 888
+            </span>
+          </div>
+        </div>
       </div></section>
 
-      <section className="campus pos-rel bg_img z-1 pt-195 pb-200" style={{ backgroundImage: `url(${asset("bg/campus-bg.jpg")})` }}>
-        <div className="section-title mb-60 mt-80 text-center"><span className="sub-title">Trải Nghiệm Học Tập</span><h2 className="title">Học Để Làm Được Việc</h2></div>
-        <div className={`${styles.campusStatic} campus-slider mr-set`}><div className="swiper-wrapper">
-          {[
-            ["campus/campus-img01.png", "Workshop Thực Chiến", "Thực hành trực tiếp trên bài toán thật cùng chuyên gia."],
-            ["campus/campus-img02.png", "Cộng Đồng Đồng Hành", "Kết nối học viên, giảng viên và doanh nghiệp trong suốt lộ trình."],
-            ["campus/campus-img03.png", "Chứng Nhận EDUGATS", "Ghi nhận năng lực hoàn thành chương trình đào tạo ứng dụng."],
-          ].map(([image, title, description]) => <div className="swiper-slide swiper-slide-active" key={title}><div className="xb-campus__wrapper pos-rel"><div className="xb-item--img pos-rel"><img src={asset(image)} alt={title} /></div><div className="xb-item--holder"><h3 className="xb-item--title">{title}</h3><p className={styles.campusDescription}>{description}</p><div className="xb-btn_thm ul_li"><Link className="thm-btn btn-yellow" href="/courses">tìm hiểu thêm <span><i className="far fa-arrow-up-right" /></span></Link></div></div></div></div>)}
-        </div></div>
-      </section>
+      <CampusCarousel />
 
       <section className="testimonial pt-120 pb-120 pos-rel"><div className="container"><div className="row align-items-center mt-none-30">
         <div className="col-lg-6 mt-30"><div className="xb-testimonial-left pos-rel"><div className="tes-img"><img src={asset("testimonial/tes-img.png")} alt="Học viên EDUGATS" /></div><div className={styles.testimonialThumbs}><img src={asset("testimonial/tes-img02.png")} alt="" /><img src={asset("testimonial/tes-img03.png")} alt="" /></div></div></div>
@@ -156,17 +148,8 @@ export default async function HomePage() {
         </div>
       </div></div></section>
 
-      <section className={`${styles.eventSection} event event-bg-clr pos-rel pt-115`}><div className={`${styles.eventContent} container`}><div className="section-title text-center mb-40"><span className="sub-title">Hoạt Động EDUGATS</span><h2 className="title">Sự Kiện Sắp Diễn Ra</h2></div><div className="row justify-content-center">
-        <div className="col-xl-6 col-lg-8">
-          {[
-            ["event/event-img01.png", "Trực tuyến qua Zoom · EDUGATS", "Live Q&A Trực Tiếp Cùng Chuyên Gia GATS"],
-            ["event/event-img02.png", "TP. Hồ Chí Minh · EDUGATS", "Workshop Xây Dựng AI Workflow Thực Chiến"],
-            ["event/event-img03.png", "Hà Nội · EDUGATS", "Ứng Dụng AI Agent Cho Vận Hành Doanh Nghiệp"],
-          ].map(([image, location, title]) => <div className="xb-event-wrapper mt-20" key={title}><div className={`${styles.eventRow} xb-event-left`}><div className={styles.eventRowImage}><img src={asset(image)} alt={title} /></div><div className="xb-item--author"><span className="xb-item--location"><i className="far fa-map-marker-alt" /> {location}</span><h2 className="xb-item--title border-effect"><Link href="/contact">{title}</Link></h2></div></div></div>)}
-        </div>
-        <div className="col-xl-6 col-lg-8"><div className={`${styles.featuredEvent} xb-event-item mt-20`}><div className="xb-item--img"><img src={asset("event/event-img04.png")} alt="Workshop EDUGATS" /></div><div className={`${styles.featuredEventBody} xb-item--wrap`}><div className="xb-item--content"><span className="xb-item--location"><i className="far fa-map-marker-alt" /> Workshop dành cho doanh nghiệp</span><h2 className="xb-item--title border-effect"><Link href="/contact">Xây dựng lộ trình ứng dụng AI và đo lường ROI thực tế</Link></h2><div className="xb-event-btn pt-15"><Link className="thm-btn" href="/contact">đăng ký tham gia <span className="icon"><i className="far fa-arrow-right" /></span></Link></div></div><div className="xb-item--date-inner text-center"><div className="xb-item--icon"><img src={asset("icon/note-book.svg")} alt="" /></div><span className="xb-item--date">24, Tháng 12<br />2026</span></div></div></div></div>
-        <div className="event-btns pos-rel z-1 text-center mt-40"><Link className="more-btn" href="/contact">xem thêm sự kiện <span><i className="far fa-arrow-right" /></span></Link></div>
-      </div></div><div className={`${styles.eventDecoration} xb-event-bottom`} aria-hidden="true"><img src={asset("event/event-img05.png")} alt="" /></div></section>
+
+      <HomeEvents />
 
       <EdubostFooter />
     </main>
