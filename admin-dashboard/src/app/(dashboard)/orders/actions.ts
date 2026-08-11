@@ -188,6 +188,51 @@ export async function fetchOrderDetail(
   return result.data;
 }
 
+export type OrderReceiptResponse = {
+  data: {
+    orderId: string;
+    status: string;
+    paidAt: string | null;
+    createdAt: string;
+    receiptNumber: string;
+    customer: {
+      name: string | null;
+      email: string | null;
+      phone: string | null;
+    };
+    items: Array<{
+      courseName: string;
+      quantity: number;
+      unitPrice: number;
+      lineTotal: number;
+    }>;
+    discountAmount: number;
+    couponCode: string | null;
+    totalAmount: number;
+    payment: {
+      method: string | null;
+      txnRef: string | null;
+    };
+    seller: {
+      name: string;
+      address: string | null;
+      email: string | null;
+      phone: string | null;
+      taxCode: string | null;
+    };
+  };
+};
+
+export async function fetchOrderReceipt(
+  orderId: string,
+): Promise<OrderReceiptResponse["data"] | null> {
+  const result = await beFetch<OrderReceiptResponse>(
+    `/orders/admin/${orderId}/receipt`,
+  );
+  if (!result.ok || !result.data?.data) return null;
+  return result.data.data;
+}
+
 export type UpdateOrderStatusInput = {
   status: "paid" | "cancelled" | "refund_pending" | "refunded";
   reason?: string;

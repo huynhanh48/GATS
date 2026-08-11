@@ -1,28 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bookmark, MessageCircle, StickyNote, Trash2 } from "lucide-react";
+import { MessageCircle, StickyNote, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  addLessonBookmark,
   addLessonNote,
   askLessonQuestion,
-  deleteLessonBookmark,
   deleteLessonNote,
   deleteLessonQuestion,
-  fetchLessonBookmarks,
   fetchLessonNotes,
   fetchLessonQuestions,
-  type LessonBookmark,
   type LessonNote,
   type LessonQuestion,
 } from "@/services/learning.service";
 
-type TabKey = "notes" | "bookmarks" | "qna";
+type TabKey = "notes" | "qna";
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof StickyNote }> = [
   { key: "notes", label: "Ghi chú", icon: StickyNote },
-  { key: "bookmarks", label: "Đánh dấu", icon: Bookmark },
   { key: "qna", label: "Hỏi đáp", icon: MessageCircle },
 ];
 
@@ -50,11 +45,6 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
   const [notesLoading, setNotesLoading] = useState(true);
   const [noteSaving, setNoteSaving] = useState(false);
 
-  const [bookmarks, setBookmarks] = useState<LessonBookmark[]>([]);
-  const [bookmarkInput, setBookmarkInput] = useState("");
-  const [bookmarksLoading, setBookmarksLoading] = useState(true);
-  const [bookmarkSaving, setBookmarkSaving] = useState(false);
-
   const [questions, setQuestions] = useState<LessonQuestion[]>([]);
   const [questionInput, setQuestionInput] = useState("");
   const [questionsLoading, setQuestionsLoading] = useState(true);
@@ -69,12 +59,6 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
       .then((data) => !cancelled && setNotes(data))
       .catch(() => !cancelled && setNotes([]))
       .finally(() => !cancelled && setNotesLoading(false));
-
-    setBookmarksLoading(true);
-    fetchLessonBookmarks(courseId, lessonId)
-      .then((data) => !cancelled && setBookmarks(data))
-      .catch(() => !cancelled && setBookmarks([]))
-      .finally(() => !cancelled && setBookmarksLoading(false));
 
     setQuestionsLoading(true);
     fetchLessonQuestions(courseId, lessonId)
@@ -111,33 +95,6 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
     }
   }
 
-  async function handleAddBookmark() {
-    setBookmarkSaving(true);
-    try {
-      const bookmark = await addLessonBookmark(
-        courseId,
-        lessonId,
-        bookmarkInput.trim() || undefined,
-      );
-      setBookmarks((prev) => [bookmark, ...prev]);
-      setBookmarkInput("");
-      toast.success("Đã đánh dấu bài học");
-    } catch (err: any) {
-      toast.error(err?.message || "Không lưu được đánh dấu");
-    } finally {
-      setBookmarkSaving(false);
-    }
-  }
-
-  async function handleDeleteBookmark(id: string) {
-    try {
-      await deleteLessonBookmark(id);
-      setBookmarks((prev) => prev.filter((b) => b.id !== id));
-    } catch (err: any) {
-      toast.error(err?.message || "Không xóa được đánh dấu");
-    }
-  }
-
   async function handleAskQuestion() {
     const content = questionInput.trim();
     if (!content) return;
@@ -164,8 +121,8 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-4xl rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <div className="flex gap-1 rounded-xl bg-muted/50 p-1">
+    <div className="mx-auto max-w-4xl rounded-2xl bg-muted/20 p-5 sm:p-6">
+      <div className="flex gap-1 rounded-xl bg-muted/60 p-1">
         {TABS.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -189,9 +146,9 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
             <textarea
               value={noteInput}
               onChange={(e) => setNoteInput(e.target.value)}
-              placeholder="Ghi chú của bạn về bài học này..."
+              placeholder="Viết ghi chú cho bài học..."
               rows={2}
-              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="flex-1 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-background focus:ring-2 focus:ring-primary/10"
             />
           </div>
           <div className="flex justify-end">
@@ -199,7 +156,7 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
               type="button"
               onClick={() => void handleAddNote()}
               disabled={noteSaving || !noteInput.trim()}
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
+              className="eb-note-save rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
             >
               {noteSaving ? "Đang lưu..." : "Lưu ghi chú"}
             </button>
@@ -241,63 +198,6 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
         </div>
       ) : null}
 
-      {tab === "bookmarks" ? (
-        <div className="mt-4 space-y-3">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={bookmarkInput}
-              onChange={(e) => setBookmarkInput(e.target.value)}
-              placeholder="Nhãn cho đánh dấu (không bắt buộc)"
-              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-            <button
-              type="button"
-              onClick={() => void handleAddBookmark()}
-              disabled={bookmarkSaving}
-              className="shrink-0 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"
-            >
-              {bookmarkSaving ? "..." : "Đánh dấu"}
-            </button>
-          </div>
-
-          {bookmarksLoading ? (
-            <p className="text-sm text-muted-foreground">Đang tải đánh dấu...</p>
-          ) : bookmarks.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Chưa có đánh dấu nào cho bài học này.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {bookmarks.map((bookmark) => (
-                <li
-                  key={bookmark.id}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background/60 p-3"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Bookmark className="h-4 w-4 shrink-0 text-primary" />
-                    <span className="truncate text-sm text-foreground">
-                      {bookmark.label || "Đánh dấu bài học"}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {formatDate(bookmark.createdAt)}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleDeleteBookmark(bookmark.id)}
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                    aria-label="Xóa đánh dấu"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : null}
-
       {tab === "qna" ? (
         <div className="mt-4 space-y-3">
           <div className="flex gap-2">
@@ -306,7 +206,7 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
               onChange={(e) => setQuestionInput(e.target.value)}
               placeholder="Đặt câu hỏi về bài học này..."
               rows={2}
-              className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+              className="flex-1 rounded-xl border border-border/60 bg-muted/20 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:bg-background focus:ring-2 focus:ring-primary/10"
             />
           </div>
           <div className="flex justify-end">
@@ -338,12 +238,11 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
                       <p className="text-sm font-semibold text-foreground">
                         {question.userName || "Học viên"}
                       </p>
-                      <p className="mt-0.5 whitespace-pre-wrap text-sm text-foreground">
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">
                         {question.content}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {formatDate(question.createdAt)}
-                        {question.isResolved ? " · Đã giải đáp" : ""}
                       </p>
                     </div>
                     <button
@@ -355,20 +254,17 @@ export function LearnExtrasPanel({ courseId, lessonId }: Props) {
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
-
-                  {question.answers.length > 0 ? (
-                    <ul className="mt-3 space-y-2 border-l-2 border-primary/30 pl-3">
+                  {question.answers && question.answers.length > 0 ? (
+                    <ul className="mt-3 space-y-2 border-t border-border pt-3">
                       {question.answers.map((answer) => (
-                        <li key={answer.id} className="text-sm">
-                          <p className="font-semibold text-foreground">
-                            {answer.userName || "Người dùng"}
-                            {answer.isInstructorAnswer ? (
-                              <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                                Giảng viên
-                              </span>
-                            ) : null}
+                        <li
+                          key={answer.id}
+                          className="rounded-lg bg-muted/40 px-3 py-2 text-sm"
+                        >
+                          <p className="font-medium text-primary">
+                            {answer.userName || "Mentor"}
                           </p>
-                          <p className="whitespace-pre-wrap text-foreground/90">
+                          <p className="mt-0.5 whitespace-pre-wrap text-foreground">
                             {answer.content}
                           </p>
                         </li>

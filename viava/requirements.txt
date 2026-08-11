@@ -1,0 +1,34 @@
+fastapi
+
+httpx
+pydantic
+pydantic-settings
+python-dotenv
+ddgs
+
+redis
+qdrant-client
+asyncpg
+pgvector
+
+azure-ai-documentintelligence
+python-docx
+PyPDF2
+openpyxl
+python-pptx
+ebooklib
+beautifulsoup4
+psycopg2-binary==2.9.10
+tiktoken==0.13.0
+mcp>=1.27,<2
+minio>=7.2.0
+aiosqlite
+aiosqlite
+networkx==3.6.1
+scipy==1.17.1
+numpy>=1.24
+
+slowapi
+
+# Dev: pip install -e ".[dev]"
+# ruff, mypy, pytest, pytest-asyncio, pre-commit

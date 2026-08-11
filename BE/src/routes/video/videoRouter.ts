@@ -123,6 +123,17 @@ async function getPlayback(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function getPlaybackByLesson(req: Request, res: Response) {
+  const courseId = getRouteParam(req.params.courseId);
+  const lessonId = getRouteParam(req.params.lessonId);
+  const result = await VideoService.getPlaybackByLesson(
+    courseId,
+    lessonId,
+    req.authUser?.id ?? null,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   initUpload: errorHandle(initUpload),
   initMultipartUpload: errorHandle(initMultipartUpload),
@@ -137,4 +148,5 @@ export default {
   getByLesson: errorHandle(getByLesson),
   deleteVideo: errorHandle(deleteVideo),
   getPlayback: errorHandle(getPlayback),
+  getPlaybackByLesson: errorHandle(getPlaybackByLesson),
 } as const;

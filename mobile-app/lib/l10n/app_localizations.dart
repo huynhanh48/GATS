@@ -173,49 +173,55 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitleReminder.
   ///
   /// In en, this message translates to:
-  /// **'Daily learning reminder'**
+  /// **'When should we remind you?'**
   String get onboardingTitleReminder;
 
   /// No description provided for @onboardingSubtitleReminder.
   ///
   /// In en, this message translates to:
-  /// **'We\'ll nudge you at the time you pick — you can change this in Settings'**
+  /// **'We\'ll nudge you to study at this time every day. Change it anytime in Settings.'**
   String get onboardingSubtitleReminder;
 
   /// No description provided for @onboardingCoachReminder.
   ///
   /// In en, this message translates to:
-  /// **'Consistency beats intensity. Pick a time that works every day!'**
+  /// **'Pick a time you can stick to — a little every day beats cramming.'**
   String get onboardingCoachReminder;
 
   /// No description provided for @onboardingReminderEnable.
   ///
   /// In en, this message translates to:
-  /// **'Enable daily reminder'**
+  /// **'Remind me to study every day'**
   String get onboardingReminderEnable;
+
+  /// No description provided for @onboardingReminderPickTime.
+  ///
+  /// In en, this message translates to:
+  /// **'What time works best for you?'**
+  String get onboardingReminderPickTime;
 
   /// No description provided for @onboardingReminderNoThanks.
   ///
   /// In en, this message translates to:
-  /// **'No thanks'**
+  /// **'Maybe later'**
   String get onboardingReminderNoThanks;
 
   /// No description provided for @onboardingReminderContinue.
   ///
   /// In en, this message translates to:
-  /// **'Continue'**
+  /// **'Save reminder'**
   String get onboardingReminderContinue;
 
   /// No description provided for @ackReminderEcho.
   ///
   /// In en, this message translates to:
-  /// **'Reminder at {time} — see you then!'**
+  /// **'We\'ll remind you at {time} — see you then!'**
   String ackReminderEcho(String time);
 
   /// No description provided for @ackReminderSkippedEcho.
   ///
   /// In en, this message translates to:
-  /// **'No problem — you can turn reminders on later in Settings.'**
+  /// **'No worries — you can turn study reminders on anytime in Settings.'**
   String get ackReminderSkippedEcho;
 
   /// No description provided for @dailyReminderTitle.
@@ -227,7 +233,7 @@ abstract class AppLocalizations {
   /// No description provided for @dailyReminderBody.
   ///
   /// In en, this message translates to:
-  /// **'Time to learn! Check in and keep your streak going.'**
+  /// **'Time to learn! Open the app, check in, and keep your streak going.'**
   String get dailyReminderBody;
 
   /// No description provided for @onboardingSubtitleLanguage.
@@ -1670,6 +1676,12 @@ abstract class AppLocalizations {
   /// **'Daily'**
   String get navDaily;
 
+  /// No description provided for @navDailyBadgeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} daily goals left'**
+  String navDailyBadgeTooltip(int count);
+
   /// No description provided for @navLibrary.
   ///
   /// In en, this message translates to:
@@ -1907,13 +1919,13 @@ abstract class AppLocalizations {
   /// No description provided for @routineEditorHint.
   ///
   /// In en, this message translates to:
-  /// **'Drag node · Tap right port to connect · Hold to delete'**
+  /// **'Drag to move · Hold a node to connect · Delete via trash icon'**
   String get routineEditorHint;
 
   /// No description provided for @routineConnectHint.
   ///
   /// In en, this message translates to:
-  /// **'Tap left port of target node to connect'**
+  /// **'Pick a target node to connect'**
   String get routineConnectHint;
 
   /// No description provided for @routineCancelConnect.
@@ -1921,6 +1933,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancel'**
   String get routineCancelConnect;
+
+  /// No description provided for @routineConnectFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect from \"{title}\"'**
+  String routineConnectFrom(String title);
+
+  /// No description provided for @routineConnectToHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which node to connect to'**
+  String get routineConnectToHint;
+
+  /// No description provided for @routineConnectEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No other nodes to connect. Add a node first.'**
+  String get routineConnectEmpty;
+
+  /// No description provided for @routineDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get routineDisconnect;
+
+  /// No description provided for @routineConnectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get routineConnectAction;
 
   /// No description provided for @routinePreviewSubtitle.
   ///
@@ -2030,6 +2072,84 @@ abstract class AppLocalizations {
   /// **'Badges'**
   String get hubBadgesTitle;
 
+  /// No description provided for @hubChartsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Learning stats'**
+  String get hubChartsTitle;
+
+  /// No description provided for @hubChartsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days — study time, XP and activity mix'**
+  String get hubChartsSubtitle;
+
+  /// No description provided for @hubChartsWeeklyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes studied per day'**
+  String get hubChartsWeeklyTitle;
+
+  /// No description provided for @hubChartsXpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'XP earned'**
+  String get hubChartsXpTitle;
+
+  /// No description provided for @hubChartsMixTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity mix'**
+  String get hubChartsMixTitle;
+
+  /// No description provided for @hubChartsWeekTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Week total'**
+  String get hubChartsWeekTotal;
+
+  /// No description provided for @hubChartsWeekAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily average'**
+  String get hubChartsWeekAvg;
+
+  /// No description provided for @hubChartsMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String hubChartsMinutes(int minutes);
+
+  /// No description provided for @hubChartsMixLessons.
+  ///
+  /// In en, this message translates to:
+  /// **'Lessons'**
+  String get hubChartsMixLessons;
+
+  /// No description provided for @hubChartsMixFlashcards.
+  ///
+  /// In en, this message translates to:
+  /// **'Flashcards'**
+  String get hubChartsMixFlashcards;
+
+  /// No description provided for @hubChartsMixQuiz.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiz'**
+  String get hubChartsMixQuiz;
+
+  /// No description provided for @hubChartsMixCoach.
+  ///
+  /// In en, this message translates to:
+  /// **'Coach'**
+  String get hubChartsMixCoach;
+
+  /// No description provided for @hubChartsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity in the last 7 days — study a lesson, review cards, or check in to see charts.'**
+  String get hubChartsEmpty;
+
   /// No description provided for @hubCertTitle.
   ///
   /// In en, this message translates to:
@@ -2077,6 +2197,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language'**
   String get settingsLanguage;
+
+  /// No description provided for @settingsDailyReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily study reminder'**
+  String get settingsDailyReminder;
+
+  /// No description provided for @settingsDailyReminderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'System notification at the time you choose'**
+  String get settingsDailyReminderSubtitle;
+
+  /// No description provided for @settingsDailyReminderTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder time'**
+  String get settingsDailyReminderTime;
+
+  /// No description provided for @settingsDailyReminderPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow notifications in system Settings to receive study reminders.'**
+  String get settingsDailyReminderPermissionDenied;
+
+  /// No description provided for @settingsDailyReminderSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Study reminder scheduled for {time}'**
+  String settingsDailyReminderSaved(String time);
 
   /// No description provided for @settingsDarkMode.
   ///
@@ -2147,7 +2297,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsReplayOnboarding.
   ///
   /// In en, this message translates to:
-  /// **'Reset onboarding'**
+  /// **'Replay onboarding'**
   String get settingsReplayOnboarding;
 
   /// No description provided for @settingsSignOutSuccess.
@@ -2159,7 +2309,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsReplaySuccess.
   ///
   /// In en, this message translates to:
-  /// **'Onboarding reset. Restart the app to replay the flow.'**
+  /// **'Opening onboarding…'**
   String get settingsReplaySuccess;
 
   /// No description provided for @tagOfficeAi.
@@ -2827,6 +2977,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No posts yet'**
   String get postFeedEmpty;
+
+  /// No description provided for @postSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search posts, authors...'**
+  String get postSearchHint;
+
+  /// No description provided for @postSearchEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching posts'**
+  String get postSearchEmpty;
+
+  /// No description provided for @postSearchResultCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} posts'**
+  String postSearchResultCount(int count);
+
+  /// No description provided for @postFilterScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Scope'**
+  String get postFilterScope;
+
+  /// No description provided for @postFilterSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get postFilterSort;
+
+  /// No description provided for @postSortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get postSortNewest;
+
+  /// No description provided for @postSortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get postSortOldest;
+
+  /// No description provided for @postSortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A–Z'**
+  String get postSortTitle;
+
+  /// No description provided for @postScopeGlobal.
+  ///
+  /// In en, this message translates to:
+  /// **'GATS'**
+  String get postScopeGlobal;
+
+  /// No description provided for @postScopeCourse.
+  ///
+  /// In en, this message translates to:
+  /// **'Course'**
+  String get postScopeCourse;
+
+  /// No description provided for @postClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get postClearFilters;
 
   /// No description provided for @postSeeAll.
   ///

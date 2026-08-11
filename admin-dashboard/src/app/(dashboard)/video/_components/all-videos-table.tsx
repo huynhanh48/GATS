@@ -215,6 +215,19 @@ export function AllVideosTable() {
                           >
                             <Eye className="mr-2 h-4 w-4" /> Xem video
                           </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (vid.audioFlacUrl) {
+                                window.open(vid.audioFlacUrl, "_blank", "noopener,noreferrer");
+                                return;
+                              }
+                              toast.error("Video này chưa có file audio FLAC");
+                            }}
+                            disabled={vid.status !== "ready" || !vid.audioFlacUrl}
+                          >
+                            <Eye className="mr-2 h-4 w-4" /> Xem audio
+                          </DropdownMenuItem>
                           
                           <DropdownMenuItem
                             onClick={() => router.push(`/course/${vid.courseId}/lessons/${vid.lessonId}/edit`)}

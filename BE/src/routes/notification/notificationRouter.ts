@@ -28,13 +28,52 @@ const composeSchema = z.object({
 
 async function list(req: Request, res: Response) {
   const query = listQuerySchema.parse(req.query);
-  const result = await NotificationService.list(query);
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
+  const result = await NotificationService.list({
+    ...query,
+    userId: req.authUser!.id,
+    isStaff,
+  });
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function markRead(req: Request, res: Response) {
   const body = markReadSchema.parse(req.body ?? {});
-  const result = await NotificationService.markRead(body.ids);
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
+  const result = await NotificationService.markRead(
+    body.ids,
+    req.authUser!.id,
+    isStaff,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function markOneRead(req: Request, res: Response) {
+  const id = String(req.params.id ?? '');
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
+  const result = await NotificationService.markOne(
+    id,
+    req.authUser!.id,
+    isStaff,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function markAllRead(req: Request, res: Response) {
+  const roles = req.authUser?.roles ?? [];
+  const isStaff =
+    roles.includes('admin') || roles.includes('instructor');
+  const result = await NotificationService.markRead(
+    undefined,
+    req.authUser!.id,
+    isStaff,
+  );
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
@@ -47,5 +86,7 @@ async function compose(req: Request, res: Response) {
 export default {
   list: errorHandle(list),
   markRead: errorHandle(markRead),
+  markOneRead: errorHandle(markOneRead),
+  markAllRead: errorHandle(markAllRead),
   compose: errorHandle(compose),
 };

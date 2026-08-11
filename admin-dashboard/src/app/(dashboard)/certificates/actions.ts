@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { beFetch } from "@/lib/api/server";
+import {
+  fetchUserDetail,
+  fetchUsers,
+  type AdminUserListItem,
+} from "../users/actions";
 
 export type CertificateStatus = "issued" | "revoked";
 
@@ -30,6 +35,19 @@ export type CertificateListResponse = {
     totalPages: number;
     hasMore: boolean;
   };
+};
+
+export type CertUserOption = {
+  id: number;
+  userName: string;
+  email: string;
+};
+
+export type CertCourseOption = {
+  courseId: string;
+  courseTitle: string;
+  percent: number;
+  status: string;
 };
 
 function mapActionError(
@@ -64,15 +82,78 @@ export async function fetchCertificates(options: {
   return result.data;
 }
 
+export async function searchCertUsers(
+  q: string,
+): Promise<CertUserOption[]> {
+  const { data } = await fetchUsers({ page: 1, limit: 30, q: q || undefined });
+  return data.map((u: AdminUserListItem) => ({
+    id: u.id,
+    userName: u.userName,
+    email: u.email,
+  }));
+}
+
+export async function fetchActiveEnrollmentsForUser(
+  userId: number,
+): Promise<CertCourseOption[]> {
+  const detail = await fetchUserDetail(userId);
+  if (!detail) return [];
+  return detail.enrollments
+    .filter((e) => e.status === "active")
+    .map((e) => ({
+      courseId: e.courseId,
+      courseTitle: e.courseTitle ?? e.courseId,
+      percent: e.percent,
+      status: e.status,
+    }));
+}
+
+export async function resolveCertPrefill(options: {
+  userId: number;
+  courseId?: string;
+}): Promise<{
+  user: CertUserOption | null;
+  course: CertCourseOption | null;
+  courses: CertCourseOption[];
+}> {
+  const detail = await fetchUserDetail(options.userId);
+  if (!detail) {
+    return { user: null, course: null, courses: [] };
+  }
+  const user: CertUserOption = {
+    id: detail.user.id,
+    userName: detail.user.userName,
+    email: detail.user.email,
+  };
+  const courses = detail.enrollments
+    .filter((e) => e.status === "active")
+    .map((e) => ({
+      courseId: e.courseId,
+      courseTitle: e.courseTitle ?? e.courseId,
+      percent: e.percent,
+      status: e.status,
+    }));
+  const course =
+    options.courseId != null
+      ? (courses.find((c) => c.courseId === options.courseId) ?? null)
+      : null;
+  return { user, course, courses };
+}
+
 export async function issueCertificate(
   userId: number,
   courseId: string,
+  reason?: string | null,
 ): Promise<{ ok: boolean; message: string }> {
-  const result = await beFetch<{ data: AdminCertificate }>(
+  const result = await beFetch<{ data: AdminCertificate; reissued?: boolean }>(
     "/certificates/admin/issue",
     {
       method: "POST",
-      body: JSON.stringify({ userId, courseId }),
+      body: JSON.stringify({
+        userId,
+        courseId,
+        ...(reason?.trim() ? { reason: reason.trim() } : {}),
+      }),
     },
   );
 
@@ -81,7 +162,38 @@ export async function issueCertificate(
   }
 
   revalidatePath("/certificates");
-  return { ok: true, message: "Đã cấp chứng chỉ" };
+  revalidatePath("/users");
+  return {
+    ok: true,
+    message: result.data?.reissued
+      ? "Đã cấp lại chứng chỉ"
+      : "Đã cấp chứng chỉ",
+  };
+}
+
+export async function reissueCertificate(
+  id: string,
+  reason?: string | null,
+): Promise<{ ok: boolean; message: string }> {
+  const result = await beFetch<{ data: AdminCertificate }>(
+    `/certificates/admin/${id}/reissue`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        ...(reason?.trim() ? { reason: reason.trim() } : {}),
+      }),
+    },
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: mapActionError(result, "Cấp lại chứng chỉ thất bại"),
+    };
+  }
+
+  revalidatePath("/certificates");
+  return { ok: true, message: "Đã cấp lại chứng chỉ" };
 }
 
 export async function revokeCertificate(

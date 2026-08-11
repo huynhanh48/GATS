@@ -3,6 +3,7 @@ const AnalyticsPaths = {
   Analytics: {
     _: '/analytics',
     Overview: '/overview',
+    ExportCsv: '/export.csv',
   },
 } as const;
 

@@ -167,7 +167,7 @@ async function createComment(req: Request, res: Response) {
   const input = parseCreateCommentInput(req.body);
   const comment = await CommentService.create(
     getRouteParam(req.params.postId),
-    authUserId(req),
+    req.authUser?.id,
     input,
     isAuthenticated(req),
   );
@@ -191,7 +191,7 @@ async function replyComment(req: Request, res: Response) {
   const comment = await CommentService.reply(
     getRouteParam(req.params.postId),
     getRouteParam(req.params.commentId),
-    authUserId(req),
+    req.authUser?.id,
     input,
     isAuthenticated(req),
   );

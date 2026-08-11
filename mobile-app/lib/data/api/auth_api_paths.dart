@@ -14,4 +14,7 @@ abstract final class AuthApiPaths {
 
   /// Apple — BE chưa có; giữ path để không hard-code sai khi sẵn sàng.
   static const loginApple = '/api/user/auth/apple';
+  static const refresh = '/api/user/refresh';
+  static const sessions = '/api/user/sessions';
+  static const devices = '/api/user/devices';
 }

@@ -1,8 +1,20 @@
 # Build & deploy Docker (Web + API + Admin)
 
-> Cập nhật: 22/07/2026  
+> Cập nhật: 02/08/2026  
 > Image gốc: `Dockerfile` (multi-stage) + `docker-compose.yml` service `app`  
-> Chi tiết secrets/OAuth: [`huong-dan-van-hanh-ngay.md`](./huong-dan-van-hanh-ngay.md), mẫu env: [`.env.vps.example`](../.env.vps.example)
+> Chi tiết secrets/OAuth: [`huong-dan-van-hanh-ngay.md`](./huong-dan-van-hanh-ngay.md)  
+> Env mẫu: local [`.env.example`](../.env.example) · VPS [`.env.vps.example`](../.env.vps.example)
+
+## Local vs production API URL
+
+| Môi trường | Compose | `NEXT_PUBLIC_API_URL` / `APP_URL` |
+|---|---|---|
+| **Local** (máy bạn) | `docker-compose.yml` only | Default `http://localhost:3000` — **không** gọi `api.gats.vn` |
+| **Prod VPS** | `docker-compose.yml` + `docker-compose.prod.yml` | Bắt buộc từ `.env`: `https://api.gats.vn` |
+
+Web trên `localhost:3005` dùng same-origin `/api/*`; Next rewrite proxy tới BE loopback `127.0.0.1:3000` (không hardcode prod). Trên `gats.vn`, nginx `/api` → BE trước Next.
+
+Nếu root `.env` còn `NEXT_PUBLIC_API_URL=https://api.gats.vn` từ lần deploy VPS, **sửa lại localhost** (hoặc copy `.env.example`) rồi `up --build`.
 
 ## Ports sau khi lên
 
@@ -11,15 +23,19 @@
 | BE API | 3000 | 3000 |
 | Web | 3005 | 3005 |
 | Admin | 9000 | 9100 |
+| Viava (FastAPI) | 8000 | (internal; nginx → `api.gats.vn/course/*`) |
 
 ## Trước khi build (bắt buộc)
 
 1. Docker Desktop **đang chạy**.
-2. Ở **repo root** tạo file `.env` (không commit) từ `.env.vps.example`:
+2. Ở **repo root** tạo file `.env` (không commit):
 
 ```powershell
 cd c:\Users\admin\Documents\CODE\GATS-ACADEMY
-copy .env.vps.example .env
+# Local laptop:
+copy .env.example .env
+# VPS production:
+# copy .env.vps.example .env
 notepad .env
 ```
 
@@ -29,11 +45,15 @@ notepad .env
 |---|---|
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Web client ID — **bake vào JS lúc build** |
 | `GOOGLE_CLIENT_ID` | Cùng giá trị — BE verify `idToken` |
-| `NEXT_PUBLIC_API_URL` | URL API mà **trình duyệt** gọi (vd `https://api.gats.vn`) |
-| `APP_URL` / `FRONTEND_URL` | Link email + CORS |
+| `NEXT_PUBLIC_API_URL` | Local: `http://localhost:3000` · Prod: `https://api.gats.vn` |
+| `APP_URL` / `FRONTEND_URL` | Link email + CORS (cùng quy tắc local/prod) |
 | `JWT_SECRET`, `SEPAY_API_KEY`, S3… | Production secrets (không để mặc định compose) |
+| `AZURE_OPENAI_*` (+ transcribe) | **Bắt buộc** cho `viava-api` — thiếu → pm2 restart loop |
+| `VIAVA_COURSE_GEN_URL` | Default trong container: `http://127.0.0.1:8000` |
 
 > Đổi `NEXT_PUBLIC_*` → phải **build lại** image (`--build`). Chỉ restart container không đủ.
+>
+> Thêm/sửa `viava/` hoặc Python deps → **rebuild** image (pip chạy lúc build).
 
 ## Build & chạy full stack
 
@@ -70,14 +90,52 @@ curl -i http://127.0.0.1:9100/
 Trong log `app` kỳ vọng:
 
 - `[entrypoint] Applying versioned database migrations...` rồi `Schema is current`; nếu migration fail, container dừng để tránh chạy app với schema lệch
-- pm2: `gats-academy-api`, `gats-academy-worker`, `web-app`, `admin-dashboard` online
+- pm2: `gats-academy-api`, `gats-academy-worker`, `web-app`, `admin-dashboard`, `viava-api` online
+
+### Smoke Viava + Admin AI (sau deploy)
+
+Thứ tự bắt buộc:
+
+```powershell
+# 1) pm2 — api + worker + viava-api phải online (AI quiz gen chạy trên worker)
+docker exec gats-academy pm2 list
+# kỳ vọng: gats-academy-api, gats-academy-worker, viava-api = online
+
+# 2) Health nội bộ (cần curl trong image)
+docker exec gats-academy curl -sf http://127.0.0.1:8000/health
+
+# 3) Public qua reverse proxy (nếu expose /course)
+curl -sf https://api.gats.vn/course/info
+
+# 4) Env trong container — Azure STT + VIAVA bắt buộc cho FLAC transcribe
+docker exec gats-academy printenv VIAVA_COURSE_GEN_URL
+# kỳ vọng: http://127.0.0.1:8000
+# Azure Speech / OpenAI keys phải có (copy từ viava/.env vào root .env Compose)
+```
+
+**Admin AI — thử nghiệm từ FLAC (ưu tiên):**
+
+1. Video khóa học `ready` + có `audio_flac_key` (S3 public/presigned `.flac`).
+2. Có ít nhất một **bài học loại Quiz** trong khóa (Curriculum). Chưa khởi tạo quiz cũng được — `/ai-gen` tự tạo khi Run.
+3. Admin → `/ai-gen`:
+   - **Quiz đích** — chọn khóa → chọn bài quiz (theo tên, không dán UUID).
+   - **Nguồn** — Course video FLAC (có thể khác khóa) / URL S3 FLAC / Text — độc lập với quiz đích.
+4. Kỳ vọng: `POST /api/quizzes/:quizId/ai-generate` → **202** `{ jobId }` ngay; UI poll `GET .../ai-generate/jobs/:jobId` đến `completed` rồi dán câu hỏi. FLAC có thể lâu trên **worker** — không phụ thuộc proxy timeout dài.
+5. Cần `gats-academy-worker` online (cùng process xử lý `quiz-ai-generate` + video). Worker offline → job kẹt `queued` / fail → toast lỗi rõ.
+6. UUID giả trên path API → **400**, không **500**.
+
+**Quiz builder (trong course):** panel AI có mode **URL S3 FLAC** (`file_url`) cạnh text / upload file — cùng flow async enqueue + poll.
+
+Swagger: `https://api.gats.vn/docs`
+
+> **Pip note:** `viava/requirements.txt` dùng `psycopg2-binary` (wheel) — không cần `libpq-dev` / `pg_config` trong image. REST API không dùng Postgres driver lúc startup.
 
 ## Những gì Dockerfile làm
 
 1. **web-builder** — `npm ci` + `next build` với `NEXT_PUBLIC_GOOGLE_CLIENT_ID` / `NEXT_PUBLIC_API_URL`
 2. **be-builder** — `npm run build` (tsc) — cần pass sau fix cookie
 3. **admin-builder** — `next build`
-4. Image runtime — copy artifact + versioned SQL + `docker-entrypoint.sh` → checksum migration runner rồi `pm2-runtime`
+4. Image runtime (`node:22-bookworm-slim`) — copy artifact + Python venv (`viava/`) + versioned SQL + `docker-entrypoint.sh` → checksum migration runner rồi `pm2-runtime` (gồm `viava-api` uvicorn `:8000`)
 
 ## Đã chỉnh gần đây (tránh lỗi deploy)
 
@@ -87,6 +145,9 @@ Trong log `app` kỳ vọng:
 | Next không bind ra ngoài container | → `HOSTNAME=0.0.0.0` cho web/admin |
 | Thiếu `next.config` trong image | → copy `next.config.ts` / `next.config.mjs` |
 | BE `start` cần `config/.env.production` | → tạo file placeholder trong image; secret lấy từ Compose env |
+| Viava numpy/scipy trên Alpine | → runtime **bookworm-slim** + pip venv + `libgomp1` |
+| Build fail `pg_config` / `psycopg2` | → `psycopg2-binary` trong `viava/requirements.txt` |
+| BE gọi Viava v1 path | → v2 `/course/learning-path` + `/course/exercises/*` + `/course/chat` |
 
 ## Lỗi thường gặp
 
@@ -97,6 +158,10 @@ Trong log `app` kỳ vọng:
 | Build BE fail cookie | Đảm bảo `AuthService.getCookieOptions(req?)` đã merge trước khi build |
 | Migration failed | Container chủ động dừng; không sửa migration đã apply, kiểm tra `DATABASE_URL`, checksum và backup trước khi retry |
 | Port đã dùng | Đổi mapping trong `docker-compose.yml` hoặc tắt process host |
+| `pg_config` / Failed to build `psycopg2` | Đã dùng `psycopg2-binary`; rebuild image |
+| `viava-api` restart loop | Điền đủ `AZURE_OPENAI_*` (+ transcribe) vào root `.env` rồi `up` lại |
+| `SyntaxError: Unexpected identifier 'uvicorn'` | PM2 đang chạy Python bằng Node — cần `interpreter: "none"` + `python -m uvicorn` trong `ecosystem.config.js`, rồi rebuild/restart `app` |
+| Compose nginx fail port 80 | Có reverse proxy ngoài rồi thì **không cần** service `nginx` của compose; Admin AI chỉ cần `viava-api` online trong container (`127.0.0.1:8000`) |
 
 ## Chỉ chạy infra (dev BE trên máy)
 

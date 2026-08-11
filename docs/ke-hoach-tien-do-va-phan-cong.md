@@ -104,6 +104,8 @@ Các tỷ lệ trên phản ánh mức độ hoàn thiện source hiện tại, 
 
 ### 4.3. Mobile App
 
+> Lộ trình phát hành Google Play / App Store (6 tháng, effort theo phiên AI): [`roadmap-mobile-store-release.docx`](./roadmap-mobile-store-release.docx).
+
 #### Đã hoàn thành hoặc đã nối source
 
 - ✅ Đăng nhập email/password và khôi phục session.

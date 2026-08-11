@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 import supertest from 'supertest';
 
 const {
@@ -272,7 +272,7 @@ describe('Video API', () => {
       })
       .expect(404);
 
-    expect(res.body.error).toBe('Course not found');
+    expect(res.body.error.message).toBe('Course not found');
   });
 
   it('returns 404 when lesson does not belong to course', async () => {
@@ -290,7 +290,7 @@ describe('Video API', () => {
       })
       .expect(404);
 
-    expect(res.body.error).toBe('Lesson not found');
+    expect(res.body.error.message).toBe('Lesson not found');
   });
 
   it('returns 422 when lesson is not video type', async () => {
@@ -311,7 +311,7 @@ describe('Video API', () => {
       })
       .expect(422);
 
-    expect(res.body.error).toBe('Lesson must be of type video');
+    expect(res.body.error.message).toBe('Lesson must be of type video');
   });
 
   it('returns 409 when lesson already has video', async () => {
@@ -330,7 +330,7 @@ describe('Video API', () => {
       })
       .expect(409);
 
-    expect(res.body.error).toBe('Lesson already has a video');
+    expect(res.body.error.message).toBe('Lesson already has a video');
   });
 
   it('sanitizes path traversal filenames', () => {
@@ -574,7 +574,7 @@ describe('Video API', () => {
       .send()
       .expect(404);
 
-    expect(res.body.error).toBe('Uploaded video not found in storage');
+    expect(res.body.error.message).toBe('Uploaded video not found in storage');
   });
 
   it('enqueues transcode job on complete-upload', async () => {
@@ -640,7 +640,7 @@ describe('Video API', () => {
       .get(`/api/courses/${courseId}/videos/${videoId}/playback`)
       .expect(422);
 
-    expect(res.body.error).toBe('Video is not ready for playback');
+    expect(res.body.error.message).toBe('Video is not ready for playback');
   });
 
   it('returns playback url when video is ready', async () => {
@@ -677,7 +677,7 @@ describe('Video API', () => {
       .get(`/api/courses/${courseId}/videos/${videoId}/playback`)
       .expect(403);
 
-    expect(res.body.error).toBe('You do not have access to this content');
+    expect(res.body.error.message).toBe('You do not have access to this content');
   });
 
   it('returns 403 for playback on draft course for guest', async () => {
@@ -698,6 +698,6 @@ describe('Video API', () => {
       .get(`/api/courses/${courseId}/videos/${videoId}/playback`)
       .expect(403);
 
-    expect(res.body.error).toBe('You do not have access to this content');
+    expect(res.body.error.message).toBe('You do not have access to this content');
   });
 });

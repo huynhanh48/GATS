@@ -3,9 +3,14 @@
 #
 # Local dev (BE on host, infra + worker in Docker):
 #   docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
+# Worker reads S3 (LongVan) from BE/config/.env.development — same bucket as host API.
 #
-# Full production stack:
+# Local full stack (defaults → localhost API, NOT api.gats.vn):
+#   copy .env.example .env   # optional; defaults already point at localhost
 #   docker compose -p gats-academy up --build -d
+#
+# Production VPS (must use prod overlay + .env from .env.vps.example → api.gats.vn):
+#   docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 #
 # Exposed on the host (left = host port; changed to avoid conflicts on the VPS):
 #   - Backend API      http://localhost:3000
@@ -33,8 +38,9 @@ x-backend-env: &backend-env
   AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
   EMAIL_USER: noreply@gats.dev
   EMAIL_PASSWORD: changeme
-  APP_URL: ${APP_URL:-https://api.gats.vn}
-  FRONTEND_URL: ${FRONTEND_URL:-https://gats.vn,https://admin.gats.vn,http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100}
+  # Local default. Prod overlay requires APP_URL from .env (https://api.gats.vn).
+  APP_URL: ${APP_URL:-http://localhost:3000}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100,https://gats.vn,https://admin.gats.vn}
   # Must match the Web client ID used by the browser (NEXT_PUBLIC_*).
   # Empty → BE returns "Google Login is not configured".
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-${NEXT_PUBLIC_GOOGLE_CLIENT_ID}}
@@ -74,6 +80,46 @@ x-backend-env: &backend-env
   VIDEO_WORKER_CONCURRENCY: "1"
   HLS_UPLOAD_CONCURRENCY: "16"
   FFMPEG_X264_PRESET: veryfast
+  FCM_SERVICE_ACCOUNT_JSON: ${FCM_SERVICE_ACCOUNT_JSON:-}
+  FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+  MOBILE_FEATURE_FLAGS: ${MOBILE_FEATURE_FLAGS:-}
+  MOBILE_MIN_ANDROID_VERSION: ${MOBILE_MIN_ANDROID_VERSION:-1.0.0}
+  MOBILE_MIN_IOS_VERSION: ${MOBILE_MIN_IOS_VERSION:-1.0.0}
+  APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+  # Viava (same container :8000). BE calls loopback; nginx proxies api.gats.vn/course/*
+  VIAVA_COURSE_GEN_URL: ${VIAVA_COURSE_GEN_URL:-http://127.0.0.1:8000}
+  VIAVA_API_KEY: ${VIAVA_API_KEY:-}
+  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+  AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+  AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-}
+  AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-2024-10-21}
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:-text-embedding-3-small}
+  AZURE_OPENAI_TRANSCRIBE_API_KEY: ${AZURE_OPENAI_TRANSCRIBE_API_KEY:-}
+  AZURE_OPENAI_TRANSCRIBE_ENDPOINT: ${AZURE_OPENAI_TRANSCRIBE_ENDPOINT:-}
+  AZURE_TRANSCRIBE_DEPLOYMENT: ${AZURE_TRANSCRIBE_DEPLOYMENT:-}
+  TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+  QDRANT_URL: ${QDRANT_URL:-}
+  QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+  RAG_WORK_DIR: ${RAG_WORK_DIR:-/app/viava/rag_data}
+
+# Dev worker: Docker network URLs only. S3/JWT/MinIO keys come from env_file so the
+# worker uses the same LongVan bucket as BE running on the host (not in-cluster MinIO).
+x-worker-dev-env: &worker-dev-env
+  NODE_ENV: development
+  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
+  REDIS_URL: redis://redis:6379
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: postgres
+  VIDEO_WORKER_CONCURRENCY: "1"
+  HLS_UPLOAD_CONCURRENCY: "16"
+  FFMPEG_X264_PRESET: veryfast
+  # MinIO for docs/thumbnails — in-cluster; host BE uses localhost:9010 via env_file.
+  MINIO_ENDPOINT: http://minio:9000
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_SECRET_KEY: minioadmin
 
 services:
   db:
@@ -134,6 +180,7 @@ services:
         done;
         mc mb -p local/s3-video-gats || true;
         mc mb -p local/files-gats || true;
+        mc anonymous set download local/files-gats || true;
         echo 'buckets ready';
 
   # Video transcode worker (BullMQ + ffmpeg). Use for local dev when API runs on host.
@@ -147,15 +194,19 @@ services:
     image: gats-academy-worker
     container_name: gats-academy-worker
     restart: unless-stopped
+    # Docker Desktop DNS can intermittently fail for public S3 hosts.
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    env_file:
+      - ./BE/config/.env.development
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
     environment:
-      <<: *backend-env
+      <<: *worker-dev-env
 
   app:
     build:
@@ -165,8 +216,8 @@ services:
         # Baked into the web-app client bundle at build time (NEXT_PUBLIC_*).
         # Override via .env next to this file or `--build-arg`.
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
-        # Where the BROWSER reaches the API (baked at build time).
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
+        # Baked at build time. Local default = localhost; VPS .env sets api.gats.vn.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     image: gats-academy
     container_name: gats-academy
     restart: unless-stopped
@@ -181,15 +232,22 @@ services:
       - "3000:3000" # backend API
       - "3005:3005" # web-app
       - "9100:9000" # admin-dashboard (host 9100; 9000 busy on VPS)
+      # Viava is internal (nginx → app:8000); not published on host by default
+    volumes:
+      - viava_rag_data:/app/viava/rag_data
+      # Local: Viava reads this via load_dotenv (not baked — .dockerignore excludes .env*).
+      # VPS: prefer AZURE_* in root .env (compose interpolation); mount is optional.
+      - ./viava/.env:/app/viava/.env:ro
     environment:
       <<: *backend-env
-      # Production gate — do not inherit development from x-backend-env.
-      NODE_ENV: production
+      # Local full stack: keep development so compose defaults pass env.ts gates.
+      # VPS: docker-compose.prod.yml overrides NODE_ENV=production + real secrets.
+      NODE_ENV: development
       # Admin SSR/proxy → API inside the same container (NOT the public URL).
       BE_API_URL: http://localhost:3000
       # Browser sockets / any NEXT_PUBLIC client calls from admin.
-      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
-      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:-https://api.gats.vn}
+      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
+      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     healthcheck:
       test:
         [
@@ -212,3 +270,4 @@ volumes:
   postgres_data:
   redis_data:
   minio_data:
+  viava_rag_data:

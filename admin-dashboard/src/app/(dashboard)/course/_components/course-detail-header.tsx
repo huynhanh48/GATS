@@ -30,8 +30,8 @@ type CourseDetailHeaderProps = {
 export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-[#0b1220]">
-      <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 gap-4">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-4 2xl:flex-nowrap">
+        <div className="flex min-w-0 basis-full gap-4 2xl:basis-auto">
           <Image
             src={resolveCourseThumbnail(course.thumbnail, 0)}
             alt={course.title}
@@ -40,8 +40,8 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
             className="h-22.5 w-40 shrink-0 rounded-xl bg-slate-100 object-contain p-1 dark:bg-slate-900"
             unoptimized
           />
-          <div className="min-w-0">
-            <h2 className="text-xl font-black text-slate-950 dark:text-white">
+          <div className="min-w-0 flex-1">
+            <h2 className="break-words text-xl font-black text-slate-950 dark:text-white">
               {course.title}
             </h2>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
@@ -72,12 +72,18 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex w-full flex-wrap gap-2 2xl:w-auto 2xl:shrink-0">
           <Link
             href={`/course/${course.id}/learners`}
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
           >
             Học viên
+          </Link>
+          <Link
+            href={`/course/${course.id}/flashcards`}
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-[#0070EB]/40 hover:bg-[#eaf2ff] hover:text-[#0070EB] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-[#0f2742]"
+          >
+            Flashcard
           </Link>
           <Link
             href={`/course/${course.id}/preview`}

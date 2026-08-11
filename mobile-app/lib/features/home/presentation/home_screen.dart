@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/root_navigator.dart';
@@ -12,7 +13,10 @@ import 'package:gats_academy/features/auth/models/auth_user.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
 import 'package:gats_academy/features/course/navigation/course_navigator.dart';
+import 'package:gats_academy/features/home/data/mobile_bootstrap_store.dart';
 import 'package:gats_academy/features/home/data/streak_controller.dart';
+import 'package:gats_academy/core/services/device_registration_service.dart';
+import 'package:gats_academy/features/home/presentation/widgets/daily_reward_sheet.dart';
 import 'package:gats_academy/features/home/presentation/course_search_screen.dart';
 import 'package:gats_academy/features/home/presentation/widgets/home_course_carousel_section.dart';
 import 'package:gats_academy/features/home/presentation/widgets/your_courses_section.dart';
@@ -46,6 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
     PostStore.instance.addListener(_onCartChanged);
     PostStore.instance.syncFromApi();
     StreakController.instance.ensureLoaded();
+    MobileBootstrapStore.instance.ensureLoaded();
+    MobileBootstrapStore.instance.addListener(_onCartChanged);
+    DeviceRegistrationService.register();
   }
 
   void _onCartChanged() {
@@ -74,7 +81,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadSession() async {
     final user = await AuthPrefs.currentUser();
     await StreakController.instance.refresh();
+    await MobileBootstrapStore.instance.refresh();
+    final boot = MobileBootstrapStore.instance.data;
+    if (boot?.daily != null) {
+      // Align local streak UI with server SoT when available.
+      await StreakController.instance.applyServerStreak(
+        boot!.daily!.streak,
+        checkedInToday: boot.daily!.checkedInToday,
+      );
+    }
     if (!mounted) return;
+    if (MobileBootstrapStore.instance.forceUpdateRequired) {
+      await _showForceUpdateDialog();
+    }
     setState(() {
       _user = user;
       _userName = user?.displayName.trim().isNotEmpty == true
@@ -83,6 +102,33 @@ class _HomeScreenState extends State<HomeScreen> {
       _refreshCourses();
       _isLoading = false;
     });
+    // Daily check-in popup after Home is painted.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      DailyRewardSheet.showIfNeeded(context);
+    });
+  }
+
+  Future<void> _showForceUpdateDialog() async {
+    final min = defaultTargetPlatform == TargetPlatform.iOS
+        ? (MobileBootstrapStore.instance.data?.minIos ?? '1.0.0')
+        : (MobileBootstrapStore.instance.data?.minAndroid ?? '1.0.0');
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cần cập nhật ứng dụng'),
+        content: Text(
+          'Phiên bản tối thiểu là $min. Vui lòng cập nhật từ cửa hàng để tiếp tục.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Đã hiểu'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onCoursesChanged() {
@@ -114,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
     CourseModule.repository.removeListener(_onCoursesChanged);
     CartController.instance.removeListener(_onCartChanged);
     PostStore.instance.removeListener(_onCartChanged);
+    MobileBootstrapStore.instance.removeListener(_onCartChanged);
     super.dispose();
   }
 

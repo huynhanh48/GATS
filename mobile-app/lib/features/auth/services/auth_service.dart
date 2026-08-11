@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:gats_academy/core/services/auth_prefs.dart';
+import 'package:gats_academy/core/services/device_registration_service.dart';
 import 'package:gats_academy/data/api/auth_api_service.dart';
 import 'package:gats_academy/features/auth/models/auth_exception.dart';
 import 'package:gats_academy/features/auth/services/social_auth_service.dart';
@@ -53,11 +54,17 @@ abstract final class AuthService {
     return AuthApiService.verifyEmail(token: token);
   }
 
-  static Future<void> persistSession(AuthSession session) {
-    return AuthPrefs.saveSession(session.user, token: session.token);
+  static Future<void> persistSession(AuthSession session) async {
+    await AuthPrefs.saveSession(
+      session.user,
+      token: session.token,
+      refreshToken: session.refreshToken,
+    );
+    await DeviceRegistrationService.register();
   }
 
   static Future<void> signOut() async {
+    await DeviceRegistrationService.unregister();
     final token = await AuthPrefs.accessToken();
     if (token != null && token.isNotEmpty) {
       await AuthApiService.logout(token: token);
@@ -70,10 +77,23 @@ abstract final class AuthService {
     if (token == null || token.isEmpty) return null;
 
     try {
-      return AuthApiService.getMe(token: token);
+      return await AuthApiService.getMe(token: token);
     } on AuthException catch (e) {
       if (e.code == AuthErrorCode.unauthorized) {
-        await AuthPrefs.signOut();
+        final refresh = await AuthPrefs.refreshToken();
+        if (refresh != null && refresh.isNotEmpty) {
+          try {
+            final renewed = await AuthApiService.refresh(refreshToken: refresh);
+            await persistSession(renewed);
+            return renewed;
+          } catch (_) {
+            await AuthPrefs.signOut();
+            return null;
+          }
+        } else {
+          await AuthPrefs.signOut();
+          return null;
+        }
       }
       rethrow;
     }

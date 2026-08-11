@@ -28,6 +28,10 @@ export const PathApi = {
     me: `${API_PREFIX}/user/me`,
     /** PUT – auth: member */
     updateMe: `${API_PREFIX}/user/me`,
+    /** POST multipart – auth: member – field: file */
+    uploadAvatar: `${API_PREFIX}/user/me/avatar`,
+    /** POST multipart – auth: member – field: file */
+    uploadCover: `${API_PREFIX}/user/me/cover`,
     /** POST – auth: member */
     changePassword: `${API_PREFIX}/user/change-password`,
     /** POST – auth: public */
@@ -45,6 +49,7 @@ export const PathApi = {
     detailById: (id: string) => `${API_PREFIX}/courses/${id}`,
     /** GET – auth: optional */
     curriculum: (courseId: string) => `${API_PREFIX}/courses/${courseId}/curriculum`,
+    review: (courseId: string) => `${API_PREFIX}/courses/${courseId}/review`,
     /** GET – auth: member (enrolled or course read permission) */
     sections: (courseId: string) => `${API_PREFIX}/courses/${courseId}/sections`,
     /** GET – auth: optional – legacy alias of categories.list?type=course */
@@ -135,6 +140,9 @@ export const PathApi = {
     /** GET - auth: member */
     lessonVideo: (courseId: string, lessonId: string) =>
       `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/video`,
+    /** GET – auth: optional – one-hop lesson → playback URL */
+    lessonPlayback: (courseId: string, lessonId: string) =>
+      `${API_PREFIX}/courses/${courseId}/lessons/${lessonId}/playback`,
   },
 
   quiz: {
@@ -177,6 +185,8 @@ export const PathApi = {
     list: `${API_PREFIX}/orders`,
     /** GET - auth: member */
     get: (orderId: string) => `${API_PREFIX}/orders/${orderId}`,
+    /** GET - auth: member (owner) or staff — paid only */
+    receipt: (orderId: string) => `${API_PREFIX}/orders/${orderId}/receipt`,
     /** POST - auth: member */
     cancel: (orderId: string) => `${API_PREFIX}/orders/${orderId}/cancel`,
   },

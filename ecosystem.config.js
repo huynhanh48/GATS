@@ -8,8 +8,8 @@
       script: "npm",
       args: "start",
       env: {
-        // Inherit Compose/VPS env; do not force development (cookie Secure, Helmet…).
-        NODE_ENV: "production",
+        // Inherit Compose/VPS: local compose = development; prod overlay = production.
+        NODE_ENV: process.env.NODE_ENV || "production",
       },
     },
     {
@@ -19,7 +19,7 @@
       script: "npm",
       args: "run start:worker",
       env: {
-        NODE_ENV: "production",
+        NODE_ENV: process.env.NODE_ENV || "production",
       },
     },
     {
@@ -43,6 +43,19 @@
         NODE_ENV: "production",
         PORT: 9000,
         HOSTNAME: "0.0.0.0",
+      },
+    },
+    {
+      // Viava course AI (FastAPI). Bind 0.0.0.0 so an external reverse proxy can reach :8000.
+      // BE inside this container uses http://127.0.0.1:8000.
+      // interpreter: "none" — do NOT run the venv binary through Node (pm2 default).
+      name: "viava-api",
+      cwd: "./viava",
+      script: "./.venv/bin/python",
+      args: "-m uvicorn servers.rest_api.main:app --host 0.0.0.0 --port 8000",
+      interpreter: "none",
+      env: {
+        RAG_WORK_DIR: "/app/viava/rag_data",
       },
     },
   ],

@@ -51,10 +51,11 @@ const CONFIG: Record<
     hint: "JPEG, PNG, WEBP, GIF",
   },
   file: {
-    accept: ".pdf,.doc,.docx,.md,.txt",
+    accept:
+      ".pdf,.doc,.docx,.md,.txt,.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/webp,image/gif",
     maxBytes: 50 * 1024 * 1024,
     maxLabel: "50MB",
-    hint: "PDF, DOC, DOCX, MD, TXT",
+    hint: "PDF, DOC, DOCX, MD, TXT, JPEG, PNG, WEBP, GIF",
   },
 };
 
@@ -239,7 +240,8 @@ export function MediaManager({ kind }: MediaManagerProps) {
                 {items.map((m) => (
                   <TableRow key={m.id}>
                     <TableCell>
-                      {m.kind === "thumbnail" ? (
+                      {m.kind === "thumbnail" ||
+                      m.mimeType.startsWith("image/") ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={m.url}

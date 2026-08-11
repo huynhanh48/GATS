@@ -1,224 +1,108 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { NatureHero } from '@/components/animations/NatureHero';
-import { CategoryTabs } from '@/components/posts/CategoryTabs';
-import { PostCard } from '@/components/posts/PostCard';
-import apiClient from '@/lib/apiClient';
-import { PathApi } from '@/constants/PathApi';
-import { CourseCategory } from '@/types/course';
-import { Post } from '@/types/post';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import apiClient from "@/lib/apiClient";
+import { PathApi } from "@/constants/PathApi";
+import type { Post } from "@/types/post";
+import { resolveMediaUrl } from "@/lib/media/url";
+import { PostCard } from "@/components/posts/PostCard";
+import { BlogSidebar } from "@/components/posts/BlogSidebar";
+
+function formatDate(post: Post) {
+  const value = post.publishedAt || post.createdAt;
+  return value ? new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value)) : "Gần đây";
+}
+
 export const PostsClient = () => {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [categories, setCategories] = useState<CourseCategory[]>([]);
+  const searchParams = useSearchParams();
+  const tagFilter = searchParams.get("tag")?.trim() || "";
+  const categoryFilter = searchParams.get("category")?.trim() || "";
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
-  // Search state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-
-  // Pagination state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 6;
 
-  // Debounce search
+  useEffect(() => setPage(1), [tagFilter, categoryFilter]);
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1); // Reset page on new search
-    }, 500);
+    const timer = setTimeout(() => { setDebouncedSearch(searchQuery); setPage(1); }, 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Reset page to 1 when category changes
-  const handleCategorySelect = (id: string | null) => {
-    setActiveCategory(id);
-    setPage(1);
-  };
-
-  // Fetch Categories
   useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await apiClient.get(PathApi.categories.list, { params: { type: 'post', status: 'active' } });
-        const data = response as any;
-        if (data?.data && Array.isArray(data.data)) {
-          setCategories(data.data);
-        } else {
-          setCategories([]);
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-        setCategories([]);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  // Fetch Posts
-  useEffect(() => {
+    let cancelled = false;
     const fetchPosts = async () => {
       setLoading(true);
       try {
-        const params: any = { page, limit, status: 'published' };
-        if (activeCategory) {
-          params.category = activeCategory;
-        }
-        if (debouncedSearch) {
-          params.search = debouncedSearch;
-        }
-        const response = await apiClient.get(PathApi.posts.list, { params });
-        const data = response as any;
-        if (data?.data && Array.isArray(data.data)) {
-          setPosts(data.data);
-          if (data.pagination) {
-            setTotalPages(data.pagination.totalPages || Math.ceil(data.pagination.total / limit) || 1);
-          } else {
-            setTotalPages(1);
-          }
-        } else {
-          setPosts([]);
-          setTotalPages(1);
+        const params: Record<string, string | number> = { page, limit, status: "published" };
+        if (categoryFilter) params.category = categoryFilter;
+        if (tagFilter) params.tag = tagFilter;
+        if (debouncedSearch) params.search = debouncedSearch;
+        const data: any = await apiClient.get(PathApi.posts.list, { params });
+        if (!cancelled) {
+          setPosts(Array.isArray(data?.data) ? data.data : []);
+          setTotalPages(data?.pagination?.totalPages || Math.ceil((data?.pagination?.total || 0) / limit) || 1);
         }
       } catch (error) {
-        console.error('Error fetching posts:', error);
-        setPosts([]);
-        setTotalPages(1);
-      } finally {
-        setLoading(false);
-        setIsInitialLoad(false);
-      }
+        console.error("Error fetching posts:", error);
+        if (!cancelled) { setPosts([]); setTotalPages(1); }
+      } finally { if (!cancelled) setLoading(false); }
     };
-    fetchPosts();
-  }, [activeCategory, page, debouncedSearch]);
+    void fetchPosts();
+    return () => { cancelled = true; };
+  }, [categoryFilter, tagFilter, page, debouncedSearch]);
+
+  const featured = posts[0];
 
   return (
-    <div className="w-full flex flex-col relative z-10">
-      {/* Animated Hero Section with Custom Search */}
-      <NatureHero>
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-2xl mx-auto w-full flex flex-col items-center justify-center gap-6"
-        >
-          <div className="w-full relative group">
-            <span
-              className="pointer-events-none absolute inset-y-0 left-0 z-10 flex w-14 items-center justify-center text-primary"
-              aria-hidden
-            >
-              <Search className="size-5 shrink-0" strokeWidth={2.25} />
-            </span>
-            <Input
-              placeholder="Tìm kiếm bài viết, chủ đề..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-auto w-full rounded-full border-2 border-border/50 bg-background/80 py-7 pr-6 pl-14 text-lg text-foreground shadow-xl backdrop-blur-md transition-all placeholder:text-muted-foreground hover:border-primary/50 focus-visible:border-primary focus-visible:ring-0"
-              aria-label="Tìm kiếm bài viết"
-            />
-          </div>
-        </motion.div>
-      </NatureHero>
+    <div className="body_wrap">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}>
+        <div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Tin tức của chúng tôi</h1><p className="breadcrumb__desc">Thông báo và cập nhật mới nhất từ GATS Academy</p></div></div>
+      </section>
 
-      {/* Tabs Section */}
-      <CategoryTabs 
-        categories={categories} 
-        activeCategoryId={activeCategory} 
-        onSelectCategory={handleCategorySelect} 
-      />
+      <section className="blog_section pt-120 pb-120" style={{ backgroundColor: "#F1F1E9" }}>
+        <div className="container">
+          {loading ? <div className="blog_post_block content_over_layout"><div className="blog_post_image"><div className="image_wrap"><img src="/edubost-reference/img/blog/blog_06.jpg" alt="" /></div></div><div className="blog_post_content"><p>Đang tải bài viết…</p></div></div> : null}
 
-      {/* Posts Grid */}
-      <main className="flex-1 container mx-auto px-4 py-12 md:py-16 flex flex-col min-h-[600px] relative">
-        {isInitialLoad ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="animate-pulse bg-muted rounded-3xl h-[400px] w-full"></div>
-            ))}
-          </div>
-        ) : (
-          <div className={cn("flex flex-col flex-1 transition-all duration-300", loading ? "opacity-50 scale-[0.99] pointer-events-none blur-[2px]" : "opacity-100 scale-100 blur-0")}>
-            {posts.length > 0 ? (
-              <>
-                <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-12">
-                  <AnimatePresence mode="popLayout">
-                    {posts.map(post => (
-                      <motion.div
-                        key={post.id}
-                        layout
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        transition={{ duration: 0.25, type: 'spring', bounce: 0.3 }}
-                      >
-                        <PostCard post={post} />
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-auto">
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="rounded-full w-10 h-10 border-border/50"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    
-                    <div className="flex items-center gap-1 mx-2">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                        <Button
-                          key={p}
-                          variant={page === p ? "default" : "ghost"}
-                          size="icon"
-                          onClick={() => setPage(p)}
-                          className={`rounded-full w-10 h-10 ${page === p ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'}`}
-                        >
-                          {p}
-                        </Button>
-                      ))}
-                    </div>
-
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="rounded-full w-10 h-10 border-border/50"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+          {!loading && featured ? (
+            <div className="blog_onecol_carousel overflow-hidden">
+              <div className="swiper-wrapper"><div className="swiper-slide">
+                <article className="blog_post_block content_over_layout">
+                  <div className="blog_post_image"><Link className="image_wrap" href={`/posts/${featured.slug}`}><img src={featured.thumbnail ? resolveMediaUrl(featured.thumbnail) : "/edubost-reference/img/blog/blog_06.jpg"} alt={featured.title} /></Link></div>
+                  <div className="blog_post_content">
+                    <div className="post_meta_wrap"><Link className="post_category" href={`/posts?category=${featured.category?.slug || ""}`}>#{featured.category?.name || "Bài viết"}</Link><ul className="post_meta unordered_list"><li><Link href={`/posts/${featured.slug}`}><i className="far fa-clock" /> {formatDate(featured)}</Link></li></ul></div>
+                    <h2 className="blog_post_title border-effect"><Link href={`/posts/${featured.slug}`}>{featured.title}</Link></h2>
+                    <p className="mb-0">{featured.excerpt || "Khám phá nội dung mới nhất từ GATS Academy."}</p>
                   </div>
-                )}
-              </>
-            ) : (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center py-20 text-muted-foreground flex-1 flex flex-col items-center justify-center"
-              >
-                <div className="w-20 h-20 mb-6 rounded-full bg-muted flex items-center justify-center">
-                  <Search className="w-10 h-10 text-muted-foreground/50" />
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-foreground">Không tìm thấy bài viết nào</h3>
-                <p>Thử điều chỉnh lại từ khóa hoặc danh mục xem sao nhé.</p>
-              </motion.div>
-            )}
-          </div>
-        )}
-      </main>
+                </article>
+              </div></div>
+              <div className="b1cc-swiper-pagination p-0"><span className="swiper-pagination-bullet swiper-pagination-bullet-active" /></div>
+            </div>
+          ) : null}
+
+          <div className="section_space pb-0"><div className="row mt-none-30">
+            <div className="col-lg-8 mt-30" id="posts-list">
+              {!loading && posts.length ? posts.map((post) => <PostCard key={post.id} post={post} isList />) : null}
+              {!loading && !posts.length ? <div className="blog_post_block"><div className="blog_post_content text-center"><h2 className="blog_post_title">Không tìm thấy bài viết</h2><p>Thử điều chỉnh từ khóa hoặc bộ lọc.</p><Link className="thm-btn" href="/posts">Xóa bộ lọc</Link></div></div> : null}
+              {totalPages > 1 ? <div className="pagination_wrap mt-60 pb-0"><ul className="pagination_nav unordered_list justify-content-center">
+                <li><a href="#posts-list" onClick={(event) => { event.preventDefault(); setPage((value) => Math.max(1, value - 1)); }} aria-disabled={page === 1} aria-label="Trang trước"><i className="fas fa-angle-double-left" /></a></li>
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((value) => <li key={value}><a href="#posts-list" className={value === page ? "current_page" : ""} onClick={(event) => { event.preventDefault(); setPage(value); }}>{value}</a></li>)}
+                <li><a href="#posts-list" onClick={(event) => { event.preventDefault(); setPage((value) => Math.min(totalPages, value + 1)); }} aria-disabled={page === totalPages} aria-label="Trang sau"><i className="fas fa-angle-double-right" /></a></li>
+              </ul></div> : null}
+            </div>
+
+            <div className="col-lg-4 mt-30"><aside className="sidebar ps-xl-5">
+              <div className="search_form"><h3 className="sidebar_widget_title">Search</h3><div className="form-group"><label className="sr-only" htmlFor="post-search">Tìm bài viết</label><input id="post-search" className="form-control" type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search your keyword" /><button type="button" aria-label="Tìm kiếm"><img src="/edubost-reference/img/icon/icon_search.svg" alt="" /></button></div></div>
+              {(categoryFilter || tagFilter) ? <div className="sidebar_widget"><h3 className="sidebar_widget_title">Bộ lọc đang dùng</h3><ul className="category_list_block unordered_list_block">{categoryFilter ? <li><Link href={tagFilter ? `/posts?tag=${tagFilter}` : "/posts"}>Danh mục: {categoryFilter} ×</Link></li> : null}{tagFilter ? <li><Link href={categoryFilter ? `/posts?category=${categoryFilter}` : "/posts"}>Từ khóa: {tagFilter} ×</Link></li> : null}</ul></div> : null}
+              <BlogSidebar activeTag={tagFilter || null} activeCategory={categoryFilter || null} />
+            </aside></div>
+          </div></div>
+        </div>
+      </section>
     </div>
   );
 };

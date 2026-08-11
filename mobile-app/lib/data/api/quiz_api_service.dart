@@ -169,10 +169,13 @@ abstract final class QuizApiService {
     required String token,
     required List<QuizSubmitAnswer> answers,
   }) async {
+    final idempotencyKey =
+        'quiz-submit-$quizId-${answers.length}-${answers.fold<int>(0, (s, a) => s ^ a.hashCode)}';
     final json = await ApiClient.post(
       QuizApiPaths.submit(quizId),
       token: token,
       body: {'answers': answers.map((a) => a.toJson()).toList()},
+      headers: {'Idempotency-Key': idempotencyKey},
     );
     final data = _asMap(json['data']);
     if (data == null) {

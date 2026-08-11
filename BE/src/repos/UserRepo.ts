@@ -1,15 +1,14 @@
 import { randomUUID } from 'crypto';
-
 import { and, count, desc, eq, ilike, inArray, or } from 'drizzle-orm';
 
 import db from '@src/db';
 import { rolesTable } from '@src/db/schema/role';
-import { userRolesTable } from '@src/db/schema/user-role';
 import { type NewUser, usersTable } from '@src/db/schema/user';
+import { userRolesTable } from '@src/db/schema/user-role';
 import {
   type UserPublic,
-  type UserRecord,
   userPublicSchema,
+  type UserRecord,
   userRecordSchema,
 } from '@src/models/User.model';
 
@@ -140,6 +139,12 @@ export async function update(
       | 'passwordHash'
       | 'verifyToken'
       | 'isLocked'
+      | 'type'
+      | 'providerId'
+      | 'onboardingAnswers'
+      | 'onboardingCompletedAt'
+      | 'avatarUrl'
+      | 'coverUrl'
     >
   >,
 ): Promise<UserRecord | undefined> {
@@ -149,6 +154,20 @@ export async function update(
     .where(eq(usersTable.id, id))
     .returning();
   return rows[0] ? parseUserRow(rows[0]) : undefined;
+}
+
+export async function saveOnboarding(
+  userId: number,
+  answers: Record<string, unknown>,
+): Promise<void> {
+  await db
+    .update(usersTable)
+    .set({
+      onboardingAnswers: answers,
+      onboardingCompletedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(usersTable.id, userId));
 }
 
 export async function getRoleNames(userId: number): Promise<string[]> {
@@ -169,6 +188,8 @@ export function toPublicUser(user: UserRecord, roles: string[]): UserPublic {
     type: user.type,
     roles,
     isLocked: user.isLocked,
+    avatarUrl: user.avatarUrl ?? null,
+    coverUrl: user.coverUrl ?? null,
   });
 }
 

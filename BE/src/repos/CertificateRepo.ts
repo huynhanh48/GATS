@@ -136,4 +136,28 @@ export async function revoke(id: string): Promise<Certificate | undefined> {
   return rows[0];
 }
 
+/** Re-activate a revoked row with a new certificate number (same user+course). */
+export async function reissue(
+  id: string,
+  data: {
+    certificateNumber: string;
+    issuedById: number | null;
+  },
+): Promise<Certificate | undefined> {
+  const now = new Date();
+  const rows = await db
+    .update(certificatesTable)
+    .set({
+      certificateNumber: data.certificateNumber,
+      status: 'issued',
+      issuedAt: now,
+      revokedAt: null,
+      issuedById: data.issuedById,
+      updatedAt: now,
+    })
+    .where(eq(certificatesTable.id, id))
+    .returning();
+  return rows[0];
+}
+
 export type { Certificate };

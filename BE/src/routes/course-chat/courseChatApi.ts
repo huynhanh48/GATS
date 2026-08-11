@@ -3,6 +3,7 @@ import { Router } from 'express';
 import CourseChatPaths from '@src/common/paths/course-chat';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import handlers from './courseChatRouter';
 
 const apiRouter = Router({ mergeParams: true });
@@ -15,6 +16,7 @@ apiRouter.get(
 apiRouter.post(
   CourseChatPaths.Messages,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('chat.message')),
   handlers.sendMessage,
 );
 apiRouter.patch(

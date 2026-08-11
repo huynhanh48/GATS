@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 
 import db from '@src/db';
 import { videoRenditionsTable } from '@src/db/schema/video-rendition';
@@ -34,6 +34,25 @@ export async function findByLessonId(
     .where(eq(videosTable.lessonId, lessonId))
     .limit(1);
   return rows[0] ? parseRow(rows[0]) : undefined;
+}
+
+/** Ready videos for a course that already have an extracted FLAC key. */
+export async function findReadyWithFlacByCourseId(
+  courseId: string,
+): Promise<VideoRecord[]> {
+  const rows = await db
+    .select()
+    .from(videosTable)
+    .where(
+      and(
+        eq(videosTable.courseId, courseId),
+        eq(videosTable.status, 'ready'),
+        isNotNull(videosTable.audioFlacKey),
+      ),
+    );
+  return rows
+    .map(parseRow)
+    .filter((v) => Boolean(v.audioFlacKey?.trim()));
 }
 
 export async function create(data: NewVideo): Promise<VideoRecord> {

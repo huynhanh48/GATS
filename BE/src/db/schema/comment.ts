@@ -26,8 +26,9 @@ export const commentsTable = pgTable(
       .notNull()
       .references(() => postsTable.id, { onDelete: 'cascade' }),
     userId: integer('user_id')
-      .notNull()
       .references(() => usersTable.id, { onDelete: 'cascade' }),
+    guestName: text('guest_name'),
+    guestEmail: text('guest_email'),
     parentId: uuid('parent_id'),
     content: text('content').notNull(),
     status: commentStatusEnum('status').notNull().default('visible'),

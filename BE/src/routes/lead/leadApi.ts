@@ -22,6 +22,13 @@ leadRouter.get(
 );
 
 leadRouter.get(
+  LeadPaths.Lead.ExportCsv,
+  errorHandle(authMiddleware),
+  errorHandle(requireAdmin),
+  leadHandlers.adminExportLeadsCsv,
+);
+
+leadRouter.get(
   LeadPaths.Lead.Get,
   errorHandle(authMiddleware),
   leadHandlers.getById,

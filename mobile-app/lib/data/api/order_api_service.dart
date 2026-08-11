@@ -150,21 +150,25 @@ abstract final class OrderApiService {
     String? customerPhone,
     String? couponCode,
   }) async {
+    final body = {
+      'fromCart': true,
+      'paymentMethod': paymentMethod,
+      if (customerName != null && customerName.trim().isNotEmpty)
+        'customerName': customerName.trim(),
+      if (customerEmail != null && customerEmail.trim().isNotEmpty)
+        'customerEmail': customerEmail.trim(),
+      if (customerPhone != null && customerPhone.trim().isNotEmpty)
+        'customerPhone': customerPhone.trim(),
+      if (couponCode != null && couponCode.trim().isNotEmpty)
+        'couponCode': couponCode.trim(),
+    };
+    // Stable across double-tap of the same checkout payload.
+    final idempotencyKey = 'order-${body.toString().hashCode}';
     final json = await ApiClient.post(
       OrderApiPaths.orders,
-      body: {
-        'fromCart': true,
-        'paymentMethod': paymentMethod,
-        if (customerName != null && customerName.trim().isNotEmpty)
-          'customerName': customerName.trim(),
-        if (customerEmail != null && customerEmail.trim().isNotEmpty)
-          'customerEmail': customerEmail.trim(),
-        if (customerPhone != null && customerPhone.trim().isNotEmpty)
-          'customerPhone': customerPhone.trim(),
-        if (couponCode != null && couponCode.trim().isNotEmpty)
-          'couponCode': couponCode.trim(),
-      },
+      body: body,
       token: token,
+      headers: {'Idempotency-Key': idempotencyKey},
     );
     return _parseCreateResult(json);
   }

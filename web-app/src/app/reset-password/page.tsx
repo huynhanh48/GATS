@@ -4,8 +4,7 @@ import { FormEvent, Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { EdubostHeader as Header, EdubostFooter as Footer } from "@/components/edubost/EdubostShell";
 import { resetPasswordRequest } from "@/services/auth.service";
 
 function ResetPasswordForm() {
@@ -52,30 +51,33 @@ function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit}>
+      <div className="form-group"><label className="input_title" htmlFor="new-password">Mật khẩu mới</label>
       <input
+        id="new-password"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Mật khẩu mới"
-        className="w-full h-12 px-4 rounded-xl bg-card border border-border"
+        className="form-control"
         autoComplete="new-password"
       />
-      <input
+      </div><div className="form-group"><label className="input_title" htmlFor="confirm-password">Xác nhận mật khẩu</label><input
+        id="confirm-password"
         type="password"
         value={confirm}
         onChange={(e) => setConfirm(e.target.value)}
         placeholder="Xác nhận mật khẩu mới"
-        className="w-full h-12 px-4 rounded-xl bg-card border border-border"
+        className="form-control"
         autoComplete="new-password"
-      />
+      /></div>
       <p className="text-xs text-muted-foreground">
         Tối thiểu 7 ký tự, có chữ hoa, số và ký tự đặc biệt.
       </p>
       <button
         type="submit"
         disabled={submitting}
-        className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 disabled:opacity-50"
+        className="thm-btn"
       >
         {submitting ? "Đang cập nhật..." : "Đặt lại mật khẩu"}
       </button>
@@ -85,17 +87,18 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="min-h-screen bg-background pt-28 pb-20">
+    <main className="body_wrap">
       <Header />
-      <div className="max-w-md mx-auto px-4">
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Đặt lại mật khẩu</h1>
-        <p className="text-muted-foreground mb-8">
+      <section className="breadcrumb bg_img ul_li" style={{ backgroundImage: "url(/edubost-reference/img/bg/breadcrumb_bg.jpg)" }}><div className="container"><div className="breadcrumb__content text-center"><h1 className="breadcrumb__title">Đặt lại mật khẩu</h1><p className="breadcrumb__desc">Tạo thông tin đăng nhập mới cho tài khoản</p></div></div></section>
+      <section className="contact_section section_space" style={{ backgroundColor: "#F1F1E9" }}><div className="container"><div className="row justify-content-center"><div className="col-lg-6"><div className="contact_form mb-0">
+        <h2 className="title">Tạo mật khẩu mới</h2>
+        <p className="content">
           Tạo mật khẩu mới cho tài khoản GATS Academy.
         </p>
         <Suspense fallback={<p className="text-muted-foreground">Đang tải...</p>}>
           <ResetPasswordForm />
         </Suspense>
-      </div>
+      </div></div></div></div></section>
       <Footer />
     </main>
   );

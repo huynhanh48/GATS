@@ -1,4 +1,4 @@
-import { and, asc, eq, max } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, max } from 'drizzle-orm';
 
 import db from '@src/db';
 import { courseSectionsTable } from '@src/db/schema/course-section';
@@ -9,6 +9,23 @@ import {
 
 function parseRow(row: unknown): CourseSectionRecord {
   return courseSectionRecordSchema.parse(row);
+}
+
+export async function countByCourses(
+  courseIds: string[],
+): Promise<Map<string, number>> {
+  if (courseIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      courseId: courseSectionsTable.courseId,
+      total: count(),
+    })
+    .from(courseSectionsTable)
+    .where(inArray(courseSectionsTable.courseId, courseIds))
+    .groupBy(courseSectionsTable.courseId);
+  return new Map(
+    rows.map((row) => [row.courseId, Number(row.total ?? 0)]),
+  );
 }
 
 export async function findById(

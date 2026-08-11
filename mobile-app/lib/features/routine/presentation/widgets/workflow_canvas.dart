@@ -16,10 +16,8 @@ class WorkflowCanvas extends StatelessWidget {
     this.onCanvasTap,
     this.onCanvasPanUpdate,
     this.onSelectNode,
-    this.onDeleteNode,
+    this.onConnectNode,
     this.onMoveNode,
-    this.onOutputTap,
-    this.onInputTap,
     this.onDragStart,
     this.onDragEnd,
     this.minWidth = 700,
@@ -35,10 +33,9 @@ class WorkflowCanvas extends StatelessWidget {
   final VoidCallback? onCanvasTap;
   final GestureDragUpdateCallback? onCanvasPanUpdate;
   final ValueChanged<String?>? onSelectNode;
-  final ValueChanged<String>? onDeleteNode;
+  /// Long-press / connect action for a node.
+  final ValueChanged<String>? onConnectNode;
   final void Function(String nodeId, Offset delta)? onMoveNode;
-  final ValueChanged<String>? onOutputTap;
-  final ValueChanged<String>? onInputTap;
   final VoidCallback? onDragStart;
   final VoidCallback? onDragEnd;
   final double minWidth;
@@ -87,13 +84,11 @@ class WorkflowCanvas extends StatelessWidget {
                 isSelected: selectedNodeId == node.id,
                 isConnectSource: connectingFromId == node.id,
                 readOnly: readOnly,
-                onTap: onSelectNode == null ? null : () => onSelectNode!(node.id),
-                onLongPress: onDeleteNode == null
+                onTap:
+                    onSelectNode == null ? null : () => onSelectNode!(node.id),
+                onLongPress: onConnectNode == null
                     ? null
-                    : () {
-                        onSelectNode?.call(node.id);
-                        onDeleteNode!(node.id);
-                      },
+                    : () => onConnectNode!(node.id),
                 onDragStart: onDragStart == null
                     ? null
                     : () {
@@ -101,9 +96,9 @@ class WorkflowCanvas extends StatelessWidget {
                         onDragStart!();
                       },
                 onDragEnd: onDragEnd,
-                onDragDelta: onMoveNode == null ? null : (delta) => onMoveNode!(node.id, delta),
-                onOutputTap: onOutputTap == null ? null : () => onOutputTap!(node.id),
-                onInputTap: onInputTap == null ? null : () => onInputTap!(node.id),
+                onDragDelta: onMoveNode == null
+                    ? null
+                    : (delta) => onMoveNode!(node.id, delta),
               );
             }),
           ],

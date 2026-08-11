@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80">
+  <rect width="240" height="80" rx="12" fill="#FFFFFF"/>
+  <path d="M20 20 H55 V30 H32 V36 H50 V46 H32 V60 H20 Z" fill="#F26522"/>
+  <path d="M60 20 H85 C95 20 100 26 100 35 C100 44 95 50 85 50 H72 V60 H60 Z M72 30 V40 H84 C88 40 90 38 90 35 C90 32 88 30 84 30 Z" fill="#00529C"/>
+  <path d="M102 20 H135 V30 H124 V60 H112 V30 H102 Z" fill="#58595B"/>
+  <text x="145" y="44" font-family="system-ui, sans-serif" font-weight="900" font-size="22" fill="#F26522">FPT</text>
+  <text x="145" y="58" font-family="system-ui, sans-serif" font-weight="700" font-size="10" fill="#00529C">AI LAB</text>
+</svg>

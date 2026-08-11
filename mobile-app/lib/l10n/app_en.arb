@@ -12,13 +12,14 @@
   "onboardingTitleAge": "What is your age range?",
   "onboardingTitleDailyGoal": "How long do you want to learn each day?",
   "onboardingTitlePurpose": "What is your learning goal?",
-  "onboardingTitleReminder": "Daily learning reminder",
-  "onboardingSubtitleReminder": "We'll nudge you at the time you pick — you can change this in Settings",
-  "onboardingCoachReminder": "Consistency beats intensity. Pick a time that works every day!",
-  "onboardingReminderEnable": "Enable daily reminder",
-  "onboardingReminderNoThanks": "No thanks",
-  "onboardingReminderContinue": "Continue",
-  "ackReminderEcho": "Reminder at {time} — see you then!",
+  "onboardingTitleReminder": "When should we remind you?",
+  "onboardingSubtitleReminder": "We'll nudge you to study at this time every day. Change it anytime in Settings.",
+  "onboardingCoachReminder": "Pick a time you can stick to — a little every day beats cramming.",
+  "onboardingReminderEnable": "Remind me to study every day",
+  "onboardingReminderPickTime": "What time works best for you?",
+  "onboardingReminderNoThanks": "Maybe later",
+  "onboardingReminderContinue": "Save reminder",
+  "ackReminderEcho": "We'll remind you at {time} — see you then!",
   "@ackReminderEcho": {
     "placeholders": {
       "time": {
@@ -26,9 +27,9 @@
       }
     }
   },
-  "ackReminderSkippedEcho": "No problem — you can turn reminders on later in Settings.",
+  "ackReminderSkippedEcho": "No worries — you can turn study reminders on anytime in Settings.",
   "dailyReminderTitle": "GATS Academy",
-  "dailyReminderBody": "Time to learn! Check in and keep your streak going.",
+  "dailyReminderBody": "Time to learn! Open the app, check in, and keep your streak going.",
   "onboardingSubtitleLanguage": "You can change this later in Settings",
   "languagePickerTitle": "Choose your language",
   "languagePickerSubtitle": "You can change this later in Settings",
@@ -412,6 +413,12 @@
   "authTabLogin": "Sign In",
   "navHome": "Home",
   "navDaily": "Daily",
+  "navDailyBadgeTooltip": "{count} daily goals left",
+  "@navDailyBadgeTooltip": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "navLibrary": "Library",
   "navCoach": "Coach",
   "navHub": "Hub",
@@ -458,9 +465,19 @@
   "routineEditorTitle": "Design Routine",
   "routineSave": "Save",
   "routineAddNode": "Add node",
-  "routineEditorHint": "Drag node · Tap right port to connect · Hold to delete",
-  "routineConnectHint": "Tap left port of target node to connect",
+  "routineEditorHint": "Drag to move · Hold a node to connect · Delete via trash icon",
+  "routineConnectHint": "Pick a target node to connect",
   "routineCancelConnect": "Cancel",
+  "routineConnectFrom": "Connect from \"{title}\"",
+  "@routineConnectFrom": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "routineConnectToHint": "Choose which node to connect to",
+  "routineConnectEmpty": "No other nodes to connect. Add a node first.",
+  "routineDisconnect": "Disconnect",
+  "routineConnectAction": "Connect",
   "routinePreviewSubtitle": "Personal learning workflow — n8n style",
   "flashcardSectionTitle": "Study Flashcards",
   "flashcardDue": "{count} cards to review today",
@@ -493,6 +510,24 @@
   "aiCoachInputHint": "Ask AI Coach...",
   "hubXpTitle": "Experience",
   "hubBadgesTitle": "Badges",
+  "hubChartsTitle": "Learning stats",
+  "hubChartsSubtitle": "Last 7 days — study time, XP and activity mix",
+  "hubChartsWeeklyTitle": "Minutes studied per day",
+  "hubChartsXpTitle": "XP earned",
+  "hubChartsMixTitle": "Activity mix",
+  "hubChartsWeekTotal": "Week total",
+  "hubChartsWeekAvg": "Daily average",
+  "hubChartsMinutes": "{minutes} min",
+  "@hubChartsMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "hubChartsMixLessons": "Lessons",
+  "hubChartsMixFlashcards": "Flashcards",
+  "hubChartsMixQuiz": "Quiz",
+  "hubChartsMixCoach": "Coach",
+  "hubChartsEmpty": "No activity in the last 7 days — study a lesson, review cards, or check in to see charts.",
   "hubCertTitle": "Certificates",
   "hubCertLocked": "Need {xp} more XP to unlock certificate exam",
   "@hubCertLocked": {
@@ -508,6 +543,16 @@
   "settingsAccount": "Account",
   "settingsNotifications": "Notifications",
   "settingsLanguage": "Language",
+  "settingsDailyReminder": "Daily study reminder",
+  "settingsDailyReminderSubtitle": "System notification at the time you choose",
+  "settingsDailyReminderTime": "Reminder time",
+  "settingsDailyReminderPermissionDenied": "Allow notifications in system Settings to receive study reminders.",
+  "settingsDailyReminderSaved": "Study reminder scheduled for {time}",
+  "@settingsDailyReminderSaved": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
   "settingsDarkMode": "Dark Mode",
   "settingsDarkModeSubtitle": "Starry night — sleep app style",
   "settingsAbout": "About App",
@@ -519,9 +564,9 @@
   "legalDataRequest": "Request data access or deletion",
   "legalOpenFailed": "Unable to open the policy page. Please try again.",
   "paymentLegalPrefix": "By paying, you agree to the ",
-  "settingsReplayOnboarding": "Reset onboarding",
+  "settingsReplayOnboarding": "Replay onboarding",
   "settingsSignOutSuccess": "Signed out. Restart the app to return to entry screen.",
-  "settingsReplaySuccess": "Onboarding reset. Restart the app to replay the flow.",
+  "settingsReplaySuccess": "Opening onboarding…",
   "tagOfficeAi": "AI for workplace",
   "streakDays": "{days} days streak",
   "@streakDays": {
@@ -726,6 +771,22 @@
   "adminPostsEmpty": "No posts yet",
   "postHomeSectionTitle": "Articles & News",
   "postFeedEmpty": "No posts yet",
+  "postSearchHint": "Search posts, authors...",
+  "postSearchEmpty": "No matching posts",
+  "postSearchResultCount": "{count} posts",
+  "@postSearchResultCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "postFilterScope": "Scope",
+  "postFilterSort": "Sort",
+  "postSortNewest": "Newest",
+  "postSortOldest": "Oldest",
+  "postSortTitle": "A–Z",
+  "postScopeGlobal": "GATS",
+  "postScopeCourse": "Course",
+  "postClearFilters": "Clear filters",
   "postSeeAll": "See all",
   "postByAuthor": "By {author}",
   "@postByAuthor": {

@@ -12,6 +12,21 @@ export const courseReviewRecordSchema = z.object({
 
 export type CourseReviewRecord = z.infer<typeof courseReviewRecordSchema>;
 
+export const upsertCourseReviewSchema = z.object({
+  rating: z.coerce.number().int().min(1).max(5),
+  content: z.string().trim().max(2000).optional().nullable(),
+});
+
+export type UpsertCourseReviewInput = z.infer<
+  typeof upsertCourseReviewSchema
+>;
+
 export function parseCourseReviewRecord(data: unknown): CourseReviewRecord {
   return courseReviewRecordSchema.parse(data);
+}
+
+export function parseUpsertCourseReviewInput(
+  data: unknown,
+): UpsertCourseReviewInput {
+  return upsertCourseReviewSchema.parse(data);
 }

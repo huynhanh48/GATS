@@ -3,6 +3,7 @@ import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/root_navigator.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/features/home/data/daily_check_in_store.dart';
+import 'package:gats_academy/features/home/data/mobile_bootstrap_store.dart';
 import 'package:gats_academy/features/home/data/streak_controller.dart';
 
 class DailyRewardSheet extends StatefulWidget {
@@ -17,17 +18,41 @@ class DailyRewardSheet extends StatefulWidget {
 
   /// Hiện dialog điểm danh nếu hôm nay chưa nhận. Trả về XP nhận được.
   static Future<int?> showIfNeeded(BuildContext context) async {
-    if (await DailyCheckInStore.hasClaimedToday()) return null;
-
+    await DailyCheckInStore.syncFromApi();
+    final claimedLocal = await DailyCheckInStore.hasClaimedToday();
+    final bootChecked =
+        MobileBootstrapStore.instance.data?.daily?.checkedInToday == true;
     final week = await DailyCheckInStore.loadCurrentWeek();
     final today = DailyCheckInStore.todaySlot(week);
-    if (today == null || today.claimed) return null;
+    final willShow = !claimedLocal &&
+        !bootChecked &&
+        today != null &&
+        !today.claimed;
+    // #region agent log
+    debugPrint(
+      'DailyRewardSheet.showIfNeeded claimedLocal=$claimedLocal '
+      'bootChecked=$bootChecked todayClaimed=${today?.claimed} willShow=$willShow',
+    );
+    // #endregion
+    if (!willShow) return null;
 
-    final hostContext = rootNavigatorKey.currentContext ?? context;
-    if (!hostContext.mounted) return null;
+    final nav = rootNavigatorKey.currentState;
+    final hostContext = nav?.overlay?.context ??
+        rootNavigatorKey.currentContext ??
+        context;
+    if (!hostContext.mounted) {
+      // #region agent log
+      debugPrint('DailyRewardSheet.showIfNeeded abort: hostContext not mounted');
+      // #endregion
+      return null;
+    }
 
+    // #region agent log
+    debugPrint('DailyRewardSheet.showIfNeeded presenting dialog');
+    // #endregion
     return showDialog<int>(
       context: hostContext,
+      useRootNavigator: true,
       barrierDismissible: true,
       barrierColor: Colors.black54,
       builder: (dialogContext) {
@@ -113,6 +138,11 @@ class _DailyRewardSheetState extends State<DailyRewardSheet>
       } else {
         Navigator.of(context).pop(xp);
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Bad state: ', ''))),
+      );
     } finally {
       if (mounted) setState(() => _claiming = false);
     }

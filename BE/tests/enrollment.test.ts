@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 import supertest from 'supertest';
 
 const {
@@ -124,7 +124,7 @@ describe('Enrollment API', () => {
       .send()
       .expect(409);
 
-    expect(res.body.error).toBe('Already enrolled in this course');
+    expect(res.body.error.message).toBe('Already enrolled in this course');
   });
 
   it('grants enrollment for another user as admin', async () => {

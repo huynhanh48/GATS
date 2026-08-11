@@ -10,6 +10,11 @@ export const metadata: Metadata = {
   title: "Kiểm duyệt bình luận",
 };
 
+/** Report/appeal queue chưa có BE — giữ ghi chú trên UI để ops biết phạm vi hiện tại. */
+const MODERATION_SCOPE_NOTE =
+  "Lọc từ tục tự động qua mục Từ cấm. Hàng đợi báo cáo người dùng / appeal sẽ bổ sung sau.";
+
+
 type StatusFilter = CommentStatus | "all";
 
 type PageProps = {
@@ -68,7 +73,7 @@ export default async function ModerationPage({ searchParams }: PageProps) {
       <AdminPageHeader
         eyebrow="Nội dung"
         title="Kiểm duyệt bình luận"
-        description="Duyệt lại các bình luận đã bị ẩn hoặc xóa, khôi phục nếu cần."
+        description={`Duyệt lại các bình luận đã bị ẩn hoặc xóa, khôi phục nếu cần. ${MODERATION_SCOPE_NOTE}`}
         metrics={[
           { label: "Tổng bình luận", value: counts.all, tone: "slate" },
           { label: "Đã ẩn", value: counts.hidden, tone: "orange" },

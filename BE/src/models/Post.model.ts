@@ -62,6 +62,8 @@ export const postDetailSchema = postRecordSchema
     author: postAuthorSchema,
     category: categoryPublicSchema.nullable(),
     tags: z.array(tagPublicSchema).default([]),
+    prevPost: z.object({ title: z.string(), slug: z.string() }).nullable().optional(),
+    nextPost: z.object({ title: z.string(), slug: z.string() }).nullable().optional(),
   });
 
 export const createPostSchema = z

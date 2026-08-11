@@ -64,14 +64,20 @@ class OnboardingReminderStepState extends State<OnboardingReminderStep> {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.notifications_active_outlined, size: 40, color: AppColors.primary),
+                child: const Icon(
+                  Icons.schedule_rounded,
+                  size: 40,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   l10n.onboardingReminderEnable,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
                 value: _enabled,
                 activeThumbColor: AppColors.primary,
@@ -81,6 +87,18 @@ class OnboardingReminderStepState extends State<OnboardingReminderStep> {
           ),
         ),
         if (_enabled) ...[
+          const SizedBox(height: AppSpacing.md),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Text(
+              l10n.onboardingReminderPickTime,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primary,
+                  ),
+            ),
+          ),
           const SizedBox(height: AppSpacing.sm),
           IosWheelTimePicker(
             key: _pickerKey,
@@ -147,10 +165,14 @@ Future<void> applyOnboardingReminderSettings(OnboardingAnswers answers) async {
   }
 
   final granted = await GatsNotificationService.requestSystemPermission();
-  if (!granted) return;
-
+  // Vẫn lên lịch — trên một số máy quyền đã có sẵn / sẽ hiện khi đến giờ nếu OS cho phép.
   await GatsNotificationService.scheduleDailyReminder(
     hour: answers.reminderHour,
     minute: answers.reminderMinute,
   );
+  if (!granted) {
+    debugPrint(
+      'applyOnboardingReminderSettings: notification permission not granted',
+    );
+  }
 }

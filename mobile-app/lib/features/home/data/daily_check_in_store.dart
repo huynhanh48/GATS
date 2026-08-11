@@ -1,4 +1,6 @@
+import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/utils/vn_weekday.dart';
+import 'package:gats_academy/data/api/daily_checkin_api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Một ô trong lịch điểm danh tuần — gắn với ngày thật.
@@ -28,7 +30,6 @@ const _weeklyXp = [5, 5, 10, 5, 15, 5, 25];
 abstract final class DailyCheckInStore {
   static const _claimedDatesKey = 'daily_check_in_claimed_dates';
   static const _legacyLastClaimedKey = 'daily_reward_last_claimed';
-  static const _maxStoredDays = 90;
 
   static Future<Set<String>> _claimedDateKeys() async {
     final prefs = await SharedPreferences.getInstance();
@@ -107,25 +108,45 @@ abstract final class DailyCheckInStore {
   }
 
   static Future<int> claimToday() async {
+    final token = await AuthPrefs.accessToken();
+    final loggedIn = token != null && token.isNotEmpty;
+
+    if (loggedIn) {
+      final api = await DailyCheckInApi.claimOrNull();
+      if (api == null) {
+        throw StateError(
+          'Không điểm danh được. Kiểm tra mạng và thử lại — chưa ghi nhận XP local.',
+        );
+      }
+      final prefs = await SharedPreferences.getInstance();
+      final todayKey = VnWeekday.dateKey(DateTime.now());
+      final claimed = await _claimedDateKeys();
+      claimed.add(todayKey);
+      await prefs.setStringList(_claimedDatesKey, claimed.toList()..sort());
+      await prefs.setString(_legacyLastClaimedKey, todayKey);
+      final weekDays = VnWeekday.daysOfCurrentWeek(DateTime.now());
+      final todayKey2 = VnWeekday.dateKey(DateTime.now());
+      final index =
+          weekDays.indexWhere((d) => VnWeekday.dateKey(d) == todayKey2);
+      return index >= 0 ? _weeklyXp[index] : _weeklyXp.first;
+    }
+
+    // Offline / unsigned: do not invent a server claim.
+    throw StateError('Cần đăng nhập để điểm danh.');
+  }
+
+  /// Prefer server streak / claimedToday when online.
+  static Future<void> syncFromApi() async {
+    final api = await DailyCheckInApi.fetchOrNull();
+    if (api == null) return;
     final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now();
-    final todayKey = VnWeekday.dateKey(today);
-    final weekDays = VnWeekday.daysOfCurrentWeek(today);
-    final index = weekDays.indexWhere((d) => VnWeekday.dateKey(d) == todayKey);
-    final xp = index >= 0 ? _weeklyXp[index] : _weeklyXp.first;
-
-    final claimed = await _claimedDateKeys();
-    claimed.add(todayKey);
-
-    final sorted = claimed.toList()..sort();
-    final trimmed = sorted.length > _maxStoredDays
-        ? sorted.sublist(sorted.length - _maxStoredDays)
-        : sorted;
-
-    await prefs.setStringList(_claimedDatesKey, trimmed);
-    await prefs.setString(_legacyLastClaimedKey, todayKey);
-
-    return xp;
+    if (api.checkedInToday) {
+      final todayKey = VnWeekday.dateKey(DateTime.now());
+      final claimed = await _claimedDateKeys();
+      claimed.add(todayKey);
+      await prefs.setStringList(_claimedDatesKey, claimed.toList()..sort());
+      await prefs.setString(_legacyLastClaimedKey, todayKey);
+    }
   }
 
   static DailyCheckInDay? todaySlot(List<DailyCheckInDay> week) {

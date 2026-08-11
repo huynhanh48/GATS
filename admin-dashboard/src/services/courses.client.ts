@@ -203,4 +203,39 @@ export const coursesClient = {
       method: "DELETE",
     });
   },
+
+  listAiQuizSources(
+    courseId: string,
+  ): Promise<ApiResult<{ data: AiQuizSourceItem[] }>> {
+    return apiRequest<{ data: AiQuizSourceItem[] }>({
+      url: `/course-management/courses/${courseId}/ai-quiz-sources`,
+      method: "GET",
+    });
+  },
+
+  listAiQuizTargets(
+    courseId: string,
+  ): Promise<ApiResult<{ data: AiQuizTargetItem[] }>> {
+    return apiRequest<{ data: AiQuizTargetItem[] }>({
+      url: `/course-management/courses/${courseId}/ai-quiz-targets`,
+      method: "GET",
+    });
+  },
+};
+
+export type AiQuizSourceItem = {
+  videoId: string;
+  lessonId: string;
+  title: string | null;
+  audioFlacUrl: string;
+};
+
+export type AiQuizTargetItem = {
+  lessonId: string;
+  lessonTitle: string;
+  sectionId: string;
+  sectionTitle: string;
+  quizId: string | null;
+  hasQuiz: boolean;
+  label: string;
 };

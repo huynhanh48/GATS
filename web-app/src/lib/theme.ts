@@ -9,7 +9,8 @@
  *    import { theme } from '@/lib/theme'
  *
  *    theme.font.primary       → 'var(--font-roboto)'
- *    theme.color.brand.blue   → '#0070EB'
+ *    theme.color.brand.blue   → '#0070EB' (info / secondary)
+ *    theme.color.brand.orange → '#ff782d' (brand-primary / logo)
  *    theme.radius.lg          → '1.2rem'
  *
  *  QUY ƯỚC REM: 1rem = 10px (html font-size: 62.5%)
@@ -62,13 +63,13 @@ export const font = {
 // 2. COLORS — BRAND PALETTE (4 màu thương hiệu chuẩn)
 // ─────────────────────────────────────────────────────────────
 const brand = {
-  /** Technology / Default — Xanh Dương */
+  /** Technology / Default — retained for secondary accents */
   blue: '#0070EB',
   blueLight: '#EAF3FE',
   blueDark: '#005BC4',
 
-  /** Creative / Secondary — Cam */
-  orange: '#FF7622',
+  /** Brand / logo / Creative — Cam (matches public/logo.svg) */
+  orange: '#ff782d',
   orangeLight: '#FFF0E6',
   orangeDark: '#D95E10',
 

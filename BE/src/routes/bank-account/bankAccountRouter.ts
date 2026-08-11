@@ -52,6 +52,13 @@ async function remove(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function exportCsv(_req: Request, res: Response) {
+  const { csv, filename } = await BankAccountService.exportCsv();
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  return res.status(HttpStatusCodes.OK).send(csv);
+}
+
 export default {
   list: errorHandle(list),
   getById: errorHandle(getById),
@@ -59,4 +66,5 @@ export default {
   update: errorHandle(update),
   setDefault: errorHandle(setDefault),
   remove: errorHandle(remove),
+  exportCsv: errorHandle(exportCsv),
 } as const;

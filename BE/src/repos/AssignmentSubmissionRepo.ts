@@ -28,6 +28,22 @@ export async function listByAssignment(
     .orderBy(desc(assignmentSubmissionsTable.submittedAt));
 }
 
+export async function listByAssignmentAndUser(
+  assignmentId: string,
+  userId: number,
+): Promise<AssignmentSubmission[]> {
+  return db
+    .select()
+    .from(assignmentSubmissionsTable)
+    .where(
+      and(
+        eq(assignmentSubmissionsTable.assignmentId, assignmentId),
+        eq(assignmentSubmissionsTable.userId, userId),
+      ),
+    )
+    .orderBy(desc(assignmentSubmissionsTable.submissionNumber));
+}
+
 export async function findLatestByUser(
   assignmentId: string,
   userId: number,

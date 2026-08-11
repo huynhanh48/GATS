@@ -4,6 +4,8 @@ const NotificationPaths = {
     _: '/notifications',
     List: '/',
     MarkRead: '/read',
+    MarkOneRead: '/:id/read',
+    MarkAllRead: '/read-all',
     Compose: '/compose',
   },
 } as const;

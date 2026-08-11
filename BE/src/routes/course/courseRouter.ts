@@ -19,6 +19,7 @@ import {
   parseCreateCourseSectionInput,
   parseUpdateCourseSectionInput,
 } from '@src/models/CourseSection.model';
+import { parseUpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import {
   parseCreateLessonInput,
   parseUpdateLessonInput,
@@ -27,12 +28,17 @@ import {
   parseAttachLessonMediaInput,
   parseLessonAttachmentIdParam,
 } from '@src/models/LessonAttachment.model';
+import { parseOnboardingAnswers } from '@src/models/Onboarding.model';
 import CategoryService from '@src/services/CategoryService';
 import CourseSectionService from '@src/services/CourseSectionService';
 import CourseService from '@src/services/CourseService';
 import CurriculumService from '@src/services/CurriculumService';
 import LessonAttachmentService from '@src/services/LessonAttachmentService';
 import LessonService from '@src/services/LessonService';
+import OnboardingRecommendationService from '@src/services/OnboardingRecommendationService';
+import QuizService from '@src/services/QuizService';
+import RecommendationAnalyticsService from '@src/services/RecommendationAnalyticsService';
+import VideoService from '@src/services/VideoService';
 
 function isAuthenticated(req: Request): boolean {
   return req.authUser !== undefined;
@@ -81,6 +87,23 @@ async function list(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function recommendations(req: Request, res: Response) {
+  const answers = parseOnboardingAnswers(req.body);
+  const result = await OnboardingRecommendationService.recommend(
+    answers,
+    req.authUser?.id,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function recommendationEvent(req: Request, res: Response) {
+  const result = await RecommendationAnalyticsService.track(
+    req.authUser?.id,
+    req.body,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function listManaged(req: Request, res: Response) {
   const query = parseListCoursesQuery(req.query);
   const result = await CourseService.listManaged(query, req.authUser!);
@@ -102,6 +125,23 @@ async function getById(req: Request, res: Response) {
     undefined,
   );
   return res.status(HttpStatusCodes.OK).json({ course });
+}
+
+async function getMyReview(req: Request, res: Response) {
+  const result = await CourseService.getMyReview(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+    req.authUser!.id,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function upsertReview(req: Request, res: Response) {
+  const result = await CourseService.upsertReview(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+    req.authUser!.id,
+    parseUpsertCourseReviewInput(req.body),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
 }
 
 async function getManagedById(req: Request, res: Response) {
@@ -267,8 +307,24 @@ async function removeLessonAttachment(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function listAiQuizSources(req: Request, res: Response) {
+  const result = await VideoService.listAiQuizSources(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function listAiQuizTargets(req: Request, res: Response) {
+  const result = await QuizService.listAiQuizTargets(
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   list: errorHandle(list),
+  recommendations: errorHandle(recommendations),
+  recommendationEvent: errorHandle(recommendationEvent),
   listManaged: errorHandle(listManaged),
   listCategories: errorHandle(listCategories),
   createCategory: errorHandle(createCategory),
@@ -276,7 +332,11 @@ export default {
   removeCategory: errorHandle(removeCategory),
   getBySlug: errorHandle(getBySlug),
   getById: errorHandle(getById),
+  getMyReview: errorHandle(getMyReview),
+  upsertReview: errorHandle(upsertReview),
   getManagedById: errorHandle(getManagedById),
+  listAiQuizSources: errorHandle(listAiQuizSources),
+  listAiQuizTargets: errorHandle(listAiQuizTargets),
   create: errorHandle(create),
   update: errorHandle(update),
   publish: errorHandle(publish),

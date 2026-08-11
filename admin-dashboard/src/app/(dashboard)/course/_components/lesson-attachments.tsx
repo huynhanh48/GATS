@@ -22,7 +22,8 @@ import type { LessonAttachment, MediaRecord } from "@/lib/api/types";
 import { lessonAttachmentsClient } from "@/services/lesson-attachments.client";
 import { mediaClient } from "@/services/media.client";
 
-const ACCEPT = ".pdf,.doc,.docx,.md,.txt";
+const ACCEPT =
+  ".pdf,.doc,.docx,.md,.txt,.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/webp,image/gif";
 const MAX_BYTES = 50 * 1024 * 1024;
 
 function formatBytes(bytes: number): string {
@@ -246,7 +247,7 @@ export function LessonAttachments({
       </div>
 
       <p className="text-xs text-dark-4 dark:text-dark-6">
-        PDF, DOC, DOCX, MD, TXT — tối đa 50MB. Học viên có thể xem và tải xuống.
+        PDF, DOC, DOCX, MD, TXT, JPEG, PNG, WEBP, GIF — tối đa 50MB. Học viên có thể xem và tải xuống.
       </p>
 
       <div

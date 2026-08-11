@@ -44,8 +44,9 @@ function mapListItem(
     createdAt: Date;
     updatedAt: Date;
     likeCount: number;
-    userId: number;
-    authorUserName: string;
+    userId: number | null;
+    authorUserName: string | null;
+    guestName: string | null;
   },
   isLiked: boolean,
 ): CommentListItem {
@@ -60,8 +61,8 @@ function mapListItem(
     likeCount: Number(row.likeCount),
     isLiked,
     author: {
-      id: row.userId,
-      userName: row.authorUserName,
+      id: row.userId ?? undefined,
+      userName: row.authorUserName || row.guestName || 'Khách',
     },
   });
 }
@@ -121,9 +122,10 @@ export async function findRootsByPostId(
         likeCount: likeCountSubquery,
         userId: commentsTable.userId,
         authorUserName: usersTable.userName,
+        guestName: commentsTable.guestName,
       })
       .from(commentsTable)
-      .innerJoin(usersTable, eq(commentsTable.userId, usersTable.id))
+      .leftJoin(usersTable, eq(commentsTable.userId, usersTable.id))
       .where(whereClause)
       .orderBy(desc(commentsTable.createdAt))
       .limit(limit)
@@ -166,9 +168,10 @@ export async function findReplies(
         likeCount: likeCountSubquery,
         userId: commentsTable.userId,
         authorUserName: usersTable.userName,
+        guestName: commentsTable.guestName,
       })
       .from(commentsTable)
-      .innerJoin(usersTable, eq(commentsTable.userId, usersTable.id))
+      .leftJoin(usersTable, eq(commentsTable.userId, usersTable.id))
       .where(whereClause)
       .orderBy(commentsTable.createdAt)
       .limit(limit)
@@ -212,8 +215,9 @@ export type ModerationQueueRow = {
   status: CommentStatus;
   createdAt: Date;
   updatedAt: Date;
-  authorId: number;
+  authorId: number | null;
   authorUserName: string | null;
+  guestName: string | null;
   likeCount: number;
 };
 
@@ -242,6 +246,7 @@ export async function listForModeration(options: {
         updatedAt: commentsTable.updatedAt,
         authorId: commentsTable.userId,
         authorUserName: usersTable.userName,
+        guestName: commentsTable.guestName,
         likeCount: likeCountSubquery,
       })
       .from(commentsTable)

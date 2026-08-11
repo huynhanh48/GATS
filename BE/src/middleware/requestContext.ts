@@ -9,6 +9,11 @@ function requestContext(req: Request, res: Response, next: NextFunction) {
   const startedAt = Date.now();
 
   res.locals.requestId = requestId;
+  res.locals.appPlatform = req.get('x-app-platform') ?? null;
+  res.locals.appVersion = req.get('x-app-version') ?? null;
+  res.locals.deviceId = req.get('x-device-id') ?? null;
+  res.locals.locale = req.get('x-locale') ?? null;
+  res.locals.timezone = req.get('x-timezone') ?? null;
   res.setHeader('x-request-id', requestId);
   res.on('finish', () => {
     if (EnvVars.NodeEnv === NodeEnvs.TEST) return;
@@ -22,6 +27,9 @@ function requestContext(req: Request, res: Response, next: NextFunction) {
         status: res.statusCode,
         durationMs: Date.now() - startedAt,
         ip: req.ip,
+        appPlatform: res.locals.appPlatform,
+        appVersion: res.locals.appVersion,
+        deviceId: res.locals.deviceId,
       }),
     );
   });

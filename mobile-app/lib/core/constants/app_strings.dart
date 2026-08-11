@@ -58,6 +58,8 @@ abstract final class AppStrings {
   static String get authRoleLabel => _l10n.authRoleLabel('%s');
   static String get navHome => _l10n.navHome;
   static String get navDaily => _l10n.navDaily;
+  static String navDailyBadgeTooltip(int count) =>
+      _l10n.navDailyBadgeTooltip(count);
   static String get navLibrary => _l10n.navLibrary;
   static String get navCoach => _l10n.navCoach;
   static String get navHub => _l10n.navHub;
@@ -100,6 +102,12 @@ abstract final class AppStrings {
   static String get routineEditorHint => _l10n.routineEditorHint;
   static String get routineConnectHint => _l10n.routineConnectHint;
   static String get routineCancelConnect => _l10n.routineCancelConnect;
+  static String routineConnectFrom(String title) =>
+      _l10n.routineConnectFrom(title);
+  static String get routineConnectToHint => _l10n.routineConnectToHint;
+  static String get routineConnectEmpty => _l10n.routineConnectEmpty;
+  static String get routineDisconnect => _l10n.routineDisconnect;
+  static String get routineConnectAction => _l10n.routineConnectAction;
   static String get routinePreviewSubtitle => _l10n.routinePreviewSubtitle;
   static String get flashcardSectionTitle => _l10n.flashcardSectionTitle;
   static String get flashcardDue => _l10n.flashcardDue(0).replaceFirst('0', '%d');
@@ -118,6 +126,20 @@ abstract final class AppStrings {
   static String get aiCoachName => _l10n.aiCoachName;
   static String get hubXpTitle => _l10n.hubXpTitle;
   static String get hubBadgesTitle => _l10n.hubBadgesTitle;
+  static String get hubChartsTitle => _l10n.hubChartsTitle;
+  static String get hubChartsSubtitle => _l10n.hubChartsSubtitle;
+  static String get hubChartsWeeklyTitle => _l10n.hubChartsWeeklyTitle;
+  static String get hubChartsXpTitle => _l10n.hubChartsXpTitle;
+  static String get hubChartsMixTitle => _l10n.hubChartsMixTitle;
+  static String get hubChartsWeekTotal => _l10n.hubChartsWeekTotal;
+  static String get hubChartsWeekAvg => _l10n.hubChartsWeekAvg;
+  static String hubChartsMinutes(int minutes) =>
+      _l10n.hubChartsMinutes(minutes);
+  static String get hubChartsMixLessons => _l10n.hubChartsMixLessons;
+  static String get hubChartsMixFlashcards => _l10n.hubChartsMixFlashcards;
+  static String get hubChartsMixQuiz => _l10n.hubChartsMixQuiz;
+  static String get hubChartsMixCoach => _l10n.hubChartsMixCoach;
+  static String get hubChartsEmpty => _l10n.hubChartsEmpty;
   static String get hubCertTitle => _l10n.hubCertTitle;
   static String get hubCertLocked => _l10n.hubCertLocked(0).replaceFirst('0', '%d');
   static String get hubCertReady => _l10n.hubCertReady;
@@ -137,6 +159,14 @@ abstract final class AppStrings {
   static String get ordersStatusFailed => _l10n.ordersStatusFailed;
   static String ordersCouponCode(String code) => _l10n.ordersCouponCode(code);
   static String get settingsNotifications => _l10n.settingsNotifications;
+  static String get settingsDailyReminder => _l10n.settingsDailyReminder;
+  static String get settingsDailyReminderSubtitle =>
+      _l10n.settingsDailyReminderSubtitle;
+  static String get settingsDailyReminderTime => _l10n.settingsDailyReminderTime;
+  static String get settingsDailyReminderPermissionDenied =>
+      _l10n.settingsDailyReminderPermissionDenied;
+  static String settingsDailyReminderSaved(String time) =>
+      _l10n.settingsDailyReminderSaved(time);
   static String get notificationsScreenTitle => _l10n.notificationsScreenTitle;
   static String get notificationsToday => _l10n.notificationsToday;
   static String get notificationsYesterday => _l10n.notificationsYesterday;
@@ -299,6 +329,18 @@ abstract final class AppStrings {
   static String get adminPostsEmpty => _l10n.adminPostsEmpty;
   static String get postHomeSectionTitle => _l10n.postHomeSectionTitle;
   static String get postFeedEmpty => _l10n.postFeedEmpty;
+  static String get postSearchHint => _l10n.postSearchHint;
+  static String get postSearchEmpty => _l10n.postSearchEmpty;
+  static String postSearchResultCount(int count) =>
+      _l10n.postSearchResultCount(count);
+  static String get postFilterScope => _l10n.postFilterScope;
+  static String get postFilterSort => _l10n.postFilterSort;
+  static String get postSortNewest => _l10n.postSortNewest;
+  static String get postSortOldest => _l10n.postSortOldest;
+  static String get postSortTitle => _l10n.postSortTitle;
+  static String get postScopeGlobal => _l10n.postScopeGlobal;
+  static String get postScopeCourse => _l10n.postScopeCourse;
+  static String get postClearFilters => _l10n.postClearFilters;
   static String get postSeeAll => _l10n.postSeeAll;
   static String get postByAuthor => _l10n.postByAuthor('%s');
   static String get postPreviewLocked => _l10n.postPreviewLocked;

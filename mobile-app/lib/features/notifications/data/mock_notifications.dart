@@ -11,6 +11,7 @@ class AppNotificationItem {
     required this.section,
     this.iconBackground,
     this.isUnread = false,
+    this.href,
   });
 
   final String id;
@@ -20,6 +21,7 @@ class AppNotificationItem {
   final AppNotificationSection section;
   final Color? iconBackground;
   final bool isUnread;
+  final String? href;
 }
 
 abstract final class MockNotifications {

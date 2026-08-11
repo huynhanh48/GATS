@@ -117,6 +117,34 @@ const EnvVars = jetEnv({
   VnpTmnCode: optionalStr,
   VnpHashSecret: optionalStr,
   GoogleClientId: optionalStr,
+  /** Apple Sign In — Services ID / Bundle ID used as JWT audience */
+  AppleClientId: optionalStr,
+  /**
+   * Viava course AI base URL (v2 FastAPI).
+   * In Docker: http://127.0.0.1:8000 — BE calls learning-path / exercises / chat.
+   * Public: https://api.gats.vn/course/... (nginx → app:8000).
+   */
+  ViavaCourseGenUrl: optionalStr,
+  /** Optional bearer/API key for Viava (Authorization: Bearer …). */
+  ViavaApiKey: optionalStr,
+  /**
+   * @deprecated v1 path — ignored. BE hardcodes Viava v2 routes under /course/.
+   */
+  ViavaCourseGenPath: defaultStr(''),
+  /** JSON object of mobile feature flags, e.g. {"flashcards":true} */
+  MobileFeatureFlags: optionalStr,
+  MobileMinAndroidVersion: defaultStr('1.0.0'),
+  MobileMinIosVersion: defaultStr('1.0.0'),
+  /** FCM HTTP v1 — raw service account JSON string */
+  FcmServiceAccountJson: optionalStr,
+  /** FCM project id (optional if present in service account JSON) */
+  FcmProjectId: optionalStr,
+  /** Seller identity on payment receipts (biên lai) */
+  SellerName: defaultStr('GATS Academy'),
+  SellerAddress: defaultStr(''),
+  SellerEmail: defaultStr('support@gats.vn'),
+  SellerPhone: defaultStr(''),
+  SellerTaxCode: optionalStr,
 });
 
 const INSECURE_PRODUCTION_VALUES = new Set([

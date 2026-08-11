@@ -18,6 +18,13 @@ bankAccountRouter.get(
 );
 
 bankAccountRouter.get(
+  BankAccountPaths.BankAccount.ExportCsv,
+  errorHandle(authMiddleware),
+  errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),
+  handlers.exportCsv,
+);
+
+bankAccountRouter.get(
   BankAccountPaths.BankAccount.Get,
   errorHandle(authMiddleware),
   errorHandle(requirePermission('update', RESOURCE_TYPES.COURSE)),

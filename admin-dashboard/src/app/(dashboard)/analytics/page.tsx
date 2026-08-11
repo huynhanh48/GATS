@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AdminFetchError } from "@/components/Layouts/admin-fetch-error";
 import { AdminPageHeader, AdminPanel } from "@/components/Layouts/admin-surface";
 import { fetchAnalyticsOverview, fetchDashboardMetrics } from "./actions";
@@ -8,13 +9,29 @@ export const metadata: Metadata = {
   title: "Phân tích",
 };
 
+type PageProps = {
+  searchParams: Promise<{ days?: string }>;
+};
+
 function currency(value: number) {
   return value.toLocaleString("vi-VN") + "đ";
 }
 
-export default async function AnalyticsPage() {
+function parseDays(raw?: string): 7 | 14 | 30 | 90 {
+  const n = Number(raw);
+  if (n === 7 || n === 30 || n === 90) return n;
+  return 14;
+}
+
+export default async function AnalyticsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const days = parseDays(params.days);
+
   const [{ data: overview, error: overviewError }, { data: metrics, error: metricsError }] =
-    await Promise.all([fetchAnalyticsOverview(), fetchDashboardMetrics()]);
+    await Promise.all([
+      fetchAnalyticsOverview(days),
+      fetchDashboardMetrics(),
+    ]);
 
   const error = overviewError || metricsError;
 
@@ -30,9 +47,34 @@ export default async function AnalyticsPage() {
           { label: "Tổng học viên", value: overview.users.total, tone: "slate" },
           { label: "Chứng chỉ đã cấp", value: overview.certificates.issued, tone: "orange" },
         ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {([7, 14, 30, 90] as const).map((d) => (
+              <Link
+                key={d}
+                href={`/analytics?days=${d}`}
+                className={`rounded-lg border px-3 py-1.5 text-sm font-medium ${
+                  days === d
+                    ? "border-[#0070EB] bg-[#0070EB] text-white"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200"
+                }`}
+              >
+                {d} ngày
+              </Link>
+            ))}
+            <a
+              href={`/api/be/analytics/export.csv?days=${days}`}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            >
+              Export CSV
+            </a>
+          </div>
+        }
       />
 
-      {error ? <AdminFetchError message={error} retryHref="/analytics" /> : null}
+      {error ? (
+        <AdminFetchError message={error} retryHref={`/analytics?days=${days}`} />
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <AdminPanel title="Đơn hàng" bodyClassName="p-4">
@@ -96,7 +138,7 @@ export default async function AnalyticsPage() {
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <AdminPanel
-          title="Doanh thu 14 ngày qua"
+          title={`Doanh thu ${days} ngày qua`}
           className="xl:col-span-2"
           bodyClassName="p-4"
         >

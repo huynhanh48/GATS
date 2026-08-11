@@ -3,6 +3,7 @@ import { Router } from 'express';
 import OrderPaths from '@src/common/paths/order';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import requireAdmin from '@src/middleware/requireAdmin';
 import orderHandlers from './orderRouter';
 
@@ -12,6 +13,7 @@ const orderRouter = Router();
 orderRouter.post(
   OrderPaths.Order.Create,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('order.create')),
   orderHandlers.createOrder,
 );
 
@@ -65,6 +67,13 @@ orderRouter.get(
   orderHandlers.adminGetOrder,
 );
 
+orderRouter.get(
+  OrderPaths.Order.AdminReceipt,
+  errorHandle(authMiddleware),
+  errorHandle(requireAdmin),
+  orderHandlers.adminGetOrderReceipt,
+);
+
 orderRouter.patch(
   OrderPaths.Order.AdminUpdateStatus,
   errorHandle(authMiddleware),
@@ -83,6 +92,12 @@ orderRouter.get(
   OrderPaths.Order.Get,
   errorHandle(authMiddleware),
   orderHandlers.getOrderById,
+);
+
+orderRouter.get(
+  OrderPaths.Order.Receipt,
+  errorHandle(authMiddleware),
+  orderHandlers.getOrderReceipt,
 );
 
 orderRouter.post(

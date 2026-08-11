@@ -41,6 +41,36 @@ export async function fetchMe(): Promise<AuthUser> {
   return data.user;
 }
 
+export async function updateMeRequest(payload: {
+  userName?: string;
+  avatarUrl?: string | null;
+  coverUrl?: string | null;
+}): Promise<AuthUser> {
+  const data = (await apiClient.put(PathApi.auth.updateMe, payload)) as MeResponse;
+  return data.user;
+}
+
+export async function uploadAvatarRequest(file: File): Promise<AuthUser> {
+  const form = new FormData();
+  form.append("file", file);
+  const data = (await apiClient.post(PathApi.auth.uploadAvatar, form, {
+    // Let the browser set multipart boundary (override default application/json).
+    headers: { "Content-Type": undefined as unknown as string },
+    timeout: 60000,
+  })) as MeResponse;
+  return data.user;
+}
+
+export async function uploadCoverRequest(file: File): Promise<AuthUser> {
+  const form = new FormData();
+  form.append("file", file);
+  const data = (await apiClient.post(PathApi.auth.uploadCover, form, {
+    headers: { "Content-Type": undefined as unknown as string },
+    timeout: 60000,
+  })) as MeResponse;
+  return data.user;
+}
+
 export async function changePasswordRequest(
   currentPassword: string,
   newPassword: string,

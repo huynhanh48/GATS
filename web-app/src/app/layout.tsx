@@ -8,35 +8,30 @@ import { Toaster } from "@/components/ui/sonner";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { CartProvider } from "@/components/providers/CartProvider";
 
-import { Exo, Open_Sans, Be_Vietnam_Pro } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 
-/** Font body chính — dùng cho paragraph, label, button text */
-const exo = Exo({
+/** Font body chính & UI — Inter (Modern, Clean, Sans-serif) */
+const inter = Inter({
   subsets: ["latin", "vietnamese"],
-  variable: "--font-exo",
+  variable: "--font-inter",
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
 });
 
-/** Font secondary — dùng cho caption, small text, description */
-const openSans = Open_Sans({
+/** Font heading — Plus Jakarta Sans (Sleek, Modern Enterprise SaaS) */
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin", "vietnamese"],
-  variable: "--font-open-sans",
+  variable: "--font-plus-jakarta-sans",
   display: "swap",
-  weight: ["300", "400", "600", "700"],
-});
-
-/** Font heading — dùng cho H1, H2, H3, title nổi bật */
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-be-vietnam-pro",
-  display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
   title: "GATS Academy - Nền tảng đào tạo AI doanh nghiệp",
   description: "Giải pháp toàn diện của bạn để làm chủ công nghệ tương lai.",
+  icons: {
+    icon: [{ url: "/logo.svg", type: "image/svg+xml" }],
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({
@@ -48,7 +43,7 @@ export default function RootLayout({
     <html
       lang="vi"
       suppressHydrationWarning
-      className={cn("h-full antialiased font-sans", exo.variable, openSans.variable, beVietnamPro.variable)}
+      className={cn("h-full antialiased font-sans", inter.variable, plusJakartaSans.variable)}
     >
       <body className="min-h-full flex flex-col bg-background font-sans" suppressHydrationWarning>
         <ThemeProvider
@@ -59,6 +54,7 @@ export default function RootLayout({
         >
           <GoogleOAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}
+            locale="vi"
           >
             <AuthProvider>
               <AuthModalProvider>

@@ -60,10 +60,6 @@ class MockCourseStore extends ChangeNotifier {
       _courses.where((c) => c.isPublished).toList();
 
   List<AppCourse> coursesForUser(String? userId, {UserRole role = UserRole.user}) {
-    if (role == UserRole.admin) return publishedCourses();
-    if (role == UserRole.mentor && userId != null) {
-      return _courses.where((c) => c.mentorId == userId && c.isPublished).toList();
-    }
     return publishedCourses();
   }
 
@@ -99,10 +95,7 @@ class MockCourseStore extends ChangeNotifier {
     required String? userId,
     required UserRole role,
   }) {
-    if (role == UserRole.admin) return true;
-    if (role == UserRole.mentor && userId == course.mentorId) return true;
-    if (role == UserRole.user && course.isOwnedBy(userId)) return true;
-    return false;
+    return course.isOwnedBy(userId);
   }
 
   void enrollUser(String courseId, String userId) {

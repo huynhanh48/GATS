@@ -22,12 +22,17 @@ export function buildExtractFlacArgs(
 /**
  * Extract a standalone FLAC from the source media (no video).
  * Skips when ffprobe finds no audio stream — caller should still mark HLS ready.
+ * Probe/network failures return `failed` (not `no_audio`).
  */
 export async function extractFlacAudio(
   input: string,
   outputPath: string,
 ): Promise<ExtractFlacResult> {
   const probe = await probeAudioStream(input);
+  if (probe.error && !probe.timedOut) {
+    logger.err(`FLAC extract aborted: probe failed (${probe.error})`);
+    return { status: 'failed', message: probe.error };
+  }
   if (!probe.hasAudio) {
     logger.info('FLAC extract skipped: no audio stream');
     return { status: 'no_audio' };

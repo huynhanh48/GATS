@@ -6,6 +6,7 @@ import { errorHandle } from '@src/middleware/errorHandle';
 import {
   parseCertificateListQuery,
   parseIssueCertificateInput,
+  parseReissueCertificateInput,
 } from '@src/models/Certificate.model';
 import CertificateService from '@src/services/CertificateService';
 
@@ -37,8 +38,12 @@ async function adminIssue(req: Request, res: Response) {
     input.userId,
     input.courseId,
     authUserId(req),
+    input.reason,
   );
-  return res.status(HttpStatusCodes.CREATED).json(result);
+  const status = result.reissued
+    ? HttpStatusCodes.OK
+    : HttpStatusCodes.CREATED;
+  return res.status(status).json(result);
 }
 
 async function adminRevoke(req: Request, res: Response) {
@@ -49,10 +54,21 @@ async function adminRevoke(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function adminReissue(req: Request, res: Response) {
+  const input = parseReissueCertificateInput(req.body);
+  const result = await CertificateService.adminReissue(
+    getRouteParam(req.params.id),
+    authUserId(req),
+    input.reason,
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 export default {
   listMine: errorHandle(listMine),
   verify: errorHandle(verify),
   adminList: errorHandle(adminList),
   adminIssue: errorHandle(adminIssue),
   adminRevoke: errorHandle(adminRevoke),
+  adminReissue: errorHandle(adminReissue),
 };

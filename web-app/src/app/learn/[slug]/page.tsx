@@ -34,7 +34,7 @@ export default function LearnSlugRedirectPage() {
         if (cancelled) return;
 
         if (!course?.id) {
-          router.replace("/learning");
+          router.replace("/profile?tab=courses");
           return;
         }
 
@@ -59,13 +59,13 @@ export default function LearnSlugRedirectPage() {
           flat.find((l) => !l.locked)?.id || flat[0]?.id || null;
 
         if (!preferred) {
-          router.replace("/learning");
+          router.replace("/profile?tab=courses");
           return;
         }
 
         router.replace(`/learn/${slug}/${preferred}`);
       } catch {
-        if (!cancelled) router.replace("/learning");
+        if (!cancelled) router.replace("/profile?tab=courses");
       }
     })();
 

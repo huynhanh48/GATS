@@ -7,12 +7,14 @@ class CourseProgressDto {
     required this.totalLessons,
     required this.percent,
     required this.completedLessonIds,
+    this.nextLessonId,
   });
 
   final int completedLessons;
   final int totalLessons;
   final int percent;
   final List<String> completedLessonIds;
+  final String? nextLessonId;
 
   /// 0.0‥1.0 for UI / repository.
   double get fraction => (percent / 100).clamp(0.0, 1.0);
@@ -26,6 +28,7 @@ class CourseProgressDto {
       completedLessonIds: ids is List
           ? ids.map((e) => e.toString()).where((e) => e.isNotEmpty).toList()
           : const [],
+      nextLessonId: json['nextLessonId']?.toString(),
     );
   }
 }
@@ -78,6 +81,7 @@ abstract final class ProgressApiService {
       totalLessons: 0,
       percent: 0,
       completedLessonIds: [],
+      nextLessonId: null,
     );
   }
 
@@ -153,6 +157,115 @@ abstract final class ProgressApiService {
       watchedSeconds: duration,
       durationSeconds: duration,
       videoId: videoId,
+    );
+  }
+
+  /// Batch sync offline outbox → `POST /api/progress/sync`.
+  static Future<ProgressSyncResult> syncEvents({
+    required String token,
+    required String deviceId,
+    required List<Map<String, dynamic>> events,
+  }) async {
+    final json = await ApiClient.post(
+      ProgressApiPaths.sync,
+      token: token,
+      body: {
+        'deviceId': deviceId,
+        'events': events,
+      },
+      headers: {
+        'Idempotency-Key': events.isNotEmpty
+            ? 'sync-${events.first['eventId']}-${events.length}'
+            : 'sync-empty',
+      },
+    );
+    final data = json['data'];
+    if (data is Map) {
+      return ProgressSyncResult.fromJson(Map<String, dynamic>.from(data));
+    }
+    return const ProgressSyncResult(results: [], checkpoint: null);
+  }
+
+  static Future<ProgressChangesPage> pullChanges({
+    required String token,
+    String? cursor,
+  }) async {
+    final json = await ApiClient.get(
+      ProgressApiPaths.changes,
+      token: token,
+      query: cursor != null && cursor.isNotEmpty ? {'cursor': cursor} : null,
+    );
+    final meta = json['meta'] is Map
+        ? Map<String, dynamic>.from(json['meta'] as Map)
+        : <String, dynamic>{};
+    final data = json['data'];
+    final rows = <Map<String, dynamic>>[];
+    if (data is List) {
+      for (final e in data) {
+        if (e is Map) rows.add(Map<String, dynamic>.from(e));
+      }
+    }
+    return ProgressChangesPage(
+      events: rows,
+      nextCursor: meta['nextCursor']?.toString(),
+      hasMore: meta['hasMore'] == true,
+    );
+  }
+}
+
+class ProgressChangesPage {
+  const ProgressChangesPage({
+    required this.events,
+    this.nextCursor,
+    this.hasMore = false,
+  });
+
+  final List<Map<String, dynamic>> events;
+  final String? nextCursor;
+  final bool hasMore;
+}
+
+class ProgressSyncResult {
+  const ProgressSyncResult({
+    required this.results,
+    this.checkpoint,
+  });
+
+  final List<ProgressSyncItemResult> results;
+  final String? checkpoint;
+
+  factory ProgressSyncResult.fromJson(Map<String, dynamic> json) {
+    final raw = json['results'];
+    final items = <ProgressSyncItemResult>[];
+    if (raw is List) {
+      for (final e in raw) {
+        if (e is Map) {
+          items.add(
+            ProgressSyncItemResult.fromJson(Map<String, dynamic>.from(e)),
+          );
+        }
+      }
+    }
+    return ProgressSyncResult(
+      results: items,
+      checkpoint: json['checkpoint']?.toString(),
+    );
+  }
+}
+
+class ProgressSyncItemResult {
+  const ProgressSyncItemResult({
+    required this.eventId,
+    required this.status,
+  });
+
+  final String eventId;
+  final String status;
+
+  factory ProgressSyncItemResult.fromJson(Map<String, dynamic> json) {
+    return ProgressSyncItemResult(
+      eventId: json['eventId']?.toString() ?? '',
+      status: json['status']?.toString() ?? 'unknown',
     );
   }
 }

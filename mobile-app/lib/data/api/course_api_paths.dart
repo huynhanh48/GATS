@@ -1,6 +1,8 @@
 /// Paths khớp BE `src/common/paths/{course,enrollment}.ts`.
 abstract final class CourseApiPaths {
   static const list = '/api/courses';
+  static const recommendations = '/api/courses/recommendations';
+  static const recommendationEvents = '/api/courses/recommendations/events';
   static String byId(String id) => '/api/courses/$id';
   static String bySlug(String slug) => '/api/courses/slug/$slug';
   static String curriculum(String courseId) =>
@@ -46,4 +48,8 @@ abstract final class PostApiPaths {
   static String commentLike(String postId, String commentId) =>
       '/api/posts/$postId/comments/$commentId/like';
   static String like(String postId) => '/api/posts/$postId/like';
+}
+
+abstract final class CategoryApiPaths {
+  static const list = '/api/categories';
 }

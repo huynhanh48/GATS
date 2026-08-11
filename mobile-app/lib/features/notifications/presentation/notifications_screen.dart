@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
+import 'package:gats_academy/core/navigation/notification_deep_link.dart';
+import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/core/services/gats_notification_service.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
 import 'package:gats_academy/core/widgets/gats_notification_banner.dart';
 import 'package:gats_academy/core/widgets/starry_sky_background.dart';
+import 'package:gats_academy/data/api/notification_api_service.dart';
 import 'package:gats_academy/features/notifications/data/mock_notifications.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -17,6 +20,24 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _testing = false;
+  bool _loadingList = true;
+  List<AppNotificationItem> _items = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    setState(() => _loadingList = true);
+    final items = await NotificationApiService.listOrEmpty();
+    if (!mounted) return;
+    setState(() {
+      _items = items;
+      _loadingList = false;
+    });
+  }
 
   Future<void> _runTest(
     Future<bool> Function() action, {
@@ -42,6 +63,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _showTopNotice(String message, {GatsNotificationKind kind = GatsNotificationKind.success}) {
     GatsNotificationService.showInApp(message: message, kind: kind);
+  }
+
+  Future<void> _onTapItem(AppNotificationItem item) async {
+    final token = await AuthPrefs.accessToken();
+    if (token != null && item.isUnread) {
+      try {
+        await NotificationApiService.markOneRead(token: token, id: item.id);
+      } catch (_) {/* ignore */}
+    }
+    if (item.href != null && item.href!.isNotEmpty) {
+      await NotificationDeepLink.open(item.href);
+    }
+    await _loadNotifications();
   }
 
   @override
@@ -77,27 +111,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          _TestNotificationCard(
-            loading: _testing,
-            onTestBanner: () => _runTest(
-              GatsNotificationService.testInAppBanner,
-              skipSuccessBanner: true,
+      body: RefreshIndicator(
+        onRefresh: _loadNotifications,
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            _TestNotificationCard(
+              loading: _testing,
+              onTestBanner: () => _runTest(
+                GatsNotificationService.testInAppBanner,
+                skipSuccessBanner: true,
+              ),
+              onTestPush: () => _runTest(
+                GatsNotificationService.testSystemPush,
+                skipSuccessBanner: true,
+              ),
+              onTestDelayed: () => _runTest(
+                GatsNotificationService.testDelayedSystemPush,
+                successMessage: AppStrings.notificationsTestScheduled,
+              ),
             ),
-            onTestPush: () => _runTest(
-              GatsNotificationService.testSystemPush,
-              skipSuccessBanner: true,
-            ),
-            onTestDelayed: () => _runTest(
-              GatsNotificationService.testDelayedSystemPush,
-              successMessage: AppStrings.notificationsTestScheduled,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          ..._buildSections(context),
-        ],
+            const SizedBox(height: AppSpacing.xl),
+            if (_loadingList)
+              const Center(child: CircularProgressIndicator())
+            else
+              ..._buildSections(context),
+          ],
+        ),
       ),
     );
   }
@@ -106,12 +146,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final sections = [
       (AppNotificationSection.today, AppStrings.notificationsToday),
       (AppNotificationSection.yesterday, AppStrings.notificationsYesterday),
-      (AppNotificationSection.earlier, 'Nov 20, 2025'),
+      (AppNotificationSection.earlier, 'Trước đó'),
     ];
 
     final widgets = <Widget>[];
     for (final (section, label) in sections) {
-      final items = MockNotifications.items.where((n) => n.section == section).toList();
+      final items = _items.where((n) => n.section == section).toList();
       if (items.isEmpty) continue;
 
       widgets
@@ -127,7 +167,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
       for (final item in items) {
         widgets
-          ..add(_NotificationTile(item: item))
+          ..add(_NotificationTile(item: item, onTap: () => _onTapItem(item)))
           ..add(const SizedBox(height: AppSpacing.sm));
       }
 
@@ -261,9 +301,10 @@ class _TestButton extends StatelessWidget {
 }
 
 class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({required this.item});
+  const _NotificationTile({required this.item, required this.onTap});
 
   final AppNotificationItem item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -277,7 +318,7 @@ class _NotificationTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: () {},
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(

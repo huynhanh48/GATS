@@ -37,6 +37,16 @@ export const NAV_DATA = [
         ],
       },
       {
+        title: "AI Gen (Viava v2)",
+        icon: Icons.SparklesIcon,
+        items: [
+          {
+            title: "Sinh Quiz AI",
+            url: "/ai-gen",
+          },
+        ],
+      },
+      {
         title: "Bài viết",
         icon: Icons.DocumentIcon,
         items: [
@@ -86,6 +96,10 @@ export const NAV_DATA = [
             url: "/orders/exceptions",
           },
           {
+            title: "Tài khoản ngân hàng",
+            url: "/bank-accounts",
+          },
+          {
             title: "Mã giảm giá",
             url: "/coupons",
           },
@@ -117,7 +131,7 @@ export const NAV_DATA = [
         icon: Icons.User,
         items: [
           {
-            title: "Danh sách lead",
+            title: "Danh sách tư vấn",
             url: "/leads",
           },
         ],
@@ -139,6 +153,10 @@ export const NAV_DATA = [
           {
             title: "Hàng đợi bình luận",
             url: "/moderation",
+          },
+          {
+            title: "Từ cấm",
+            url: "/moderation/banned-words",
           },
         ],
       },

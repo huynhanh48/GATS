@@ -332,7 +332,7 @@ function setupDetailMocks(options?: {
       courseId,
       key: 'Monitor',
       label: 'Video theo yêu cầu',
-      value: 24,
+      value: '24',
       unit: 'hour',
       order: 0,
       createdAt: new Date(),
@@ -496,6 +496,7 @@ describe('GET /api/courses/slug/:slug', () => {
   it('allows authenticated user to access draft course', async () => {
     authUser = { id: 1, email: 'admin@test.com', roles: ['admin'] };
     setupDetailMocks({ status: 'draft' });
+    mockCanManageCourse.mockResolvedValue(true);
 
     await agent
       .get('/api/courses/slug/rag-cho-doanh-nghiep-tu-pdf-den-chatbot')
@@ -602,7 +603,7 @@ describe('backfillRagCourseDetail idempotency', () => {
       courseId,
       key: 'Monitor',
       label: 'Video theo yêu cầu',
-      value: 24,
+      value: '24',
       unit: 'hour',
       order: 0,
       createdAt: new Date(),

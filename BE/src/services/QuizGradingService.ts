@@ -2,6 +2,23 @@ import type { QuizQuestion } from '@src/db/schema/quiz-question';
 import type { QuizQuestionAnswer } from '@src/db/schema/quiz-question-answer';
 import { normalizeFillBlankAnswer } from '@src/models/Quiz.model';
 
+function countFillBlanks(questionText: string): number {
+  // Treat a numbered marker such as `___1___` as one blank, not two.
+  return (questionText.match(/_{3,}\s*\d+\s*_{3,}|_{3,}/g) ?? []).length;
+}
+
+function splitFillBlankParts(text: string): string[] {
+  const value = text.trim();
+  if (!value) return [];
+  if (value.includes('|')) {
+    return value.split('|').map((part) => part.trim());
+  }
+  if (value.includes(';')) {
+    return value.split(';').map((part) => part.trim());
+  }
+  return [value];
+}
+
 export function gradeSingleChoiceQuestion(
   question: QuizQuestion,
   answers: QuizQuestionAnswer[],
@@ -21,19 +38,46 @@ export function gradeFillBlankQuestion(
     return { score: 0, isCorrect: false };
   }
 
-  const normalized = normalizeFillBlankAnswer(
-    textAnswer,
-    question.caseSensitive,
-  );
-  const isCorrect = acceptedAnswers
+  const correctAnswers = acceptedAnswers
     .filter((answer) => answer.isCorrect)
-    .some((answer) => {
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  const blankCount = countFillBlanks(question.question);
+
+  // Multi-blank: grade each blank against ordered accepted answers.
+  if (blankCount > 1 && correctAnswers.length >= blankCount) {
+    const parts = splitFillBlankParts(textAnswer);
+    if (parts.length !== blankCount || parts.some((part) => !part)) {
+      return { score: 0, isCorrect: false };
+    }
+
+    const isCorrect = parts.every((part, index) => {
+      const normalized = normalizeFillBlankAnswer(
+        part,
+        question.caseSensitive,
+      );
       const accepted = normalizeFillBlankAnswer(
-        answer.answer,
+        correctAnswers[index].answer,
         question.caseSensitive,
       );
       return normalized === accepted;
     });
+
+    return { score: isCorrect ? question.points : 0, isCorrect };
+  }
+
+  const normalized = normalizeFillBlankAnswer(
+    textAnswer,
+    question.caseSensitive,
+  );
+  const isCorrect = correctAnswers.some((answer) => {
+    const accepted = normalizeFillBlankAnswer(
+      answer.answer,
+      question.caseSensitive,
+    );
+    return normalized === accepted;
+  });
 
   return { score: isCorrect ? question.points : 0, isCorrect };
 }

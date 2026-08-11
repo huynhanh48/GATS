@@ -7,8 +7,18 @@ export const metadata: Metadata = {
   title: "Chứng chỉ",
 };
 
-export default async function CertificatesPage() {
-  const { data: certificates, pagination } = await fetchCertificates({ limit: 100 });
+type PageProps = {
+  searchParams: Promise<{ issueUser?: string; issueCourse?: string }>;
+};
+
+export default async function CertificatesPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const prefillUserId = Number(params.issueUser);
+  const prefillCourseId = params.issueCourse?.trim() || undefined;
+
+  const { data: certificates, pagination } = await fetchCertificates({
+    limit: 100,
+  });
   const issued = certificates.filter((c) => c.status === "issued").length;
   const revoked = certificates.filter((c) => c.status === "revoked").length;
 
@@ -24,7 +34,15 @@ export default async function CertificatesPage() {
           { label: "Đã thu hồi", value: revoked, tone: "orange" },
         ]}
       />
-      <CertificateManager certificates={certificates} />
+      <CertificateManager
+        certificates={certificates}
+        prefillUserId={
+          Number.isFinite(prefillUserId) && prefillUserId > 0
+            ? prefillUserId
+            : undefined
+        }
+        prefillCourseId={prefillCourseId}
+      />
     </div>
   );
 }

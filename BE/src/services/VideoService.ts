@@ -744,6 +744,49 @@ async function deleteVideo(videoId: string) {
   };
 }
 
+async function buildPlaybackPayload(
+  courseId: string,
+  video: NonNullable<Awaited<ReturnType<typeof VideoRepo.findById>>>,
+  lesson: NonNullable<Awaited<ReturnType<typeof LessonRepo.findById>>>,
+  userId: number | null,
+) {
+  if (video.status !== 'ready' || (!video.hlsKey && !video.mp4Url)) {
+    throw new RouteError(
+      HttpStatusCodes.UNPROCESSABLE_ENTITY,
+      Errors.NOT_READY,
+    );
+  }
+
+  const playbackType = video.hlsKey ? 'hls' : 'mp4';
+  const playbackUrl = video.hlsKey
+    ? buildPlaybackUrl(video.hlsKey)
+    : (video.mp4Url as string);
+
+  let progress = null;
+  if (userId !== null) {
+    progress =
+      (await LessonProgressRepo.findByUserAndLesson(userId, lesson.id)) ?? null;
+  }
+
+  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+
+  return {
+    data: {
+      videoId: video.id,
+      courseId: video.courseId,
+      lessonId: video.lessonId,
+      playbackUrl,
+      playbackType,
+      expiresAt,
+      hlsKey: video.hlsKey,
+      audioFlacKey: video.audioFlacKey,
+      audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),
+      mp4Url: video.mp4Url,
+      ...(progress ? { progress } : {}),
+    },
+  };
+}
+
 async function getPlayback(
   courseId: string,
   videoId: string,
@@ -776,37 +819,76 @@ async function getPlayback(
     );
   }
 
-  if (video.status !== 'ready' || (!video.hlsKey && !video.mp4Url)) {
+  return buildPlaybackPayload(courseId, video, lesson, userId);
+}
+
+/**
+ * One-hop lesson → playback for the learn player (avoids video then playback RTT).
+ * Soft-empty `{ data: null }` when the lesson has no video yet.
+ */
+async function getPlaybackByLesson(
+  courseId: string,
+  lessonId: string,
+  userId: number | null,
+) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+
+  const lesson = await LessonRepo.findByIdAndCourseId(lessonId, courseId);
+  if (!lesson) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.LESSON_NOT_FOUND);
+  }
+
+  const canView = await CourseAccessService.canViewCourseContent(
+    userId,
+    courseId,
+    lesson,
+  );
+  if (!canView) {
     throw new RouteError(
-      HttpStatusCodes.UNPROCESSABLE_ENTITY,
-      Errors.NOT_READY,
+      HttpStatusCodes.FORBIDDEN,
+      CourseAccessService.Errors.FORBIDDEN,
     );
   }
 
-  const playbackType = video.hlsKey ? 'hls' : 'mp4';
-  const playbackUrl = video.hlsKey
-    ? buildPlaybackUrl(video.hlsKey)
-    : (video.mp4Url as string);
-
-  let progress = null;
-  if (userId !== null) {
-    progress =
-      (await LessonProgressRepo.findByUserAndLesson(userId, lesson.id)) ?? null;
+  const video = await VideoRepo.findByLessonId(lessonId);
+  if (!video) {
+    return { data: null };
   }
 
-  return {
-    data: {
+  return buildPlaybackPayload(courseId, video, lesson, userId);
+}
+
+export type AiQuizSourceItem = {
+  videoId: string;
+  lessonId: string;
+  title: string | null;
+  audioFlacUrl: string;
+};
+
+async function listAiQuizSources(courseId: string) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+
+  const videos = await VideoRepo.findReadyWithFlacByCourseId(courseId);
+  const data: AiQuizSourceItem[] = [];
+
+  for (const video of videos) {
+    const audioFlacUrl = buildAudioFlacUrl(video.audioFlacKey);
+    if (!audioFlacUrl) continue;
+    data.push({
       videoId: video.id,
-      courseId: video.courseId,
-      playbackUrl,
-      playbackType,
-      hlsKey: video.hlsKey,
-      audioFlacKey: video.audioFlacKey,
-      audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),
-      mp4Url: video.mp4Url,
-      ...(progress ? { progress } : {}),
-    },
-  };
+      lessonId: video.lessonId,
+      title: video.title,
+      audioFlacUrl,
+    });
+  }
+
+  return { data };
 }
 
 export default {
@@ -823,6 +905,8 @@ export default {
   getByLesson,
   deleteVideo,
   getPlayback,
+  getPlaybackByLesson,
+  listAiQuizSources,
   build720pPlaylistKey,
   buildHlsPlaylistKey,
 };

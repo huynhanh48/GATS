@@ -9,27 +9,35 @@ export function toSepayTransferContent(txnRef: string): string {
 }
 
 /**
- * Our txnRef shape: ORD + unix ms digits + 6 hex (from randomBytes(3)).
- * Banks often append extra alnum after the memo — do not swallow that into the ref.
+ * Our txnRef shape: ORD + unix ms digits + 6 hex (randomBytes(3)).
+ * Prefer 13-digit ms (current Date.now()); then 12 / 14 for edge clocks.
+ * Fixed digit width avoids greedy `\d+` backtracking into hex or bank suffix.
  */
-const ORD_TXN_REF_IN_CONTENT = /SEVQR(ORD\d+[A-F0-9]{6})/;
+const ORD_MS_WIDTHS = [13, 12, 14] as const;
 
 /**
  * Extract cleaned txnRef from bank/Sepay content.
- * Expects pattern SEVQR{ORD…} anywhere in the text.
+ * Accepts optional SEVQR prefix (VietinBank memos often drop it).
  */
 export function extractTxnRefFromContent(
   content: string | undefined | null,
 ): string | null {
   if (!content) return null;
   const clean = cleanAlnum(content);
-  const match = clean.match(ORD_TXN_REF_IN_CONTENT);
-  return match?.[1] ?? null;
+
+  for (const width of ORD_MS_WIDTHS) {
+    const re = new RegExp(`(?:SEVQR)?(ORD\\d{${width}}[A-F0-9]{6})`);
+    const match = clean.match(re);
+    if (match?.[1]) return match[1];
+  }
+  return null;
 }
 
 export function contentMatchesTxnRef(
   content: string,
   txnRef: string,
 ): boolean {
-  return cleanAlnum(content).includes(toSepayTransferContent(txnRef));
+  const clean = cleanAlnum(content);
+  const ref = cleanAlnum(txnRef);
+  return clean.includes(`SEVQR${ref}`) || clean.includes(ref);
 }

@@ -1,0 +1,385 @@
+"use client";
+
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
+import type { QuizQuestion } from "@/lib/api/types";
+import {
+  coursesClient,
+  type AiQuizSourceItem,
+} from "@/services/courses.client";
+import { quizClient } from "@/services/quiz.client";
+
+const inputClass =
+  "w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 dark:border-dark-3 dark:bg-dark-2 dark:text-white";
+const labelClass = "mb-1.5 block text-sm font-medium text-dark dark:text-white";
+
+type Props = {
+  courseId: string;
+  quizId: string;
+  onGenerated: (questions: QuizQuestion[]) => void;
+};
+
+type SourceMode = "course_video" | "text" | "file_url" | "file";
+
+function isDroppedConnection(message: string, status?: number): boolean {
+  if (status === 504 || status === 502 || status === 524) return true;
+  const m = message.toLowerCase();
+  return (
+    m.includes("network error") ||
+    m.includes("504") ||
+    m.includes("502") ||
+    m.includes("timeout") ||
+    m.includes("timed out") ||
+    m.includes("econnaborted") ||
+    m.includes("failed to fetch")
+  );
+}
+
+export function QuizAiGeneratePanel({
+  courseId,
+  quizId,
+  onGenerated,
+}: Props) {
+  const [pending, startTransition] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [sourceMode, setSourceMode] = useState<SourceMode>("course_video");
+  const [videoSources, setVideoSources] = useState<AiQuizSourceItem[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState("");
+  const [text, setText] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [language, setLanguage] = useState("vi");
+  const [targetLevel, setTargetLevel] = useState("intermediate");
+  const [questionCount, setQuestionCount] = useState(5);
+  const [detailLevel, setDetailLevel] = useState("standard");
+  const [exerciseTypes, setExerciseTypes] = useState(
+    "mcq,true_false,fill_in_blank,short_answer",
+  );
+  const selectedVideo = videoSources.find(
+    (source) => source.videoId === selectedVideoId,
+  );
+
+  useEffect(() => {
+    if (!open || sourceMode !== "course_video" || !courseId) return;
+    let cancelled = false;
+    setSourcesLoading(true);
+    void coursesClient.listAiQuizSources(courseId).then((res) => {
+      if (cancelled) return;
+      setSourcesLoading(false);
+      if (res.error) {
+        setVideoSources([]);
+        setSelectedVideoId("");
+        toast.error(res.error.message);
+        return;
+      }
+      const sources = res.data?.data ?? [];
+      setVideoSources(sources);
+      setSelectedVideoId((current) =>
+        sources.some((source) => source.videoId === current)
+          ? current
+          : (sources[0]?.videoId ?? ""),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, open, sourceMode]);
+
+  function handleGenerate() {
+    startTransition(async () => {
+      const form = new FormData();
+      form.append("language", language);
+      form.append("target_level", targetLevel);
+      form.append("question_count", String(questionCount));
+      form.append("detail_level", detailLevel);
+      form.append("exercise_types", exerciseTypes);
+      form.append("apply", "true");
+      form.append("shuffle_options", "true");
+      form.append("max_options_per_mcq", "4");
+
+      if (sourceMode === "course_video") {
+        if (!selectedVideo?.audioFlacUrl) {
+          toast.error("Chọn một video đã xử lý audio FLAC");
+          return;
+        }
+        form.append("file_url", selectedVideo.audioFlacUrl);
+      } else if (sourceMode === "text") {
+        if (!text.trim()) {
+          toast.error("Nhập nội dung text để sinh quiz");
+          return;
+        }
+        form.append("text", text.trim());
+      } else if (sourceMode === "file_url") {
+        if (!fileUrl.trim()) {
+          toast.error("Nhập URL S3 FLAC (…/audio.flac) hoặc URL tài liệu");
+          return;
+        }
+        form.append("file_url", fileUrl.trim());
+      } else {
+        if (!file) {
+          toast.error("Chọn file upload");
+          return;
+        }
+        form.append("file", file);
+      }
+
+      const beforeRes = await quizClient.getAdmin(quizId);
+      const previousCount = beforeRes.data?.data?.questions?.length ?? 0;
+
+      const enqueue = await quizClient.aiGenerate(quizId, form);
+      if (enqueue.error) {
+        if (isDroppedConnection(enqueue.error.message, enqueue.error.status)) {
+          toast.message("Mất kết nối — đang tải lại câu hỏi từ quiz…");
+          const recovered = await quizClient.recoverQuestionsAfterDrop(
+            quizId,
+            previousCount,
+          );
+          if (recovered.length > 0) {
+            onGenerated(recovered);
+            toast.success(
+              `Đã thêm ${recovered.length} câu hỏi vào quiz (fallback)`,
+            );
+            setOpen(false);
+            return;
+          }
+        }
+        toast.error(enqueue.error.message);
+        return;
+      }
+
+      const jobId = enqueue.data?.data?.jobId;
+      if (!jobId) {
+        toast.error("Không nhận được jobId từ server");
+        return;
+      }
+
+      toast.message("Đang gen trên server…");
+      const res = await quizClient.waitForAiGenerateJob(quizId, jobId);
+      if (res.error) {
+        const recovered = await quizClient.recoverQuestionsAfterDrop(
+          quizId,
+          previousCount,
+        );
+        if (recovered.length > 0) {
+          onGenerated(recovered);
+          toast.success(
+            `Job lỗi/poll fail, nhưng đã thêm ${recovered.length} câu hỏi vào quiz`,
+          );
+          setOpen(false);
+          return;
+        }
+        toast.error(res.error.message);
+        return;
+      }
+
+      const created = (res.data?.data?.questions ?? []) as QuizQuestion[];
+      const skipped = res.data?.data?.skipped_count ?? 0;
+      onGenerated(created);
+      toast.success(
+        res.data?.message ??
+          `Đã thêm ${created.length} câu hỏi${skipped ? ` (bỏ qua ${skipped})` : ""}`,
+      );
+      setOpen(false);
+    });
+  }
+
+  if (!open) {
+    return (
+      <div className="mb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-lg border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-100 dark:border-violet-700 dark:bg-violet-950/40 dark:text-violet-200"
+        >
+          Sinh câu hỏi bằng AI
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4 rounded-lg border border-violet-300 bg-violet-50/80 p-4 dark:border-violet-700 dark:bg-violet-950/20">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h6 className="text-sm font-semibold text-violet-900 dark:text-violet-100">
+          AI sinh câu hỏi quiz
+        </h6>
+        <button
+          type="button"
+          className="text-sm text-dark-4 hover:text-dark dark:text-dark-6"
+          onClick={() => setOpen(false)}
+          disabled={pending}
+        >
+          Đóng
+        </button>
+      </div>
+      <p className="mb-3 text-xs text-dark-4 dark:text-dark-6">
+        Text / upload file / URL (PDF hoặc S3 FLAC{" "}
+        <code className="text-[10px]">…/audio.flac</code>). Viava transcribe
+        audio FLAC. Chỉ map mcq, đúng-sai, điền khuyết, short answer.
+      </p>
+
+      <div className="mb-3 flex flex-wrap gap-2">
+        {(
+          [
+            ["course_video", "Video trong khóa học"],
+            ["text", "Text"],
+            ["file_url", "URL S3 FLAC / file"],
+            ["file", "Upload file"],
+          ] as const
+        ).map(([mode, label]) => (
+          <button
+            key={mode}
+            type="button"
+            disabled={pending}
+            onClick={() => setSourceMode(mode)}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              sourceMode === mode
+                ? "bg-violet-600 text-white"
+                : "bg-white text-slate-600 dark:bg-dark-2 dark:text-dark-6"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {sourceMode === "course_video" ? (
+        <div className="rounded-lg border border-violet-200 bg-white p-3 dark:border-violet-900 dark:bg-dark-2">
+          <label className={labelClass}>Video dùng làm nguồn</label>
+          <select
+            className={inputClass}
+            value={selectedVideoId}
+            onChange={(event) => setSelectedVideoId(event.target.value)}
+            disabled={pending || sourcesLoading}
+          >
+            {sourcesLoading ? (
+              <option value="">Đang tải danh sách video…</option>
+            ) : videoSources.length === 0 ? (
+              <option value="">Chưa có video nào đã xử lý audio FLAC</option>
+            ) : (
+              videoSources.map((source) => (
+                <option key={source.videoId} value={source.videoId}>
+                  {source.title || `Video bài học ${source.lessonId}`}
+                </option>
+              ))
+            )}
+          </select>
+          <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            VIAVA sẽ dùng bản audio FLAC của video để nhận dạng nội dung, sinh
+            câu hỏi và thêm trực tiếp vào quiz này.
+          </p>
+        </div>
+      ) : null}
+
+      {sourceMode === "text" ? (
+        <textarea
+          className={`${inputClass} min-h-[120px]`}
+          placeholder="Dán nội dung bài giảng / tài liệu…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          disabled={pending}
+        />
+      ) : null}
+      {sourceMode === "file_url" ? (
+        <input
+          className={inputClass}
+          placeholder="https://…/audio.flac hoặc URL tài liệu"
+          value={fileUrl}
+          onChange={(e) => setFileUrl(e.target.value)}
+          disabled={pending}
+        />
+      ) : null}
+      {sourceMode === "file" ? (
+        <input
+          type="file"
+          className={inputClass}
+          disabled={pending}
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        />
+      ) : null}
+
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <label className={labelClass}>Ngôn ngữ</label>
+          <input
+            className={inputClass}
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            disabled={pending}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Trình độ</label>
+          <select
+            className={inputClass}
+            value={targetLevel}
+            onChange={(e) => setTargetLevel(e.target.value)}
+            disabled={pending}
+          >
+            <option value="beginner">beginner</option>
+            <option value="intermediate">intermediate</option>
+            <option value="advanced">advanced</option>
+            <option value="expert">expert</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Số câu hỏi</label>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            className={inputClass}
+            value={questionCount}
+            onChange={(e) => setQuestionCount(Number(e.target.value) || 5)}
+            disabled={pending}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Độ chi tiết</label>
+          <select
+            className={inputClass}
+            value={detailLevel}
+            onChange={(e) => setDetailLevel(e.target.value)}
+            disabled={pending}
+          >
+            <option value="concise">concise</option>
+            <option value="standard">standard</option>
+            <option value="detailed">detailed</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <label className={labelClass}>Loại bài tập (phân cách dấu phẩy)</label>
+        <input
+          className={inputClass}
+          value={exerciseTypes}
+          onChange={(e) => setExerciseTypes(e.target.value)}
+          disabled={pending}
+        />
+      </div>
+
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => setOpen(false)}
+          className="rounded-lg border border-stroke px-4 py-2 text-sm dark:border-dark-3"
+        >
+          Hủy
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleGenerate}
+          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-60"
+        >
+          {pending
+            ? "Đang gen trên server…"
+            : "Sinh & thêm vào quiz"}
+        </button>
+      </div>
+    </div>
+  );
+}

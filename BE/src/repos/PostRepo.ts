@@ -436,6 +436,40 @@ export async function incrementViewCount(id: string): Promise<void> {
     );
 }
 
+export async function findAdjacentPost(
+  publishedAt: Date,
+  direction: 'prev' | 'next',
+  options: { hasAdminRead: boolean; isAuthenticated: boolean }
+): Promise<{ title: string; slug: string } | undefined> {
+  const conditions = buildVisibilityConditions(
+    options.hasAdminRead,
+    options.isAuthenticated,
+  );
+  withSoftDelete(conditions, 'without');
+
+  // prev = older post (publishedAt < current), ordered by publishedAt DESC
+  // next = newer post (publishedAt > current), ordered by publishedAt ASC
+  if (direction === 'prev') {
+    conditions.push(sql`${postsTable.publishedAt} < ${publishedAt}`);
+  } else {
+    conditions.push(sql`${postsTable.publishedAt} > ${publishedAt}`);
+  }
+
+  const rows = await db
+    .select({
+      title: postsTable.title,
+      slug: postsTable.slug,
+    })
+    .from(postsTable)
+    .where(and(...conditions))
+    .orderBy(
+      direction === 'prev' ? desc(postsTable.publishedAt) : postsTable.publishedAt
+    )
+    .limit(1);
+
+  return rows[0];
+}
+
 export async function create(data: NewPost): Promise<PostRecord> {
   const rows = await db.insert(postsTable).values(data).returning();
   return parseRow(rows[0]);

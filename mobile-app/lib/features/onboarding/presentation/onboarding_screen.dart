@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/services/app_locale_controller.dart';
 import 'package:gats_academy/core/services/onboarding_prefs.dart';
@@ -40,13 +38,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     language: _languageFromLocale(AppLocaleController.instance.locale),
   );
   List<CourseItem> _recommended = [];
+  bool _isRecommending = false;
 
-  void _goToResults() {
+  Future<void> _goToResults() async {
+    if (_isRecommending) return;
     setState(() {
-      _recommended = CourseRecommender.recommend(_answers);
+      _isRecommending = true;
+    });
+    await OnboardingPrefs.savePendingAnswers(_answers);
+    final recommended = await CourseRecommender.recommend(_answers);
+    if (!mounted) return;
+    setState(() {
+      _recommended = recommended;
+      _isRecommending = false;
       _phase = _OnboardingPhase.results;
     });
-    unawaited(OnboardingPrefs.savePendingAnswers(_answers));
   }
 
   void _goToRateUs() {
@@ -57,20 +63,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return switch (_phase) {
       _OnboardingPhase.intro => OnboardingIntroScreen(
-          onContinue: () => setState(() => _phase = _OnboardingPhase.quiz),
-          onBack: widget.onBackToEntry,
-        ),
-      _OnboardingPhase.quiz => OnboardingQuizScreen(
-          answers: _answers,
-          onAnswersChanged: (a) => setState(() => _answers = a),
-          onComplete: _goToResults,
-          onBack: () => setState(() => _phase = _OnboardingPhase.intro),
-        ),
+        onContinue: () => setState(() => _phase = _OnboardingPhase.quiz),
+        onBack: widget.onBackToEntry,
+      ),
+      _OnboardingPhase.quiz => Stack(
+        children: [
+          OnboardingQuizScreen(
+            answers: _answers,
+            onAnswersChanged: (a) => setState(() => _answers = a),
+            onComplete: _goToResults,
+            onBack: () => setState(() => _phase = _OnboardingPhase.intro),
+          ),
+          if (_isRecommending)
+            const Positioned.fill(
+              child: ColoredBox(
+                color: Color(0x66000000),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ),
+        ],
+      ),
       _OnboardingPhase.results => OnboardingResultsScreen(
-          courses: _recommended,
-          onContinue: _goToRateUs,
-          onBack: () => setState(() => _phase = _OnboardingPhase.quiz),
-        ),
+        courses: _recommended,
+        onContinue: _goToRateUs,
+        onBack: () => setState(() => _phase = _OnboardingPhase.quiz),
+      ),
     };
   }
 }

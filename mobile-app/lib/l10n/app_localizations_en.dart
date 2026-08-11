@@ -47,40 +47,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingTitlePurpose => 'What is your learning goal?';
 
   @override
-  String get onboardingTitleReminder => 'Daily learning reminder';
+  String get onboardingTitleReminder => 'When should we remind you?';
 
   @override
   String get onboardingSubtitleReminder =>
-      'We\'ll nudge you at the time you pick — you can change this in Settings';
+      'We\'ll nudge you to study at this time every day. Change it anytime in Settings.';
 
   @override
   String get onboardingCoachReminder =>
-      'Consistency beats intensity. Pick a time that works every day!';
+      'Pick a time you can stick to — a little every day beats cramming.';
 
   @override
-  String get onboardingReminderEnable => 'Enable daily reminder';
+  String get onboardingReminderEnable => 'Remind me to study every day';
 
   @override
-  String get onboardingReminderNoThanks => 'No thanks';
+  String get onboardingReminderPickTime => 'What time works best for you?';
 
   @override
-  String get onboardingReminderContinue => 'Continue';
+  String get onboardingReminderNoThanks => 'Maybe later';
+
+  @override
+  String get onboardingReminderContinue => 'Save reminder';
 
   @override
   String ackReminderEcho(String time) {
-    return 'Reminder at $time — see you then!';
+    return 'We\'ll remind you at $time — see you then!';
   }
 
   @override
   String get ackReminderSkippedEcho =>
-      'No problem — you can turn reminders on later in Settings.';
+      'No worries — you can turn study reminders on anytime in Settings.';
 
   @override
   String get dailyReminderTitle => 'GATS Academy';
 
   @override
   String get dailyReminderBody =>
-      'Time to learn! Check in and keep your streak going.';
+      'Time to learn! Open the app, check in, and keep your streak going.';
 
   @override
   String get onboardingSubtitleLanguage =>
@@ -883,6 +886,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navDaily => 'Daily';
 
   @override
+  String navDailyBadgeTooltip(int count) {
+    return '$count daily goals left';
+  }
+
+  @override
   String get navLibrary => 'Library';
 
   @override
@@ -1004,13 +1012,31 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get routineEditorHint =>
-      'Drag node · Tap right port to connect · Hold to delete';
+      'Drag to move · Hold a node to connect · Delete via trash icon';
 
   @override
-  String get routineConnectHint => 'Tap left port of target node to connect';
+  String get routineConnectHint => 'Pick a target node to connect';
 
   @override
   String get routineCancelConnect => 'Cancel';
+
+  @override
+  String routineConnectFrom(String title) {
+    return 'Connect from \"$title\"';
+  }
+
+  @override
+  String get routineConnectToHint => 'Choose which node to connect to';
+
+  @override
+  String get routineConnectEmpty =>
+      'No other nodes to connect. Add a node first.';
+
+  @override
+  String get routineDisconnect => 'Disconnect';
+
+  @override
+  String get routineConnectAction => 'Connect';
 
   @override
   String get routinePreviewSubtitle => 'Personal learning workflow — n8n style';
@@ -1075,6 +1101,49 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hubBadgesTitle => 'Badges';
 
   @override
+  String get hubChartsTitle => 'Learning stats';
+
+  @override
+  String get hubChartsSubtitle =>
+      'Last 7 days — study time, XP and activity mix';
+
+  @override
+  String get hubChartsWeeklyTitle => 'Minutes studied per day';
+
+  @override
+  String get hubChartsXpTitle => 'XP earned';
+
+  @override
+  String get hubChartsMixTitle => 'Activity mix';
+
+  @override
+  String get hubChartsWeekTotal => 'Week total';
+
+  @override
+  String get hubChartsWeekAvg => 'Daily average';
+
+  @override
+  String hubChartsMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get hubChartsMixLessons => 'Lessons';
+
+  @override
+  String get hubChartsMixFlashcards => 'Flashcards';
+
+  @override
+  String get hubChartsMixQuiz => 'Quiz';
+
+  @override
+  String get hubChartsMixCoach => 'Coach';
+
+  @override
+  String get hubChartsEmpty =>
+      'No activity in the last 7 days — study a lesson, review cards, or check in to see charts.';
+
+  @override
   String get hubCertTitle => 'Certificates';
 
   @override
@@ -1100,6 +1169,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsDailyReminder => 'Daily study reminder';
+
+  @override
+  String get settingsDailyReminderSubtitle =>
+      'System notification at the time you choose';
+
+  @override
+  String get settingsDailyReminderTime => 'Reminder time';
+
+  @override
+  String get settingsDailyReminderPermissionDenied =>
+      'Allow notifications in system Settings to receive study reminders.';
+
+  @override
+  String settingsDailyReminderSaved(String time) {
+    return 'Study reminder scheduled for $time';
+  }
 
   @override
   String get settingsDarkMode => 'Dark Mode';
@@ -1136,15 +1224,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentLegalPrefix => 'By paying, you agree to the ';
 
   @override
-  String get settingsReplayOnboarding => 'Reset onboarding';
+  String get settingsReplayOnboarding => 'Replay onboarding';
 
   @override
   String get settingsSignOutSuccess =>
       'Signed out. Restart the app to return to entry screen.';
 
   @override
-  String get settingsReplaySuccess =>
-      'Onboarding reset. Restart the app to replay the flow.';
+  String get settingsReplaySuccess => 'Opening onboarding…';
 
   @override
   String get tagOfficeAi => 'AI for workplace';
@@ -1528,6 +1615,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get postFeedEmpty => 'No posts yet';
+
+  @override
+  String get postSearchHint => 'Search posts, authors...';
+
+  @override
+  String get postSearchEmpty => 'No matching posts';
+
+  @override
+  String postSearchResultCount(int count) {
+    return '$count posts';
+  }
+
+  @override
+  String get postFilterScope => 'Scope';
+
+  @override
+  String get postFilterSort => 'Sort';
+
+  @override
+  String get postSortNewest => 'Newest';
+
+  @override
+  String get postSortOldest => 'Oldest';
+
+  @override
+  String get postSortTitle => 'A–Z';
+
+  @override
+  String get postScopeGlobal => 'GATS';
+
+  @override
+  String get postScopeCourse => 'Course';
+
+  @override
+  String get postClearFilters => 'Clear filters';
 
   @override
   String get postSeeAll => 'See all';

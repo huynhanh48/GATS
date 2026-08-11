@@ -18,6 +18,7 @@ export const ALLOWED_FILE_CONTENT_TYPES = [
   'application/msword',
   'text/markdown',
   'text/plain',
+  ...ALLOWED_IMAGE_CONTENT_TYPES,
 ] as const;
 
 export const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;

@@ -12,13 +12,14 @@
   "onboardingTitleAge": "Tầm tuổi của bạn?",
   "onboardingTitleDailyGoal": "Mỗi ngày bạn muốn học bao lâu?",
   "onboardingTitlePurpose": "Mục đích học là gì?",
-  "onboardingTitleReminder": "Nhắc học mỗi ngày",
-  "onboardingSubtitleReminder": "Chúng tôi sẽ nhắc bạn đúng giờ — có thể đổi trong Cài đặt",
-  "onboardingCoachReminder": "Kiên trì mỗi ngày quan trọng hơn học dồn! Chọn giờ phù hợp với bạn nhé.",
-  "onboardingReminderEnable": "Bật nhắc nhở hàng ngày",
-  "onboardingReminderNoThanks": "Không, cảm ơn",
-  "onboardingReminderContinue": "Tiếp tục",
-  "ackReminderEcho": "Nhắc lúc {time} — hẹn gặp bạn!",
+  "onboardingTitleReminder": "Chọn giờ nhắc học",
+  "onboardingSubtitleReminder": "Mỗi ngày app sẽ nhắc bạn học đúng giờ này. Đổi lại bất cứ lúc nào trong Cài đặt.",
+  "onboardingCoachReminder": "Chọn khung giờ bạn thường rảnh — học đều mỗi ngày dễ hơn học dồn.",
+  "onboardingReminderEnable": "Nhận nhắc học mỗi ngày",
+  "onboardingReminderPickTime": "Bạn muốn được nhắc lúc mấy giờ?",
+  "onboardingReminderNoThanks": "Để sau",
+  "onboardingReminderContinue": "Lưu giờ nhắc",
+  "ackReminderEcho": "Đã hẹn nhắc lúc {time} — giữ streak nhé!",
   "@ackReminderEcho": {
     "placeholders": {
       "time": {
@@ -26,9 +27,9 @@
       }
     }
   },
-  "ackReminderSkippedEcho": "Không sao — bạn có thể bật nhắc nhở sau trong Cài đặt.",
+  "ackReminderSkippedEcho": "Không sao — bạn có thể bật nhắc học bất cứ lúc nào trong Cài đặt.",
   "dailyReminderTitle": "GATS Academy",
-  "dailyReminderBody": "Đến giờ học rồi! Điểm danh và giữ streak nhé.",
+  "dailyReminderBody": "Đến giờ học rồi! Mở app, điểm danh và giữ streak nhé.",
   "onboardingSubtitleLanguage": "Bạn có thể đổi lại trong Cài đặt",
   "languagePickerTitle": "Chọn ngôn ngữ",
   "languagePickerSubtitle": "Bạn có thể đổi lại trong Cài đặt",
@@ -356,6 +357,12 @@
   "authTabLogin": "Đăng nhập",
   "navHome": "Trang chủ",
   "navDaily": "Hàng ngày",
+  "navDailyBadgeTooltip": "Còn {count} mục tiêu hôm nay",
+  "@navDailyBadgeTooltip": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "navLibrary": "Thư viện",
   "navCoach": "Coach",
   "navHub": "Hub",
@@ -395,9 +402,19 @@
   "routineEditorTitle": "Thiết kế Routine",
   "routineSave": "Lưu",
   "routineAddNode": "Thêm node",
-  "routineEditorHint": "Kéo node · Chạm cổng phải để nối · Giữ để xóa",
-  "routineConnectHint": "Chạm cổng trái của node đích để nối",
+  "routineEditorHint": "Kéo để di chuyển · Giữ node để nối · Xóa bằng nút thùng rác",
+  "routineConnectHint": "Chọn node đích để nối",
   "routineCancelConnect": "Hủy",
+  "routineConnectFrom": "Nối từ \"{title}\"",
+  "@routineConnectFrom": {
+    "placeholders": {
+      "title": { "type": "String" }
+    }
+  },
+  "routineConnectToHint": "Chọn node muốn nối tới",
+  "routineConnectEmpty": "Chưa có node khác để nối. Thêm node trước.",
+  "routineDisconnect": "Gỡ nối",
+  "routineConnectAction": "Nối",
   "routinePreviewSubtitle": "Workflow học tập cá nhân — kiểu n8n",
   "flashcardSectionTitle": "Ôn flashcard",
   "flashcardDue": "{count} thẻ cần ôn hôm nay",
@@ -416,6 +433,24 @@
   "aiCoachInputHint": "Hỏi AI Coach...",
   "hubXpTitle": "Kinh nghiệm",
   "hubBadgesTitle": "Huy hiệu",
+  "hubChartsTitle": "Thống kê học tập",
+  "hubChartsSubtitle": "7 ngày gần nhất — phút học, XP và phân bổ hoạt động",
+  "hubChartsWeeklyTitle": "Phút học mỗi ngày",
+  "hubChartsXpTitle": "XP kiếm được",
+  "hubChartsMixTitle": "Phân bổ hoạt động",
+  "hubChartsWeekTotal": "Tổng tuần",
+  "hubChartsWeekAvg": "Trung bình/ngày",
+  "hubChartsMinutes": "{minutes} phút",
+  "@hubChartsMinutes": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "hubChartsMixLessons": "Bài học",
+  "hubChartsMixFlashcards": "Flashcard",
+  "hubChartsMixQuiz": "Quiz",
+  "hubChartsMixCoach": "Coach",
+  "hubChartsEmpty": "Chưa có hoạt động trong 7 ngày — học bài, ôn thẻ hoặc điểm danh để thấy biểu đồ.",
   "hubCertTitle": "Chứng chỉ",
   "hubCertLocked": "Cần thêm {xp} XP để mở bài thi chứng chỉ",
   "hubCertReady": "Bạn đã đủ XP! Sẵn sàng thi chứng chỉ.",
@@ -424,6 +459,16 @@
   "settingsAccount": "Tài khoản",
   "settingsNotifications": "Thông báo",
   "settingsLanguage": "Ngôn ngữ",
+  "settingsDailyReminder": "Nhắc học hàng ngày",
+  "settingsDailyReminderSubtitle": "Thông báo hệ thống đúng giờ bạn chọn",
+  "settingsDailyReminderTime": "Giờ nhắc",
+  "settingsDailyReminderPermissionDenied": "Cần cho phép thông báo trong Cài đặt hệ thống để nhận nhắc học.",
+  "settingsDailyReminderSaved": "Đã lên lịch nhắc học lúc {time}",
+  "@settingsDailyReminderSaved": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
   "settingsDarkMode": "Giao diện tối",
   "settingsDarkModeSubtitle": "Trời sao đêm — kiểu app sleep",
   "settingsAbout": "Về ứng dụng",
@@ -437,7 +482,7 @@
   "paymentLegalPrefix": "Khi thanh toán, bạn đồng ý với ",
   "settingsReplayOnboarding": "Làm lại onboarding",
   "settingsSignOutSuccess": "Đã đăng xuất. Khởi động lại app để về màn hình chính.",
-  "settingsReplaySuccess": "Đã reset onboarding. Khởi động lại app để xem lại flow.",
+  "settingsReplaySuccess": "Đang mở lại luồng onboarding…",
   "tagOfficeAi": "AI cho công sở",
   "streakDays": "{days} ngày streak",
   "onboardingWelcome": "Chào mừng đến GATS Academy",
@@ -572,6 +617,22 @@
   "adminPostsEmpty": "Chưa có bài viết nào",
   "postHomeSectionTitle": "Bài viết & tin tức",
   "postFeedEmpty": "Chưa có bài viết",
+  "postSearchHint": "Tìm bài viết, tác giả...",
+  "postSearchEmpty": "Không tìm thấy bài viết phù hợp",
+  "postSearchResultCount": "{count} bài viết",
+  "@postSearchResultCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "postFilterScope": "Phạm vi",
+  "postFilterSort": "Sắp xếp",
+  "postSortNewest": "Mới nhất",
+  "postSortOldest": "Cũ nhất",
+  "postSortTitle": "A–Z",
+  "postScopeGlobal": "GATS",
+  "postScopeCourse": "Khóa học",
+  "postClearFilters": "Xóa bộ lọc",
   "postSeeAll": "Xem tất cả",
   "postByAuthor": "Bởi {author}",
   "postPreviewLocked": "Đăng ký khóa để đọc toàn bộ bài viết",

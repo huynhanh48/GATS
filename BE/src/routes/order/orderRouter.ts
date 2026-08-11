@@ -36,6 +36,14 @@ async function getOrderById(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function getOrderReceipt(req: Request, res: Response) {
+  const result = await OrderService.getOrderReceipt(
+    getRouteParam(req.params.orderId),
+    { userId: authUserId(req), roles: req.authUser!.roles },
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
 async function cancelOrder(req: Request, res: Response) {
   const result = await OrderService.cancelOrder(
     authUserId(req),
@@ -52,6 +60,13 @@ async function adminListOrders(req: Request, res: Response) {
 
 async function adminGetOrder(req: Request, res: Response) {
   const result = await OrderService.adminGetOrder(
+    getRouteParam(req.params.orderId),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function adminGetOrderReceipt(req: Request, res: Response) {
+  const result = await OrderService.adminGetOrderReceipt(
     getRouteParam(req.params.orderId),
   );
   return res.status(HttpStatusCodes.OK).json(result);
@@ -111,9 +126,11 @@ export default {
   createOrder: errorHandle(createOrder),
   listOrders: errorHandle(listOrders),
   getOrderById: errorHandle(getOrderById),
+  getOrderReceipt: errorHandle(getOrderReceipt),
   cancelOrder: errorHandle(cancelOrder),
   adminListOrders: errorHandle(adminListOrders),
   adminGetOrder: errorHandle(adminGetOrder),
+  adminGetOrderReceipt: errorHandle(adminGetOrderReceipt),
   adminUpdateOrderStatus: errorHandle(adminUpdateOrderStatus),
   adminRepairEnrollment: errorHandle(adminRepairEnrollment),
   adminExpireStalePending: errorHandle(adminExpireStalePending),

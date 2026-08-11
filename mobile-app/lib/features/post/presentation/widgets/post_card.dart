@@ -76,7 +76,7 @@ class PostCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gats = context.gatsColors;
-    final body = canReadFull ? post.body : post.previewExcerpt;
+    final body = post.previewExcerpt;
     final theme = Theme.of(context);
     final hasCover = post.coverImage != null && post.coverImage!.isNotEmpty;
     final contentPadding = EdgeInsets.all(compact ? AppSpacing.md : AppSpacing.lg);

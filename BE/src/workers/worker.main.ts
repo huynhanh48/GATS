@@ -3,13 +3,15 @@ import 'dotenv/config';
 
 import '@src/db';
 import { closeRedisConnections } from '@src/libs/redis.client';
+import { createQuizAiGenerateWorker } from '@src/workers/quiz-ai.worker';
 import { createVideoTranscodeWorker } from '@src/workers/video-transcode.worker';
 
-const worker = createVideoTranscodeWorker();
+const videoWorker = createVideoTranscodeWorker();
+const quizAiWorker = createQuizAiGenerateWorker();
 let isShuttingDown = false;
 let shutdownTimer: NodeJS.Timeout | undefined;
 
-logger.info('Video transcode worker started');
+logger.info('Workers started (video-transcode + quiz-ai-generate)');
 
 async function shutdown(signal: string): Promise<void> {
   if (isShuttingDown) {
@@ -18,7 +20,7 @@ async function shutdown(signal: string): Promise<void> {
   }
 
   isShuttingDown = true;
-  logger.info(`Received ${signal}, force-closing worker...`);
+  logger.info(`Received ${signal}, force-closing workers...`);
 
   shutdownTimer = setTimeout(() => {
     logger.err('Worker shutdown timed out, forcing exit...');
@@ -27,7 +29,7 @@ async function shutdown(signal: string): Promise<void> {
   shutdownTimer.unref();
 
   try {
-    await worker.close(true);
+    await Promise.all([videoWorker.close(true), quizAiWorker.close(true)]);
     await closeRedisConnections();
     process.exit(0);
   } catch (error) {

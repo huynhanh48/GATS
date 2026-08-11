@@ -1,4 +1,18 @@
-import { and, count, desc, eq, ilike, inArray, ne, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  lte,
+  ne,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -14,6 +28,11 @@ import { type CourseRecord, parseCourseRecord } from '@src/models/Course.model';
 
 function parseRow(row: unknown): CourseRecord {
   return parseCourseRecord(row);
+}
+
+/** Escape `%` / `_` so user input is treated as literal text in ILIKE. */
+function escapeLikePattern(raw: string): string {
+  return raw.replace(/[\\%_]/g, '\\$&');
 }
 
 function withSoftDelete(
@@ -42,6 +61,23 @@ export async function findById(
     .where(and(...conditions))
     .limit(1);
   return rows[0] ? parseRow(rows[0]) : undefined;
+}
+
+/** Batch lookup — avoids N+1 in enrollment listMine. */
+export async function findByIds(
+  ids: string[],
+  options: { deleted?: SoftDeleteVisibility } = {},
+): Promise<CourseRecord[]> {
+  if (ids.length === 0) return [];
+  const unique = [...new Set(ids)];
+  const conditions: SQL[] = [inArray(coursesTable.id, unique)];
+  withSoftDelete(conditions, options.deleted);
+
+  const rows = await db
+    .select()
+    .from(coursesTable)
+    .where(and(...conditions));
+  return rows.map(parseRow);
 }
 
 export async function findBySlug(
@@ -93,13 +129,18 @@ export async function slugExists(
   return rows.length > 0;
 }
 
+export type CourseListSort = 'newest' | 'price_asc' | 'price_desc';
+
 export async function findMany(options: {
   status?: CourseStatus;
   level?: string;
   categoryId?: string;
   instructorId?: number;
+  minPrice?: number;
+  maxPrice?: number;
   courseIds?: string[];
   keyword?: string;
+  sort?: CourseListSort;
   skip: number;
   take: number;
   deleted?: SoftDeleteVisibility;
@@ -121,21 +162,43 @@ export async function findMany(options: {
   if (options.instructorId !== undefined) {
     conditions.push(eq(coursesTable.instructorId, options.instructorId));
   }
+  const effectivePrice = sql`COALESCE(${coursesTable.salePrice}, ${coursesTable.price})`;
+  if (options.minPrice !== undefined) {
+    conditions.push(gte(effectivePrice, options.minPrice));
+  }
+  if (options.maxPrice !== undefined) {
+    conditions.push(lte(effectivePrice, options.maxPrice));
+  }
   if (options.courseIds) {
     conditions.push(inArray(coursesTable.id, options.courseIds));
   }
   if (options.keyword) {
-    conditions.push(ilike(coursesTable.title, `%${options.keyword}%`));
+    const pattern = `%${escapeLikePattern(options.keyword.trim())}%`;
+    conditions.push(
+      or(
+        ilike(coursesTable.title, pattern),
+        ilike(coursesTable.slug, pattern),
+        ilike(coursesTable.description, pattern),
+      )!,
+    );
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Effective storefront price: sale when set, else list price.
+  const orderByClause =
+    options.sort === 'price_asc'
+      ? [asc(effectivePrice), desc(coursesTable.createdAt)]
+      : options.sort === 'price_desc'
+        ? [desc(effectivePrice), desc(coursesTable.createdAt)]
+        : [desc(coursesTable.createdAt)];
 
   const [rows, totalRows] = await Promise.all([
     db
       .select()
       .from(coursesTable)
       .where(whereClause)
-      .orderBy(desc(coursesTable.createdAt))
+      .orderBy(...orderByClause)
       .limit(options.take)
       .offset(options.skip),
     db.select({ total: count() }).from(coursesTable).where(whereClause),

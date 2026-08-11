@@ -13,6 +13,7 @@ import requirePermission from '@src/middleware/requirePermission';
 import requireStaff from '@src/middleware/requireStaff';
 
 import courseHandlers from './courseRouter';
+import flashcardAdminHandlers from '../flashcard/flashcardAdminRouter';
 
 const apiRouter = Router();
 const courseRouter = Router();
@@ -45,6 +46,16 @@ courseRouter.get(
   CoursePaths.Course.List,
   errorHandle(optionalAuthMiddleware),
   courseHandlers.list,
+);
+courseRouter.post(
+  CoursePaths.Course.Recommendations,
+  errorHandle(optionalAuthMiddleware),
+  courseHandlers.recommendations,
+);
+courseRouter.post(
+  CoursePaths.Course.RecommendationEvents,
+  errorHandle(optionalAuthMiddleware),
+  courseHandlers.recommendationEvent,
 );
 courseRouter.get(
   CoursePaths.Course.Categories.List,
@@ -79,6 +90,16 @@ courseRouter.get(
   CoursePaths.Course.Curriculum,
   errorHandle(optionalAuthMiddleware),
   courseHandlers.getCurriculum,
+);
+courseRouter.get(
+  CoursePaths.Course.Review,
+  errorHandle(authMiddleware),
+  courseHandlers.getMyReview,
+);
+courseRouter.put(
+  CoursePaths.Course.Review,
+  errorHandle(authMiddleware),
+  courseHandlers.upsertReview,
 );
 
 courseRouter.get(
@@ -210,6 +231,26 @@ courseManagementRouter.get(
 courseManagementRouter.get(
   CoursePaths.Management.Get,
   courseHandlers.getManagedById,
+);
+courseManagementRouter.get(
+  CoursePaths.Management.AiQuizSources,
+  errorHandle(requireCourseUpdate('courseId')),
+  courseHandlers.listAiQuizSources,
+);
+courseManagementRouter.get(
+  CoursePaths.Management.AiQuizTargets,
+  errorHandle(requireCourseUpdate('courseId')),
+  courseHandlers.listAiQuizTargets,
+);
+courseManagementRouter.get(
+  CoursePaths.Management.FlashcardDecks,
+  errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(flashcardAdminHandlers.listDecks),
+);
+courseManagementRouter.post(
+  CoursePaths.Management.FlashcardDecks,
+  errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(flashcardAdminHandlers.createDeck),
 );
 
 apiRouter.use(CoursePaths.Course._, courseRouter);

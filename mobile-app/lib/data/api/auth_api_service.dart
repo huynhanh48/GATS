@@ -10,10 +10,15 @@ import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:http/http.dart' as http;
 
 class AuthSession {
-  const AuthSession({required this.user, required this.token});
+  const AuthSession({
+    required this.user,
+    required this.token,
+    this.refreshToken,
+  });
 
   final AuthUser user;
   final String token;
+  final String? refreshToken;
 }
 
 /// Auth REST — mirror Web: token rồi hydrate user qua `/me`.
@@ -124,12 +129,44 @@ abstract final class AuthApiService {
     }
   }
 
-  /// Apple: BE chưa có — luôn fail rõ ràng.
+  /// Apple: `POST /api/user/auth/apple` + `{ identityToken }`.
   static Future<AuthSession> loginWithApple(SocialAuthCredential credential) async {
-    throw const AuthException(
-      AuthErrorCode.socialFailed,
-      serverMessage: 'Đăng nhập Apple sắp ra mắt.',
-    );
+    if (credential.provider != AuthMethod.apple) {
+      throw const AuthException(
+        AuthErrorCode.socialFailed,
+        serverMessage: 'Provider không phải Apple.',
+      );
+    }
+    try {
+      final json = await ApiClient.post(
+        AuthApiPaths.loginApple,
+        body: {'identityToken': credential.idToken},
+      );
+      return _hydrateAfterAuth(
+        json,
+        fallbackEmail: credential.email,
+        fallbackName: credential.displayName,
+        fallbackMethod: AuthMethod.apple,
+      );
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } catch (_) {
+      throw const AuthException(AuthErrorCode.networkError);
+    }
+  }
+
+  static Future<AuthSession> refresh({required String refreshToken}) async {
+    try {
+      final json = await ApiClient.post(
+        AuthApiPaths.refresh,
+        body: {'refreshToken': refreshToken},
+      );
+      return _hydrateAfterAuth(json);
+    } on ApiException catch (e) {
+      throw _mapApiException(e);
+    } catch (_) {
+      throw const AuthException(AuthErrorCode.networkError);
+    }
   }
 
   @Deprecated('Use loginWithGoogle / loginWithApple')
@@ -240,13 +277,18 @@ abstract final class AuthApiService {
   }) async {
     final payload = _unwrap(json);
     final token = _readToken(payload);
+    final refresh = payload['refreshToken'] as String?;
     if (token == null || token.isEmpty) {
       throw const AuthException(AuthErrorCode.emailVerificationRequired);
     }
     try {
-      return await getMe(token: token);
+      final session = await getMe(token: token);
+      return AuthSession(
+        user: session.user,
+        token: token,
+        refreshToken: refresh,
+      );
     } on AuthException {
-      // Fallback tạm nếu /me lỗi — vẫn giữ token để retry sau.
       return AuthSession(
         user: _userFromJson(
           _readUserMap(payload),
@@ -255,6 +297,7 @@ abstract final class AuthApiService {
           fallbackMethod: fallbackMethod,
         ),
         token: token,
+        refreshToken: refresh,
       );
     }
   }
@@ -334,14 +377,10 @@ abstract final class AuthApiService {
     };
   }
 
+  /// Mobile is learner-only; admin/instructor manage content on web admin.
   static UserRole _mapRole(String? type, List<String> roles) {
-    if (roles.contains('admin')) return UserRole.admin;
-    if (roles.contains('mentor')) return UserRole.mentor;
-    return switch (type?.toLowerCase()) {
-      'mentor' => UserRole.mentor,
-      'admin' => UserRole.admin,
-      _ => UserRole.user,
-    };
+    // Keep params for call-site compatibility; always learner on mobile.
+    return UserRole.user;
   }
 
   static String _networkHint() =>

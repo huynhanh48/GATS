@@ -97,6 +97,7 @@ abstract final class CourseBeMapper {
               isPreview: isPreview,
               locked: locked,
               type: lesson['type'] as String? ?? 'video',
+              content: lesson['content'] as String?,
             ),
           );
         }

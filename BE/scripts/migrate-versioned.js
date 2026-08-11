@@ -149,6 +149,20 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('[migrate] FAILED:', error.message);
+  const parts = [
+    error?.message,
+    error?.code ? `code=${error.code}` : null,
+    error?.detail ? `detail=${error.detail}` : null,
+    error?.hint ? `hint=${error.hint}` : null,
+  ].filter(Boolean);
+  if (!parts.length && error?.errors?.length) {
+    for (const nested of error.errors) {
+      parts.push(
+        nested?.message ||
+          `${nested?.code || 'error'} ${nested?.address || ''}:${nested?.port || ''}`,
+      );
+    }
+  }
+  console.error('[migrate] FAILED:', parts.join(' | ') || String(error));
   process.exit(1);
 });

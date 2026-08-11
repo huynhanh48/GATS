@@ -31,4 +31,16 @@ class StreakController extends ChangeNotifier {
     _loaded = true;
     notifyListeners();
   }
+
+  Future<void> applyServerStreak(int streak, {bool? checkedInToday}) async {
+    _streakDays = streak;
+    if (checkedInToday != null) _claimedToday = checkedInToday;
+    _loaded = true;
+    notifyListeners();
+  }
+
+  Future<void> syncFromApi() async {
+    await DailyCheckInStore.syncFromApi();
+    await refresh();
+  }
 }

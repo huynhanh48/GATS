@@ -14,7 +14,8 @@ abstract final class MockAuthService {
       displayName: account.displayName,
       email: account.email,
       method: AuthMethod.demo,
-      role: account.role,
+      // Mobile app is learner-only (admin/instructor use web dashboard).
+      role: UserRole.user,
     );
   }
 

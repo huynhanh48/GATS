@@ -62,6 +62,14 @@ export default async function CourseLearnersPage({ params }: PageProps) {
             tone: "slate",
           },
         ]}
+        actions={
+          <a
+            href={`/api/be/courses/${id}/enrollments/learners/export.csv`}
+            className="inline-flex rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Export CSV
+          </a>
+        }
       />
 
       <AdminPanel title="Danh sách học viên" bodyClassName="p-0 overflow-x-auto">
@@ -78,6 +86,7 @@ export default async function CourseLearnersPage({ params }: PageProps) {
                 <th className="px-4 py-3">Tiến độ</th>
                 <th className="px-4 py-3">Hoạt động gần nhất</th>
                 <th className="px-4 py-3">Đăng ký lúc</th>
+                <th className="px-4 py-3">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -121,6 +130,24 @@ export default async function CourseLearnersPage({ params }: PageProps) {
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-500">
                     {formatDate(learner.enrolledAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-col gap-1">
+                      <Link
+                        href={`/course/${id}/learners/${learner.userId}`}
+                        className="text-sm font-medium text-[#0070EB] hover:underline"
+                      >
+                        Lịch sử & AI coach
+                      </Link>
+                      {learner.status === "active" ? (
+                        <Link
+                          href={`/certificates?issueUser=${learner.userId}&issueCourse=${id}`}
+                          className="text-sm font-medium text-slate-600 hover:text-[#0070EB] hover:underline dark:text-slate-300"
+                        >
+                          Cấp chứng chỉ
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}

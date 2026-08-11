@@ -27,6 +27,7 @@ import LeadApi from '@src/routes/lead/leadApi';
 import NotificationApi from '@src/routes/notification/notificationApi';
 import AdminUserApi from '@src/routes/admin-user/adminUserApi';
 import ModerationApi from '@src/routes/moderation/moderationApi';
+import BannedWordApi from '@src/routes/banned-word/bannedWordApi';
 import AdminMetricsApi from '@src/routes/admin-metrics/adminMetricsApi';
 import CouponApi from '@src/routes/coupon/couponApi';
 import CertificateApi from '@src/routes/certificate/certificateApi';
@@ -34,7 +35,10 @@ import AnalyticsApi from '@src/routes/analytics/analyticsApi';
 import LearnExtrasApi from '@src/routes/learn-extras/learnExtrasApi';
 import CourseChatApi from '@src/routes/course-chat/courseChatApi';
 import HealthApi from '@src/routes/health/healthApi';
+import MobileApi from '@src/routes/mobile/mobileApi';
+import FlashcardAdminApi from '@src/routes/flashcard/flashcardAdminApi';
 import CourseChatPaths from '@src/common/paths/course-chat';
+import AiCoachApi from '@src/routes/ai-coach/aiCoachApi';
 import EnvVars, {
   assertProductionConfiguration,
   NodeEnvs,
@@ -42,14 +46,20 @@ import EnvVars, {
 import cors from 'cors';
 import originGuard from './middleware/originGuard';
 import { errorHandle } from './middleware/errorHandle';
-import { getAllowedOrigins } from './common/utils/cors';
+import { getAllowedOrigins, isOriginAllowed } from './common/utils/cors';
 import requestContext from './middleware/requestContext';
+import responseMeta from './middleware/responseMeta';
 /******************************************************************************
                                 Setup
 ******************************************************************************/
 
 const app = express();
 assertProductionConfiguration();
+
+// Rich-text posts can legitimately exceed Express' 100 KB default once the
+// editor serializes headings, links and formatting as HTML. Keep a finite
+// application-level cap even though nginx allows larger media uploads.
+const REQUEST_BODY_LIMIT = '2mb';
 
 // **** Middleware **** //
 
@@ -60,14 +70,15 @@ if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
 
 // Basic middleware
 app.use(requestContext);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(responseMeta);
+app.use(express.json({ limit: REQUEST_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: REQUEST_BODY_LIMIT }));
 app.use(cookieParser());
 app.use(
   cors({
     origin(origin, callback) {
       // Server-to-server/mobile clients do not send Origin.
-      if (!origin || getAllowedOrigins().includes(origin)) {
+      if (!origin || isOriginAllowed(origin)) {
         return callback(null, true);
       }
       return callback(null, false);
@@ -108,15 +119,19 @@ app.use(Paths._, LeadApi);
 app.use(Paths._, NotificationApi);
 app.use(Paths._, AdminUserApi);
 app.use(Paths._, ModerationApi);
+app.use(Paths._, BannedWordApi);
 app.use(Paths._, AdminMetricsApi);
 app.use(Paths._, CouponApi);
 app.use(Paths._, CertificateApi);
 app.use(Paths._, AnalyticsApi);
 app.use(Paths._, LearnExtrasApi);
+app.use(Paths._, MobileApi);
+app.use(Paths._, FlashcardAdminApi);
 app.use(CourseChatPaths._, CourseChatApi);
+app.use(Paths._ + '/ai-coach', AiCoachApi);
 
 // Add error handler
-app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (EnvVars.NodeEnv !== NodeEnvs.TEST.valueOf()) {
     if (EnvVars.NodeEnv === NodeEnvs.PRODUCTION) {
       console.error(
@@ -133,22 +148,78 @@ app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
     }
   }
 
-  if (isHttpException(err)) {
-    const body: { error: string; issues?: unknown } = { error: err.message };
-    if (err.issues !== undefined) {
-      body.issues = err.issues;
-    }
-    return res.status(err.status).json(body);
+  const retryAfter =
+    res.statusCode === 429 || res.statusCode === 503 ? '5' : undefined;
+  if (retryAfter) {
+    res.setHeader('Retry-After', retryAfter);
   }
 
-  // Zod parse outside errorHandle → still return 422, not 500
+  const requestError = err as Error & { status?: number; type?: string };
+  if (
+    requestError.status === 413 ||
+    requestError.type === 'entity.too.large'
+  ) {
+    const message =
+      'Nội dung gửi lên quá lớn. Vui lòng giữ tổng dữ liệu dưới 2 MB.';
+    return res.status(413).json({
+      error: {
+        code: 'PAYLOAD_TOO_LARGE',
+        message,
+        details: { maxSize: REQUEST_BODY_LIMIT },
+        retryable: false,
+      },
+      message,
+      meta: {
+        requestId: res.locals.requestId,
+        serverTime: new Date().toISOString(),
+      },
+    });
+  }
+
+  if (isHttpException(err)) {
+    const retryable =
+      err.retryable ||
+      err.status === 429 ||
+      err.status === 503 ||
+      err.status >= 500;
+    if (retryable && (err.status === 429 || err.status === 503)) {
+      res.setHeader('Retry-After', '5');
+    }
+    return res.status(err.status).json({
+      error: {
+        code: err.code ?? `HTTP_${err.status}`,
+        message: err.message,
+        details: err.details ?? err.issues ?? {},
+        retryable,
+      },
+      // Backward-compatible string field for older clients
+      message: err.message,
+      meta: {
+        requestId: res.locals.requestId,
+        serverTime: new Date().toISOString(),
+      },
+    });
+  }
+
   if (err instanceof ZodError) {
     const issues = err.issues;
     const first = issues[0];
     const message = first
       ? `Validation Error (${(first.path ?? []).join('.')}): ${first.message ?? 'Invalid'}`
       : 'Unprocessable Entity';
-    return res.status(422).json({ error: message, issues });
+    return res.status(422).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message,
+        details: { issues },
+        retryable: false,
+      },
+      message,
+      meta: {
+        requestId: res.locals.requestId,
+        serverTime: new Date().toISOString(),
+      },
+    });
   }
 
   return next(err);

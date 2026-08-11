@@ -4,6 +4,7 @@ const BankAccountPaths = {
     _: '/bank-accounts',
     List: '/',
     Create: '/',
+    ExportCsv: '/export.csv',
     Get: '/:bankAccountId',
     Update: '/:bankAccountId',
     Delete: '/:bankAccountId',

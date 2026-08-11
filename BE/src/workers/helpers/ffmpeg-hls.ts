@@ -46,6 +46,11 @@ export type AudioProbeResult = {
   /** True when stream is AAC — safe to `-c:a copy` into HLS. */
   copySafe: boolean;
   timedOut: boolean;
+  /**
+   * Set when ffprobe crashed or exited non-zero — distinct from "no audio stream".
+   * Callers that need certainty (FLAC) must treat this as failure, not no_audio.
+   */
+  error: string | null;
 };
 
 /** Thrown when HTTPS probe times out — worker should download to disk and retry. */
@@ -122,6 +127,7 @@ export function parseFfprobeAudioResult(stdout: string): AudioProbeResult {
         codecName: null,
         copySafe: false,
         timedOut: false,
+        error: null,
       };
     }
 
@@ -135,6 +141,7 @@ export function parseFfprobeAudioResult(stdout: string): AudioProbeResult {
       codecName,
       copySafe: codecName === 'aac',
       timedOut: false,
+      error: null,
     };
   } catch {
     return {
@@ -142,6 +149,7 @@ export function parseFfprobeAudioResult(stdout: string): AudioProbeResult {
       codecName: null,
       copySafe: false,
       timedOut: false,
+      error: 'ffprobe returned invalid JSON',
     };
   }
 }
@@ -173,6 +181,10 @@ export async function probeAudioStream(
         logger.info(
           `ffprobe timed out after ${ms}ms, assuming audio=true copySafe=false`,
         );
+      } else if (result.error) {
+        logger.err(
+          `ffprobe failed in ${ms}ms: ${result.error}`,
+        );
       } else {
         logger.info(
           `ffprobe done in ${ms}ms hasAudio=${result.hasAudio} codec=${result.codecName ?? 'none'} copySafe=${result.copySafe}`,
@@ -188,6 +200,7 @@ export async function probeAudioStream(
         codecName: null,
         copySafe: false,
         timedOut: true,
+        error: null,
       });
     }, FFPROBE_TIMEOUT_MS);
 
@@ -202,6 +215,7 @@ export async function probeAudioStream(
           codecName: null,
           copySafe: false,
           timedOut: false,
+          error: `ffprobe exited with code ${code}`,
         });
         return;
       }
@@ -209,12 +223,13 @@ export async function probeAudioStream(
       finish(parseFfprobeAudioResult(stdout));
     });
 
-    proc.on('error', () => {
+    proc.on('error', (err) => {
       finish({
         hasAudio: false,
         codecName: null,
         copySafe: false,
         timedOut: false,
+        error: err.message || 'ffprobe spawn failed',
       });
     });
   });

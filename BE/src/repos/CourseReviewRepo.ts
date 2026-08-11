@@ -1,4 +1,4 @@
-import { and, avg, count, eq } from 'drizzle-orm';
+import { and, avg, count, eq, inArray } from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -45,6 +45,57 @@ export async function getStatsByCourse(courseId: string): Promise<{
       : roundAverageRating(Number(rawAverage));
 
   return { ratingCount, averageRating };
+}
+
+export async function getStatsByCourses(
+  courseIds: string[],
+): Promise<Map<string, { ratingCount: number; averageRating: number | null }>> {
+  if (courseIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      courseId: courseReviewsTable.courseId,
+      ratingCount: count(courseReviewsTable.id),
+      averageRating: avg(courseReviewsTable.rating),
+    })
+    .from(courseReviewsTable)
+    .where(inArray(courseReviewsTable.courseId, courseIds))
+    .groupBy(courseReviewsTable.courseId);
+
+  return new Map(
+    rows.map((row) => [
+      row.courseId,
+      {
+        ratingCount: Number(row.ratingCount ?? 0),
+        averageRating:
+          row.averageRating == null
+            ? null
+            : roundAverageRating(Number(row.averageRating)),
+      },
+    ]),
+  );
+}
+
+export async function getRatingDistributionByCourses(
+  courseIds: string[],
+): Promise<Map<string, Record<number, number>>> {
+  if (courseIds.length === 0) return new Map();
+  const rows = await db
+    .select({
+      courseId: courseReviewsTable.courseId,
+      rating: courseReviewsTable.rating,
+      total: count(courseReviewsTable.id),
+    })
+    .from(courseReviewsTable)
+    .where(inArray(courseReviewsTable.courseId, courseIds))
+    .groupBy(courseReviewsTable.courseId, courseReviewsTable.rating);
+
+  const result = new Map<string, Record<number, number>>();
+  for (const row of rows) {
+    const distribution = result.get(row.courseId) ?? {};
+    distribution[row.rating] = Number(row.total ?? 0);
+    result.set(row.courseId, distribution);
+  }
+  return result;
 }
 
 export async function findByCourseAndUser(

@@ -1,8 +1,9 @@
+import { z } from 'zod';
+
 import {
   loginPasswordSchema,
   passwordSchema,
 } from '@src/common/utils/password';
-import { z } from 'zod';
 
 export const authTypeSchema = z.enum([
   'facebook',
@@ -23,6 +24,10 @@ export const userRecordSchema = z.object({
   accessToken: z.string().nullable(),
   tokenExpiresAt: z.coerce.date().nullable(),
   isLocked: z.boolean().default(false),
+  onboardingAnswers: z.unknown().nullable(),
+  onboardingCompletedAt: z.coerce.date().nullable(),
+  avatarUrl: z.string().nullable().optional(),
+  coverUrl: z.string().nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 });
@@ -35,7 +40,17 @@ export const userPublicSchema = z.object({
   type: authTypeSchema,
   roles: z.array(z.string()),
   isLocked: z.boolean().optional(),
+  avatarUrl: z.string().nullable().optional(),
+  coverUrl: z.string().nullable().optional(),
 });
+
+export const updateMeSchema = z
+  .object({
+    userName: z.string().min(3).max(50).optional(),
+    avatarUrl: z.string().min(1).max(512).nullable().optional(),
+    coverUrl: z.string().min(1).max(512).nullable().optional(),
+  })
+  .strict();
 
 export const registerSchema = z
   .object({
@@ -80,9 +95,7 @@ function resolveLoginIdentity(data: {
 
   if (data.email) {
     const isEmail = z.string().email().safeParse(data.email).success;
-    return isEmail
-      ? { email: data.email }
-      : { user_name: data.email };
+    return isEmail ? { email: data.email } : { user_name: data.email };
   }
 
   return {};
@@ -153,6 +166,7 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type UpdateMeInput = z.infer<typeof updateMeSchema>;
 
 export function parseRegisterInput(data: unknown): RegisterInput {
   return registerSchema.parse(data);
@@ -176,6 +190,10 @@ export function parseForgotPasswordInput(data: unknown): ForgotPasswordInput {
 
 export function parseResetPasswordInput(data: unknown): ResetPasswordInput {
   return resetPasswordSchema.parse(data);
+}
+
+export function parseUpdateMeInput(data: unknown): UpdateMeInput {
+  return updateMeSchema.parse(data);
 }
 
 export function parseUserPublic(data: unknown): UserPublic {

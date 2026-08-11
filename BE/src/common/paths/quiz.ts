@@ -10,6 +10,8 @@ const QuizPaths = {
       List: '/quizzes/:quizId/questions',
       Create: '/quizzes/:quizId/questions',
       Reorder: '/quizzes/:quizId/questions/reorder',
+      AiGenerate: '/quizzes/:quizId/ai-generate',
+      AiGenerateJob: '/quizzes/:quizId/ai-generate/jobs/:jobId',
     },
     Attempts: {
       Create: '/quizzes/:quizId/attempts',

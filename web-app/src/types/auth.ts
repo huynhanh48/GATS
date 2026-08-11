@@ -9,6 +9,8 @@ export type AuthUser = {
   email: string;
   type: AuthType;
   roles: string[];
+  avatarUrl?: string | null;
+  coverUrl?: string | null;
 };
 
 export type AuthModalMode = "login" | "register";

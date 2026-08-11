@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gats_academy/core/constants/app_strings.dart';
 import 'package:gats_academy/core/navigation/gats_main_navigator.dart';
+import 'package:gats_academy/core/navigation/main_shell_tab_controller.dart';
 import 'package:gats_academy/core/navigation/shell_tab_scope.dart';
 import 'package:gats_academy/core/theme/app_theme.dart';
 import 'package:gats_academy/core/widgets/app_header.dart';
@@ -41,6 +42,20 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     DailyTasksController.instance.ensureLoaded();
+    MainShellTabController.instance.addListener(_onTabRequest);
+  }
+
+  @override
+  void dispose() {
+    MainShellTabController.instance.removeListener(_onTabRequest);
+    super.dispose();
+  }
+
+  void _onTabRequest() {
+    final index = MainShellTabController.instance.takePending();
+    if (index == null || index < 0 || index >= MainShellTabs.count) return;
+    if (!mounted) return;
+    setState(() => _currentIndex = index);
   }
 
   int _navSelectedIndex(int screenIndex) {
@@ -200,6 +215,11 @@ class _MainShellState extends State<MainShell> {
                     selectedIcon: Icons.today_rounded,
                     label: AppStrings.navDaily,
                     badgeLabel: DailyTasksController.instance.badgeLabel,
+                    badgeTooltip: DailyTasksController.instance.pendingCount > 0
+                        ? AppStrings.navDailyBadgeTooltip(
+                            DailyTasksController.instance.pendingCount,
+                          )
+                        : null,
                   ),
                   FloatingNavDestination(
                     icon: Icons.psychology_outlined,

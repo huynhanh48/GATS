@@ -13,7 +13,9 @@ const OrderPaths = {
     AdminUpdateStatus: '/admin/:orderId/status',
     AdminRepairEnrollment: '/admin/:orderId/repair-enrollment',
     AdminExpireStale: '/admin/expire-stale',
+    AdminReceipt: '/admin/:orderId/receipt',
     Get: '/:orderId',
+    Receipt: '/:orderId/receipt',
     Cancel: '/:orderId/cancel',
   },
 } as const;

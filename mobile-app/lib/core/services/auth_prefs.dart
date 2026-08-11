@@ -17,6 +17,7 @@ abstract final class AuthPrefs {
   /// Legacy plain-text key — migrate 1 lần rồi xóa.
   static const _legacyTokenKey = 'auth_access_token';
   static const _secureTokenKey = 'auth_access_token';
+  static const _secureRefreshKey = 'auth_refresh_token';
 
   static SharedPreferences? _prefs;
   static bool _memoryFallback = false;
@@ -128,7 +129,6 @@ abstract final class AuthPrefs {
       final token = await accessToken();
       if (token == null || token.isEmpty) return null;
       final methodName = prefs.getString(_methodKey);
-      final roleName = prefs.getString(_roleKey);
       final userId = prefs.getString(_userIdKey);
       if (userId == null || userId.isEmpty) return null;
       return AuthUser(
@@ -139,10 +139,7 @@ abstract final class AuthPrefs {
           (m) => m.name == methodName,
           orElse: () => AuthMethod.email,
         ),
-        role: UserRole.values.firstWhere(
-          (r) => r.name == roleName,
-          orElse: () => UserRole.user,
-        ),
+        role: UserRole.user,
       );
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
@@ -153,7 +150,37 @@ abstract final class AuthPrefs {
     }
   }
 
-  static Future<void> saveSession(AuthUser user, {required String token}) async {
+  static Future<String?> refreshToken() async {
+    if (_memoryFallback) return null;
+    try {
+      return await _secure.read(key: _secureRefreshKey);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Update access/refresh tokens after silent refresh (profile unchanged).
+  static Future<void> updateTokens({
+    required String accessToken,
+    String? refreshToken,
+  }) async {
+    _memoryToken = accessToken;
+    if (_memoryFallback) return;
+    try {
+      await _secure.write(key: _secureTokenKey, value: accessToken);
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _secure.write(key: _secureRefreshKey, value: refreshToken);
+      }
+    } catch (_) {
+      // ignore — next request may 401 again
+    }
+  }
+
+  static Future<void> saveSession(
+    AuthUser user, {
+    required String token,
+    String? refreshToken,
+  }) async {
     _memoryUser = user;
     _memoryToken = token;
     if (_memoryFallback) return;
@@ -166,9 +193,11 @@ abstract final class AuthPrefs {
       await prefs.setString(_emailKey, user.email);
       await prefs.setString(_methodKey, user.method.name);
       await prefs.setString(_roleKey, user.role.name);
-      // Không ghi JWT plain vào prefs.
       await prefs.remove(_legacyTokenKey);
       await _secure.write(key: _secureTokenKey, value: token);
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _secure.write(key: _secureRefreshKey, value: refreshToken);
+      }
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {
@@ -192,6 +221,7 @@ abstract final class AuthPrefs {
         await prefs.remove(_legacyTokenKey);
       }
       await _secure.delete(key: _secureTokenKey);
+      await _secure.delete(key: _secureRefreshKey);
     } on PlatformException catch (e) {
       _useMemoryFallback(e);
     } catch (e) {

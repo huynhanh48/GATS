@@ -13,6 +13,7 @@ import type {
   ListCoursesQuery,
   UpdateCourseInput,
 } from '@src/models/Course.model';
+import type { UpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import { parseCourseDetail, parseCoursePublic } from '@src/models/Course.model';
 import type { TagPublic } from '@src/models/Tag.model';
 import * as AssignmentRepo from '@src/repos/AssignmentRepo';
@@ -99,18 +100,68 @@ async function attachPublic(course: CourseRecord): Promise<CoursePublic> {
 
 async function attachPublicList(
   courses: CourseRecord[],
-): Promise<CoursePublic[]> {
-  const [categoryMap, tagMap] = await Promise.all([
+): Promise<
+  Array<
+    CoursePublic & {
+      stats: CourseDetail['stats'] & {
+        ratingDistribution: Record<number, number>;
+      };
+    }
+  >
+> {
+  const courseIds = courses.map((course) => course.id);
+  const [
+    categoryMap,
+    tagMap,
+    authors,
+    enrollmentMap,
+    reviewMap,
+    reviewDistributionMap,
+    sectionMap,
+    lessonMap,
+  ] = await Promise.all([
     CategoryRepo.findByCourseIds(courses.map((course) => course.id)),
     CourseTagRepo.findByCourseIds(courses.map((course) => course.id)),
+    UserRepo.findByIds(
+      courses
+        .map((course) => course.instructorId)
+        .filter((id): id is number => id !== null),
+    ),
+    EnrollmentRepo.countActiveByCourses(courseIds),
+    CourseReviewRepo.getStatsByCourses(courseIds),
+    CourseReviewRepo.getRatingDistributionByCourses(courseIds),
+    CourseSectionRepo.countByCourses(courseIds),
+    LessonRepo.getStatsByCourses(courseIds),
   ]);
-  return courses.map((course) =>
-    toPublicCourse(
+  const authorMap = new Map(
+    authors.map((author) => [
+      author.id,
+      { id: author.id, userName: author.userName },
+    ]),
+  );
+  return courses.map((course) => {
+    const reviewStats = reviewMap.get(course.id);
+    const lessonStats = lessonMap.get(course.id);
+    return {
+      ...toPublicCourse(
       course,
       categoryMap.get(course.id) ?? null,
       tagMap.get(course.id) ?? [],
-    ),
-  );
+      ),
+      author: course.instructorId
+        ? (authorMap.get(course.instructorId) ?? null)
+        : null,
+      stats: {
+        enrollmentCount: enrollmentMap.get(course.id) ?? 0,
+        ratingCount: reviewStats?.ratingCount ?? 0,
+        averageRating: reviewStats?.averageRating ?? null,
+        ratingDistribution: reviewDistributionMap.get(course.id) ?? {},
+        sectionCount: sectionMap.get(course.id) ?? 0,
+        lessonCount: lessonStats?.lessonCount ?? 0,
+        totalDurationSeconds: lessonStats?.totalDurationSeconds ?? 0,
+      },
+    };
+  });
 }
 
 function buildPagination(query: ListCoursesQuery, total: number) {
@@ -246,9 +297,12 @@ async function list(query: ListCoursesQuery, viewer?: AuthUser) {
     status: effectiveStatus,
     level: query.level,
     categoryId,
-    instructorId: isInstructor ? viewer?.id : undefined,
+    instructorId: isInstructor ? viewer?.id : query.instructorId,
+    minPrice: query.minPrice,
+    maxPrice: query.maxPrice,
     courseIds,
     keyword: query.keyword,
+    sort: query.sort,
     skip: query.skip,
     take: query.take,
     deleted: deletedVisibility,
@@ -283,6 +337,42 @@ async function getById(id: string, viewer?: AuthUser) {
 
   assertPublishedAccess(course.status, isAdmin || isInstructor);
   return attachPublic(course);
+}
+
+async function getMyReview(courseId: string, userId: number) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+  return {
+    data: (await CourseReviewRepo.findByCourseAndUser(courseId, userId)) ?? null,
+  };
+}
+
+async function upsertReview(
+  courseId: string,
+  userId: number,
+  input: UpsertCourseReviewInput,
+) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
+  }
+  const enrolled = await CourseAccessService.isEnrolled(userId, courseId);
+  if (!enrolled) {
+    throw new RouteError(
+      HttpStatusCodes.FORBIDDEN,
+      'Chỉ học viên đã đăng ký mới có thể đánh giá khóa học',
+    );
+  }
+  const review = await CourseReviewRepo.upsert({
+    courseId,
+    userId,
+    rating: input.rating,
+    content: input.content?.trim() || null,
+  });
+  const stats = await CourseReviewRepo.getStatsByCourse(courseId);
+  return { data: review, stats };
 }
 
 async function getBySlug(
@@ -377,8 +467,12 @@ async function getBySlug(
       id: item.id,
       key: item.key,
       label: item.label,
-      value: item.value,
-      unit: item.unit,
+      // DB column is varchar; coerce so numeric mocks/legacy rows still parse.
+      value:
+        item.value === null || item.value === undefined
+          ? null
+          : String(item.value),
+      unit: item.unit === null || item.unit === undefined ? null : String(item.unit),
       order: item.order,
     })),
     sections: detailSections,
@@ -527,6 +621,7 @@ async function update(id: string, input: UpdateCourseInput, actor?: AuthUser) {
   }
 
   if (input.status === 'published' && existing.status !== 'published') {
+    await assertPublishReady(id);
     Object.assign(payload, { publishedAt: new Date() });
   }
 
@@ -643,7 +738,21 @@ async function getPublishReadiness(id: string) {
   return { data: { ready, checks } };
 }
 
+async function assertPublishReady(id: string): Promise<void> {
+  const { data } = await getPublishReadiness(id);
+  if (data.ready) return;
+
+  const failed = data.checks
+    .filter((check) => !check.passed)
+    .map((check) => check.detail ?? check.label);
+  throw new RouteError(
+    HttpStatusCodes.BAD_REQUEST,
+    `Course is not ready to publish: ${failed.join('; ')}`,
+  );
+}
+
 async function publish(id: string) {
+  await assertPublishReady(id);
   return update(id, { status: 'published' });
 }
 
@@ -695,6 +804,8 @@ export default {
   listPublic,
   listManaged,
   getById,
+  getMyReview,
+  upsertReview,
   getBySlug,
   create,
   update,

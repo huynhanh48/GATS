@@ -1,5 +1,5 @@
 ﻿# Stage 1: Build Web App
-FROM node:22-alpine AS web-builder
+FROM node:22-bookworm-slim AS web-builder
 WORKDIR /app/web-app
 # Install with --include=dev so build tools (next, etc.) are present even if
 # the host Bake sets NODE_ENV=production. Do NOT leave NODE_ENV=development
@@ -10,7 +10,8 @@ COPY web-app/ .
 # NEXT_PUBLIC_* vars are inlined into the client bundle AT BUILD TIME,
 # so they must be passed as build args (see docker-compose.yml build.args).
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
-ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
+# Local-safe default. Prod compose/.env must pass https://api.gats.vn.
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NODE_ENV=production
@@ -26,12 +27,12 @@ ENV NODE_ENV=production
 RUN npm run build
 
 # Stage 3: Build Admin Dashboard
-FROM node:22-alpine AS admin-builder
+FROM node:22-bookworm-slim AS admin-builder
 WORKDIR /app/admin-dashboard
 COPY admin-dashboard/package*.json ./
 RUN npm ci --include=dev
 COPY admin-dashboard/ .
-ARG NEXT_PUBLIC_API_URL=https://api.gats.vn
+ARG NEXT_PUBLIC_API_URL=http://localhost:3000
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
@@ -40,11 +41,21 @@ ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NODE_ENV=production
 RUN npm run build
 
-# Stage 4: Production Image
-FROM node:22-alpine
+# Stage 4: Production Image (Debian bookworm — Python wheels for numpy/scipy)
+FROM node:22-bookworm-slim
 
-# Install ffmpeg for the worker and pm2 for process management
-RUN apk add --no-cache ffmpeg && npm install -g pm2
+# ffmpeg (video worker) + Python (Viava FastAPI) + pm2
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    python3 \
+    python3-venv \
+    python3-pip \
+    ca-certificates \
+    curl \
+    libgomp1 \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g pm2
 
 WORKDIR /app
 
@@ -78,6 +89,18 @@ COPY --from=admin-builder /app/admin-dashboard/.next ./admin-dashboard/.next
 COPY --from=admin-builder /app/admin-dashboard/public ./admin-dashboard/public
 COPY --from=admin-builder /app/admin-dashboard/next.config.mjs ./admin-dashboard/next.config.mjs
 
+# Vendored Viava (FastAPI on :8000) — install deps before full tree for better cache
+COPY viava/requirements.txt /app/viava/requirements.txt
+RUN python3 -m venv /app/viava/.venv \
+  && /app/viava/.venv/bin/pip install --no-cache-dir -U pip \
+  && /app/viava/.venv/bin/pip install --no-cache-dir \
+    -r /app/viava/requirements.txt \
+    "uvicorn[standard]" \
+    python-multipart \
+    openai
+COPY viava/ /app/viava/
+RUN mkdir -p /app/viava/rag_data
+
 # Copy ecosystem config + entrypoint (runs DB migrations, then pm2)
 COPY ecosystem.config.js .
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
@@ -86,8 +109,8 @@ RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
   && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Container-internal ports (host mapping is defined in docker-compose.yml).
-# Backend API (3000), Web App (3005), Admin Dashboard (9000)
-EXPOSE 3000 3005 9000
+# Backend API (3000), Web App (3005), Admin Dashboard (9000), Viava (8000)
+EXPOSE 3000 3005 9000 8000
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["pm2-runtime", "ecosystem.config.js"]

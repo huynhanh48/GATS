@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
 import supertest from 'supertest';
 
 const {
@@ -144,6 +144,37 @@ describe('LessonProgress API', () => {
     );
   });
 
+  it('does not complete quiz lessons from watched percent alone', async () => {
+    mockAssertLessonAccess.mockResolvedValue({
+      ...sampleLesson,
+      type: 'quiz' as const,
+      duration: 100,
+    });
+    mockLessonProgressFind.mockResolvedValue(null);
+    const incomplete = {
+      ...sampleProgress,
+      watchedSeconds: 100,
+      durationSeconds: 100,
+      percent: 100,
+      isCompleted: false,
+      completedAt: null,
+    };
+    mockLessonProgressUpsert.mockResolvedValue(incomplete);
+
+    const res = await agent
+      .put(`/api/courses/${courseId}/lessons/${lessonId}/progress`)
+      .send({ watched_seconds: 100, duration_seconds: 100 })
+      .expect(200);
+
+    expect(res.body.data.isCompleted).toBe(false);
+    expect(mockLessonProgressUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lessonId,
+        isCompleted: false,
+      }),
+    );
+  });
+
   it('returns lesson progress', async () => {
     mockLessonProgressFind.mockResolvedValue(sampleProgress);
 
@@ -170,6 +201,6 @@ describe('LessonProgress API', () => {
       .get(`/api/courses/${courseId}/progress`)
       .expect(403);
 
-    expect(res.body.error).toBe('You do not have access to this content');
+    expect(res.body.error.message).toBe('You do not have access to this content');
   });
 });

@@ -12,12 +12,11 @@ import 'package:gats_academy/core/services/auth_prefs.dart';
 import 'package:gats_academy/data/mock/models/course_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
 import 'package:gats_academy/features/course/course_module.dart';
-import 'package:gats_academy/features/course/data/lecture_progress_store.dart';
 import 'package:gats_academy/features/course/presentation/course_detail_screen.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_action_bar.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_hero_header.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_meta_row.dart';
-import 'package:gats_academy/features/course/presentation/widgets/lecture_preview_sheet.dart';
+import 'package:gats_academy/features/course/presentation/lesson_player_screen.dart';
 import 'package:gats_academy/features/store/presentation/cart_screen.dart';
 
 class CourseStoreDetailScreen extends StatefulWidget {
@@ -105,16 +104,19 @@ class _CourseStoreDetailScreenState extends State<CourseStoreDetailScreen> {
       return;
     }
 
-    final lectures = course.lectures;
-    final index = lectures.indexWhere((l) => l.id == lecture.id);
-    await LecturePreviewSheet.show(
+    final lectures = course.lectures
+        .where((l) => l.isPublished && (_owned || l.isPreview))
+        .toList();
+    if (lectures.isEmpty) return;
+
+    await GatsMainNavigator.push(
       context,
-      courseId: course.id,
-      lecture: lecture,
-      index: index < 0 ? 0 : index,
-      total: lectures.length,
-      state: LectureLearnState.upcoming,
-      onMarkComplete: () async {},
+      LessonPlayerScreen(
+        courseId: course.id,
+        lectures: lectures,
+        initialLectureId: lecture.id,
+        onMarkComplete: (_) async {},
+      ),
     );
   }
 

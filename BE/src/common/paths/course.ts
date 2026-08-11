@@ -3,6 +3,8 @@ const CoursePaths = {
   Course: {
     _: '/courses',
     List: '/',
+    Recommendations: '/recommendations',
+    RecommendationEvents: '/recommendations/events',
     Create: '/',
     GetBySlug: '/slug/:slug',
     Categories: {
@@ -18,6 +20,7 @@ const CoursePaths = {
     Publish: '/:id/publish',
     PublishReadiness: '/:id/publish-readiness',
     Curriculum: '/:courseId/curriculum',
+    Review: '/:courseId/review',
     Sections: {
       _: '/:courseId/sections',
       List: '/:courseId/sections',
@@ -39,6 +42,9 @@ const CoursePaths = {
     _: '/course-management/courses',
     List: '/',
     Get: '/:id',
+    FlashcardDecks: '/:courseId/flashcard-decks',
+    AiQuizSources: '/:courseId/ai-quiz-sources',
+    AiQuizTargets: '/:courseId/ai-quiz-targets',
   },
 } as const;
 

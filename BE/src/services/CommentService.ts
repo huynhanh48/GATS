@@ -9,6 +9,7 @@ import type {
 } from '@src/models/Comment.model';
 import * as CommentLikeRepo from '@src/repos/CommentLikeRepo';
 import * as CommentRepo from '@src/repos/CommentRepo';
+import { maskBannedWords } from '@src/services/BannedWordService';
 import PostService from '@src/services/PostService';
 
 const Errors = {
@@ -87,16 +88,23 @@ async function listReplies(
 
 async function create(
   postId: string,
-  userId: number,
+  userId: number | undefined,
   input: CreateCommentInput,
   isAuthenticated: boolean,
 ): Promise<CommentRecord> {
   await PostService.assertPostReadableById(postId, userId, isAuthenticated);
 
+  if (!userId && (!input.guestName || !input.guestEmail)) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Guest name and email are required');
+  }
+
+  const content = await maskBannedWords(input.content);
   return CommentRepo.create({
     postId,
-    userId,
-    content: input.content,
+    userId: userId ?? null,
+    guestName: userId ? null : input.guestName,
+    guestEmail: userId ? null : input.guestEmail,
+    content,
     parentId: null,
   });
 }
@@ -104,11 +112,15 @@ async function create(
 async function reply(
   postId: string,
   parentId: string,
-  userId: number,
+  userId: number | undefined,
   input: CreateCommentInput,
   isAuthenticated: boolean,
 ): Promise<CommentRecord> {
   await PostService.assertPostReadableById(postId, userId, isAuthenticated);
+
+  if (!userId && (!input.guestName || !input.guestEmail)) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Guest name and email are required');
+  }
 
   const parent = await CommentRepo.findById(parentId);
   if (
@@ -120,10 +132,13 @@ async function reply(
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_REPLY);
   }
 
+  const content = await maskBannedWords(input.content);
   return CommentRepo.create({
     postId,
-    userId,
-    content: input.content,
+    userId: userId ?? null,
+    guestName: userId ? null : input.guestName,
+    guestEmail: userId ? null : input.guestEmail,
+    content,
     parentId,
   });
 }
@@ -163,7 +178,7 @@ async function update(
   } = {};
 
   if (input.content !== undefined) {
-    payload.content = input.content;
+    payload.content = await maskBannedWords(input.content);
   }
 
   if (input.status !== undefined) {

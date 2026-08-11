@@ -194,6 +194,65 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
     return card;
   }
 
+  Widget _storeCircleAction({
+    required BuildContext context,
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    Widget? badgeLabel,
+    bool elevated = true,
+  }) {
+    final gats = context.gatsColors;
+    final button = SizedBox.square(
+      dimension: 48,
+      child: DecoratedBox(
+        decoration: elevated
+            ? GatsSurfaceDecoration.card(
+                context,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              )
+            : const BoxDecoration(shape: BoxShape.circle),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: IconButton(
+            icon: Icon(icon, size: 24),
+            color: gats.textPrimary,
+            tooltip: tooltip,
+            onPressed: onPressed,
+          ),
+        ),
+      ),
+    );
+
+    if (badgeLabel == null) return button;
+    return Badge(
+      alignment: Alignment.topRight,
+      offset: const Offset(-2, 2),
+      label: badgeLabel,
+      child: button,
+    );
+  }
+
+  Widget _wishlistAction(BuildContext context, {bool elevated = true}) {
+    return AnimatedBuilder(
+      animation: CartController.instance,
+      builder: (context, _) {
+        final wishlistCount = CartController.instance.wishlist.length;
+        return _storeCircleAction(
+          context: context,
+          icon: Icons.favorite_border_rounded,
+          tooltip: AppStrings.storeWishlistTooltip,
+          badgeLabel: wishlistCount > 0 ? Text('$wishlistCount') : null,
+          elevated: elevated,
+          onPressed: () =>
+              GatsMainNavigator.push(context, const WishlistScreen()),
+        );
+      },
+    );
+  }
+
   void _openCourseSearch() {
     GatsMainNavigator.push(context, const CourseSearchScreen());
   }
@@ -335,35 +394,7 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
           ),
         ),
         actions: [
-          AnimatedBuilder(
-            animation: CartController.instance,
-            builder: (context, _) {
-              final wishlistCount = CartController.instance.wishlist.length;
-              return Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.favorite_border),
-                    tooltip: AppStrings.storeWishlistTooltip,
-                    onPressed: () => GatsMainNavigator.push(context, const WishlistScreen()),
-                  ),
-                  if (wishlistCount > 0)
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                        child: Text(
-                          '$wishlistCount',
-                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
+          _wishlistAction(context, elevated: false),
           AnimatedBuilder(
             animation: CartController.instance,
             builder: (context, _) {
@@ -405,28 +436,6 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
       physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: EdgeInsets.fromLTRB(0, 8, 0, widget.embeddedInShell ? 120 : 24),
       children: [
-        if (widget.embeddedInShell)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, 8),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: AnimatedBuilder(
-                animation: CartController.instance,
-                builder: (context, _) {
-                  final wishlistCount = CartController.instance.wishlist.length;
-                  return IconButton(
-                    icon: Badge(
-                      isLabelVisible: wishlistCount > 0,
-                      label: Text('$wishlistCount'),
-                      child: const Icon(Icons.favorite_border),
-                    ),
-                    tooltip: AppStrings.storeWishlistTooltip,
-                    onPressed: () => GatsMainNavigator.push(context, const WishlistScreen()),
-                  );
-                },
-              ),
-            ),
-          ),
         // Search & Filter Row
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -449,18 +458,15 @@ class _CourseStoreScreenState extends State<CourseStoreScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: _openFilterDialog,
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: gats.surface,
-                      shape: BoxShape.circle,
-                      boxShadow: AppShadows.card,
-                    ),
-                    child: Icon(Icons.filter_list_rounded, color: gats.lavenderAccent),
-                  ),
+                if (widget.embeddedInShell) ...[
+                  _wishlistAction(context),
+                  const SizedBox(width: 8),
+                ],
+                _storeCircleAction(
+                  context: context,
+                  icon: Icons.filter_list_rounded,
+                  tooltip: AppStrings.storeFilterTitle,
+                  onPressed: _openFilterDialog,
                 ),
               ],
             ),

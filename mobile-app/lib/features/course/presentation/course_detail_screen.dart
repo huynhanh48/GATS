@@ -16,9 +16,10 @@ import 'package:gats_academy/features/course/presentation/widgets/course_learnin
 import 'package:gats_academy/features/course/presentation/widgets/course_lecture_card.dart';
 import 'package:gats_academy/features/course/presentation/widgets/course_tab_shell.dart';
 import 'package:gats_academy/features/course/presentation/widgets/group_chat_panel.dart';
-import 'package:gats_academy/features/course/presentation/widgets/lecture_preview_sheet.dart';
+import 'package:gats_academy/features/course/presentation/lesson_player_screen.dart';
 import 'package:gats_academy/features/course/presentation/quiz_take_screen.dart';
 import 'package:gats_academy/features/course/presentation/lesson_quiz_launcher.dart';
+import 'package:gats_academy/features/flashcard/presentation/flashcard_deck_section.dart';
 import 'package:gats_academy/features/store/presentation/course_store_detail_screen.dart';
 
 /// Màn học đầy đủ — chỉ dành cho khóa đã mua / đăng ký (hoặc mentor/admin).
@@ -67,10 +68,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   bool _hasFullAccess(AppCourse course) {
     final user = _user;
     if (user == null) return false;
-    final role = user.role;
-    if (role == UserRole.admin) return true;
-    if (role == UserRole.mentor && course.isManagedBy(user.id)) return true;
-    return _repo.isOwned(course.id, user.id, role: role);
+    return _repo.isOwned(course.id, user.id, role: UserRole.user);
   }
 
   @override
@@ -91,19 +89,17 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       return _RedirectToStorePreview(courseId: widget.courseId);
     }
 
-    final role = _user!.role;
     final userId = _user!.id;
-    final isMentor = role == UserRole.mentor && course.isManagedBy(userId);
     final canAccessChat = _repo.canAccessGroupChat(
       course: course,
       userId: userId,
-      role: role,
+      role: UserRole.user,
     );
 
     return _CourseLearningView(
       course: course,
       user: _user,
-      isMentor: isMentor,
+      isMentor: false,
       canAccessChat: canAccessChat,
     );
   }
@@ -156,9 +152,10 @@ class _CourseLearningView extends StatefulWidget {
 
 class _CourseLearningViewState extends State<_CourseLearningView>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabController = TabController(length: 3, vsync: this);
+  late final TabController _tabController = TabController(length: 4, vsync: this);
   final _progress = LectureProgressStore.instance;
   bool _progressReady = false;
+  int _flashcardReloadVersion = 0;
 
   @override
   void initState() {
@@ -175,7 +172,10 @@ class _CourseLearningViewState extends State<_CourseLearningView>
         oldWidget.user?.id != widget.user?.id) {
       _progressReady = false;
       _loadProgress();
+      return;
     }
+    // Curriculum often loads after first frame — keep progress store in sync.
+    _progress.replaceLectures(widget.course.lectures);
   }
 
   Future<void> _loadProgress() async {
@@ -191,6 +191,8 @@ class _CourseLearningViewState extends State<_CourseLearningView>
       fallbackCourseProgress: widget.course.progressFor(userId),
     );
     if (!mounted) return;
+    // Detail may have refreshed lectures while await was in flight.
+    _progress.replaceLectures(widget.course.lectures);
     setState(() => _progressReady = true);
   }
 
@@ -236,16 +238,21 @@ class _CourseLearningViewState extends State<_CourseLearningView>
       );
       return;
     }
-    final index = _progress.indexOf(lecture);
-    if (index < 0) return;
-    await LecturePreviewSheet.show(
+
+    // Curriculum may have arrived after progress hydrate — sync before open.
+    _progress.replaceLectures(widget.course.lectures);
+
+    final published = _published;
+    if (published.isEmpty) return;
+
+    await GatsMainNavigator.push(
       context,
-      courseId: widget.course.id,
-      lecture: lecture,
-      index: index,
-      total: _progress.totalCount,
-      state: _progress.stateOf(lecture),
-      onMarkComplete: () => _markLectureComplete(lecture),
+      LessonPlayerScreen(
+        courseId: widget.course.id,
+        lectures: published,
+        initialLectureId: lecture.id,
+        onMarkComplete: _markLectureComplete,
+      ),
     );
   }
 
@@ -272,6 +279,7 @@ class _CourseLearningViewState extends State<_CourseLearningView>
       tabLabels: [
         AppStrings.courseTabLectures,
         AppStrings.courseTabQuiz,
+        'Flashcard',
         AppStrings.courseTabGroup,
       ],
       hero: CourseLearningHeader(
@@ -325,6 +333,21 @@ class _CourseLearningViewState extends State<_CourseLearningView>
           course: course,
           isMentor: widget.isMentor,
           bottomInset: 0,
+        ),
+        RefreshIndicator(
+          onRefresh: () async {
+            setState(() => _flashcardReloadVersion++);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              FlashcardDeckSection(
+                key: ValueKey('${course.id}:$_flashcardReloadVersion'),
+                courseId: course.id,
+              ),
+            ],
+          ),
         ),
         widget.canAccessChat
             ? GroupChatPanel(

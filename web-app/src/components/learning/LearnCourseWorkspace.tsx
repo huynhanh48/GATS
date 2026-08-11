@@ -16,9 +16,13 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
+  FileText,
+  HelpCircle,
   Lock,
   Menu,
   Moon,
+  PlayCircle,
   RotateCcw,
   Sun,
   X,
@@ -30,7 +34,6 @@ import { HlsVideoPlayer } from "@/components/common/HlsVideoPlayer";
 import { LearnQuizPanel } from "@/components/learning/LearnQuizPanel";
 import { LearnAssignmentPanel } from "@/components/learning/LearnAssignmentPanel";
 import { LearnExtrasPanel } from "@/components/learning/LearnExtrasPanel";
-import { CourseChatPanel } from "@/components/learning/CourseChatPanel";
 import { resolveMediaUrl } from "@/lib/media/url";
 import {
   fetchCourseBySlug,
@@ -66,6 +69,17 @@ type SectionRow = {
 
 function flattenLessons(sections: SectionRow[]): LessonRow[] {
   return sections.flatMap((s) => s.lessons ?? []);
+}
+
+export function isLessonSequentiallyUnlocked(
+  lessons: Array<{ id: string }>,
+  lessonIndex: number,
+  completedIds: Set<string>,
+): boolean {
+  if (lessonIndex < 0 || lessonIndex >= lessons.length) return false;
+  return lessons
+    .slice(0, lessonIndex)
+    .every((lesson) => completedIds.has(lesson.id));
 }
 
 function formatSeconds(total: number) {
@@ -110,8 +124,21 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   const [reloadKey, setReloadKey] = useState(0);
   const [themeMounted, setThemeMounted] = useState(false);
 
-  const lastSavedRef = useRef(0);
-  const lastTickRef = useRef({ watched: 0, duration: 0 });
+  const lastSavedRef = useRef(new Map<string, number>());
+  const progressInFlightRef = useRef(new Set<string>());
+  const lastTickRef = useRef<{
+    watched: number;
+    duration: number;
+    courseId: string | null;
+    lessonId: string | null;
+    videoId: string | null;
+  }>({
+    watched: 0,
+    duration: 0,
+    courseId: null,
+    lessonId: null,
+    videoId: null,
+  });
   const loadRequestRef = useRef(0);
   const pendingPlaybackUrlRef = useRef("");
   const lessons = useMemo(() => flattenLessons(sections), [sections]);
@@ -142,8 +169,9 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
       if (Array.isArray(progress.completedLessonIds)) {
         setCompletedIds(new Set(progress.completedLessonIds));
       }
+      return progress;
     } catch {
-      // ignore
+      return null;
     }
   }, []);
 
@@ -170,6 +198,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         if (cancelled) return;
         if (!courseData?.id) {
           setLoadError("Không tìm thấy khóa học");
+          if (!cancelled) setLoading(false);
           return;
         }
 
@@ -183,6 +212,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
           Boolean(user?.roles?.includes("admin"));
         if (!enrolled && !canMentorCourse) {
           toast.error("Bạn chưa đăng ký khóa học này");
+          if (!cancelled) setLoading(false);
           router.push(`/courses/${slug}`);
           return;
         }
@@ -206,17 +236,69 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
 
         setCourse(courseData);
         setSections(mappedSections);
-        setOpenSections(mappedSections.map((_, i) => i));
-        await refreshCourseProgress(courseData.id);
-
         const flat = flattenLessons(mappedSections);
+
+        // Start lesson fetch ASAP when URL lesson is not hard-locked; progress
+        // unlock may still redirect after. Cache dedupes if loadLesson re-runs.
+        const tentativeLesson =
+          lessonIdProp &&
+          flat.find((lesson) => lesson.id === lessonIdProp && !lesson.locked);
+        if (tentativeLesson) {
+          setActiveLessonId(tentativeLesson.id);
+          const sectionIdx = mappedSections.findIndex((s) =>
+            (s.lessons ?? []).some((l) => l.id === tentativeLesson.id),
+          );
+          setOpenSections(sectionIdx >= 0 ? [sectionIdx] : [0]);
+        }
+
+        // Paint shell before progress / unlock resolve.
+        if (!cancelled) setLoading(false);
+
+        // Prefetch playback in parallel with progress (TTL cache dedupes loadLesson).
+        const progressPromise = refreshCourseProgress(courseData.id);
+        if (
+          tentativeLesson &&
+          (tentativeLesson.type || "video").toLowerCase() === "video"
+        ) {
+          void fetchLessonPlayback(courseData.id, tentativeLesson.id).catch(
+            () => null,
+          );
+        }
+        const progress = await progressPromise;
+        if (cancelled) return;
+
+        const initialCompletedIds = new Set(progress?.completedLessonIds ?? []);
+        const requestedIndex = lessonIdProp
+          ? flat.findIndex((lesson) => lesson.id === lessonIdProp)
+          : -1;
+        const requestedIsUnlocked =
+          requestedIndex >= 0 &&
+          !flat[requestedIndex].locked &&
+          isLessonSequentiallyUnlocked(
+            flat,
+            requestedIndex,
+            initialCompletedIds,
+          );
+        const firstAvailable =
+          flat.find(
+            (lesson, index) =>
+              !lesson.locked &&
+              isLessonSequentiallyUnlocked(flat, index, initialCompletedIds),
+          )?.id ?? null;
         const preferred =
-          (lessonIdProp && flat.find((l) => l.id === lessonIdProp)?.id) ||
-          flat.find((l) => !l.locked)?.id ||
+          (requestedIsUnlocked ? lessonIdProp : null) ||
+          firstAvailable ||
           flat[0]?.id ||
           null;
+        const preferredSectionIdx = mappedSections.findIndex((s) =>
+          (s.lessons ?? []).some((l) => l.id === preferred),
+        );
+        setOpenSections(preferredSectionIdx >= 0 ? [preferredSectionIdx] : [0]);
 
         if (preferred) {
+          if (lessonIdProp && lessonIdProp !== preferred) {
+            toast.info("Hãy hoàn thành bài trước để mở khóa bài này");
+          }
           setActiveLessonId(preferred);
           // Chỉ redirect khi URL chưa có đúng lessonId (tránh remount thừa → hủy HLS)
           if (lessonIdProp !== preferred) {
@@ -226,7 +308,6 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
       } catch (err: any) {
         console.error(err);
         setLoadError(err?.message || "Không tải được khóa học");
-      } finally {
         if (!cancelled) setLoading(false);
       }
     })();
@@ -245,8 +326,14 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
     // Không clear playbackUrl → tránh unmount HLS giữa chừng (canceled m3u8)
     setResumeAt(0);
     setResumePrompt(null);
-    lastSavedRef.current = 0;
-    lastTickRef.current = { watched: 0, duration: 0 };
+    lastSavedRef.current.set(lesson.id, 0);
+    lastTickRef.current = {
+      watched: 0,
+      duration: 0,
+      courseId: course.id,
+      lessonId: lesson.id,
+      videoId: null,
+    };
 
     try {
       if ((lesson.type || "video").toLowerCase() === "video") {
@@ -322,42 +409,91 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   }, [activeLessonId, course?.id]);
 
   const saveProgress = useEffectEvent(
-    async (watched: number, duration: number, force = false) => {
-      if (!course?.id || !activeLessonId) return;
-      if (!force && watched - lastSavedRef.current < 8) return;
-      lastSavedRef.current = watched;
+    async (
+      watched: number,
+      duration: number,
+      force = false,
+      target?: {
+        courseId: string | null;
+        lessonId: string | null;
+        videoId: string | null;
+      },
+    ) => {
+      const courseId = target?.courseId ?? course?.id ?? null;
+      const lessonId = target?.lessonId ?? activeLessonId;
+      const progressVideoId = target?.videoId ?? videoId;
+      if (!courseId || !lessonId || watched <= 0 || duration <= 0) return;
+
+      const lastSaved = lastSavedRef.current.get(lessonId) ?? 0;
+
+      // Pause, ended and effect cleanup may report the same second repeatedly.
+      // Never send an unchanged or older snapshot, even for a forced flush.
+      if (watched <= lastSaved) return;
+      if (!force && watched - lastSaved < 8) return;
+      if (progressInFlightRef.current.has(lessonId)) return;
+
+      progressInFlightRef.current.add(lessonId);
+      lastSavedRef.current.set(lessonId, watched);
       try {
-        const res: any = await upsertLessonProgress(course.id, activeLessonId, {
+        const res: any = await upsertLessonProgress(courseId, lessonId, {
           watched_seconds: watched,
           duration_seconds: duration > 0 ? duration : undefined,
-          video_id: videoId ?? undefined,
+          video_id: progressVideoId ?? undefined,
         });
         if (res?.data?.isCompleted) {
-          setCompletedIds((prev) => new Set(prev).add(activeLessonId));
+          const wasCompleted = completedIds.has(lessonId);
+          setCompletedIds((prev) => {
+            if (prev.has(lessonId)) return prev;
+            const next = new Set(prev);
+            next.add(lessonId);
+            return next;
+          });
+          // Course progress only changes materially when a lesson first completes.
+          if (!wasCompleted) await refreshCourseProgress(courseId);
         }
-        await refreshCourseProgress(course.id);
       } catch {
-        // silent
+        // Allow the same snapshot to be retried after a transient failure, but do
+        // not roll back a newer snapshot that may already have been scheduled.
+        if (lastSavedRef.current.get(lessonId) === watched) {
+          lastSavedRef.current.set(lessonId, lastSaved);
+        }
+      } finally {
+        progressInFlightRef.current.delete(lessonId);
       }
     },
   );
 
   useEffect(() => {
     return () => {
-      const { watched, duration } = lastTickRef.current;
-      if (watched > 0 && duration > 0) {
-        void saveProgress(watched, duration, true);
+      const tick = lastTickRef.current;
+      if (tick.watched > 0 && tick.duration > 0) {
+        void saveProgress(tick.watched, tick.duration, true, tick);
       }
     };
-  }, [activeLessonId, saveProgress]);
+    // Effect Events always read the latest implementation and must not be a
+    // dependency. This cleanup should run only when changing lessons/unmounting.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLessonId]);
 
   const handleTimeUpdate = (watched: number, duration: number) => {
-    lastTickRef.current = { watched, duration };
+    lastTickRef.current = {
+      watched,
+      duration,
+      courseId: course?.id ?? null,
+      lessonId: activeLessonId,
+      videoId,
+    };
     void saveProgress(watched, duration, false);
   };
 
   const handlePauseSave = (watched: number, duration: number) => {
-    lastTickRef.current = { watched, duration };
+    lastTickRef.current = {
+      watched,
+      duration,
+      courseId: course?.id ?? null,
+      lessonId: activeLessonId,
+      videoId,
+    };
     void saveProgress(watched, duration, true);
   };
 
@@ -382,19 +518,39 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
   };
 
   const goRelative = (delta: number) => {
-    const next = lessons[activeIndex + delta];
-    if (!next || next.locked) {
+    const nextIndex = activeIndex + delta;
+    const next = lessons[nextIndex];
+    const locked =
+      Boolean(next?.locked) ||
+      !isLessonSequentiallyUnlocked(lessons, nextIndex, completedIds);
+    if (!next) {
       toast.info(delta > 0 ? "Đây là bài cuối" : "Đây là bài đầu");
+      return;
+    }
+    if (locked) {
+      toast.info("Hãy hoàn thành bài hiện tại để mở khóa bài tiếp theo");
       return;
     }
     navigateLesson(next.id);
     setSidebarOpen(false);
   };
 
+  useEffect(() => {
+    if (!activeLessonId || sections.length === 0) return;
+    const idx = sections.findIndex((s) =>
+      (s.lessons ?? []).some((l) => l.id === activeLessonId),
+    );
+    if (idx < 0) return;
+    setOpenSections((prev) => (prev.includes(idx) ? prev : [...prev, idx]));
+  }, [activeLessonId, sections]);
+
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center font-sans font-bold">
-        Đang tải lớp học...
+      <div className="flex min-h-screen items-center justify-center bg-background font-sans">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Đang tải lớp học…</p>
+        </div>
       </div>
     );
   }
@@ -414,7 +570,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
             <RotateCcw className="w-4 h-4" /> Thử lại
           </button>
           <Link
-            href="/learning"
+            href="/profile?tab=courses"
             className="rounded-xl border border-border px-4 py-2 text-sm font-semibold"
           >
             Về Học tập
@@ -428,13 +584,24 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
     typeof activeLesson?.content === "string" &&
     activeLesson.content.trim().length > 0;
 
+  const lessonTypeIcon = (type: string) => {
+    const t = type.toLowerCase();
+    if (t === "quiz") return HelpCircle;
+    if (t === "assignment") return ClipboardList;
+    if (t === "text") return FileText;
+    return PlayCircle;
+  };
+
   const lessonList = (mobile: boolean) =>
     sections.map((section, sIdx) => {
       const open = openSections.includes(sIdx);
       return (
-        <div key={section.id || sIdx} className={mobile ? "mb-4" : "overflow-hidden border-b border-border last:border-b-0"}>
+        <div
+          key={section.id || sIdx}
+          className={mobile ? "mb-3" : "border-b border-border/70 last:border-b-0"}
+        >
           {mobile ? (
-            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground px-2 mb-1">
+            <p className="mb-1 px-1 text-xs font-semibold text-muted-foreground">
               {section.title}
             </p>
           ) : (
@@ -447,51 +614,90 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
                     : [...prev, sIdx],
                 )
               }
-              className="flex min-h-14 w-full items-center justify-between gap-2 px-5 py-3 text-left text-sm font-bold text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+              className="flex min-h-12 w-full cursor-pointer items-center justify-between gap-2 px-4 py-2.5 text-left text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
             >
               <span className="line-clamp-2">{section.title}</span>
               <ChevronDown
-                className={`w-4 h-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
               />
             </button>
           )}
           {(mobile || open) && (
-            <ul className={mobile ? "space-y-1" : "space-y-0.5 pb-3"}>
-              {(section.lessons ?? []).map((lesson, lessonIndex) => {
+            <ul className={mobile ? "space-y-0.5" : "space-y-0.5 pb-2"}>
+              {(section.lessons ?? []).map((lesson) => {
                 const active = lesson.id === activeLessonId;
                 const done = completedIds.has(lesson.id);
-                const locked = Boolean(lesson.locked);
+                const lessonIndex = lessons.findIndex(
+                  (item) => item.id === lesson.id,
+                );
+                const locked =
+                  Boolean(lesson.locked) ||
+                  !isLessonSequentiallyUnlocked(
+                    lessons,
+                    lessonIndex,
+                    completedIds,
+                  );
                 const type = (lesson.type || "video").toLowerCase();
+                const TypeIcon = lessonTypeIcon(type);
                 return (
                   <li key={lesson.id}>
                     <button
                       type="button"
                       disabled={locked}
                       onClick={() => {
-                        if (locked) return;
+                        if (locked) {
+                          toast.info(
+                            "Hãy hoàn thành bài trước để mở khóa bài này",
+                          );
+                          return;
+                        }
                         navigateLesson(lesson.id);
                         setSidebarOpen(false);
                       }}
-                      className={`relative flex min-h-14 w-full items-start gap-3 px-5 py-3 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${
+                      className={`relative flex min-h-12 w-full cursor-pointer items-start gap-3 px-4 py-2.5 text-left text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? "eb-lesson-active" : ""} ${done ? "eb-lesson-done" : ""} ${
                         active
                           ? mobile
-                            ? "rounded-xl bg-primary/10 text-primary font-bold"
-                            : "bg-primary/[0.08] text-primary font-bold before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-r-full before:bg-primary"
+                            ? "rounded-xl bg-primary/10 font-semibold text-primary"
+                            : "bg-primary/[0.07] font-semibold text-primary before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-r-full before:bg-primary"
                           : locked
-                            ? "opacity-50 cursor-not-allowed"
+                            ? "cursor-not-allowed opacity-45"
                             : mobile
-                              ? "rounded-xl hover:bg-muted text-foreground"
-                              : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                              ? "rounded-xl text-foreground hover:bg-muted"
+                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                       }`}
                     >
-                      <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[11px] font-black ${done ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
-                        {locked ? <Lock className="h-3.5 w-3.5" /> : done ? <CheckCircle2 className="h-4 w-4" /> : lessonIndex + 1}
+                      <span
+                        className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md ${
+                          done
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                            : active
+                              ? "bg-primary/15 text-primary"
+                              : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {locked ? (
+                          <Lock className="h-3.5 w-3.5" />
+                        ) : done ? (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        ) : (
+                          <TypeIcon className="h-3.5 w-3.5" />
+                        )}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 block leading-5">{lesson.title}</span>
-                        <span className="mt-1 block text-[11px] font-medium text-muted-foreground">
-                          {type === "quiz" ? "Bài kiểm tra" : type === "assignment" ? "Bài tập" : "Video bài học"}
-                          {lesson.duration ? ` · ${Math.ceil(lesson.duration / 60)} phút` : ""}
+                        <span className="line-clamp-2 block leading-5">
+                          {lesson.title}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] font-medium text-muted-foreground">
+                          {type === "quiz"
+                            ? "Quiz"
+                            : type === "assignment"
+                              ? "Bài tập"
+                              : type === "text"
+                                ? "Bài đọc"
+                                : "Video"}
+                          {lesson.duration
+                            ? ` · ${Math.ceil(lesson.duration / 60)} phút`
+                            : ""}
                         </span>
                       </span>
                     </button>
@@ -506,185 +712,198 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background font-sans text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/90 shadow-sm backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[1536px] items-center gap-3 px-3 sm:px-5">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-background/95 backdrop-blur-md">
+        <div className="mx-auto flex h-14 max-w-[1536px] items-center gap-3 px-3 sm:px-5">
           <Link
-            href="/learning"
-            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            href="/profile?tab=courses"
+            className="inline-flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Khóa của tôi</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Học tập</span>
           </Link>
-          <div className="min-w-0 flex-1 border-l border-border pl-4">
-            <h1 className="truncate text-sm font-bold text-foreground sm:text-base">{course.title}</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {courseProgress.percent}% · {courseProgress.completedLessons}/
-              {courseProgress.totalLessons} bài
-            </p>
+          <div className="min-w-0 flex-1 border-l border-border pl-3 sm:pl-4">
+            <h1 className="truncate text-sm font-semibold sm:text-[15px]">
+              {course.title}
+            </h1>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground shadow-sm sm:flex">
-            <span className="h-2 w-2 rounded-full bg-primary" />
-            {courseProgress.percent}% hoàn thành
+          <div className="hidden items-center gap-2 rounded-full bg-muted/80 px-3 py-1.5 text-xs font-semibold text-foreground sm:flex">
+            {courseProgress.percent}% · {courseProgress.completedLessons}/
+            {courseProgress.totalLessons}
           </div>
           {themeMounted ? (
             <button
               type="button"
-              onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-              className="grid min-h-11 min-w-11 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              aria-label={resolvedTheme === "dark" ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+              onClick={() =>
+                setTheme(resolvedTheme === "dark" ? "light" : "dark")
+              }
+              className="grid min-h-10 min-w-10 cursor-pointer place-items-center rounded-lg text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={
+                resolvedTheme === "dark"
+                  ? "Chuyển sang giao diện sáng"
+                  : "Chuyển sang giao diện tối"
+              }
             >
-              {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
             </button>
           ) : null}
           <button
             type="button"
-            className="grid min-h-11 min-w-11 place-items-center rounded-xl border border-border bg-card transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
+            className="grid min-h-10 min-w-10 cursor-pointer place-items-center rounded-lg border border-border transition duration-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden"
             onClick={() => setSidebarOpen(true)}
             aria-label="Mở mục lục"
           >
-            <Menu className="w-5 h-5" />
+            <Menu className="h-5 w-5" />
           </button>
-        </div>
-        <div className="h-1 bg-muted">
-          <div
-            className="h-full bg-primary transition-all duration-500"
-            style={{ width: `${courseProgress.percent}%` }}
-          />
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1536px] flex-1 items-start gap-5 px-3 py-5 sm:px-5 lg:py-6">
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+      <div className="mx-auto flex w-full max-w-[1536px] flex-1 items-start gap-6 px-3 py-4 sm:px-5 lg:py-6">
+        <main className="flex min-w-0 flex-1 flex-col">
           {lessonType === "video" ? (
-            <div className="flex justify-center bg-muted/40 p-2 sm:p-3 lg:p-4">
-            <div className="relative aspect-video w-full max-w-[1180px] overflow-hidden rounded-2xl bg-black shadow-xl shadow-black/20 ring-1 ring-black/10 dark:ring-white/10">
-              {playbackUrl && resumePrompt == null ? (
-                <HlsVideoPlayer
-                  url={playbackUrl}
-                  initialTime={resumeAt > 5 ? resumeAt : undefined}
-                  onTimeUpdate={handleTimeUpdate}
-                  onPlaybackPause={handlePauseSave}
-                />
-              ) : resumePrompt != null ? (
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-muted-foreground text-sm">
-                  Chọn tiếp tục hoặc xem từ đầu…
-                </div>
-              ) : loadingLesson ? (
-                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
-                  Đang tải bài học…
-                </div>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-muted-foreground text-sm">
-                  {hasContent || activeLesson?.linkedPost
-                    ? "Bài học chưa có video — xem nội dung bên dưới."
-                    : "Video chưa sẵn sàng cho bài này."}
-                </div>
-              )}
+            <div className="w-full">
+              <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black shadow-lg shadow-black/15">
+                {playbackUrl && resumePrompt == null ? (
+                  <HlsVideoPlayer
+                    url={playbackUrl}
+                    initialTime={resumeAt > 5 ? resumeAt : undefined}
+                    onTimeUpdate={handleTimeUpdate}
+                    onPlaybackPause={handlePauseSave}
+                  />
+                ) : resumePrompt != null ? (
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-white/70">
+                    Chọn tiếp tục hoặc xem từ đầu…
+                  </div>
+                ) : loadingLesson ? (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-white/70">
+                    Đang tải bài học…
+                  </div>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-white/70">
+                    {hasContent || activeLesson?.linkedPost
+                      ? "Bài học chưa có video — xem nội dung bên dưới."
+                      : "Video chưa sẵn sàng cho bài này."}
+                  </div>
+                )}
 
-              {resumePrompt != null ? (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4">
-                  <div className="bg-card text-card-foreground rounded-2xl p-5 max-w-sm w-full space-y-4 shadow-xl">
-                    <p className="font-bold">Tiếp tục xem?</p>
-                    <p className="text-sm text-muted-foreground">
-                      Bạn đã xem đến {formatSeconds(resumePrompt)}. Muốn tiếp tục
-                      hay xem từ đầu?
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 rounded-xl bg-primary text-primary-foreground py-2 text-sm font-bold"
-                        onClick={() => {
-                          setResumeAt(resumePrompt);
-                          setPlaybackUrl(pendingPlaybackUrlRef.current);
-                          pendingPlaybackUrlRef.current = "";
-                          setResumePrompt(null);
-                        }}
-                      >
-                        Tiếp tục
-                      </button>
-                      <button
-                        type="button"
-                        className="flex-1 rounded-xl border border-border py-2 text-sm font-semibold"
-                        onClick={() => {
-                          setResumeAt(0);
-                          setPlaybackUrl(pendingPlaybackUrlRef.current);
-                          pendingPlaybackUrlRef.current = "";
-                          setResumePrompt(null);
-                        }}
-                      >
-                        Từ đầu
-                      </button>
+                {resumePrompt != null ? (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4">
+                    <div className="w-full max-w-sm space-y-4 rounded-2xl bg-card p-5 text-card-foreground shadow-xl">
+                      <p className="font-semibold">Tiếp tục xem?</p>
+                      <p className="text-sm text-muted-foreground">
+                        Bạn đã xem đến {formatSeconds(resumePrompt)}. Muốn tiếp
+                        tục hay xem từ đầu?
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="min-h-10 flex-1 cursor-pointer rounded-xl bg-primary py-2 text-sm font-semibold text-primary-foreground"
+                          onClick={() => {
+                            setResumeAt(resumePrompt);
+                            setPlaybackUrl(pendingPlaybackUrlRef.current);
+                            pendingPlaybackUrlRef.current = "";
+                            setResumePrompt(null);
+                          }}
+                        >
+                          Tiếp tục
+                        </button>
+                        <button
+                          type="button"
+                          className="min-h-10 flex-1 cursor-pointer rounded-xl border border-border py-2 text-sm font-medium"
+                          onClick={() => {
+                            setResumeAt(0);
+                            setPlaybackUrl(pendingPlaybackUrlRef.current);
+                            pendingPlaybackUrlRef.current = "";
+                            setResumePrompt(null);
+                          }}
+                        >
+                          Từ đầu
+                        </button>
+                      </div>
                     </div>
                   </div>
+                ) : null}
+              </div>
+              {audioFlacUrl ? (
+                <div className="mt-2 flex w-full justify-end">
+                  <a
+                    href={audioFlacUrl}
+                    download
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    Tải audio FLAC
+                  </a>
                 </div>
               ) : null}
             </div>
-            {audioFlacUrl ? (
-              <div className="mt-2 flex w-full max-w-[1180px] justify-end">
-                <a
-                  href={audioFlacUrl}
-                  download
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  Tải audio FLAC
-                </a>
-              </div>
-            ) : null}
-            </div>
           ) : null}
 
-          <div className="space-y-5 border-y border-border bg-card p-5 sm:p-7">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="mb-1 text-xs font-bold uppercase tracking-[0.16em] text-primary">Bài {activeIndex + 1} / {lessons.length}</p>
-                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
-                  {activeLesson?.title ?? "Chọn bài học"}
-                </h2>
-                {activeLessonId && completedIds.has(activeLessonId) ? (
-                  <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Đã hoàn thành
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => goRelative(-1)}
-                  disabled={activeIndex <= 0}
-                  className="inline-flex min-h-11 items-center gap-1 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Trước
-                </button>
-                <button
-                  type="button"
-                  onClick={() => goRelative(1)}
-                  disabled={
-                    activeIndex < 0 || activeIndex >= lessons.length - 1
-                  }
-                  className="inline-flex min-h-11 items-center gap-1 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                >
-                  Sau <ChevronRight className="w-4 h-4" />
-                </button>
-                {lessonType === "video" || lessonType === "text" ? (
-                  <button
-                    type="button"
-                    onClick={() => void markComplete()}
-                    disabled={!activeLessonId}
-                    className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-primary/90 disabled:opacity-40 motion-reduce:transform-none"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    Hoàn thành
-                  </button>
-                ) : null}
-              </div>
+          <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-muted-foreground">
+                Bài {activeIndex + 1} / {lessons.length}
+              </p>
+              <h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
+                {activeLesson?.title ?? "Chọn bài học"}
+              </h2>
+              {activeLessonId && completedIds.has(activeLessonId) ? (
+                <p className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Đã hoàn thành
+                </p>
+              ) : null}
             </div>
-
+            <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto">
+              <button
+                type="button"
+                onClick={() => goRelative(-1)}
+                disabled={activeIndex <= 0}
+                className="inline-flex min-h-10 cursor-pointer items-center gap-1 rounded-xl border border-border bg-background px-3.5 py-2 text-sm font-medium text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronLeft className="h-4 w-4" /> Trước
+              </button>
+              <button
+                type="button"
+                onClick={() => goRelative(1)}
+                disabled={
+                  activeIndex < 0 ||
+                  activeIndex >= lessons.length - 1 ||
+                  Boolean(lessons[activeIndex + 1]?.locked) ||
+                  !isLessonSequentiallyUnlocked(
+                    lessons,
+                    activeIndex + 1,
+                    completedIds,
+                  )
+                }
+                title={
+                  activeLessonId && !completedIds.has(activeLessonId)
+                    ? "Hoàn thành bài hiện tại để mở khóa bài tiếp theo"
+                    : undefined
+                }
+                className="inline-flex min-h-10 cursor-pointer items-center gap-1 rounded-xl border border-border bg-background px-3.5 py-2 text-sm font-medium text-muted-foreground transition duration-200 hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                Sau <ChevronRight className="h-4 w-4" />
+              </button>
+              {lessonType === "video" || lessonType === "text" ? (
+                <button
+                  type="button"
+                  onClick={() => void markComplete()}
+                  disabled={!activeLessonId}
+                  className="eb-complete-button ml-auto inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition duration-200 hover:bg-primary/90 disabled:opacity-40 sm:ml-0"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Hoàn thành
+                </button>
+              ) : null}
+            </div>
           </div>
-          <div className="min-h-40 space-y-5 bg-muted/20 p-5 text-foreground sm:p-7 lg:p-10">
 
+          <div className="mt-6 space-y-6 border-t border-border/70 pt-6">
             {lessonType === "quiz" && course?.id && activeLessonId ? (
               <LearnQuizPanel
                 courseId={course.id}
@@ -706,7 +925,7 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
 
             {hasContent ? (
               <div
-                className="prose prose-sm dark:prose-invert mx-auto max-w-4xl rounded-2xl border border-border bg-card p-5 sm:p-8"
+                className="prose dark:prose-invert mx-auto w-full max-w-4xl rounded-2xl bg-muted/25 px-4 py-5 text-[16px] leading-7 sm:px-6 sm:py-6"
                 dangerouslySetInnerHTML={{ __html: activeLesson!.content! }}
               />
             ) : null}
@@ -714,16 +933,16 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
             {activeLesson?.linkedPost ? (
               <Link
                 href={`/posts/${activeLesson.linkedPost.slug}`}
-                className="group mx-auto block max-w-4xl rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+                className="group mx-auto block max-w-4xl rounded-2xl border border-border/70 bg-muted/20 p-4 transition duration-200 hover:border-primary/35 hover:bg-muted/35"
               >
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                <p className="mb-1 text-xs font-medium text-muted-foreground">
                   Bài viết liên quan
                 </p>
-                <p className="font-semibold text-foreground">
+                <p className="font-semibold text-foreground group-hover:text-primary">
                   {activeLesson.linkedPost.title}
                 </p>
                 {activeLesson.linkedPost.excerpt ? (
-                  <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                     {activeLesson.linkedPost.excerpt}
                   </p>
                 ) : null}
@@ -731,26 +950,25 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
             ) : null}
 
             {course?.id && activeLessonId ? (
-              <LearnExtrasPanel courseId={course.id} lessonId={activeLessonId} />
-            ) : null}
-
-            {course?.id && user?.id ? (
-              <CourseChatPanel courseId={course.id} currentUserId={user.id} />
+              <LearnExtrasPanel
+                courseId={course.id}
+                lessonId={activeLessonId}
+              />
             ) : null}
           </div>
         </main>
 
-        <aside className="sticky top-20 hidden max-h-[calc(100vh-6rem)] w-[350px] shrink-0 flex-col self-start overflow-hidden rounded-3xl border border-border bg-card text-foreground shadow-sm lg:flex xl:w-[370px]">
-          <div className="border-b border-border p-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Lộ trình học</p>
-            <div className="mt-1 flex items-end justify-between gap-3">
-              <h3 className="text-lg font-bold text-foreground">Nội dung khóa học</h3>
-              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
-                {courseProgress.completedLessons}/{courseProgress.totalLessons} bài
+        <aside className="sticky top-16 hidden max-h-[calc(100vh-5rem)] w-[320px] shrink-0 flex-col self-start overflow-hidden rounded-2xl border border-border/80 bg-card xl:w-[340px] lg:flex">
+          <div className="border-b border-border/70 p-4">
+            <div className="flex items-end justify-between gap-3">
+              <h3 className="text-sm font-semibold">Nội dung khóa học</h3>
+              <span className="text-xs font-medium text-muted-foreground">
+                {courseProgress.completedLessons}/{courseProgress.totalLessons}{" "}
+                bài
               </span>
             </div>
             <div
-              className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted"
+              className="mt-3 h-1 overflow-hidden rounded-full bg-muted"
               role="progressbar"
               aria-label="Tiến độ khóa học"
               aria-valuemin={0}
@@ -758,14 +976,12 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
               aria-valuenow={courseProgress.percent}
             >
               <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
+                className="h-full rounded-full bg-primary transition-all duration-500 motion-reduce:transition-none"
                 style={{ width: `${courseProgress.percent}%` }}
               />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            {lessonList(false)}
-          </div>
+          <div className="flex-1 overflow-y-auto">{lessonList(false)}</div>
         </aside>
       </div>
 
@@ -773,26 +989,29 @@ export function LearnCourseWorkspace({ slug, lessonId: lessonIdProp }: Props) {
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <button
             type="button"
-            className="flex-1 bg-slate-950/70 backdrop-blur-sm"
+            className="flex-1 bg-black/60 backdrop-blur-sm"
             aria-label="Đóng"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="h-full w-[88vw] max-w-sm overflow-y-auto border-l border-border bg-card p-4 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="flex h-full w-[88vw] max-w-sm flex-col border-l border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border/70 p-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Lộ trình học</p>
-                <h3 className="mt-1 font-black">Nội dung khóa học</h3>
+                <h3 className="font-semibold">Nội dung khóa học</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {courseProgress.percent}% · {courseProgress.completedLessons}/
+                  {courseProgress.totalLessons} bài
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="grid min-h-11 min-w-11 place-items-center rounded-xl hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="grid min-h-10 min-w-10 cursor-pointer place-items-center rounded-lg hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-label="Đóng mục lục"
               >
-                <X className="w-5 h-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
-            {lessonList(true)}
+            <div className="flex-1 overflow-y-auto p-3">{lessonList(true)}</div>
           </div>
         </div>
       ) : null}

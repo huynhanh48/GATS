@@ -178,11 +178,10 @@ export function VideoUploader({
 
         if (isProcessingStatus(updated.status)) {
           pollTimerRef.current = setTimeout(tick, POLL_INTERVAL_MS);
-        } else if (updated.status === "ready") {
-          toast.success("Video đã xử lý xong, sẵn sàng phát!");
         } else if (updated.status === "failed") {
           toast.error(updated.errorMessage || "Xử lý video thất bại");
         }
+        // ready: no toast here — video-upload-manager owns completion toast
       };
 
       void tick();

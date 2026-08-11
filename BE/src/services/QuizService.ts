@@ -9,6 +9,8 @@ import type {
 } from '@src/models/Quiz.model';
 import { shuffleArray } from '@src/models/Quiz.model';
 import * as AssignmentRepo from '@src/repos/AssignmentRepo';
+import * as CourseRepo from '@src/repos/CourseRepo';
+import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
 import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
 import * as QuizRepo from '@src/repos/QuizRepo';
@@ -30,6 +32,7 @@ const Errors = {
   INVALID_LESSON_TYPE_CHANGE: 'Cannot change lesson type when quiz data exists',
   INVALID_REORDER: 'Invalid question reorder payload',
   INVALID_SUBMISSION: 'Invalid quiz submission',
+  COURSE_NOT_FOUND: 'Course not found',
 } as const;
 
 async function assertQuizLesson(courseId: string, lessonId: string) {
@@ -382,8 +385,13 @@ async function submitQuiz(
       (item) => item.questionId === question.id,
     );
     let grade = { score: 0, isCorrect: false };
+    let selectedAnswer: string | null = null;
 
     if (answer && question.type === 'single_choice') {
+      selectedAnswer =
+        question.answers.find(
+          (option) => option.id === answer.selectedAnswerId,
+        )?.answer ?? null;
       grade = gradeSingleChoiceQuestion(
         question,
         question.answers,
@@ -392,6 +400,7 @@ async function submitQuiz(
     }
 
     if (answer && question.type === 'fill_blank') {
+      selectedAnswer = answer.textAnswer?.trim() || null;
       grade = gradeFillBlankQuestion(
         question,
         answer.textAnswer,
@@ -401,9 +410,19 @@ async function submitQuiz(
 
     return {
       questionId: question.id,
+      question: question.question,
       isCorrect: grade.isCorrect,
       score: grade.score,
-      explanation: question.explanation,
+      maxScore: question.points,
+      selectedAnswer,
+      correctAnswers: question.answers
+        .filter((option) => option.isCorrect)
+        .sort((a, b) => a.order - b.order)
+        .map((option) => option.answer),
+      explanation:
+        quiz.showExplanation && question.explanation
+          ? question.explanation
+          : undefined,
     };
   });
 
@@ -469,6 +488,42 @@ export async function assertLessonTypeChangeAllowed(
   }
 }
 
+async function listAiQuizTargets(courseId: string) {
+  const course = await CourseRepo.findById(courseId);
+  if (!course) {
+    throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.COURSE_NOT_FOUND);
+  }
+
+  const [sections, lessons] = await Promise.all([
+    CourseSectionRepo.listByCourse(courseId),
+    LessonRepo.listByCourse(courseId),
+  ]);
+  const sectionById = new Map(
+    sections.map((section) => [section.id, section]),
+  );
+  const quizLessons = lessons.filter((lesson) => lesson.type === 'quiz');
+  const quizzes = await Promise.all(
+    quizLessons.map((lesson) => QuizRepo.findByLessonId(lesson.id)),
+  );
+
+  return {
+    data: quizLessons.map((lesson, index) => {
+      const section = sectionById.get(lesson.sectionId);
+      const quizId = quizzes[index]?.id ?? null;
+      const sectionTitle = section?.title ?? 'Chương chưa xác định';
+      return {
+        lessonId: lesson.id,
+        lessonTitle: lesson.title,
+        sectionId: lesson.sectionId,
+        sectionTitle,
+        quizId,
+        hasQuiz: Boolean(quizId),
+        label: `${sectionTitle} · ${lesson.title}`,
+      };
+    }),
+  };
+}
+
 export default {
   Errors,
   create,
@@ -484,4 +539,5 @@ export default {
   removeQuestion,
   reorderQuestions,
   assertLessonTypeChangeAllowed,
+  listAiQuizTargets,
 };

@@ -25,7 +25,7 @@ const sections = [
   { id: "changes", title: "Thay đổi điều khoản" },
 ] as const;
 
-const headingClass = "scroll-mt-28 pt-5 text-xl font-bold text-foreground";
+const headingClass = "scroll-mt-28 pt-6 text-2xl font-bold text-foreground";
 
 export default function TermsPage() {
   return (
@@ -34,11 +34,18 @@ export default function TermsPage() {
       summary="Các điều khoản điều chỉnh việc tạo tài khoản, mua và học khóa học, sử dụng tính năng cộng đồng, nội dung và công cụ AI của GATS Academy."
       sections={sections}
     >
+      <div className="space-y-5 text-[1.6rem] leading-8">
       <p>
         Vui lòng đọc kỹ trước khi sử dụng dịch vụ. Điều khoản này được áp dụng
         cùng <Link href="/privacy">Chính sách quyền riêng tư</Link>,{" "}
         <Link href="/payment-policy">Chính sách thanh toán</Link>,{" "}
         <Link href="/refund">Chính sách hoàn tiền</Link> và các quy tắc liên quan.
+      </p>
+      <p>
+        Điều khoản tạo thành thỏa thuận giữa người dùng và GATS Academy trong suốt
+        quá trình truy cập nền tảng. Nếu bạn sử dụng dịch vụ thay mặt doanh nghiệp
+        hoặc tổ chức, bạn xác nhận mình có đủ thẩm quyền chấp thuận thỏa thuận này
+        cho đơn vị đó và chịu trách nhiệm về tính chính xác của thông tin cung cấp.
       </p>
 
       <h2 id="acceptance" className={headingClass}>1. Chấp thuận điều khoản</h2>
@@ -61,6 +68,12 @@ export default function TermsPage() {
         hoạt động hợp lệ phát sinh từ tài khoản. Hãy báo ngay khi nghi ngờ truy
         cập trái phép.
       </p>
+      <p>
+        Người dùng nên sử dụng mật khẩu mạnh, không dùng lại mật khẩu ở dịch vụ
+        khác và đăng xuất khỏi thiết bị dùng chung. GATS Academy có thể yêu cầu xác
+        minh bổ sung, đặt lại thông tin đăng nhập hoặc tạm khóa phiên hoạt động khi
+        phát hiện dấu hiệu bất thường nhằm bảo vệ tài khoản và dữ liệu học tập.
+      </p>
 
       <h2 id="license" className={headingClass}>4. Quyền truy cập khóa học</h2>
       <p>
@@ -68,6 +81,12 @@ export default function TermsPage() {
         hạn, không độc quyền và không được chuyển nhượng đối với khóa học đã
         mua. “Truy cập trọn đời”, nếu được hiển thị, nghĩa là trong thời gian
         khóa học và nền tảng còn được GATS Academy duy trì hợp lý.
+      </p>
+      <p>
+        Nội dung, giảng viên, bài tập và lịch phát hành có thể được cập nhật để đảm
+        bảo chất lượng chuyên môn. Việc cập nhật hợp lý không làm phát sinh quyền
+        sao chép, tải xuống hàng loạt hoặc chuyển quyền học cho tài khoản khác.
+        Quyền truy cập có thể phụ thuộc vào yêu cầu kỹ thuật và trạng thái tài khoản.
       </p>
 
       <h2 id="user-content" className={headingClass}>5. Nội dung người dùng</h2>
@@ -102,6 +121,13 @@ export default function TermsPage() {
         hàng. Đơn chuyển khoản chỉ được xác nhận sau khi đối soát thành công.
         Mã giảm giá không có giá trị quy đổi thành tiền và có thể kèm điều kiện
         riêng. Xem thêm <Link href="/payment-policy">Chính sách thanh toán</Link>.
+      </p>
+      <p>
+        Người dùng có trách nhiệm kiểm tra tên khóa học, số tiền và nội dung chuyển
+        khoản trước khi xác nhận. Trường hợp thanh toán thiếu, thừa, trùng hoặc sai
+        nội dung sẽ được đối soát theo thông tin ngân hàng thực nhận và có thể cần
+        thêm thời gian xử lý. GATS Academy không yêu cầu cung cấp mật khẩu ngân hàng
+        hay mã OTP qua tin nhắn, cuộc gọi hoặc biểu mẫu hỗ trợ.
       </p>
 
       <h2 id="intellectual-property" className={headingClass}>9. Sở hữu trí tuệ</h2>
@@ -148,6 +174,7 @@ export default function TermsPage() {
         luật. Phiên bản mới có hiệu lực từ ngày được ghi trên trang; thay đổi
         quan trọng có thể được thông báo qua email hoặc trong ứng dụng.
       </p>
+      </div>
     </LegalPageShell>
   );
 }

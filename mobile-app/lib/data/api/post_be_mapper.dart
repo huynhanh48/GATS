@@ -1,7 +1,7 @@
-import 'package:gats_academy/core/utils/html_plain_text.dart';
 import 'package:gats_academy/core/utils/media_url.dart';
 import 'package:gats_academy/data/mock/models/post_models.dart';
 import 'package:gats_academy/features/auth/models/user_role.dart';
+import 'package:gats_academy/core/utils/html_plain_text.dart';
 
 /// Map JSON từ BE post/comment → model UI mobile.
 abstract final class PostBeMapper {
@@ -22,9 +22,22 @@ abstract final class PostBeMapper {
     final rawBody = (content != null && content.isNotEmpty)
         ? content
         : (excerpt ?? '');
-    final body = HtmlPlainText.from(rawBody);
+    // Keep HTML/markdown so detail can render headings like web.
+    final body = rawBody.trim();
 
     final status = json['status'] as String? ?? 'published';
+
+    String? categoryId;
+    String? categoryName;
+    String? categorySlug;
+    final category = json['category'];
+    if (category is Map) {
+      categoryId = category['id']?.toString();
+      categoryName = category['name']?.toString();
+      categorySlug = category['slug']?.toString();
+    } else {
+      categoryId = json['categoryId']?.toString();
+    }
 
     return CommunityPost(
       id: json['id'] as String? ?? '',
@@ -37,6 +50,9 @@ abstract final class PostBeMapper {
       coverImage: MediaUrl.resolve(json['thumbnail'] as String?),
       publishedAt: publishedAt,
       isPublished: status == 'published',
+      categoryId: categoryId,
+      categoryName: categoryName,
+      categorySlug: categorySlug,
     );
   }
 

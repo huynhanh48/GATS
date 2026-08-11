@@ -17,13 +17,6 @@ const inter = localFont({
   weight: "100 900",
 });
 
-const outfit = localFont({
-  src: "../fonts/Outfit-Variable.ttf",
-  variable: "--font-outfit",
-  display: "swap",
-  weight: "100 900",
-});
-
 export const metadata: Metadata = {
   title: {
     template: "%s | GATS Academy Admin",
@@ -38,7 +31,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
     <html
       lang="vi"
       suppressHydrationWarning
-      className={`${inter.variable} ${outfit.variable} font-sans antialiased`}
+      className={`${inter.variable} font-sans antialiased`}
     >
       <body suppressHydrationWarning className="font-sans">
         <Providers>

@@ -55,14 +55,30 @@ android {
 
     buildTypes {
         release {
-            // Prefer release keystore; debug fallback for local smoke only — not for Play Store.
-            signingConfig =
-                if (hasReleaseKeystore) {
-                    signingConfigs.getByName("release")
-                } else {
-                    signingConfigs.getByName("debug")
-                }
+            // Only attach release signing when key.properties exists.
+            // Do NOT check() here — Gradle configures release even for assembleDebug
+            // (`flutter run`), which must keep working without a store keystore.
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
+    }
+}
+
+// Fail only when a real release artifact is requested (Play Store / CI).
+gradle.taskGraph.whenReady {
+    val needsReleaseKeystore =
+        allTasks.any { task ->
+            val n = task.name
+            (n.startsWith("assemble") || n.startsWith("bundle") || n.startsWith("sign")) &&
+                n.contains("Release", ignoreCase = true)
+        }
+    if (needsReleaseKeystore && !hasReleaseKeystore) {
+        throw GradleException(
+            "Missing android/key.properties — required for release/Play Store builds. " +
+                "Copy android/key.properties.example and point storeFile at your keystore. " +
+                "Debug (`flutter run` / assembleDebug) does not need it.",
+        )
     }
 }
 

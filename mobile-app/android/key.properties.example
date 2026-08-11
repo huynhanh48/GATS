@@ -1,5 +1,11 @@
-# Copy to android/key.properties (do not commit) and point storeFile to your .jks/.keystore.
-storePassword=
-keyPassword=
-keyAlias=
-storeFile=
+# Copy to android/key.properties (do NOT commit real secrets).
+# Generate keystore:
+#   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# Then register SHA-1 / SHA-256 of this keystore in Google Cloud Console
+# (Android OAuth client for package com.gat.academy).
+
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=upload
+storeFile=../upload-keystore.jks

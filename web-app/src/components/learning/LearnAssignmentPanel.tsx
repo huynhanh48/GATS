@@ -77,22 +77,22 @@ export function LearnAssignmentPanel({
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-8 flex items-center justify-center gap-2 text-muted-foreground">
-        <Loader2 className="w-5 h-5 animate-spin" /> Đang tải bài tập…
+      <div className="flex items-center justify-center gap-2 rounded-2xl bg-muted/20 p-8 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" /> Đang tải bài tập…
       </div>
     );
   }
 
   if (error || !assignment) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6 space-y-3">
+      <div className="space-y-3 rounded-2xl bg-muted/20 p-5">
         <p className="text-sm text-destructive">{error || "Không có bài tập"}</p>
         <button
           type="button"
           onClick={() => void load()}
-          className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
         >
-          <RotateCcw className="w-4 h-4" /> Thử lại
+          <RotateCcw className="h-4 w-4" /> Thử lại
         </button>
       </div>
     );
@@ -101,16 +101,14 @@ export function LearnAssignmentPanel({
   const latest = assignment.latestSubmission;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 space-y-5">
+    <div className="space-y-5 rounded-2xl bg-muted/20 p-4 sm:p-5">
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-primary mb-1">
-          Assignment
-        </p>
-        <h3 className="text-lg font-bold flex items-center gap-2">
-          <FileText className="w-5 h-5" />
+        <p className="mb-1 text-xs font-medium text-primary">Bài tập</p>
+        <h3 className="flex items-center gap-2 text-lg font-semibold">
+          <FileText className="h-5 w-5" />
           {assignment.title || "Bài tập"}
         </h3>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="mt-1 text-sm text-muted-foreground">
           Điểm tối đa {assignment.maxScore}
           {assignment.dueAt
             ? ` · Hạn ${new Date(assignment.dueAt).toLocaleString("vi-VN")}`
@@ -121,7 +119,7 @@ export function LearnAssignmentPanel({
       </div>
 
       {latest ? (
-        <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm space-y-1">
+        <div className="space-y-1 rounded-xl bg-background/60 p-4 text-sm">
           <p className="font-semibold">
             Lần nộp gần nhất:{" "}
             <span className="capitalize">{latest.status}</span>
@@ -150,7 +148,7 @@ export function LearnAssignmentPanel({
               onChange={(e) => setText(e.target.value)}
               rows={5}
               placeholder="Nội dung bài làm…"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-border/60 bg-background/80 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
             />
           ) : null}
           {allowUrl ? (
@@ -159,7 +157,7 @@ export function LearnAssignmentPanel({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://…"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-border/60 bg-background/80 px-3 py-2 text-sm outline-none transition focus:border-primary/40 focus:ring-2 focus:ring-primary/10"
             />
           ) : null}
           {!allowText && !allowUrl ? (
@@ -171,7 +169,7 @@ export function LearnAssignmentPanel({
               type="button"
               disabled={submitting}
               onClick={() => void onSubmit()}
-              className="rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-bold hover:bg-primary/90 disabled:opacity-50"
+              className="cursor-pointer rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
             >
               {submitting ? "Đang nộp..." : "Nộp bài"}
             </button>

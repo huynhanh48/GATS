@@ -4,6 +4,7 @@ import AssignmentPaths from '@src/common/paths/assignment';
 import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
+import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
 
 import assignmentHandlers from './assignmentRouter';
@@ -54,6 +55,7 @@ assignmentRouter.get(
 assignmentRouter.post(
   AssignmentPaths.Assignment.Submissions.Submit,
   errorHandle(authMiddleware),
+  errorHandle(idempotencyMiddleware('assignment.submit')),
   assignmentHandlers.submitAssignment,
 );
 

@@ -7,6 +7,9 @@ const EnrollmentPaths = {
     Update: '/:userId',
     Revoke: '/:userId',
     Learners: '/learners',
+    LearnersExportCsv: '/learners/export.csv',
+    LearnerExerciseHistory: '/learners/:userId/exercise-history',
+    LearnerAiCoach: '/learners/:userId/ai-coach',
   },
   Me: {
     _: '/me/enrollments',

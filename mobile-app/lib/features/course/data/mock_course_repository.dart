@@ -32,13 +32,9 @@ final class MockCourseRepository implements CourseRepository {
   @override
   List<CourseItem> listOwned({String? userId, UserRole role = UserRole.user}) {
     if (userId == null) return [];
-    if (role == UserRole.admin) {
-      return listPublished(userId: userId, role: role);
-    }
     return listPublished(userId: userId, role: role).where((c) {
       final course = getCourse(c.id);
       if (course == null) return false;
-      if (role == UserRole.mentor && course.isManagedBy(userId)) return true;
       return course.isOwnedBy(userId);
     }).toList();
   }
@@ -47,8 +43,6 @@ final class MockCourseRepository implements CourseRepository {
   bool isOwned(String courseId, String? userId, {UserRole role = UserRole.user}) {
     final course = getCourse(courseId);
     if (course == null) return false;
-    if (role == UserRole.admin) return true;
-    if (role == UserRole.mentor && userId == course.mentorId) return true;
     return course.isOwnedBy(userId);
   }
 

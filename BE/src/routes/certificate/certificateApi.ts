@@ -41,5 +41,12 @@ certificateRouter.post(
   certificateHandlers.adminRevoke,
 );
 
+certificateRouter.post(
+  CertificatePaths.Certificate.AdminReissue,
+  errorHandle(authMiddleware),
+  errorHandle(requireStaff),
+  certificateHandlers.adminReissue,
+);
+
 apiRouter.use(CertificatePaths.Certificate._, certificateRouter);
 export default apiRouter;

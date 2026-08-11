@@ -127,7 +127,8 @@ class PillTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final useFill = tabs.length <= 3;
+    // Equal-width pills look better for 2–4 course tabs; scroll only when crowded.
+    final useFill = tabs.length <= 4;
     final trackRadius = BorderRadius.circular(AppRadius.lg);
 
     return Container(
@@ -186,6 +187,10 @@ class _FillPillTabBar extends StatelessWidget {
                         child: _PillTabLabel(
                           label: tabs[index],
                           selected: selected,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 10,
+                          ),
                           onTap: () {
                             if (controller.index != index) {
                               controller.animateTo(index);
@@ -272,16 +277,18 @@ class _PillTabLabel extends StatelessWidget {
               )
             : null,
         alignment: Alignment.center,
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 12,
-            color: selected ? gats.lavenderAccent : gats.textSecondary,
-            decoration: TextDecoration.none,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            maxLines: 1,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 12,
+              color: selected ? gats.lavenderAccent : gats.textSecondary,
+              decoration: TextDecoration.none,
+            ),
           ),
         ),
       ),
