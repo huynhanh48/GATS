@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80">
-  <rect width="240" height="80" rx="12" fill="#FFFFFF"/>
-  <rect x="20" y="20" width="18" height="18" fill="#F25022"/>
-  <rect x="42" y="20" width="18" height="18" fill="#7FBA00"/>
-  <rect x="20" y="42" width="18" height="18" fill="#00A4EF"/>
-  <rect x="42" y="42" width="18" height="18" fill="#FFB900"/>
-  <text x="72" y="46" font-family="system-ui, sans-serif" font-weight="700" font-size="20" fill="#5E5E5E">Microsoft</text>
-  <text x="72" y="60" font-family="system-ui, sans-serif" font-weight="800" font-size="10" fill="#00A4EF">AI PARTNER</text>
-</svg>

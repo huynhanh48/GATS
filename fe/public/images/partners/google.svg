@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" width="240" height="80">
-  <rect width="240" height="80" rx="12" fill="#FFFFFF"/>
-  <path d="M42 22 C30 22 20 31 20 43 C20 55 30 64 42 64 C50 64 56 60 60 55 L52 48 C49 52 45 54 42 54 C35 54 30 49 30 43 C30 37 35 32 42 32 C46 32 49 34 52 37 L60 30 C56 25 50 22 42 22 Z" fill="#4285F4"/>
-  <path d="M42 38 V48 H58 C57 52 53 54 48 54" fill="none" stroke="#EA4335" stroke-width="4"/>
-  <text x="70" y="44" font-family="system-ui, sans-serif" font-weight="800" font-size="20" fill="#4285F4">Google</text>
-  <text x="70" y="58" font-family="system-ui, sans-serif" font-weight="700" font-size="10" fill="#34A853">CLOUD AI</text>
-</svg>

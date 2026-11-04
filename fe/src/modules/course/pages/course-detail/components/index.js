@@ -1,0 +1,9 @@
+export { default as CourseHero } from './CourseHero';
+export { default as CourseTabs } from './CourseTabs';
+export { default as CourseDescriptionTab } from './CourseDescriptionTab';
+export { default as CourseCurriculumTab } from './CourseCurriculumTab';
+export { default as CourseFaqTab } from './CourseFaqTab';
+export { default as CourseNoticeTab } from './CourseNoticeTab';
+export { default as CourseReviewsTab } from './CourseReviewsTab';
+export { default as CourseGradeTab } from './CourseGradeTab';
+export { default as CourseSidebar } from './CourseSidebar';

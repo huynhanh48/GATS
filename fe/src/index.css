@@ -1,0 +1,459 @@
+@import "tailwindcss";
+@source "./";
+@source "../index.html";
+
+/* MasterStudy Marketing LMS Theme - Design System & Global Styles */
+
+:root {
+  --primary: #407bff;
+  --primary-hover: #2d69ec;
+  --primary-active: #1e53d0;
+  --primary-soft: #edf3ff;
+  --primary-glow: rgba(64, 123, 255, 0.25);
+  
+  --brand-dark: #273044;
+  --brand-navy: #1c2333;
+  --text-main: #273044;
+  --text-muted: #6e798c;
+  --text-light: #98a2b3;
+  
+  --bg-page: #ffffff;
+  --bg-soft: #f7f9fd;
+  --bg-card: #ffffff;
+  --border-light: #e9eef5;
+  --border-focus: #407bff;
+  
+  --badge-hot: #ff5252;
+  --badge-special: #ff9800;
+  --badge-new: #10b981;
+  --badge-members: #407bff;
+  --star-gold: #ffb606;
+  
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+  
+  --shadow-sm: 0 2px 8px rgba(39, 48, 68, 0.04);
+  --shadow-md: 0 8px 24px rgba(39, 48, 68, 0.08);
+  --shadow-lg: 0 16px 40px rgba(39, 48, 68, 0.12);
+  --shadow-primary: 0 8px 20px rgba(64, 123, 255, 0.25);
+  
+  --font-heading: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  --container-max: 1200px;
+}
+
+.roadmap-vietnamese-title {
+  font-family: var(--font-heading);
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: var(--font-body);
+    color: var(--text-main);
+    background-color: var(--bg-page);
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6,
+  .section-title,
+  .hero-title,
+  .course-title,
+  .modal-course-title,
+  .card-title,
+  .footer-heading,
+  .subject-name {
+    font-family: var(--font-heading);
+    color: var(--brand-dark);
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  button {
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.2s ease;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Common Buttons */
+.btn-primary {
+  background-color: var(--primary);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 13px 28px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow-primary);
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(64, 123, 255, 0.35);
+}
+
+.btn-secondary {
+  background-color: #ffffff;
+  color: var(--brand-dark);
+  border: 1px solid var(--border-light);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline-blue {
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  padding: 11px 24px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+}
+
+.btn-outline-blue:hover {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+/* Section Common Layout */
+.section {
+  padding: 80px 0;
+  position: relative;
+}
+
+.section-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 52px auto;
+}
+
+.section-title {
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--brand-dark);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.section-subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Course Badges */
+.badge-pill {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  text-transform: capitalize;
+  z-index: 2;
+  letter-spacing: 0.02em;
+}
+
+.badge-hot {
+  background-color: var(--badge-hot);
+}
+
+.badge-special {
+  background-color: var(--badge-special);
+}
+
+.badge-new {
+  background-color: var(--badge-new);
+}
+
+.badge-members {
+  background-color: var(--badge-members);
+}
+
+/* Star Ratings */
+.rating-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--star-gold);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f4f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar utility while maintaining scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Modal Overlay & Transitions */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(20, 26, 38, 0.65);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tiptap Rich Content Renderer Styles */
+.tiptap-rendered-content {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #273044;
+  font-size: 15.5px;
+  line-height: 1.85;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+.tiptap-rendered-content h1,
+.tiptap-rendered-content h2,
+.tiptap-rendered-content h3,
+.tiptap-rendered-content h4 {
+  font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #1e293b;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  margin-top: 1.75em;
+  margin-bottom: 0.6em;
+}
+
+.tiptap-rendered-content h1 { font-size: 1.75rem; }
+.tiptap-rendered-content h2 { font-size: 1.4rem; }
+.tiptap-rendered-content h3 { font-size: 1.2rem; }
+.tiptap-rendered-content h4 { font-size: 1.05rem; }
+
+.tiptap-rendered-content p {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  color: #334155;
+}
+
+.tiptap-rendered-content strong,
+.tiptap-rendered-content b {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tiptap-rendered-content ul,
+.tiptap-rendered-content ol {
+  margin-top: 0.75em;
+  margin-bottom: 0.75em;
+  padding-left: 1.5em;
+}
+
+.tiptap-rendered-content ul { list-style-type: disc; }
+.tiptap-rendered-content ol { list-style-type: decimal; }
+
+.tiptap-rendered-content li {
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
+  color: #334155;
+}
+
+.tiptap-rendered-content hr {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 2em 0;
+}
+
+.tiptap-rendered-content blockquote {
+  border-left: 4px solid #1a56db;
+  padding-left: 1rem;
+  margin: 1.5em 0;
+  color: #475569;
+  font-style: italic;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 0 8px 8px 0;
+}
+
+.tiptap-rendered-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5em auto;
+  display: block;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive Iframe / Video / Embeds (YouTube, Vimeo, etc.) */
+.tiptap-rendered-content iframe,
+.tiptap-rendered-content video,
+.tiptap-rendered-content embed,
+.tiptap-rendered-content object {
+  max-width: 100% !important;
+  width: 100% !important;
+  aspect-ratio: 16 / 9;
+  height: auto !important;
+  border-radius: 8px;
+  margin: 1.5em 0;
+  display: block;
+  border: 0;
+}
+
+.tiptap-rendered-content div[data-youtube-video] {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tiptap-rendered-content div[data-youtube-video] iframe {
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  border: 0;
+  border-radius: 8px;
+}
+
+.tiptap-rendered-content code {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-family: monospace;
+}
+
+.tiptap-rendered-content pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5em 0;
+}
+
+.tiptap-rendered-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.tiptap-rendered-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5em 0;
+}
+
+.tiptap-rendered-content th,
+.tiptap-rendered-content td {
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.tiptap-rendered-content th {
+  background-color: #f8fafc;
+  font-weight: 700;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .section {
+    padding: 60px 0;
+  }
+  .section-title {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: 45px 0;
+  }
+  .section-title {
+    font-size: 26px;
+  }
+}
+

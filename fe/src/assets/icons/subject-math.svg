@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <!-- Calculator Body (Orange) -->
+  <rect x="12" y="11" width="28" height="42" rx="5" fill="#FA541C"/>
+
+  <!-- Calculator Screen (Blue) -->
+  <rect x="16" y="15" width="20" height="9" rx="2" fill="#1890FF"/>
+  <!-- Screen Digits / Indicator Lines -->
+  <rect x="18" y="19" width="3" height="1.5" rx="0.5" fill="#FFFFFF"/>
+  <rect x="23" y="19" width="3" height="1.5" rx="0.5" fill="#FFFFFF"/>
+  <rect x="28" y="19" width="6" height="1.5" rx="0.5" fill="#FFFFFF"/>
+
+  <!-- Keypad Buttons (Grid of Blue Buttons) -->
+  <!-- Row 1 -->
+  <rect x="16" y="27" width="5" height="4" rx="1.5" fill="#1890FF"/>
+  <rect x="23.5" y="27" width="5" height="4" rx="1.5" fill="#1890FF"/>
+  <rect x="31" y="27" width="5" height="4" rx="1.5" fill="#1890FF"/>
+
+  <!-- Row 2 -->
+  <rect x="16" y="34" width="5" height="4" rx="1.5" fill="#1890FF"/>
+  <rect x="23.5" y="34" width="5" height="4" rx="1.5" fill="#1890FF"/>
+  <rect x="31" y="34" width="5" height="4" rx="1.5" fill="#1890FF"/>
+
+  <!-- Row 3 -->
+  <rect x="16" y="41" width="5" height="4" rx="1.5" fill="#1890FF"/>
+  <rect x="23.5" y="41" width="5" height="4" rx="1.5" fill="#1890FF"/>
+  <rect x="31" y="41" width="5" height="4" rx="1.5" fill="#40A9FF"/>
+
+  <!-- Minus / Plus / Dot labels on buttons -->
+  <line x1="17.5" y1="29" x2="19.5" y2="29" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
+  <line x1="25" y1="29" x2="27" y2="29" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
+  <line x1="26" y1="28" x2="26" y2="30" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="33.5" cy="29" r="0.75" fill="#FFFFFF"/>
+
+  <!-- Standing Pencil on the Right (Orange) -->
+  <!-- Eraser -->
+  <rect x="45" y="13" width="7" height="4" rx="1.5" fill="#FA541C"/>
+  <rect x="45" y="17" width="7" height="2" fill="#D9D9D9"/>
+  <!-- Body -->
+  <rect x="45" y="19" width="7" height="25" fill="#FA541C"/>
+  <line x1="47.5" y1="19" x2="47.5" y2="44" stroke="#D4380D" stroke-width="0.8"/>
+  <line x1="49.5" y1="19" x2="49.5" y2="44" stroke="#FF7A45" stroke-width="0.8"/>
+  <!-- Sharpened Tip -->
+  <path d="M45 44 L52 44 L48.5 51 Z" fill="#FFA940"/>
+  <path d="M47.5 49 L49.5 49 L48.5 51 Z" fill="#1890FF"/>
+</svg>

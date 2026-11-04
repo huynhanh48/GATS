@@ -18,23 +18,20 @@ ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
     NODE_ENV=production
 RUN npm run build
 
-# Stage 2: Build fe (Next.js web app)
+# Stage 2: Build fe (Vite SPA — React 19 + Vite + Tailwind)
 FROM node:22-bookworm-slim AS fe-builder
 WORKDIR /app/fe
-# Install with --include=dev so build tools (next, etc.) are present even if
-# the host Bake sets NODE_ENV=production. Do NOT leave NODE_ENV=development
-# for `next build` — Next.js 16 then fails prerender with useContext null.
 COPY fe/package*.json ./
 RUN npm ci --include=dev
 COPY fe/ .
-# NEXT_PUBLIC_* vars are inlined into the client bundle AT BUILD TIME,
-# so they must be passed as build args (see docker-compose.prod.yml build.args).
-ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
+# PUBLIC_* vars are inlined into the client bundle AT BUILD TIME (vite envPrefix
+# in fe/vite.config.js), so they must be passed as build args
+# (see docker-compose.prod.yml build.args). Output: /app/fe/dist (static).
+ARG PUBLIC_GOOGLE_CLIENT_ID
 # Local-safe default. Prod compose/.env must pass https://api.gats.vn.
-ARG NEXT_PUBLIC_API_URL=http://localhost:3000
-ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID \
-    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
-    NODE_ENV=production
+ARG PUBLIC_API_URL=http://localhost:3000
+ENV PUBLIC_GOOGLE_CLIENT_ID=$PUBLIC_GOOGLE_CLIENT_ID \
+    PUBLIC_API_URL=$PUBLIC_API_URL
 RUN npm run build
 
 # Stage 3: Build be (Express + TypeScript API)
@@ -49,7 +46,7 @@ RUN npm run build
 # Stage 4: Runtime image (Debian bookworm — ffmpeg + drizzle CLI)
 FROM node:22-bookworm-slim
 
-# ffmpeg (video worker) + pm2
+# ffmpeg (video worker) + pm2 + serve (static server cho fe SPA)
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ffmpeg \
@@ -57,7 +54,7 @@ RUN apt-get update \
     curl \
     procps \
   && rm -rf /var/lib/apt/lists/* \
-  && npm install -g pm2
+  && npm install -g pm2 serve
 
 WORKDIR /app
 
@@ -68,12 +65,8 @@ COPY --from=admin-builder /app/admin/.next ./admin/.next
 COPY --from=admin-builder /app/admin/public ./admin/public
 COPY --from=admin-builder /app/admin/next.config.mjs ./admin/next.config.mjs
 
-# Copy built web app
-COPY --from=fe-builder /app/fe/package*.json ./fe/
-COPY --from=fe-builder /app/fe/node_modules ./fe/node_modules
-COPY --from=fe-builder /app/fe/.next ./fe/.next
-COPY --from=fe-builder /app/fe/public ./fe/public
-COPY --from=fe-builder /app/fe/next.config.ts ./fe/next.config.ts
+# Copy built web app — SPA tĩnh: chỉ cần dist, không cần node_modules
+COPY --from=fe-builder /app/fe/dist ./fe/dist
 
 # Copy built backend (dist + deps) plus what drizzle-kit needs at runtime.
 COPY --from=be-builder /app/be/package*.json ./be/

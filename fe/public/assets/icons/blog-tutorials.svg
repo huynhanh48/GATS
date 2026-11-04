@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="book_grad" x1="10" y1="12" x2="54" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f6d365" />
+      <stop offset="100%" stop-color="#fda085" />
+    </linearGradient>
+    <filter id="shadow_book" x="6" y="8" width="52" height="52" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#ea580c" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  <rect x="12" y="10" width="40" height="44" rx="6" fill="url(#book_grad)" filter="url(#shadow_book)" />
+  <rect x="12" y="28" width="40" height="8" fill="#b45309" />
+  <rect x="28" y="25" width="10" height="14" rx="2" fill="#ffffff" stroke="#78350f" stroke-width="2" />
+  <line x1="16" y1="18" x2="48" y2="18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-opacity="0.8" />
+  <line x1="16" y1="22" x2="40" y2="22" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-opacity="0.8" />
+</svg>

@@ -35,15 +35,12 @@ module.exports = {
       },
     },
     {
+      // fe là SPA tĩnh: `vite build` -> fe/dist, phục vụ bằng `serve -s`
+      // (-s = single-page app: mọi route đều trả index.html cho react-router).
       name: "gats-fe",
       cwd: "./fe",
-      script: "npm",
-      args: "start",
-      env: {
-        NODE_ENV: "production",
-        PORT: 3002,
-        HOSTNAME: "0.0.0.0",
-      },
+      script: "serve",
+      args: "-s dist -l 3002",
     },
   ],
 };

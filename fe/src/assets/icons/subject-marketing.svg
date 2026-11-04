@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <!-- Target Bullseye (Orange & White Rings) -->
+  <circle cx="42" cy="22" r="15" fill="#FA541C"/>
+  <circle cx="42" cy="22" r="11" fill="#FFFFFF"/>
+  <circle cx="42" cy="22" r="7" fill="#FA541C"/>
+  <circle cx="42" cy="22" r="3" fill="#FFFFFF"/>
+
+  <!-- Dart / Arrow Hitting Center -->
+  <line x1="56" y1="8" x2="44" y2="20" stroke="#FA541C" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Dart Flights -->
+  <path d="M53 7 L57 7 L57 11 Z" fill="#FA541C"/>
+  <path d="M54 6 L58 10" stroke="#FA541C" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Megaphone / Loudspeaker (Blue with Orange Accents) -->
+  <!-- Sound Waves from Megaphone -->
+  <path d="M41 40 C43 38 43 34 41 32" stroke="#FA541C" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M46 43 C49 39 49 33 46 29" stroke="#FA541C" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Horn Cone (Blue) -->
+  <path d="M22 33 L35 27 Q37 26 37 28 L37 44 Q37 46 35 45 L22 39 Z" fill="#1890FF"/>
+  <!-- Speaker Opening Rim -->
+  <ellipse cx="37" cy="36" rx="2.5" ry="9" fill="#40A9FF"/>
+
+  <!-- Megaphone Body Cylinder & Back (Blue) -->
+  <rect x="15" y="32.5" width="8" height="7" rx="2" fill="#1890FF"/>
+  <!-- Back Cap -->
+  <path d="M15 32.5 Q13 32.5 13 36 Q13 39.5 15 39.5 Z" fill="#096DD9"/>
+
+  <!-- Megaphone Handle (Orange) -->
+  <path d="M19 39.5 L17 48 Q16.5 50 18.5 50.5 Q20.5 51 21 49 L23 39.5 Z" fill="#FA541C"/>
+</svg>

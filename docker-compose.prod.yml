@@ -138,9 +138,12 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # NEXT_PUBLIC_* được nhúng vào bundle lúc build → đổi phải build lại.
+        # NEXT_PUBLIC_* nhúng vào bundle admin (Next.js); PUBLIC_* nhúng vào
+        # bundle fe (Vite). Cả hai đều là build-time → đổi phải build lại.
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:?NEXT_PUBLIC_GOOGLE_CLIENT_ID is required}
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+        PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:?NEXT_PUBLIC_GOOGLE_CLIENT_ID is required}
+        PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
     image: gats-academy
     container_name: gats-academy
     restart: unless-stopped

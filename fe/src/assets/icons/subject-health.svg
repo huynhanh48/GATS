@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+  <!-- Heart Body (Orange) -->
+  <path d="M32 46 C29 43 14 32.5 14 22 C14 15.5 19 11 25 11 C28.5 11 31 12.8 32 14.5 C33 12.8 35.5 11 39 11 C45 11 50 15.5 50 22 C50 32.5 35 43 32 46 Z" fill="#FA541C"/>
+
+  <!-- Medical Cross (+) inside Heart (White) -->
+  <rect x="29.5" y="19" width="5" height="13" rx="1.5" fill="#FFFFFF"/>
+  <rect x="25.5" y="23" width="13" height="5" rx="1.5" fill="#FFFFFF"/>
+
+  <!-- Sprouting Leaves at the Bottom (Vibrant Blue) -->
+  <!-- Left Leaf -->
+  <path d="M30 46 C25 47 18 48 16 41 C16 35 24 37 28 41 C29.5 42.5 30 45 30 46 Z" fill="#1890FF"/>
+  <!-- Right Leaf -->
+  <path d="M34 46 C39 47 46 48 48 41 C48 35 40 37 36 41 C34.5 42.5 34 45 34 46 Z" fill="#1890FF"/>
+
+  <!-- Leaf Central Veins (Soft Blue) -->
+  <path d="M28.5 43.5 Q22 41 18 39" stroke="#69C0FF" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M35.5 43.5 Q42 41 46 39" stroke="#69C0FF" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+</svg>

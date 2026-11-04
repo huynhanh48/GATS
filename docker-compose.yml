@@ -34,8 +34,12 @@ services:
     environment:
       TZ: Asia/Ho_Chi_Minh
       # Google Login (bỏ trống = nút Google báo chưa cấu hình)
+      # fe (Vite) đọc biến PUBLIC_*, admin (Next.js) đọc NEXT_PUBLIC_*
+      PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # fe (Vite dev server) gọi be ở localhost:3000 — trình duyệt chạy trên máy.
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:3000}
     volumes:
       # Source — sửa trên máy, container tự reload
       - ./be:/app/be
