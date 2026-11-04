@@ -5,11 +5,14 @@ dotenv.config({
 });
 
 const backendPort = process.env.PORT || '3000';
-const browserSyncPort = Number(process.env.BROWSER_SYNC_PORT || 3002);
+// Tránh trùng với admin (3001) và fe (3002).
+const browserSyncPort = Number(process.env.BROWSER_SYNC_PORT || 3010);
+const browserSyncUiPort = Number(process.env.BROWSER_SYNC_UI_PORT || 3011);
 
 module.exports = {
   proxy: `http://localhost:${backendPort}`,
   port: browserSyncPort,
+  ui: { port: browserSyncUiPort },
   open: false,
   notify: false,
   reloadDelay: 300,

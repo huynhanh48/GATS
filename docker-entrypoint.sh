@@ -4,7 +4,7 @@ set -e
 # Apply immutable, ordered SQL migrations before booting app processes.
 # The DB is guaranteed healthy by compose `depends_on: service_healthy`.
 echo "[entrypoint] Applying versioned database migrations..."
-cd /app/gats-academy
+cd /app/be
 if npm run db:migrate:versioned; then
   echo "[entrypoint] Database migrations complete."
 else

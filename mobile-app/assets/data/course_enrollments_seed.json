@@ -1,7 +1,0 @@
-{
-  "enrollments": [
-    { "courseId": "course-1", "userId": "mock_user", "progress": 0.35 },
-    { "courseId": "course-4", "userId": "mock_user", "progress": 0.15 },
-    { "courseId": "course-6", "userId": "mock_user", "progress": 0.8 }
-  ]
-}

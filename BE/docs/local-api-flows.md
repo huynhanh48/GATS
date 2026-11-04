@@ -11,8 +11,8 @@ Hướng dẫn chạy hạ tầng local bằng Docker Compose và test các lu�
 | App | Port host | Ghi chú |
 |-----|-----------|---------|
 | **BE API** | `3000` | `npm run dev:basic` — admin proxy tới đây |
-| **admin-dashboard** | `9000` | `npm run dev` |
-| **web-app** | `3000` hoặc `3001` | tránh trùng BE nếu cùng lúc |
+| **admin** | `9000` | `npm run dev` |
+| **fe** | `3000` hoặc `3001` | tránh trùng BE nếu cùng lúc |
 | Postgres | `5432` | docker |
 | Redis | `6379` | docker |
 | MinIO API | `9010` | docker (`9010→9000` trong container) |
@@ -418,4 +418,4 @@ Xem §3.4–3.6.
 
 ---
 
-*Cập nhật theo code trong `BE/src/routes/*` và `BE/src/common/paths/*`. Khi thêm domain mới, bổ sung mục tương ứng vào doc này.*
+*Cập nhật theo code trong `be/src/routes/*` và `be/src/common/paths/*`. Khi thêm domain mới, bổ sung mục tương ứng vào doc này.*

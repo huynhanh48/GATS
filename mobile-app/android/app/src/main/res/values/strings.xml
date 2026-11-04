@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- PHẢI là OAuth client loại "Web application" — KHÔNG dùng Android/Desktop client ID -->
-    <string name="default_web_client_id">501395717848-vo6vfqup0im33mr0qovsdjffaeh40mcc.apps.googleusercontent.com</string>
-</resources>

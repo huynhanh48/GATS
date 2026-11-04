@@ -7,18 +7,13 @@ node_modules/
 .env.development
 .env.production
 .env.*.local
-BE/.env.development
-BE/config/.env.development
+be/.env.development
+be/config/.env.development
 # Keep example templates tracked
 !.env.example
 !**/.env.example
 !.env.*.example
 !**/.env.*.example
-
-# Vendored Viava (Python)
-viava/.venv/
-viava/rag_data/
-viava/**/__pycache__/
 
 # Logs
 logs/
@@ -54,7 +49,3 @@ coverage/
 *.pem
 *.zip
 
-# Android release signing (never commit)
-**/android/key.properties
-**/*.jks
-**/*.keystore

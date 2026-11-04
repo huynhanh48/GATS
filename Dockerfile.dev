@@ -1,0 +1,49 @@
+# GATS Academy — image DEVELOPMENT: MỘT container chạy toàn bộ.
+#
+#   postgres + redis + rustfs (S3) + be (dev server) + admin (dev server) + fe (dev server)
+#
+# Chỉ 3 cổng mở ra ngoài: 3000 (be), 3001 (admin), 3002 (fe).
+# Dùng qua docker-compose.yml; xem README.md.
+
+# Binary S3 (RustFS) — bản glibc để chạy được trên Debian bên dưới.
+FROM rustfs/rustfs:1.0.4-glibc AS rustfs
+
+FROM node:22-bookworm
+
+# postgres + redis + ffmpeg (video worker) + pm2
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    postgresql \
+    redis-server \
+    ffmpeg \
+    ca-certificates \
+    curl \
+    procps \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g pm2
+
+COPY --from=rustfs /usr/bin/rustfs /usr/local/bin/rustfs
+
+WORKDIR /app
+
+# Dependencies — tách layer để sửa source không phải cài lại
+COPY be/package*.json ./be/
+RUN cd be && npm ci --include=dev
+COPY admin/package*.json ./admin/
+RUN cd admin && npm ci --include=dev
+COPY fe/package*.json ./fe/
+RUN cd fe && npm ci --include=dev
+
+# Source (image chạy được ngay kể cả khi không mount)
+COPY be ./be
+COPY admin ./admin
+COPY fe ./fe
+COPY ecosystem.dev.config.js ./
+COPY docker/dev-entrypoint.sh /usr/local/bin/dev-entrypoint.sh
+COPY docker/dev-s3-init.cjs ./docker/dev-s3-init.cjs
+RUN chmod +x /usr/local/bin/dev-entrypoint.sh
+
+EXPOSE 3000 3001 3002
+
+ENTRYPOINT ["/usr/local/bin/dev-entrypoint.sh"]
+CMD ["pm2-runtime", "/app/ecosystem.dev.config.js"]

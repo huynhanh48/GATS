@@ -1,273 +1,59 @@
-# Full GATS Academy stack: backend API + video worker + web-app + admin-dashboard
-# (single image, run by pm2) plus Postgres, Redis and MinIO infrastructure.
+# GATS Academy — DOCKER DEV: MỘT container chạy toàn bộ.
 #
-# Local dev (BE on host, infra + worker in Docker):
-#   docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
-# Worker reads S3 (LongVan) from BE/config/.env.development — same bucket as host API.
+#   docker compose up -d --build     # dựng + chạy
+#   docker compose logs -f           # xem log
+#   docker compose down              # dừng (giữ dữ liệu)
+#   docker compose down -v           # dừng + xoá dữ liệu (DB, S3, Redis)
 #
-# Local full stack (defaults → localhost API, NOT api.gats.vn):
-#   copy .env.example .env   # optional; defaults already point at localhost
-#   docker compose -p gats-academy up --build -d
+# Trong container có: postgres + redis + rustfs (S3) + be + admin + fe (dev server).
+# Chỉ 3 cổng mở ra ngoài:
+#   - be API           http://localhost:3000
+#   - admin dashboard  http://localhost:3001
+#   - fe web           http://localhost:3002
 #
-# Production VPS (must use prod overlay + .env from .env.vps.example → api.gats.vn):
-#   docker compose -p gats-academy -f docker-compose.yml -f docker-compose.prod.yml up --build -d
-#
-# Exposed on the host (left = host port; changed to avoid conflicts on the VPS):
-#   - Backend API      http://localhost:3000
-#   - Web app          http://localhost:3005
-#   - Admin dashboard  http://localhost:9100
-#   - MinIO console     http://localhost:9011  (minioadmin / minioadmin)
-#   - MinIO S3 API      http://localhost:9010
+# Source được mount từ máy vào container → sửa file là app tự reload.
 
-# Shared BE/runtime env for worker (dev profile) and app.
-# Production `app` MUST override NODE_ENV=production below.
-x-backend-env: &backend-env
-  NODE_ENV: development
-  PORT: "3000"
-  HOST: 0.0.0.0
-  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
-  POSTGRES_DB: postgres
-  POSTGRES_HOST: db
-  POSTGRES_PORT: "5432"
-  REDIS_URL: redis://redis:6379
-  REDIS_PORT: "6379"
-  JWT_SECRET: dev-secret-change-me-please-min-32-characters
-  JWT_EXPIRES_IN: 7d
-  AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
-  EMAIL_USER: noreply@gats.dev
-  EMAIL_PASSWORD: changeme
-  # Local default. Prod overlay requires APP_URL from .env (https://api.gats.vn).
-  APP_URL: ${APP_URL:-http://localhost:3000}
-  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3005,http://127.0.0.1:3005,http://localhost:9000,http://127.0.0.1:9000,http://localhost:9100,http://127.0.0.1:9100,https://gats.vn,https://admin.gats.vn}
-  # Must match the Web client ID used by the browser (NEXT_PUBLIC_*).
-  # Empty → BE returns "Google Login is not configured".
-  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-${NEXT_PUBLIC_GOOGLE_CLIENT_ID}}
-  VIDEO_STORAGE_PROVIDER: s3
-  AWS_REGION: us-east-1
-  # In-cluster MinIO for API/worker. Override on VPS with LongVan HTTPS (or any
-  # public S3) via .env — browser uploads need HTTPS (see S3_PUBLIC_* below).
-  S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
-  S3_BUCKET: ${S3_BUCKET:-s3-video-gats}
-  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
-  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
-  S3_FORCE_PATH_STYLE: "true"
-  # Browser-facing endpoint/base for presigned uploads + HLS playback (HTTPS).
-  # Example LongVan: https://s3-hn1-r1.longvan.net  and  .../s3-video-gats
-  S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-}
-  S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL:-}
-  MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://minio:9000}
-  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-  MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-files-gats}
-  MINIO_REGION: us-east-1
-  MINIO_FORCE_PATH_STYLE: "true"
-  MINIO_PUBLIC_BASE_URL: ${MINIO_PUBLIC_BASE_URL:-}
-  ADMIN_DEFAULT_EMAIL: admin@gmail.com
-  ADMIN_DEFAULT_PASSWORD: admin12345
-  # Bank transfer / Sepay (override via .env on VPS)
-  BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:-}
-  BANK_NAME: ${BANK_NAME:-VietinBank}
-  BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME:-}
-  SEPAY_API_KEY: ${SEPAY_API_KEY:-}
-  SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID:-}
-  SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY:-}
-  SEPAY_PG_ENV: ${SEPAY_PG_ENV:-production}
-  SEPAY_PG_ENABLED: ${SEPAY_PG_ENABLED:-false}
-  VNP_TMN_CODE: ${VNP_TMN_CODE:-}
-  VNP_HASH_SECRET: ${VNP_HASH_SECRET:-}
-  VIDEO_WORKER_CONCURRENCY: "1"
-  HLS_UPLOAD_CONCURRENCY: "16"
-  FFMPEG_X264_PRESET: veryfast
-  FCM_SERVICE_ACCOUNT_JSON: ${FCM_SERVICE_ACCOUNT_JSON:-}
-  FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
-  MOBILE_FEATURE_FLAGS: ${MOBILE_FEATURE_FLAGS:-}
-  MOBILE_MIN_ANDROID_VERSION: ${MOBILE_MIN_ANDROID_VERSION:-1.0.0}
-  MOBILE_MIN_IOS_VERSION: ${MOBILE_MIN_IOS_VERSION:-1.0.0}
-  APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
-  # Viava (same container :8000). BE calls loopback; nginx proxies api.gats.vn/course/*
-  VIAVA_COURSE_GEN_URL: ${VIAVA_COURSE_GEN_URL:-http://127.0.0.1:8000}
-  VIAVA_API_KEY: ${VIAVA_API_KEY:-}
-  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
-  AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
-  AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-}
-  AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-2024-10-21}
-  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: ${AZURE_OPENAI_EMBEDDING_DEPLOYMENT:-text-embedding-3-small}
-  AZURE_OPENAI_TRANSCRIBE_API_KEY: ${AZURE_OPENAI_TRANSCRIBE_API_KEY:-}
-  AZURE_OPENAI_TRANSCRIBE_ENDPOINT: ${AZURE_OPENAI_TRANSCRIBE_ENDPOINT:-}
-  AZURE_TRANSCRIBE_DEPLOYMENT: ${AZURE_TRANSCRIBE_DEPLOYMENT:-}
-  TAVILY_API_KEY: ${TAVILY_API_KEY:-}
-  QDRANT_URL: ${QDRANT_URL:-}
-  QDRANT_API_KEY: ${QDRANT_API_KEY:-}
-  RAG_WORK_DIR: ${RAG_WORK_DIR:-/app/viava/rag_data}
-
-# Dev worker: Docker network URLs only. S3/JWT/MinIO keys come from env_file so the
-# worker uses the same LongVan bucket as BE running on the host (not in-cluster MinIO).
-x-worker-dev-env: &worker-dev-env
-  NODE_ENV: development
-  DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres
-  REDIS_URL: redis://redis:6379
-  POSTGRES_HOST: db
-  POSTGRES_PORT: "5432"
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: postgres
-  POSTGRES_DB: postgres
-  VIDEO_WORKER_CONCURRENCY: "1"
-  HLS_UPLOAD_CONCURRENCY: "16"
-  FFMPEG_X264_PRESET: veryfast
-  # MinIO for docs/thumbnails — in-cluster; host BE uses localhost:9010 via env_file.
-  MINIO_ENDPOINT: http://minio:9000
-  MINIO_ACCESS_KEY: minioadmin
-  MINIO_SECRET_KEY: minioadmin
+name: gats
 
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    ports:
-      - "5432:5432" # for local `npm run dev` on host
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    ports:
-      - "6379:6379" # for local `npm run dev` on host
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    ports:
-      - "9010:9000" # MinIO S3 API  (host 9010)
-      - "9011:9001" # MinIO console (host 9011; 9001 busy on VPS)
-    volumes:
-      - minio_data:/data
-
-  # One-shot: wait for MinIO, then create the video + file buckets.
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      - minio
-    entrypoint:
-      - /bin/sh
-      - -c
-      - >
-        until mc alias set local http://minio:9000 minioadmin minioadmin; do
-          echo 'waiting for minio...'; sleep 2;
-        done;
-        mc mb -p local/s3-video-gats || true;
-        mc mb -p local/files-gats || true;
-        mc anonymous set download local/files-gats || true;
-        echo 'buckets ready';
-
-  # Video transcode worker (BullMQ + ffmpeg). Use for local dev when API runs on host.
-  # Start with: docker compose -p gats-academy --profile dev up -d db redis minio minio-init worker
-  # Do NOT start this when the `app` service is running — app already runs worker via pm2.
-  worker:
-    profiles: ["dev"]
-    build:
-      context: ./BE
-      dockerfile: Dockerfile.worker
-    image: gats-academy-worker
-    container_name: gats-academy-worker
-    restart: unless-stopped
-    # Docker Desktop DNS can intermittently fail for public S3 hosts.
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-    env_file:
-      - ./BE/config/.env.development
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    environment:
-      <<: *worker-dev-env
-
-  app:
+  gats:
     build:
       context: .
-      dockerfile: Dockerfile
-      args:
-        # Baked into the web-app client bundle at build time (NEXT_PUBLIC_*).
-        # Override via .env next to this file or `--build-arg`.
-        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
-        # Baked at build time. Local default = localhost; VPS .env sets api.gats.vn.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
-    image: gats-academy
-    container_name: gats-academy
+      dockerfile: Dockerfile.dev
+    image: gats-dev
+    container_name: gats-dev
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
     ports:
-      - "3000:3000" # backend API
-      - "3005:3005" # web-app
-      - "9100:9000" # admin-dashboard (host 9100; 9000 busy on VPS)
-      # Viava is internal (nginx → app:8000); not published on host by default
-    volumes:
-      - viava_rag_data:/app/viava/rag_data
-      # Local: Viava reads this via load_dotenv (not baked — .dockerignore excludes .env*).
-      # VPS: prefer AZURE_* in root .env (compose interpolation); mount is optional.
-      - ./viava/.env:/app/viava/.env:ro
+      - "3000:3000" # be API
+      - "3001:3001" # admin dashboard
+      - "3002:3002" # fe web
+      # Upload (avatar / media / video) lưu ở S3 trong container. Trình duyệt chỉ
+      # xem được file upload nếu S3 cũng mở ra ngoài — bỏ comment 2 dòng dưới:
+      # - "9010:9010" # S3 API
+      # - "9011:9011" # S3 console (minioadmin / minioadmin)
     environment:
-      <<: *backend-env
-      # Local full stack: keep development so compose defaults pass env.ts gates.
-      # VPS: docker-compose.prod.yml overrides NODE_ENV=production + real secrets.
-      NODE_ENV: development
-      # Admin SSR/proxy → API inside the same container (NOT the public URL).
-      BE_API_URL: http://localhost:3000
-      # Browser sockets / any NEXT_PUBLIC client calls from admin.
-      NEXT_PUBLIC_BE_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
-      NEXT_PUBLIC_BE_SOCKET_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3000/health/ready').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",
-        ]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 60s
-    logging:
-      driver: json-file
-      options:
-        max-size: "20m"
-        max-file: "5"
+      TZ: Asia/Ho_Chi_Minh
+      # Google Login (bỏ trống = nút Google báo chưa cấu hình)
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    volumes:
+      # Source — sửa trên máy, container tự reload
+      - ./be:/app/be
+      - ./admin:/app/admin
+      - ./fe:/app/fe
+      # node_modules nằm trong volume (không lấy node_modules của máy)
+      - be_node_modules:/app/be/node_modules
+      - admin_node_modules:/app/admin/node_modules
+      - fe_node_modules:/app/fe/node_modules
+      # Dữ liệu hạ tầng — giữ giữa các lần chạy
+      - pg_data:/var/lib/postgresql/data
+      - redis_data:/data/redis
+      - s3_data:/data/s3
 
 volumes:
-  postgres_data:
+  be_node_modules:
+  admin_node_modules:
+  fe_node_modules:
+  pg_data:
   redis_data:
-  minio_data:
-  viava_rag_data:
+  s3_data:
