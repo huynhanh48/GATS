@@ -30,8 +30,16 @@ COPY fe/ .
 ARG PUBLIC_GOOGLE_CLIENT_ID
 # Local-safe default. Prod compose/.env must pass https://api.gats.vn.
 ARG PUBLIC_API_URL=http://localhost:3000
+# Fallback STK hiển thị ở modal thanh toán khi API không trả về (fe đọc
+# BANK_* hoặc PUBLIC_BANK_*, xem fe/src/modules/course/components/CoursePaymentModal.jsx).
+ARG BANK_NAME
+ARG BANK_ACCOUNT_NUMBER
+ARG BANK_ACCOUNT_NAME
 ENV PUBLIC_GOOGLE_CLIENT_ID=$PUBLIC_GOOGLE_CLIENT_ID \
-    PUBLIC_API_URL=$PUBLIC_API_URL
+    PUBLIC_API_URL=$PUBLIC_API_URL \
+    BANK_NAME=$BANK_NAME \
+    BANK_ACCOUNT_NUMBER=$BANK_ACCOUNT_NUMBER \
+    BANK_ACCOUNT_NAME=$BANK_ACCOUNT_NAME
 RUN npm run build
 
 # Stage 3: Build be (Express + TypeScript API)

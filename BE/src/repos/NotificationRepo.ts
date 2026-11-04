@@ -12,9 +12,12 @@ export async function create(data: NewNotification): Promise<Notification> {
   return rows[0];
 }
 
-/** Learner inbox: only rows addressed to this user (no admin system feed). */
+/** Learner inbox: only rows addressed to this user or global admin broadcasts. */
 function learnerScope(userId: number) {
-  return eq(notificationsTable.userId, userId);
+  return or(
+    eq(notificationsTable.userId, userId),
+    eq(notificationsTable.type, 'admin_broadcast'),
+  )!;
 }
 
 /**

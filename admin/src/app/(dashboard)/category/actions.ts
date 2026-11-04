@@ -16,6 +16,9 @@ function mapActionError(
 ): string {
   if (result.status === 401) return "Phiên đăng nhập đã hết hạn";
   if (result.status === 403) return "Bạn không có quyền thực hiện thao tác này";
+  if (result.status === 409) {
+    return "Danh mục đang được sử dụng. Hãy chuyển nội dung sang danh mục khác trước khi xóa.";
+  }
   return result.error ?? fallback;
 }
 
@@ -111,4 +114,24 @@ export async function deleteCategory(
 
   revalidateCategoryPaths(type);
   return { ok: true, message: "Xóa danh mục thành công" };
+}
+
+export async function reorderCategories(
+  type: CategoryType,
+  items: { id: string; sortOrder: number }[],
+): Promise<{ ok: boolean; message: string }> {
+  const result = await beFetch("/categories/reorder", {
+    method: "PUT",
+    body: JSON.stringify({ type, items }),
+  });
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      message: mapActionError(result, "Sắp xếp danh mục thất bại"),
+    };
+  }
+
+  revalidateCategoryPaths(type);
+  return { ok: true, message: "Cập nhật thứ tự thành công" };
 }

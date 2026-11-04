@@ -10,6 +10,7 @@ import { getAdminSession } from "@/lib/api/server";
 import type { AccountRole } from "../actions";
 import { MentorCourseEditor } from "../mentor-course-editor";
 import { fetchCourses } from "../../course/actions";
+import { GrantCourseForm, RevokeCourseButton } from "../user-enrollment-actions";
 
 export const metadata: Metadata = {
   title: "Chi tiết người dùng",
@@ -146,6 +147,7 @@ export default async function UserDetailPage({ params }: PageProps) {
           </AdminPanel>
 
           <AdminPanel title="Enrollment" bodyClassName="p-0 overflow-x-auto">
+            <GrantCourseForm userId={user.id} courses={courseList.data.map((course) => ({ id: course.id, title: course.title, status: course.status }))} activeCourseIds={enrollments.filter((item) => item.status === "active").map((item) => item.courseId)}/>
             <p className="px-4 pt-4 text-sm text-slate-500">
               Active {enrollmentsSummary.active} · Cancelled{" "}
               {enrollmentsSummary.cancelled} · Expired{" "}
@@ -162,6 +164,7 @@ export default async function UserDetailPage({ params }: PageProps) {
                     <th className="px-4 py-3">Tiến độ</th>
                     <th className="px-4 py-3">Hoạt động gần nhất</th>
                     <th className="px-4 py-3">Chứng chỉ</th>
+                    <th className="px-4 py-3 text-right">Quản lý</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -213,6 +216,7 @@ export default async function UserDetailPage({ params }: PageProps) {
                           <span className="text-xs text-slate-400">—</span>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-right"><RevokeCourseButton userId={user.id} courseId={e.courseId} courseTitle={e.courseTitle ?? e.courseId} disabled={e.status !== "active"}/></td>
                     </tr>
                   ))}
                 </tbody>

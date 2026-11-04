@@ -85,7 +85,7 @@ export async function createUploadPartUrl(
   });
 
   // Sign against the browser-reachable endpoint (HTTPS on prod). Using the
-  // in-cluster http://s3:9000 client here causes mixed-content blocks.
+  // in-cluster http://minio:9000 client here causes mixed-content blocks.
   return getSignedUrl(getS3BrowserClient(), command, {
     expiresIn: expiresInSeconds,
   });

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
 import { BubbleMenu } from "@tiptap/react/menus"
 import { cn } from "@/lib/utils"
-import { Bold, Italic, Strikethrough, AlignLeft, AlignCenter, AlignRight, Link as LucideLinkIcon } from "lucide-react"
+import { Bold, Italic, Strikethrough, AlignLeft, AlignCenter, AlignRight, Link as LucideLinkIcon, Table as TableIcon, Indent as IndentIcon, Outdent as OutdentIcon } from "lucide-react"
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
@@ -20,6 +20,14 @@ import { TextStyle } from "@tiptap/extension-text-style"
 import { Color } from "@tiptap/extension-color"
 import { ImagePasteLink } from "@/components/tiptap-extension/image-paste-extension"
 import { ResizableYoutube } from "@/components/tiptap-extension/resizable-youtube-extension"
+import {
+  CustomTable,
+  CustomTableCell,
+  CustomTableHeader,
+} from "@/components/tiptap-node/custom-table"
+import { TableRow } from '@tiptap/extension-table-row'
+import { Indent } from "@/components/tiptap-extension/indent-extension"
+import { Markdown } from "tiptap-markdown"
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap-ui-primitive/button"
@@ -44,6 +52,7 @@ import "@/components/tiptap-node/paragraph-node/paragraph-node.scss"
 // --- Tiptap UI ---
 import { HeadingDropdownMenu } from "@/components/tiptap-ui/heading-dropdown-menu"
 import { ImageUploadButton } from "@/components/tiptap-ui/image-upload-button"
+import { FileUploadButton } from "@/components/tiptap-ui/file-upload-button"
 import { ListDropdownMenu } from "@/components/tiptap-ui/list-dropdown-menu"
 import { BlockquoteButton } from "@/components/tiptap-ui/blockquote-button"
 import { CodeBlockButton } from "@/components/tiptap-ui/code-block-button"
@@ -65,6 +74,8 @@ import {
 import { MarkButton } from "@/components/tiptap-ui/mark-button"
 import { TextAlignButton } from "@/components/tiptap-ui/text-align-button"
 import { UndoRedoButton } from "@/components/tiptap-ui/undo-redo-button"
+import { TablePopover } from "@/components/tiptap-ui/table-popover"
+import { TableBubbleMenu } from "@/components/tiptap-ui/table-bubble-menu"
 
 // --- Icons ---
 import { ArrowLeftIcon } from "@/components/tiptap-icons/arrow-left-icon"
@@ -73,6 +84,7 @@ import { TextColorIcon } from "@/components/tiptap-icons/text-color-icon"
 import { LinkIcon } from "@/components/tiptap-icons/link-icon"
 
 // --- Hooks ---
+import { useTiptapEditor } from "@/hooks/use-tiptap-editor"
 import { useIsBreakpoint } from "@/hooks/use-is-breakpoint"
 import { useWindowSize } from "@/hooks/use-window-size"
 import { useCursorVisibility } from "@/hooks/use-cursor-visibility"
@@ -98,6 +110,8 @@ const MainToolbarContent = ({
   onLinkClick: () => void
   isMobile: boolean
 }) => {
+  const { editor } = useTiptapEditor()
+
   return (
     <>
       <Spacer />
@@ -159,6 +173,36 @@ const MainToolbarContent = ({
 
       <ToolbarGroup>
         <ImageUploadButton text="Add" />
+        <FileUploadButton />
+      </ToolbarGroup>
+
+      <ToolbarSeparator />
+
+      <ToolbarGroup>
+        <TablePopover />
+      </ToolbarGroup>
+
+      <ToolbarSeparator />
+
+      <ToolbarGroup>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => editor?.chain().focus().indent().run()}
+          tooltip="Thụt lề"
+          aria-label="Thụt lề"
+        >
+          <IndentIcon className="tiptap-button-icon" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => editor?.chain().focus().outdent().run()}
+          tooltip="Giảm thụt lề"
+          aria-label="Giảm thụt lề"
+        >
+          <OutdentIcon className="tiptap-button-icon" />
+        </Button>
       </ToolbarGroup>
 
       <Spacer />
@@ -236,6 +280,9 @@ export function SimpleEditor({ value, onChange, className }: SimpleEditorProps =
       // ⚑ Must be first so handlePaste intercepts before Link/Typography
       // auto-link paste rules turn URLs into plain link marks.
       ImagePasteLink,
+      Markdown.configure({
+        transformPastedText: true,
+      }),
 
       StarterKit.configure({
         horizontalRule: false,
@@ -263,6 +310,13 @@ export function SimpleEditor({ value, onChange, className }: SimpleEditorProps =
       Selection,
       TextStyle,
       Color,
+      CustomTable.configure({
+        resizable: true,
+      }),
+      TableRow,
+      CustomTableHeader,
+      CustomTableCell,
+      Indent,
       ImageUploadNode.configure({
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
@@ -315,93 +369,8 @@ export function SimpleEditor({ value, onChange, className }: SimpleEditorProps =
           )}
         </Toolbar>
 
-        {editor && (
-          <BubbleMenu
-            editor={editor}
-            // @ts-ignore
-            tippyOptions={{ placement: 'top', offset: [0, 8], zIndex: 99999 }}
-            shouldShow={({ editor, state }) => {
-              const { selection } = state;
-              const { empty } = selection;
 
-              if (empty || !editor.isEditable) {
-                return false;
-              }
-
-              if (editor.isActive("imageResize") || editor.isActive("image") || editor.isActive("youtube") || editor.isActive("horizontalRule")) {
-                return false;
-              }
-
-              return true;
-            }}
-          >
-            <div className="flex items-center bg-white shadow-md border border-slate-200 rounded-md overflow-hidden p-1 gap-1">
-              <button
-                onClick={() => editor.chain().focus().toggleBold().run()}
-                className={cn("p-1.5 text-sm hover:bg-slate-100 rounded", editor.isActive('bold') ? "bg-slate-200 text-primary" : "text-slate-600")}
-                type="button"
-                title="In đậm"
-              >
-                <Bold className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={cn("p-1.5 text-sm hover:bg-slate-100 rounded", editor.isActive('italic') ? "bg-slate-200 text-primary" : "text-slate-600")}
-                type="button"
-                title="In nghiêng"
-              >
-                <Italic className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => editor.chain().focus().toggleStrike().run()}
-                className={cn("p-1.5 text-sm hover:bg-slate-100 rounded", editor.isActive('strike') ? "bg-slate-200 text-primary" : "text-slate-600")}
-                type="button"
-                title="Gạch ngang"
-              >
-                <Strikethrough className="w-4 h-4" />
-              </button>
-
-              <div className="w-px h-5 bg-slate-200 mx-1" />
-
-              <button
-                onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                className={cn("p-1.5 text-sm hover:bg-slate-100 rounded", editor.isActive({ textAlign: 'left' }) ? "bg-slate-200 text-primary" : "text-slate-600")}
-                type="button"
-                title="Căn trái"
-              >
-                <AlignLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                className={cn("p-1.5 text-sm hover:bg-slate-100 rounded", editor.isActive({ textAlign: 'center' }) ? "bg-slate-200 text-primary" : "text-slate-600")}
-                type="button"
-                title="Căn giữa"
-              >
-                <AlignCenter className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                className={cn("p-1.5 text-sm hover:bg-slate-100 rounded", editor.isActive({ textAlign: 'right' }) ? "bg-slate-200 text-primary" : "text-slate-600")}
-                type="button"
-                title="Căn phải"
-              >
-                <AlignRight className="w-4 h-4" />
-              </button>
-
-              <div className="w-px h-5 bg-slate-200 mx-1" />
-
-              <LinkPopover
-                editor={editor}
-                className={cn(
-                  "h-7 w-7 p-0 hover:bg-slate-100 rounded",
-                  editor.isActive('link') ? "bg-slate-200 text-primary" : "text-slate-600"
-                )}
-              >
-                <LucideLinkIcon className="w-4 h-4" />
-              </LinkPopover>
-            </div>
-          </BubbleMenu>
-        )}
+        <TableBubbleMenu editor={editor} />
         <EditorContent
           editor={editor}
           role="presentation"

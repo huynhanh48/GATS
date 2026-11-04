@@ -22,6 +22,7 @@ export type CategoryPublic = {
   name: string;
   slug: string;
   type?: string;
+  description?: string | null;
 };
 
 export type CategoryType = "course" | "post";
@@ -33,15 +34,13 @@ export type CategoryWithCounts = {
   slug: string;
   type: CategoryType;
   status: CategoryStatus;
+  sortOrder?: number;
   description?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
-  parentId?: string | null;
-  sortOrder?: number;
-  seoTitle?: string | null;
-  seoDescription?: string | null;
   courseCount: number;
   postCount: number;
+  tagIds: string[];
 };
 
 export type CategoryListResponse = {
@@ -55,10 +54,7 @@ export type CreateCategoryInput = {
   description?: string;
   thumbnail?: string;
   icon?: string;
-  parent_id?: string;
-  sort_order?: number;
-  seo_title?: string;
-  seo_description?: string;
+  tagIds?: string[];
 };
 
 export type UpdateCategoryInput = {
@@ -68,10 +64,7 @@ export type UpdateCategoryInput = {
   description?: string | null;
   thumbnail?: string | null;
   icon?: string | null;
-  parent_id?: string | null;
-  sort_order?: number;
-  seo_title?: string | null;
-  seo_description?: string | null;
+  tagIds?: string[];
 };
 
 export type TagPublic = {
@@ -79,6 +72,7 @@ export type TagPublic = {
   name: string;
   slug: string;
   type?: string;
+  description?: string | null;
 };
 
 export type TagType = "course" | "post" | "global";
@@ -87,7 +81,8 @@ export type TagStatus = "active" | "inactive";
 export type TagWithCounts = TagPublic & {
   type: TagType;
   status: TagStatus;
-  description?: string | null;
+  sortOrder?: number;
+  level?: "beginner" | "intermediate" | "advanced" | string | null;
   courseCount: number;
   postCount: number;
 };
@@ -100,8 +95,19 @@ export type CreateTagInput = {
   name: string;
   type: TagType;
   slug?: string;
+  level?: string | null;
   description?: string;
 };
+
+export type LevelMetadata = {
+  code: CourseLevel;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  status: "active" | "inactive";
+};
+
+export type LevelListResponse = { data: LevelMetadata[] };
 
 export type CoursePublic = {
   id: string;
@@ -192,6 +198,8 @@ export type CourseDetailLesson = {
   type: LessonType;
   order: number;
   isPreview: boolean;
+  isArticlePreview?: boolean;
+  videoPreviewDurationSeconds?: number;
   duration: number | null;
   locked: boolean;
   /** HTML content – replaces the old textContent / text_content field */
@@ -288,6 +296,8 @@ export type CreateLessonInput = {
   /** HTML content – used by all lesson types */
   content?: string;
   is_preview?: boolean;
+  is_article_preview?: boolean;
+  video_preview_duration_seconds?: number;
   duration?: number;
   linked_post_id?: string | null;
 };
@@ -300,6 +310,8 @@ export type UpdateLessonInput = {
   /** HTML content – used by all lesson types */
   content?: string | null;
   is_preview?: boolean;
+  is_article_preview?: boolean;
+  video_preview_duration_seconds?: number;
   duration?: number | null;
   linked_post_id?: string | null;
 };
@@ -314,16 +326,15 @@ export type LessonCreateResponseData = {
   order: number;
   content: string | null;
   isPreview: boolean;
+  isArticlePreview?: boolean;
+  videoPreviewDurationSeconds?: number;
   duration: number | null;
 };
 
 // ─── Quiz Types ──────────────────────────────────────────────────────────────
 
 export type QuizQuestionType =
-  | "single_choice"
-  | "multiple_choice"
-  | "fill_blank"
-  | "true_false";
+  "single_choice" | "multiple_choice" | "fill_blank" | "true_false";
 
 export type QuizOption = {
   id?: string;
@@ -458,11 +469,7 @@ export type Assignment = {
 export type VideoContentType = "video/mp4" | "video/quicktime" | "video/webm";
 
 export type VideoStatus =
-  | "pending_upload"
-  | "uploaded"
-  | "processing"
-  | "ready"
-  | "failed";
+  "pending_upload" | "uploaded" | "processing" | "ready" | "failed";
 
 export type VideoRecord = {
   videoId: string;
@@ -652,6 +659,41 @@ export type MediaListResponse = {
 export type ActionResult = {
   ok: boolean;
   message: string;
+};
+
+export type CourseMenuItem = {
+  id: string;
+  title: string;
+  parentId: string | null;
+  courseId: string | null;
+  url: string | null;
+  badge: string | null;
+  icon: string | null;
+  description: string | null;
+  sortOrder: number;
+  isActive: boolean;
+};
+
+export type TagWithLevelCounts = {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  counts: {
+    beginner: number;
+    intermediate: number;
+    advanced: number;
+    total: number;
+  };
+};
+
+export type TagWithCategoryCounts = {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  categoryCounts: Record<string, number>;
+  total: number;
 };
 
 // ─── Cart / Orders / Enrollments (learner) ───────────────────────────────────
@@ -863,10 +905,7 @@ export type PublishReadinessResponse = {
 // ─── Quiz attempts (admin) ───────────────────────────────────────────────────
 
 export type QuizAttemptStatus =
-  | "in_progress"
-  | "submitted"
-  | "graded"
-  | "expired";
+  "in_progress" | "submitted" | "graded" | "expired";
 
 export type QuizAttemptAdmin = {
   id: string;
@@ -892,10 +931,7 @@ export type QuizAttemptsResponse = {
 // ─── Assignment submissions (admin grading inbox) ────────────────────────────
 
 export type AssignmentSubmissionStatus =
-  | "draft"
-  | "submitted"
-  | "graded"
-  | "returned";
+  "draft" | "submitted" | "graded" | "returned";
 
 export type AssignmentSubmissionAttachment = {
   id: string;

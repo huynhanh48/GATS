@@ -6,6 +6,7 @@ import { errorHandle } from '@src/middleware/errorHandle';
 import {
   parseCreateCategoryInput,
   parseListCategoriesQuery,
+  parseReorderCategoriesInput,
   parseUpdateCategoryInput,
 } from '@src/models/Category.model';
 import CategoryService from '@src/services/CategoryService';
@@ -38,9 +39,16 @@ async function remove(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function reorder(req: Request, res: Response) {
+  const input = parseReorderCategoriesInput(req.body);
+  await CategoryService.reorder(input.type, input.items);
+  return res.status(HttpStatusCodes.OK).json({ success: true });
+}
+
 export default {
   list: errorHandle(list),
   create: errorHandle(create),
   update: errorHandle(update),
   remove: errorHandle(remove),
+  reorder: errorHandle(reorder),
 } as const;

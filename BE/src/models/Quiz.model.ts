@@ -308,7 +308,11 @@ export function normalizeFillBlankAnswer(
   value: string,
   caseSensitive: boolean,
 ): string {
-  const normalized = value.trim().replace(/\s+/g, ' ');
+  // Mobile keyboards may produce Vietnamese text in decomposed Unicode form
+  // (for example, a base letter followed by combining marks). Normalize both
+  // submitted and accepted answers before comparing them so visually identical
+  // text is graded identically across devices.
+  const normalized = value.normalize('NFC').trim().replace(/\s+/gu, ' ');
   return caseSensitive ? normalized : normalized.toLocaleLowerCase('vi-VN');
 }
 

@@ -13,6 +13,7 @@ const Errors = {
   EXPIRED: 'Coupon has expired or is not yet active',
   LIMIT_REACHED: 'Coupon usage limit reached',
   MIN_AMOUNT: 'Order amount does not meet the coupon minimum',
+  WRONG_SCOPE: 'Coupon is not valid for this product',
 } as const;
 
 function computeDiscount(coupon: Coupon, orderAmount: number): number {
@@ -33,6 +34,8 @@ async function create(input: CreateCouponInput, actorUserId?: number) {
     code: input.code,
     description: input.description || null,
     type: input.type,
+    scope: input.scope,
+    membershipPlanId: input.scope === 'membership' ? input.membershipPlanId ?? null : null,
     value: input.value,
     maxUses: input.maxUses ?? null,
     minOrderAmount: input.minOrderAmount,
@@ -98,6 +101,10 @@ async function update(
   const updated = await CouponRepo.update(id, {
     ...(input.description !== undefined ? { description: input.description } : {}),
     ...(input.type !== undefined ? { type: input.type } : {}),
+    ...(input.scope !== undefined ? { scope: input.scope } : {}),
+    ...(input.membershipPlanId !== undefined
+      ? { membershipPlanId: input.membershipPlanId }
+      : {}),
     ...(input.value !== undefined ? { value: input.value } : {}),
     ...(input.maxUses !== undefined ? { maxUses: input.maxUses } : {}),
     ...(input.minOrderAmount !== undefined
@@ -113,7 +120,7 @@ async function update(
     action: 'coupon.updated',
     resourceType: 'coupon',
     resourceId: id,
-    meta: input as Record<string, unknown>,
+    meta: input,
   });
 
   return { data: updated };
@@ -139,6 +146,9 @@ async function remove(id: string, actorUserId?: number) {
 async function validate(
   code: string,
   orderAmount: number,
+  context: { scope: 'course' | 'membership'; membershipPlanId?: string } = {
+    scope: 'course',
+  },
 ): Promise<{ coupon: Coupon; discountAmount: number }> {
   const coupon = await CouponRepo.findByCode(normalizeCouponCode(code));
   if (!coupon || !coupon.isActive) {
@@ -161,13 +171,28 @@ async function validate(
     throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.MIN_AMOUNT);
   }
 
+  if (coupon.scope !== 'all' && coupon.scope !== context.scope) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.WRONG_SCOPE);
+  }
+  if (
+    coupon.scope === 'membership' &&
+    coupon.membershipPlanId &&
+    coupon.membershipPlanId !== context.membershipPlanId
+  ) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.WRONG_SCOPE);
+  }
+
   const discountAmount = computeDiscount(coupon, orderAmount);
   return { coupon, discountAmount };
 }
 
 /** Public endpoint for checkout preview — validate without redeeming. */
-async function preview(code: string, orderAmount: number) {
-  const { coupon, discountAmount } = await validate(code, orderAmount);
+async function preview(
+  code: string,
+  orderAmount: number,
+  context?: { scope: 'course' | 'membership'; membershipPlanId?: string },
+) {
+  const { coupon, discountAmount } = await validate(code, orderAmount, context);
   return {
     data: {
       code: coupon.code,

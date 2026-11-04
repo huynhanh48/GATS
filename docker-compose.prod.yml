@@ -144,6 +144,10 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
         PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:?NEXT_PUBLIC_GOOGLE_CLIENT_ID is required}
         PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?NEXT_PUBLIC_API_URL is required}
+        # Fallback STK trong bundle fe (nhúng lúc build, giống PUBLIC_*).
+        BANK_NAME: ${BANK_NAME:-VietinBank}
+        BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:-}
+        BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME:-}
     image: gats-academy
     container_name: gats-academy
     restart: unless-stopped

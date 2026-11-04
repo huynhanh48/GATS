@@ -7,6 +7,7 @@ import {
   parseCreateTagInput,
   parseListTagsQuery,
   parseUpdateTagInput,
+  reorderTagsSchema,
 } from '@src/models/Tag.model';
 import TagService from '@src/services/TagService';
 
@@ -33,9 +34,16 @@ async function remove(req: Request, res: Response) {
   return res.status(HttpStatusCodes.OK).json(result);
 }
 
+async function reorder(req: Request, res: Response) {
+  const input = reorderTagsSchema.parse(req.body);
+  await TagService.reorder(input.type, input.items);
+  return res.status(HttpStatusCodes.OK).json({ success: true });
+}
+
 export default {
   list: errorHandle(list),
   create: errorHandle(create),
   update: errorHandle(update),
   remove: errorHandle(remove),
+  reorder: errorHandle(reorder),
 } as const;

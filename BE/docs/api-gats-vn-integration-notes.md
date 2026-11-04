@@ -248,7 +248,7 @@ await api.post('/media/thumbnails', form);
 
 Giới hạn hiện tại:
 
-- image: JPEG, PNG, WebP, GIF; tối đa 10 MiB
+- image: JPEG, PNG, WebP, GIF, SVG; tối đa 30 MiB
 - document: PDF, DOCX, DOC, Markdown, plain text; tối đa 50 MiB
 
 BE kiểm tra MIME type do client gửi, nên cần giữ đúng `Content-Type` của file.

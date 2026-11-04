@@ -32,35 +32,39 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-4 shadow-sm backdrop-blur md:px-6 2xl:px-10 dark:border-slate-800 dark:bg-[#07111f]/90">
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        className="grid size-10 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0070EB] dark:border-slate-700 dark:bg-[#0f172a] dark:text-slate-200 dark:hover:bg-white/10"
-        aria-label={isOpen ? "Ẩn thanh điều hướng" : "Hiện thanh điều hướng"}
-        title={isOpen ? "Ẩn sidebar" : "Hiện sidebar"}
-      >
-        <MenuIcon />
-      </button>
+      <div className="flex items-center gap-4">
+        {!isOpen && (
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="grid size-10 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0070EB] dark:border-slate-700 dark:bg-[#0f172a] dark:text-slate-200 dark:hover:bg-white/10"
+            aria-label="Hiện thanh điều hướng"
+            title="Hiện sidebar"
+          >
+            <MenuIcon />
+          </button>
+        )}
 
-      {isMobile && (
-        <Link href="/" className="2xsm:ml-4 ml-2 max-[430px]:hidden">
-          <Image
-            src="/Group.svg"
-            width={32}
-            height={32}
-            alt="GATS"
-            className="size-8 object-contain"
-          />
-        </Link>
-      )}
+        {isMobile && (
+          <Link href="/" className="2xsm:ml-4 ml-2 max-[430px]:hidden">
+            <Image
+              src="/Group.svg"
+              width={32}
+              height={32}
+              alt="GATS"
+              className="size-8 object-contain"
+            />
+          </Link>
+        )}
 
-      <div className="max-xl:hidden">
-        <h1 className="mb-0.5 font-sans text-xl font-bold text-slate-950 dark:text-white">
-          {pageTitle}
-        </h1>
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-          GATS Academy admin workspace
-        </p>
+        <div className="max-xl:hidden">
+          <h1 className="mb-0.5 font-sans text-xl font-bold text-slate-950 dark:text-white">
+            {pageTitle}
+          </h1>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            GATS Academy admin workspace
+          </p>
+        </div>
       </div>
 
       <div className="2xsm:gap-4 flex flex-1 items-center justify-end gap-2">

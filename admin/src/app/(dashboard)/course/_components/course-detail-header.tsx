@@ -37,7 +37,7 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
             alt={course.title}
             width={160}
             height={90}
-            className="h-22.5 w-40 shrink-0 rounded-xl bg-slate-100 object-contain p-1 dark:bg-slate-900"
+            className="h-22.5 w-40 shrink-0 rounded-xl bg-slate-100 object-cover dark:bg-slate-900"
             unoptimized
           />
           <div className="min-w-0 flex-1">
@@ -111,7 +111,11 @@ export function CourseDetailHeader({ course }: CourseDetailHeaderProps) {
         <span className="text-slate-700 dark:text-slate-200">
           Giá:{" "}
           <strong>
-            {(course.salePrice ?? course.price).toLocaleString("vi-VN")}đ
+            {course.price === 0
+              ? "Miễn phí"
+              : course.price < 0
+                ? "Liên hệ"
+                : `${(course.salePrice ?? course.price).toLocaleString("vi-VN")}đ`}
           </strong>
         </span>
         {course.author && (

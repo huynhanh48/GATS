@@ -21,6 +21,7 @@ const CoursePaths = {
     PublishReadiness: '/:id/publish-readiness',
     Curriculum: '/:courseId/curriculum',
     Review: '/:courseId/review',
+    ReviewCheckpoint: '/:courseId/review-checkpoint',
     Sections: {
       _: '/:courseId/sections',
       List: '/:courseId/sections',

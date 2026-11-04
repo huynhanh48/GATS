@@ -51,14 +51,12 @@ type CategoryFormState = {
   name: string;
   description: string;
   status: CategoryStatus;
-  sort_order: string;
 };
 
 const emptyForm: CategoryFormState = {
   name: "",
   description: "",
   status: "active",
-  sort_order: "0",
 };
 
 type CategoryManagerProps = {
@@ -125,15 +123,6 @@ export function CategoryManager({
         ),
       },
       {
-        accessorKey: "sortOrder",
-        header: "Thứ tự",
-        cell: ({ row }) => (
-          <span className="text-dark dark:text-white">
-            {row.original.sortOrder ?? 0}
-          </span>
-        ),
-      },
-      {
         id: "actions",
         header: () => <span className="sr-only">Thao tác</span>,
         enableSorting: false,
@@ -177,7 +166,6 @@ export function CategoryManager({
       name: category.name,
       description: category.description ?? "",
       status: category.status,
-      sort_order: String(category.sortOrder ?? 0),
     });
     setDialogOpen(true);
   }
@@ -191,8 +179,6 @@ export function CategoryManager({
     }
 
     const description = form.description.trim();
-    const sortOrder = Number(form.sort_order);
-
     setLoading(true);
 
     if (editing) {
@@ -200,7 +186,6 @@ export function CategoryManager({
         name,
         status: form.status,
         description: description || null,
-        sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
       });
       setLoading(false);
 
@@ -219,7 +204,6 @@ export function CategoryManager({
       name,
       type,
       ...(description ? { description } : {}),
-      sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
     });
     setLoading(false);
 
@@ -312,19 +296,6 @@ export function CategoryManager({
                 </select>
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="cat-sort">Thứ tự</Label>
-              <Input
-                id="cat-sort"
-                type="number"
-                min={0}
-                value={form.sort_order}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, sort_order: e.target.value }))
-                }
-              />
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="cat-desc">Mô tả</Label>

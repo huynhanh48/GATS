@@ -61,7 +61,7 @@ export function resolveS3BrowserEndpoint(): string {
   return EnvVars.S3Endpoint.replace(/\/$/, '');
 }
 
-/** Server-side client (may be http://s3:9000 inside Docker). */
+/** Server-side client (may be http://minio:9000 inside Docker). */
 export function getS3Client(): S3Client {
   if (!s3Client) {
     s3Client = createS3Client(EnvVars.S3Endpoint);

@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -21,6 +22,8 @@ export const tagsTable = pgTable(
     description: text('description'),
     type: tagTypeEnum('type').notNull(),
     status: tagStatusEnum('status').notNull().default('active'),
+    level: varchar('level', { length: 50 }),
+    sortOrder: integer('sort_order').notNull().default(0),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -28,6 +31,7 @@ export const tagsTable = pgTable(
     uniqueIndex('idx_tags_type_slug').on(table.type, table.slug),
     index('idx_tags_type').on(table.type),
     index('idx_tags_status').on(table.status),
+    index('idx_tags_sort_order').on(table.sortOrder),
   ],
 );
 

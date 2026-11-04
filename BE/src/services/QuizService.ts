@@ -419,10 +419,7 @@ async function submitQuiz(
         .filter((option) => option.isCorrect)
         .sort((a, b) => a.order - b.order)
         .map((option) => option.answer),
-      explanation:
-        quiz.showExplanation && question.explanation
-          ? question.explanation
-          : undefined,
+      explanation: question.explanation ?? undefined,
     };
   });
 

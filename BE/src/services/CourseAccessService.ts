@@ -89,6 +89,7 @@ export async function canViewCourseContent(
   userId: number | null,
   courseId: string,
   lesson?: LessonRecord,
+  previewKind: 'any' | 'video' | 'article' = 'any',
 ): Promise<boolean> {
   const course = await deps.findCourseById(courseId);
   if (!course) {
@@ -107,7 +108,12 @@ export async function canViewCourseContent(
     return true;
   }
 
-  if (lesson.isPreview) {
+  const previewAllowed = previewKind === 'video'
+    ? lesson.isPreview
+    : previewKind === 'article'
+      ? lesson.isArticlePreview
+      : lesson.isPreview || lesson.isArticlePreview;
+  if (previewAllowed) {
     return true;
   }
 

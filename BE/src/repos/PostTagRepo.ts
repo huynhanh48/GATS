@@ -20,6 +20,7 @@ export async function findByPostIds(
       name: tagsTable.name,
       slug: tagsTable.slug,
       type: tagsTable.type,
+      description: tagsTable.description,
     })
     .from(postTagsTable)
     .innerJoin(tagsTable, eq(postTagsTable.tagId, tagsTable.id))
@@ -34,6 +35,7 @@ export async function findByPostIds(
         name: row.name,
         slug: row.slug,
         type: row.type,
+        description: row.description,
       }),
     );
     result.set(row.postId, tags);

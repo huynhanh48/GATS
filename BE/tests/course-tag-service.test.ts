@@ -25,7 +25,6 @@ const courseTag = {
   slug: 'ai',
   type: 'course' as const,
   status: 'active' as const,
-  description: null,
 };
 
 describe('course tag ID resolution', () => {

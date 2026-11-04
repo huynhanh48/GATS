@@ -16,8 +16,8 @@ move GATS-specific behavior behind small project modules.
 ## Project Shape
 
 - Frontend: Next.js App Router, React, TypeScript, Tailwind.
-- Backend reference: `../be`. Treat `../be/src/common/paths/*` and
-  `../be/src/models/*` as the source of truth for backend paths and payloads.
+- Backend reference: `../BE`. Treat `../BE/src/common/paths/*` and
+  `../BE/src/models/*` as the source of truth for backend paths and payloads.
 - Backend proxy: browser requests go through `src/app/api/be/[...path]/route.ts`.
   Add new backend prefixes in `src/lib/api/proxy-allowlist.ts` before exposing
   them to the browser.
@@ -68,8 +68,8 @@ move GATS-specific behavior behind small project modules.
 
 When adding or changing course features:
 
-1. Read the BE route constants in `../be/src/common/paths/course.ts`.
-2. Check payload schemas in `../be/src/models/Course.model.ts`,
+1. Read the BE route constants in `../BE/src/common/paths/course.ts`.
+2. Check payload schemas in `../BE/src/models/Course.model.ts`,
    `CourseSection.model.ts`, and `Lesson.model.ts`.
 3. Update `src/lib/api/types.ts` if the response shape changed.
 4. Update the Axios client service in `src/services/courses.client.ts` for

@@ -20,6 +20,7 @@ export async function findByCourseIds(
       name: tagsTable.name,
       slug: tagsTable.slug,
       type: tagsTable.type,
+      description: tagsTable.description,
     })
     .from(courseTagsTable)
     .innerJoin(tagsTable, eq(courseTagsTable.tagId, tagsTable.id))
@@ -34,6 +35,7 @@ export async function findByCourseIds(
         name: row.name,
         slug: row.slug,
         type: row.type,
+        description: row.description,
       }),
     );
     result.set(row.courseId, tags);

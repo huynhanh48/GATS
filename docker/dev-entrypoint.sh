@@ -41,6 +41,23 @@ fi
 # ---------------------------------------------------------------- buckets
 node /app/docker/dev-s3-init.cjs
 
+# ---------------------------------------------------------------- node deps
+# node_modules nằm trong volume, nên rebuild image không cập nhật nó. So
+# package-lock.json với dấu `.gats-lock` (tạo lúc build image) để cài lại khi
+# danh sách package đổi — vd fe chuyển từ Next.js sang Vite.
+sync_deps() {
+  app="$1"
+  lock="/app/$app/package-lock.json"
+  stamp="/app/$app/node_modules/.gats-lock"
+  if [ ! -f "$stamp" ] || ! cmp -s "$lock" "$stamp"; then
+    echo "[dev] package-lock.json của $app đã đổi — chạy npm ci"
+    (cd "/app/$app" && npm ci --include=dev) && cp "$lock" "$stamp"
+  fi
+}
+sync_deps be
+sync_deps admin
+sync_deps fe
+
 # ---------------------------------------------------------------- database
 cd /app/be
 echo "[dev] migrate + seed database"

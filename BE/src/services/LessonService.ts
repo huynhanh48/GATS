@@ -53,6 +53,8 @@ async function create(
     order,
     content: input.content ?? null,
     isPreview: input.is_preview,
+    isArticlePreview: input.is_article_preview,
+    videoPreviewDurationSeconds: input.video_preview_duration_seconds,
     duration: input.duration ?? null,
     linkedPostId: input.linked_post_id ?? null,
   });
@@ -85,6 +87,12 @@ async function update(
     ...(input.order !== undefined ? { order: input.order } : {}),
     ...(input.content !== undefined ? { content: input.content } : {}),
     ...(input.is_preview !== undefined ? { isPreview: input.is_preview } : {}),
+    ...(input.is_article_preview !== undefined
+      ? { isArticlePreview: input.is_article_preview }
+      : {}),
+    ...(input.video_preview_duration_seconds !== undefined
+      ? { videoPreviewDurationSeconds: input.video_preview_duration_seconds }
+      : {}),
     ...(input.duration !== undefined ? { duration: input.duration } : {}),
     ...(input.linked_post_id !== undefined
       ? { linkedPostId: input.linked_post_id }

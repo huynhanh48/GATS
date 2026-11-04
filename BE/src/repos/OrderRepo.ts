@@ -55,10 +55,12 @@ export async function createOrderWithItems(
   return db.transaction(async (tx) => {
     const orderRows = await tx.insert(ordersTable).values(order).returning();
     const created = orderRows[0];
-    const itemRows = await tx
-      .insert(orderItemsTable)
-      .values(items.map((item) => ({ ...item, orderId: created.id })))
-      .returning();
+    const itemRows = items.length > 0
+      ? await tx
+          .insert(orderItemsTable)
+          .values(items.map((item) => ({ ...item, orderId: created.id })))
+          .returning()
+      : [];
 
     return {
       ...parseOrder(created),
@@ -92,6 +94,15 @@ export async function listByUserId(userId: number): Promise<OrderRecord[]> {
     .where(eq(ordersTable.userId, userId))
     .orderBy(desc(ordersTable.createdAt));
   return rows.map(parseOrder);
+}
+
+export async function hasPaidPrompt(userId: number, itemKey: string): Promise<boolean> {
+  const rows = await db.select({ id: ordersTable.id }).from(ordersTable).where(and(
+    eq(ordersTable.userId, userId),
+    eq(ordersTable.status, 'paid'),
+    eq(ordersTable.promptItemKey, itemKey),
+  )).limit(1);
+  return rows.length > 0;
 }
 
 export async function listItemsByOrderId(

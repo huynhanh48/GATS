@@ -121,6 +121,8 @@ export async function create(data: {
   order: number;
   content?: string | null;
   isPreview?: boolean;
+  isArticlePreview?: boolean;
+  videoPreviewDurationSeconds?: number;
   duration?: number | null;
   linkedPostId?: string | null;
 }): Promise<LessonRecord> {
@@ -135,6 +137,8 @@ export async function create(data: {
       order: data.order,
       content: data.content ?? null,
       isPreview: data.isPreview ?? false,
+      isArticlePreview: data.isArticlePreview ?? false,
+      videoPreviewDurationSeconds: data.videoPreviewDurationSeconds ?? 180,
       duration: data.duration ?? null,
       linkedPostId: data.linkedPostId ?? null,
     })
@@ -151,6 +155,8 @@ export async function update(
     order?: number;
     content?: string | null;
     isPreview?: boolean;
+    isArticlePreview?: boolean;
+    videoPreviewDurationSeconds?: number;
     duration?: number | null;
     linkedPostId?: string | null;
   },

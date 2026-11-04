@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 
-/** Mirror of be/src/common/utils/sepay.ts for contract checks. */
+/** Mirror of BE/src/common/utils/sepay.ts for contract checks. */
 function cleanAlnum(value: string): string {
   return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }

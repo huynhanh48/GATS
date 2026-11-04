@@ -3,12 +3,12 @@ import Image from "next/image";
 export function Logo() {
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-[#0070EB]/10 p-1.5">
+      <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full bg-[#407bff]/10 p-1">
         <Image
-          src="/Group.svg"
-          alt=""
-          width={28}
-          height={28}
+          src="/logo.png"
+          alt="GATS Logo"
+          width={32}
+          height={32}
           className="size-full object-contain"
           priority
         />

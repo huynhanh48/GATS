@@ -45,17 +45,17 @@ const CONFIG: Record<
   }
 > = {
   thumbnail: {
-    accept: "image/jpeg,image/png,image/webp,image/gif",
-    maxBytes: 10 * 1024 * 1024,
-    maxLabel: "10MB",
-    hint: "JPEG, PNG, WEBP, GIF",
+    accept: "image/jpeg,image/png,image/webp,image/gif,image/svg+xml",
+    maxBytes: 30 * 1024 * 1024,
+    maxLabel: "30MB",
+    hint: "JPEG, PNG, WEBP, GIF, SVG",
   },
   file: {
     accept:
-      ".pdf,.doc,.docx,.md,.txt,.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/webp,image/gif",
-    maxBytes: 50 * 1024 * 1024,
-    maxLabel: "50MB",
-    hint: "PDF, DOC, DOCX, MD, TXT, JPEG, PNG, WEBP, GIF",
+      ".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,.jpg,.jpeg,.png,.gif,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,image/jpeg,image/png,image/webp,image/gif",
+    maxBytes: 500 * 1024 * 1024,
+    maxLabel: "500MB",
+    hint: "PDF, Word, Excel, CSV, MD, TXT, JPEG, PNG, WEBP, GIF",
   },
 };
 

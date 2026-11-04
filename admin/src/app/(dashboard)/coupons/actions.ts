@@ -4,12 +4,15 @@ import { revalidatePath } from "next/cache";
 import { beFetch } from "@/lib/api/server";
 
 export type CouponType = "percent" | "fixed";
+export type CouponScope = "all" | "course" | "membership";
 
 export type AdminCoupon = {
   id: string;
   code: string;
   description: string | null;
   type: CouponType;
+  scope: CouponScope;
+  membershipPlanId: string | null;
   value: number;
   maxUses: number | null;
   usedCount: number;
@@ -52,6 +55,8 @@ export type CouponInput = {
   code: string;
   description?: string;
   type: CouponType;
+  scope: CouponScope;
+  membershipPlanId?: string | null;
   value: number;
   maxUses?: number | null;
   minOrderAmount: number;

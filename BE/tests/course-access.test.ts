@@ -71,6 +71,18 @@ describe('CourseAccessService', () => {
     expect(allowed).toBe(false);
   });
 
+  it('does not grant video access from article preview alone', async () => {
+    mockFindCourseById.mockResolvedValue(publishedCourse);
+    const CourseAccessService = (await import('@src/services/CourseAccessService')).default;
+    const allowed = await CourseAccessService.canViewCourseContent(
+      null,
+      courseId,
+      { ...lockedLesson, isArticlePreview: true } as never,
+      'video',
+    );
+    expect(allowed).toBe(false);
+  });
+
   it('allows locked lesson for enrolled users', async () => {
     mockFindCourseById.mockResolvedValue(publishedCourse);
     mockIsActiveEnrolled.mockResolvedValue(true);

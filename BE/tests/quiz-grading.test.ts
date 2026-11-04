@@ -53,6 +53,16 @@ describe('normalizeFillBlankAnswer', () => {
   it('keeps case when caseSensitive is true', () => {
     expect(normalizeFillBlankAnswer('  Sống   Ở  ', true)).toBe('Sống Ở');
   });
+
+  it('normalizes decomposed Vietnamese text produced by mobile keyboards', () => {
+    const composed = 'Tiếng Việt';
+    const decomposed = composed.normalize('NFD');
+
+    expect(decomposed).not.toBe(composed);
+    expect(normalizeFillBlankAnswer(decomposed, false)).toBe(
+      normalizeFillBlankAnswer(composed, false),
+    );
+  });
 });
 
 describe('quiz question validation', () => {
@@ -212,6 +222,21 @@ describe('grading', () => {
     );
     expect(result.isCorrect).toBe(false);
   });
+
+  it(
+    'matches visually identical Vietnamese answers with different Unicode forms',
+    () => {
+      const accepted = 'Tiếng Việt';
+      const mobileInput = accepted.normalize('NFD');
+      const result = gradeFillBlankQuestion(
+        { ...baseQuestion, type: 'fill_blank', caseSensitive: false },
+        mobileInput,
+        [answer('f1', accepted, true, 0, 'fill_blank')],
+      );
+
+      expect(result).toEqual({ score: 2, isCorrect: true });
+    },
+  );
 });
 
 describe('computeAttemptTotals', () => {

@@ -13,14 +13,14 @@ import type {
   ListCoursesQuery,
   UpdateCourseInput,
 } from '@src/models/Course.model';
-import type { UpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import { parseCourseDetail, parseCoursePublic } from '@src/models/Course.model';
+import type { UpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import type { TagPublic } from '@src/models/Tag.model';
-import * as AssignmentRepo from '@src/repos/AssignmentRepo';
 import * as CategoryRepo from '@src/repos/CategoryRepo';
 import * as CourseIncludeRepo from '@src/repos/CourseIncludeRepo';
 import * as CourseLearningOutcomeRepo from '@src/repos/CourseLearningOutcomeRepo';
 import * as CourseRepo from '@src/repos/CourseRepo';
+import * as CourseReviewMilestoneRepo from '@src/repos/CourseReviewMilestoneRepo';
 import * as CourseReviewRepo from '@src/repos/CourseReviewRepo';
 import * as CourseSectionRepo from '@src/repos/CourseSectionRepo';
 import * as CourseTagRepo from '@src/repos/CourseTagRepo';
@@ -29,11 +29,8 @@ import * as LessonAttachmentRepo from '@src/repos/LessonAttachmentRepo';
 import * as LessonRepo from '@src/repos/LessonRepo';
 import * as OrderRepo from '@src/repos/OrderRepo';
 import * as PostRepo from '@src/repos/PostRepo';
-import * as QuizQuestionRepo from '@src/repos/QuizQuestionRepo';
-import * as QuizRepo from '@src/repos/QuizRepo';
 import * as RoleRepo from '@src/repos/RoleRepo';
 import * as UserRepo from '@src/repos/UserRepo';
-import * as VideoRepo from '@src/repos/VideoRepo';
 import CategoryService from '@src/services/CategoryService';
 import {
   buildDetailSections,
@@ -98,9 +95,7 @@ async function attachPublic(course: CourseRecord): Promise<CoursePublic> {
   );
 }
 
-async function attachPublicList(
-  courses: CourseRecord[],
-): Promise<
+async function attachPublicList(courses: CourseRecord[]): Promise<
   Array<
     CoursePublic & {
       stats: CourseDetail['stats'] & {
@@ -144,9 +139,9 @@ async function attachPublicList(
     const lessonStats = lessonMap.get(course.id);
     return {
       ...toPublicCourse(
-      course,
-      categoryMap.get(course.id) ?? null,
-      tagMap.get(course.id) ?? [],
+        course,
+        categoryMap.get(course.id) ?? null,
+        tagMap.get(course.id) ?? [],
       ),
       author: course.instructorId
         ? (authorMap.get(course.instructorId) ?? null)
@@ -308,8 +303,16 @@ async function list(query: ListCoursesQuery, viewer?: AuthUser) {
     deleted: deletedVisibility,
   });
 
+  // Public API safety boundary: a soft-deleted course must never be exposed,
+  // even if its publishing status is still `published` or a repository/query
+  // regression accidentally returns it. Managed trash views keep their
+  // requested `only`/`with` visibility unchanged.
+  const visibleData = canManageCourses
+    ? data
+    : data.filter((course) => course.deletedAt === null);
+
   return {
-    data: await attachPublicList(data),
+    data: await attachPublicList(visibleData),
     pagination: buildPagination(query, total),
   };
 }
@@ -345,7 +348,8 @@ async function getMyReview(courseId: string, userId: number) {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
   return {
-    data: (await CourseReviewRepo.findByCourseAndUser(courseId, userId)) ?? null,
+    data:
+      (await CourseReviewRepo.findByCourseAndUser(courseId, userId)) ?? null,
   };
 }
 
@@ -371,6 +375,7 @@ async function upsertReview(
     rating: input.rating,
     content: input.content?.trim() || null,
   });
+  await CourseReviewMilestoneRepo.resolveAfterReview(userId, courseId);
   const stats = await CourseReviewRepo.getStatsByCourse(courseId);
   return { data: review, stats };
 }
@@ -472,7 +477,10 @@ async function getBySlug(
         item.value === null || item.value === undefined
           ? null
           : String(item.value),
-      unit: item.unit === null || item.unit === undefined ? null : String(item.unit),
+      unit:
+        item.unit === null || item.unit === undefined
+          ? null
+          : String(item.unit),
       order: item.order,
     })),
     sections: detailSections,
@@ -617,7 +625,7 @@ async function update(id: string, input: UpdateCourseInput, actor?: AuthUser) {
     }
     payload.slug = slug;
   } else if (input.title !== undefined && input.title !== existing.title) {
-    payload.slug = await resolveUniqueSlug(input.title, existing.slug, id);
+    payload.slug = await resolveUniqueSlug(input.title, undefined, id);
   }
 
   if (input.status === 'published' && existing.status !== 'published') {
@@ -670,11 +678,7 @@ async function getPublishReadiness(id: string) {
       label: 'Đã có ảnh đại diện khóa học',
       passed: Boolean(course.thumbnail),
     },
-    {
-      id: 'description',
-      label: 'Đã có mô tả khóa học',
-      passed: Boolean(course.description?.trim()),
-    },
+
     {
       id: 'learning_outcomes',
       label: 'Đã có mục tiêu học tập',
@@ -692,46 +696,7 @@ async function getPublishReadiness(id: string) {
     },
   ];
 
-  const incompleteLessons: string[] = [];
-  for (const lesson of lessons) {
-    if (lesson.type === 'video') {
-      const video = await VideoRepo.findByLessonId(lesson.id);
-      if (!video || video.status !== 'ready') {
-        incompleteLessons.push(`${lesson.title} (video chưa xử lý xong)`);
-      }
-    } else if (lesson.type === 'quiz') {
-      const quiz = await QuizRepo.findByLessonId(lesson.id);
-      const questions = quiz
-        ? await QuizQuestionRepo.listByQuizId(quiz.id)
-        : [];
-      if (!quiz || questions.length === 0) {
-        incompleteLessons.push(`${lesson.title} (quiz chưa có câu hỏi)`);
-      }
-    } else if (lesson.type === 'assignment') {
-      const assignment = await AssignmentRepo.findByLessonId(lesson.id);
-      if (!assignment) {
-        incompleteLessons.push(`${lesson.title} (chưa cấu hình bài tập)`);
-      }
-    } else if (lesson.type === 'text') {
-      if (!lesson.content?.trim()) {
-        incompleteLessons.push(`${lesson.title} (chưa có nội dung)`);
-      }
-    }
-  }
 
-  checks.push({
-    id: 'lesson_content',
-    label: 'Tất cả bài học đã có nội dung đầy đủ',
-    passed: lessons.length > 0 && incompleteLessons.length === 0,
-    detail:
-      incompleteLessons.length > 0
-        ? `Chưa hoàn thiện: ${incompleteLessons.slice(0, 5).join(', ')}${
-            incompleteLessons.length > 5
-              ? ` và ${incompleteLessons.length - 5} bài khác`
-              : ''
-          }`
-        : undefined,
-  });
 
   const ready = checks.every((check) => check.passed);
 

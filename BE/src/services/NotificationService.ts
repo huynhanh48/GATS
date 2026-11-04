@@ -8,6 +8,7 @@ export type NotifyInput = {
   body?: string | null;
   href?: string | null;
   entityId?: string | null;
+  userId?: number | null;
 };
 
 export type ComposeInput = {
@@ -26,6 +27,7 @@ async function notify(input: NotifyInput) {
       body: input.body ?? null,
       href: input.href ?? null,
       entityId: input.entityId ?? null,
+      userId: input.userId ?? null,
       isRead: false,
       source: 'system',
     });
@@ -73,6 +75,26 @@ async function list(query: {
   const limit = Math.min(100, Math.max(1, query.limit ?? 20));
   const skip = (page - 1) * limit;
   const learnerOnly = !query.isStaff;
+
+  // Auto-seed real account activation notification if learner has no personal notifications yet
+  if (query.userId != null && learnerOnly) {
+    const existing = await NotificationRepo.list({
+      skip: 0,
+      take: 1,
+      userId: query.userId,
+      learnerOnly: true,
+    });
+    if (existing.total === 0) {
+      await NotificationRepo.create({
+        userId: query.userId,
+        type: 'account_activated',
+        title: 'Hệ thống: Kích hoạt tài khoản thành công',
+        body: 'Tài khoản học viên của bạn đã được kích hoạt thành công! Bắt đầu hành trình học tập cùng GATS Academy ngay hôm nay.',
+        isRead: false,
+        source: 'system',
+      });
+    }
+  }
   const { data, total, unreadCount } = await NotificationRepo.list({
     skip,
     take: limit,

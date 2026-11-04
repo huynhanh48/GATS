@@ -8,6 +8,7 @@ import { useActionState, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CategorySelect } from "@/app/(dashboard)/category/_components/category-select";
 import { TagSelect } from "@/components/tags/tag-select";
+import { ThumbnailFieldUpload } from "@/components/media/thumbnail-field-upload";
 import { createCourse, updateCourse, type CreateCourseState } from "../actions";
 import {
   Award,
@@ -121,6 +122,9 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
   const [state, formAction, isPending] = useActionState(action, initialState);
 
   const [activeTab, setActiveTab] = useState<TabId>("general");
+  const [priceType, setPriceType] = useState<"paid" | "free" | "contact">(
+    course?.price === 0 ? "free" : (course?.price ?? 0) < 0 ? "contact" : "paid"
+  );
   const [openIncludeIconIndex, setOpenIncludeIconIndex] = useState<
     number | null
   >(null);
@@ -286,6 +290,12 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
                 handleChange={() => {}}
                 disabled={isPending}
               />
+              <ThumbnailFieldUpload
+                inputName="thumbnail"
+                initialUrl={course?.thumbnail}
+                disabled={isPending}
+                presetType="course"
+              />
             </div>
 
             <InputGroup
@@ -305,30 +315,58 @@ export function CourseForm({ mode, course, onSuccess }: CourseFormProps) {
                 Giá & khuyến mãi
               </p>
               <p className="mt-1 text-xs text-dark-4 dark:text-dark-6">
-                Để giá = 0 là miễn phí. Điền giá sale thấp hơn giá gốc để hiện
-                badge Sale trên /course.
+                Chọn Loại hiển thị: "Có giá" để bán, "Miễn phí" (0đ), hoặc "Liên hệ" (-1đ).
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <InputGroup
-                type="number"
-                name="price"
-                label="Giá gốc (VNĐ)"
-                placeholder="299000"
-                defaultValue={course?.price?.toString() ?? ""}
-                handleChange={() => {}}
-                disabled={isPending}
-              />
 
-              <InputGroup
-                type="number"
-                name="sale_price"
-                label="Giá sale (VNĐ)"
-                placeholder="Để trống nếu không sale"
-                defaultValue={course?.salePrice?.toString() ?? ""}
-                handleChange={() => {}}
-                disabled={isPending}
-              />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div>
+                <label className="mb-2.5 block font-medium text-dark dark:text-white">
+                  Loại hiển thị
+                </label>
+                <select
+                  name="price_type"
+                  value={priceType}
+                  onChange={(e) => setPriceType(e.target.value as any)}
+                  disabled={isPending}
+                  className="w-full rounded-lg border border-stroke bg-transparent px-4 py-3 text-dark transition outline-none focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white"
+                >
+                  <option value="paid">Có giá (nhập số tiền)</option>
+                  <option value="free">Miễn phí (0đ)</option>
+                  <option value="contact">Liên hệ (-1đ)</option>
+                </select>
+              </div>
+
+              {priceType === "paid" && (
+                <div className="space-y-5">
+                  <InputGroup
+                    type="number"
+                    name="price"
+                    label="Giá gốc (VNĐ)"
+                    placeholder="299000"
+                    defaultValue={course?.price !== undefined && course.price > 0 ? course.price.toString() : ""}
+                    handleChange={() => {}}
+                    disabled={isPending}
+                  />
+
+                  <InputGroup
+                    type="number"
+                    name="sale_price"
+                    label="Giá sale (VNĐ)"
+                    placeholder="Để trống nếu không sale"
+                    defaultValue={course?.salePrice?.toString() ?? ""}
+                    handleChange={() => {}}
+                    disabled={isPending}
+                  />
+                </div>
+              )}
+              
+              {priceType !== "paid" && (
+                <>
+                  <input type="hidden" name="price" value={priceType === "free" ? "0" : "-1"} />
+                  <input type="hidden" name="sale_price" value="" />
+                </>
+              )}
             </div>
           </div>
 

@@ -251,6 +251,8 @@ const lessons = [
     content: null,
     linkedPostId: null,
     isPreview: false,
+    isArticlePreview: false,
+    videoPreviewDurationSeconds: 180,
     duration: 120,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -266,6 +268,8 @@ const lessons = [
     content: 'secret-text',
     linkedPostId: null,
     isPreview: true,
+    isArticlePreview: false,
+    videoPreviewDurationSeconds: 180,
     duration: 60,
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
@@ -524,8 +528,17 @@ describe('course-curriculum-builder', () => {
     expect(mapped.content).toBeUndefined();
   });
 
-  it('includes content for unlocked curriculum lessons', () => {
+  it('does not expose article content for video-only previews', () => {
     const mapped = mapCurriculumLesson(lessons[1]!, false);
+    expect(mapped.locked).toBe(false);
+    expect(mapped.content).toBeUndefined();
+  });
+
+  it('includes content for article previews', () => {
+    const mapped = mapCurriculumLesson(
+      { ...lessons[1]!, isPreview: false, isArticlePreview: true },
+      false,
+    );
     expect(mapped.locked).toBe(false);
     expect(mapped.content).toBe('secret-text');
   });

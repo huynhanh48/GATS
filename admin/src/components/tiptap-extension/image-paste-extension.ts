@@ -77,6 +77,8 @@ export async function fetchIsImage(url: string): Promise<boolean> {
   }
 }
 
+import { handleImageUpload } from "@/lib/tiptap-utils"
+
 /**
  * Converts a pasted image or YouTube URL into the matching rich node.
  *
@@ -96,19 +98,91 @@ export const ImagePasteLink = Extension.create({
         key: new PluginKey("imagePasteLink"),
         props: {
           handlePaste: (_view, event) => {
+            let imageFiles: File[] = []
+            
+            // Try reading from files
+            if (event.clipboardData?.files?.length) {
+              imageFiles = Array.from(event.clipboardData.files).filter(f => f.type.startsWith("image/"))
+            }
+
+            // Fallback to items if files is empty (some browsers/copy methods)
+            if (imageFiles.length === 0 && event.clipboardData?.items) {
+              const items = event.clipboardData.items
+              for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith("image/")) {
+                  const file = items[i].getAsFile()
+                  if (file) imageFiles.push(file)
+                }
+              }
+            }
+
+            // Also check for base64 images in HTML
+            if (imageFiles.length === 0 && event.clipboardData) {
+              const html = event.clipboardData.getData("text/html")
+              if (html) {
+                const match = html.match(/<img[^>]+src="data:image\/([^;]+);base64,([^"]+)"/i)
+                if (match) {
+                  const mime = `image/${match[1]}`
+                  const b64Data = match[2]
+                  try {
+                    const byteCharacters = atob(b64Data)
+                    const byteNumbers = new Array(byteCharacters.length)
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                      byteNumbers[i] = byteCharacters.charCodeAt(i)
+                    }
+                    const byteArray = new Uint8Array(byteNumbers)
+                    const file = new File([byteArray], `pasted-image.${match[1]}`, { type: mime })
+                    imageFiles.push(file)
+                  } catch (e) {
+                    console.error("Failed to parse base64 image", e)
+                  }
+                }
+              }
+            }
+
+            if (imageFiles.length > 0) {
+              // Clone files immediately into memory before the paste event finishes.
+              // Some browsers/environments detach clipboard Blobs once the event handler returns.
+              Promise.all(
+                imageFiles.map(async (file) => {
+                  try {
+                    const buffer = await file.arrayBuffer()
+                    return new File([buffer], file.name || "pasted-image.png", { type: file.type })
+                  } catch (err) {
+                    console.error("Failed to clone pasted file", err)
+                    return file // fallback to original if cloning fails
+                  }
+                })
+              ).then((clonedFiles) => {
+                Promise.all(clonedFiles.map(f => handleImageUpload(f)))
+                  .then(urls => {
+                    urls.forEach(url => {
+                      if (url) insertImage(editor, url)
+                    })
+                  })
+                  .catch(err => console.error("Paste image upload failed", err))
+              })
+
+              return true // Prevent default paste behavior
+            }
+
             const url = extractSingleUrl(
               event.clipboardData?.getData("text/plain")
             )
             if (!url) return false
 
             // YouTube + image URLs that we can classify synchronously.
-            if (insertMediaFromUrl(editor, url)) {
+            // Note: If it's a ChatGPT URL, it might not look like an image to regex
+            // but we can't upload it due to CORS anyway, so hotlinking is the only fallback.
+            if (insertMediaFromUrl(editor, url) || url.includes("oaiusercontent.com")) {
+              if (url.includes("oaiusercontent.com")) {
+                // Force insert for chatgpt urls since we can't fetch HEAD
+                insertImage(editor, url)
+              }
               return true
             }
 
-            // Async fallback: HEAD request to check Content-Type. We let the
-            // default paste run (URL becomes a link), then replace it with an
-            // image node if the request confirms it points at an image.
+            // Async fallback: HEAD request to check Content-Type.
             fetchIsImage(url).then((isImg) => {
               if (isImg) insertImage(editor, url)
             })

@@ -71,6 +71,8 @@ export async function update(
       Coupon,
       | 'description'
       | 'type'
+      | 'scope'
+      | 'membershipPlanId'
       | 'value'
       | 'maxUses'
       | 'minOrderAmount'

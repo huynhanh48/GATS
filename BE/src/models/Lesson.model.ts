@@ -13,6 +13,8 @@ export const lessonRecordSchema = z.object({
   order: z.number().int(),
   content: z.string().nullable(),
   isPreview: z.boolean(),
+  isArticlePreview: z.boolean().default(false),
+  videoPreviewDurationSeconds: z.number().int().min(30).max(600).default(180),
   duration: z.number().int().nullable(),
   linkedPostId: z.string().uuid().nullable(),
   createdAt: z.coerce.date(),
@@ -28,6 +30,8 @@ export const createLessonSchema = z.object({
   order: z.number().int().min(0).optional(),
   content: z.string().optional(),
   is_preview: z.boolean().default(false),
+  is_article_preview: z.boolean().default(false),
+  video_preview_duration_seconds: z.number().int().min(30).max(600).default(180),
   duration: z.number().int().min(0).optional(),
   linked_post_id: z.string().uuid().nullable().optional(),
 });
@@ -40,6 +44,8 @@ export const updateLessonSchema = z
     order: z.number().int().min(0).optional(),
     content: z.string().nullable().optional(),
     is_preview: z.boolean().optional(),
+    is_article_preview: z.boolean().optional(),
+    video_preview_duration_seconds: z.number().int().min(30).max(600).optional(),
     duration: z.number().int().min(0).nullable().optional(),
     linked_post_id: z.string().uuid().nullable().optional(),
   })

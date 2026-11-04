@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 
-import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import EnvVars from '@src/common/constants/env';
+import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { RouteError } from '@src/common/utils/route-errors';
 import db from '@src/db';
 import { categoriesTable } from '@src/db/schema/category';
@@ -9,11 +9,7 @@ import { coursesTable } from '@src/db/schema/course';
 import { lessonsTable } from '@src/db/schema/lesson';
 
 export type ViavaCompatExerciseType =
-  | 'mcq'
-  | 'true_false'
-  | 'fill_in_blank'
-  | 'short_answer'
-  | 'flashcard';
+  'mcq' | 'true_false' | 'fill_in_blank' | 'short_answer' | 'flashcard';
 
 const EXERCISE_GENERATE_PATH: Record<ViavaCompatExerciseType, string> = {
   mcq: '/course/exercises/mcq/generate',
@@ -44,10 +40,7 @@ export async function resolveViavaDomainFromCourseId(
   const rows = await db
     .select({ slug: categoriesTable.slug })
     .from(coursesTable)
-    .leftJoin(
-      categoriesTable,
-      eq(coursesTable.categoryId, categoriesTable.id),
-    )
+    .leftJoin(categoriesTable, eq(coursesTable.categoryId, categoriesTable.id))
     .where(eq(coursesTable.id, courseId))
     .limit(1);
   return normalizeViavaDomain(rows[0]?.slug);
@@ -60,10 +53,7 @@ export async function resolveViavaDomainFromLessonId(
     .select({ slug: categoriesTable.slug })
     .from(lessonsTable)
     .innerJoin(coursesTable, eq(lessonsTable.courseId, coursesTable.id))
-    .leftJoin(
-      categoriesTable,
-      eq(coursesTable.categoryId, categoriesTable.id),
-    )
+    .leftJoin(categoriesTable, eq(coursesTable.categoryId, categoriesTable.id))
     .where(eq(lessonsTable.id, lessonId))
     .limit(1);
   return normalizeViavaDomain(rows[0]?.slug);
@@ -123,15 +113,12 @@ function statusFromViava(httpStatus: number): HttpStatusCodes {
   return HttpStatusCodes.BAD_GATEWAY;
 }
 
-async function viavaRequest(
-  path: string,
-  init: RequestInit,
-): Promise<unknown> {
+async function viavaRequest(path: string, init: RequestInit): Promise<unknown> {
   const base = getViavaBaseUrl();
   if (!base) {
     throw new RouteError(
       HttpStatusCodes.SERVICE_UNAVAILABLE,
-      'AI quiz generation is not configured (set VIAVA_COURSE_GEN_URL)',
+      'AI generation is not configured (set VIAVA_COURSE_GEN_URL)',
     );
   }
 
@@ -273,7 +260,12 @@ export async function chatWithViava(options: {
   domains?: string[];
 }): Promise<{ answer: string; references: string[] } | null> {
   const base = getViavaBaseUrl();
-  if (!base) return null;
+  if (!base) {
+    throw new RouteError(
+      HttpStatusCodes.SERVICE_UNAVAILABLE,
+      'AI Coach chưa được cấu hình (thiếu VIAVA_COURSE_GEN_URL)',
+    );
+  }
 
   try {
     const payload = (await viavaRequest('/course/chat', {
@@ -287,16 +279,65 @@ export async function chatWithViava(options: {
       signal: AbortSignal.timeout(75_000),
     })) as { answer?: string; references?: string[] };
 
-    const answer =
+    const rawAnswer =
       typeof payload?.answer === 'string' ? payload.answer.trim() : '';
-    if (!answer) return null;
+    if (!rawAnswer) return null;
+    const references = normalizeCoachReferences(payload.references);
+    const answer = appendCoachReferences(
+      stripCoachReferences(rawAnswer),
+      references,
+    );
     return {
       answer,
-      references: Array.isArray(payload.references)
-        ? payload.references.filter((r): r is string => typeof r === 'string')
-        : [],
+      references,
     };
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof RouteError) throw error;
+    throw new RouteError(
+      HttpStatusCodes.BAD_GATEWAY,
+      `AI Coach failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+    );
   }
+}
+
+const coachAudioReferencePattern =
+  /(?:\/audio\/|\.(?:flac|mp3|wav|m4a|aac|ogg)(?:[?#]|$))/i;
+const coachVideoReferencePattern =
+  /(?:youtube\.com|youtu\.be|vimeo\.com|\.(?:mp4|webm|mov|m3u8)(?:[?#]|$))/i;
+
+function referenceTarget(reference: string): string {
+  return reference.replace(/^\s*\[R\d+\]\s*/i, '').trim();
+}
+
+function normalizeCoachReferences(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  return value
+    .filter((reference): reference is string => typeof reference === 'string')
+    .map(referenceTarget)
+    .filter(
+      (reference) => reference && !coachAudioReferencePattern.test(reference),
+    )
+    .filter((reference) => {
+      const key = reference.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((left, right) => {
+      const leftRank = coachVideoReferencePattern.test(left) ? 0 : 1;
+      const rightRank = coachVideoReferencePattern.test(right) ? 0 : 1;
+      return leftRank - rightRank;
+    });
+}
+
+function stripCoachReferences(answer: string): string {
+  return answer.replace(/\n+#{1,6}\s*Tham khảo\s*[\s\S]*$/i, '').trim();
+}
+
+function appendCoachReferences(answer: string, references: string[]): string {
+  if (!references.length) return answer;
+  const items = references.map((reference) => `- ${reference}`).join('\n');
+  return `${answer}\n\n### Tham khảo\n\n${items}`;
 }

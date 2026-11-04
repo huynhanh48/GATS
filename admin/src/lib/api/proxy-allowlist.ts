@@ -29,9 +29,11 @@ const ALLOWED_PREFIXES = [
   "moderation",
   "banned-words",
   "admin/metrics",
+  "admin/memberships",
   "coupons",
   "certificates",
   "analytics",
+  "ai-tools-config",
 ] as const;
 
 export function isPathAllowed(pathSegments: string[]): boolean {

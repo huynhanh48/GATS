@@ -9,6 +9,7 @@ export async function fetchCourseTags(): Promise<TagWithCounts[]> {
 
 export async function createCourseTag(
   name: string,
+  level?: string | null,
 ): Promise<{ ok: boolean; message: string; tag?: TagWithCounts }> {
-  return createTag(name, "course");
+  return createTag(name, "course", level);
 }

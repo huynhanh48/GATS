@@ -10,6 +10,10 @@ import { errorHandle } from '@src/middleware/errorHandle';
 import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
 import {
+  authenticatedUserRateKey,
+  redisRateLimit,
+} from '@src/middleware/redisRateLimit';
+import {
   handleQuizAiUploadError,
   quizAiUploadMiddleware,
 } from '@src/middleware/quizAiUploadMiddleware';
@@ -20,6 +24,12 @@ import CourseAccessService from '@src/services/CourseAccessService';
 import quizHandlers from './quizRouter';
 
 const apiRouter = Router();
+const aiGenerationLimit = redisRateLimit({
+  keyPrefix: 'ai:generation',
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyFn: authenticatedUserRateKey,
+});
 
 const requireCourseUpdate = (courseIdParam = 'courseId') =>
   requirePermission('update', RESOURCE_TYPES.COURSE, (req) => {
@@ -100,6 +110,7 @@ apiRouter.post(
   QuizPaths.Quiz.Questions.AiGenerate,
   errorHandle(authMiddleware),
   errorHandle(requireQuizCourseUpdate),
+  errorHandle(aiGenerationLimit),
   quizAiUploadMiddleware,
   handleQuizAiUploadError,
   errorHandle(quizHandlers.aiGenerate),

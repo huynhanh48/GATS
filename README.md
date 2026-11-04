@@ -8,7 +8,7 @@ Monorepo GATS Academy: backend API, web học viên, admin dashboard.
 GATS/
 ├── be/                    # Backend API — Express 5 + TypeScript + Drizzle (cổng 3000)
 ├── admin/                 # Admin dashboard — Next.js (cổng 3001)
-├── fe/                    # Web học viên — Next.js (cổng 3002)
+├── fe/                    # Web học viên — Vite + React SPA, build ra fe/dist (cổng 3002)
 ├── docker/
 │   ├── dev-entrypoint.sh  # Khởi động postgres + redis + s3 rồi chạy 3 dev server
 │   └── dev-s3-init.cjs    # Tạo bucket cho S3
@@ -80,7 +80,8 @@ Lần đầu container sẽ tự: khởi tạo Postgres → chạy migration →
 | --------------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `.env` (copy từ `.env.example`)    | Tuỳ chọn, cho Docker dev    | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_ID` nếu test Google Login                                                                                                         |
 | `be/config/.env.development`          | Container dev đọc qua mount | Đã điền sẵn cho hạ tầng trong container (DB/Redis/S3 localhost). Điền thêm `EMAIL_PASSWORD`, `SEPAY_API_KEY`, `VNP_*` khi cần                                         |
-| `fe/.env.local`, `admin/.env.local` | Container dev đọc qua mount | Đã điền sẵn                                                                                                                                                                       |
+| `admin/.env.local`                     | Container dev đọc qua mount | Đã điền sẵn                                                                                                                                                                       |
+| Env của `fe` (Vite)                    | Dev: `docker-compose.yml`   | `PUBLIC_API_URL`, `PUBLIC_GOOGLE_CLIENT_ID` (dev). Prod thì nhúng lúc build — xem mục 5                                                                                            |
 | `.env.prod.example` → `.env`       | Deploy VPS                    | `POSTGRES_PASSWORD`, `JWT_SECRET`, `EMAIL_PASSWORD`, `MINIO_ROOT_USER/PASSWORD`, `S3_ACCESS_KEY_ID/SECRET`, `ADMIN_DEFAULT_PASSWORD`, `SEPAY_API_KEY`, `NEXT_PUBLIC_*` |
 
 Các file `.env*` đều đã bị gitignore (trừ `*.example`).
@@ -112,15 +113,44 @@ Build image production thủ công:
 docker build -t gats-academy .
 ```
 
-> Đổi biến `NEXT_PUBLIC_*` thì **phải build lại** (giá trị được nhúng vào JS lúc build).
+> Biến nhúng lúc build (đổi phải build lại): `NEXT_PUBLIC_*` cho admin (Next.js), `PUBLIC_*` + `BANK_*` cho fe (Vite).
 
 TLS/reverse proxy: đặt nginx (hoặc proxy khác) phía trước 3 cổng 3000/3001/3002.
+
+### Đổi fe / đổi dependency thì chạy lại thế nào
+
+Source được mount vào container dev, nên **sửa code** thì không cần build lại. Nhưng **đổi `package.json`, đổi framework hay đổi biến nhúng lúc build** thì phải build lại:
+
+```bash
+cd ~/GATS
+docker compose down
+docker compose up -d --build      # build lại image dev rồi chạy
+docker compose logs -f            # theo dõi tới khi fe/admin/be online
+```
+
+`node_modules` của be/admin/fe nằm trong volume nên rebuild image **không** cập nhật nó; `docker/dev-entrypoint.sh` tự so `package-lock.json` và chạy `npm ci` khi danh sách package đổi. Muốn cài lại sạch từ đầu thì xoá volume tương ứng:
+
+```bash
+docker compose down
+docker volume rm gats_fe_node_modules     # hoặc gats_be_node_modules / gats_admin_node_modules
+docker compose up -d --build
+```
+
+Production (VPS):
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml logs -f app
+```
+
+Cổng của fe nằm trong `fe/vite.config.js` (`server.port` + `preview.port`) — phải khớp `3002:3002` trong compose và `FRONTEND_URL` của be.
 
 ## 6. Lưu ý
 
 - **Ảnh/file upload**: file upload (avatar, media, video) lưu ở S3 **trong** container dev. Trình duyệt chỉ xem được nếu mở thêm cổng S3 — bỏ comment 2 dòng `9010:9010` / `9011:9011` trong `docker-compose.yml` rồi `docker compose up -d`. Ảnh có sẵn trong repo (`/images/...`) không bị ảnh hưởng.
 - **S3 local dùng RustFS** (`rustfs/rustfs`): image MinIO community (`minio/minio`) đã bị gỡ khỏi Docker Hub. RustFS nói cùng S3 API nên code không đổi; production vẫn trỏ `S3_*`/`MINIO_*` vào LongVan hoặc S3-compatible bất kỳ.
-- **Cổng cũ đã đổi**: admin `9000 → 3001`, fe `3005 → 3002` (be giữ `3000`). Đã cập nhật trong `package.json`, `ecosystem*.js`, Dockerfile, compose, `be/config/.env.development` (`FRONTEND_URL`).
+- **Cổng**: be `3000`, admin `3001`, fe `3002`. Cổng fe khai báo ở `fe/vite.config.js`; đổi cổng thì phải sửa cả `docker-compose*.yml`, `ecosystem*.js`, `be/config/.env.development` (`FRONTEND_URL`) và origin trong Google Console.
+- **fe là SPA tĩnh** (Vite): dev chạy `vite` (HMR), prod build ra `fe/dist` rồi phục vụ bằng `serve -s dist` trong `ecosystem.config.js`. API URL/Google Client ID của fe là biến `PUBLIC_*` — nhúng lúc build, không đọc lúc chạy.
 - **Video worker** (`be-worker`) chạy sẵn trong container dev để xử lý upload/transcode video.
 - Đã bỏ khỏi repo: `docs/`, `mobile-app/`, `scripts/`, `viava/`, `deploy/`.
 - Các tính năng gọi AI course-gen (quiz AI, coach, flashcard) gọi sang `viava` — dịch vụ này đã bị xoá nên các endpoint đó sẽ lỗi.

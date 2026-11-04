@@ -19,10 +19,10 @@ export type LinkedPostSummary = {
 export type LinkedPostsById = Map<string, LinkedPostSummary>;
 
 export function isLessonUnlocked(
-  lesson: Pick<LessonRecord, 'isPreview'>,
+  lesson: Pick<LessonRecord, 'isPreview'> & { isArticlePreview?: boolean },
   hasFullAccess: boolean,
 ): boolean {
-  return hasFullAccess || lesson.isPreview;
+  return hasFullAccess || lesson.isPreview || Boolean(lesson.isArticlePreview);
 }
 
 export function groupLessonsBySectionId(
@@ -52,6 +52,7 @@ export function mapDetailLesson(
   linkedPostsById?: LinkedPostsById,
 ): CourseDetailLesson {
   const unlocked = isLessonUnlocked(lesson, hasFullAccess);
+  const articleUnlocked = hasFullAccess || lesson.isArticlePreview;
   const attachments = attachmentsByLesson?.get(lesson.id) ?? [];
   const linkedPost = resolveLinkedPost(lesson, linkedPostsById);
   return {
@@ -61,11 +62,13 @@ export function mapDetailLesson(
     type: lesson.type,
     order: lesson.order,
     isPreview: lesson.isPreview,
+    isArticlePreview: lesson.isArticlePreview,
+    videoPreviewDurationSeconds: lesson.videoPreviewDurationSeconds,
     duration: lesson.duration,
     linkedPostId: lesson.linkedPostId ?? null,
-    linkedPost,
-    ...(unlocked ? { content: lesson.content } : {}),
-    ...(unlocked ? { attachments } : {}),
+    linkedPost: articleUnlocked ? linkedPost : null,
+    ...(articleUnlocked ? { content: lesson.content } : {}),
+    ...(articleUnlocked ? { attachments } : {}),
     locked: !unlocked,
   };
 }
@@ -82,6 +85,8 @@ export function mapCurriculumLesson(
   type: string;
   order: number;
   isPreview: boolean;
+  isArticlePreview?: boolean;
+  videoPreviewDurationSeconds?: number;
   duration: number | null;
   content?: string | null;
   attachments?: LessonAttachmentPublic[];
@@ -90,6 +95,7 @@ export function mapCurriculumLesson(
   linkedPost: LinkedPostSummary | null;
 } {
   const unlocked = isLessonUnlocked(lesson, hasFullAccess);
+  const articleUnlocked = hasFullAccess || lesson.isArticlePreview;
   const attachments = attachmentsByLesson?.get(lesson.id) ?? [];
   const linkedPost = resolveLinkedPost(lesson, linkedPostsById);
   return {
@@ -99,11 +105,13 @@ export function mapCurriculumLesson(
     type: lesson.type,
     order: lesson.order,
     isPreview: lesson.isPreview,
+    isArticlePreview: lesson.isArticlePreview,
+    videoPreviewDurationSeconds: lesson.videoPreviewDurationSeconds,
     duration: lesson.duration,
     linkedPostId: lesson.linkedPostId ?? null,
-    linkedPost,
-    ...(unlocked ? { content: lesson.content } : {}),
-    ...(unlocked ? { attachments } : {}),
+    linkedPost: articleUnlocked ? linkedPost : null,
+    ...(articleUnlocked ? { content: lesson.content } : {}),
+    ...(articleUnlocked ? { attachments } : {}),
     locked: !unlocked,
   };
 }

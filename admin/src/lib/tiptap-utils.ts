@@ -17,7 +17,8 @@ import {
 import { mediaClient } from "@/services/media.client"
 
 // Matches the media backend thumbnail limit (MAX_IMAGE_UPLOAD_BYTES).
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+export const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
+export const MAX_GENERIC_FILE_SIZE = 500 * 1024 * 1024 // 500MB
 
 export const MAC_SYMBOLS: Record<string, string> = {
   mod: "⌘",
@@ -405,6 +406,37 @@ export const handleImageUpload = async (
 
   onProgress?.({ progress: 100 })
   return res.data.media.url
+}
+
+/**
+ * Handles generic file upload to the media backend
+ */
+export const handleFileUpload = async (
+  file: File,
+  onProgress?: (event: { progress: number }) => void,
+  abortSignal?: AbortSignal
+): Promise<{ url: string; name: string; size: number }> => {
+  if (!file) throw new Error("No file provided")
+  if (file.size > MAX_GENERIC_FILE_SIZE) {
+    throw new Error(
+      `File size exceeds limit (${MAX_GENERIC_FILE_SIZE / (1024 * 1024)}MB)`
+    )
+  }
+  if (abortSignal?.aborted) throw new Error("Upload cancelled")
+
+  const res = await mediaClient.uploadFile(file, {
+    signal: abortSignal,
+    onProgress: (percent) => onProgress?.({ progress: percent }),
+  })
+
+  if (!res.data) throw new Error(res.error?.message || "File upload failed")
+
+  onProgress?.({ progress: 100 })
+  return {
+    url: res.data.media.url,
+    name: file.name,
+    size: file.size,
+  }
 }
 
 type ProtocolOptions = {

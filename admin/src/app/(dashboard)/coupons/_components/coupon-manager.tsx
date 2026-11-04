@@ -34,8 +34,10 @@ import {
   updateCoupon,
   type AdminCoupon,
   type CouponInput,
+  type CouponScope,
   type CouponType,
 } from "../actions";
+import type { MembershipPlan } from "../../memberships/actions";
 
 const selectClass =
   "h-10 w-full rounded-lg border border-stroke bg-transparent px-3 text-sm text-dark outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary";
@@ -44,6 +46,8 @@ type CouponFormState = {
   code: string;
   description: string;
   type: CouponType;
+  scope: CouponScope;
+  membershipPlanId: string;
   value: string;
   maxUses: string;
   minOrderAmount: string;
@@ -56,6 +60,8 @@ const emptyForm: CouponFormState = {
   code: "",
   description: "",
   type: "percent",
+  scope: "all",
+  membershipPlanId: "",
   value: "10",
   maxUses: "",
   minOrderAmount: "0",
@@ -84,9 +90,10 @@ function toDateInputValue(value: string | null) {
 
 type Props = {
   coupons: AdminCoupon[];
+  membershipPlans: MembershipPlan[];
 };
 
-export function CouponManager({ coupons }: Props) {
+export function CouponManager({ coupons, membershipPlans }: Props) {
   const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<AdminCoupon | null>(null);
@@ -120,6 +127,19 @@ export function CouponManager({ coupons }: Props) {
             {row.original.type === "percent"
               ? `${row.original.value}%`
               : currency(row.original.value)}
+          </span>
+        ),
+      },
+      {
+        id: "scope",
+        header: "Phạm vi",
+        cell: ({ row }) => (
+          <span className="text-dark dark:text-white">
+            {row.original.scope === "membership"
+              ? "Membership"
+              : row.original.scope === "course"
+                ? "Khóa học"
+                : "Tất cả"}
           </span>
         ),
       },
@@ -206,6 +226,8 @@ export function CouponManager({ coupons }: Props) {
       code: coupon.code,
       description: coupon.description ?? "",
       type: coupon.type,
+      scope: coupon.scope,
+      membershipPlanId: coupon.membershipPlanId ?? "",
       value: String(coupon.value),
       maxUses: coupon.maxUses !== null ? String(coupon.maxUses) : "",
       minOrderAmount: String(coupon.minOrderAmount),
@@ -237,6 +259,11 @@ export function CouponManager({ coupons }: Props) {
     const payload: Partial<CouponInput> = {
       description: form.description.trim() || undefined,
       type: form.type,
+      scope: form.scope,
+      membershipPlanId:
+        form.scope === "membership" && form.membershipPlanId
+          ? form.membershipPlanId
+          : null,
       value,
       maxUses,
       minOrderAmount,
@@ -318,6 +345,54 @@ export function CouponManager({ coupons }: Props) {
                 required={!editing}
                 className="font-mono"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="coupon-scope">Phạm vi áp dụng</Label>
+                <select
+                  id="coupon-scope"
+                  className={selectClass}
+                  value={form.scope}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      scope: e.target.value as CouponScope,
+                      membershipPlanId:
+                        e.target.value === "membership"
+                          ? prev.membershipPlanId
+                          : "",
+                    }))
+                  }
+                >
+                  <option value="all">Tất cả sản phẩm</option>
+                  <option value="course">Chỉ khóa học</option>
+                  <option value="membership">Chỉ membership</option>
+                </select>
+              </div>
+              {form.scope === "membership" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="coupon-plan">Gói membership</Label>
+                  <select
+                    id="coupon-plan"
+                    className={selectClass}
+                    value={form.membershipPlanId}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        membershipPlanId: e.target.value,
+                      }))
+                    }
+                  >
+                    <option value="">Tất cả gói membership</option>
+                    {membershipPlans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

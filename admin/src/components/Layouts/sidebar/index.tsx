@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { NAV_DATA } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
+import { MenuIcon } from "../header/icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 
@@ -37,7 +38,12 @@ function getBestActiveUrl(pathname: string, items: Array<{ url?: string }>) {
 }
 
 function isInstructorNavigationUrl(url?: string) {
-  return url === "/course" || url === "/course/new" || url === "/course/quiz";
+  return (
+    url === "/course" ||
+    url === "/course/new" ||
+    url === "/course/quiz" ||
+    url === "/course/flashcards"
+  );
 }
 
 export function Sidebar({ roles = [] }: { roles?: string[] }) {
@@ -101,7 +107,7 @@ export function Sidebar({ roles = [] }: { roles?: string[] }) {
         inert={!isOpen}
       >
         <div className="flex h-full flex-col py-8 pr-3 pl-5">
-          <div className="relative pr-4.5">
+          <div className="flex items-center justify-between pr-2">
             <Link
               href={instructorOnly ? "/course" : "/"}
               onClick={() => isMobile && toggleSidebar()}
@@ -110,15 +116,15 @@ export function Sidebar({ roles = [] }: { roles?: string[] }) {
               <Logo />
             </Link>
 
-            {isMobile && (
-              <button
-                onClick={toggleSidebar}
-                className="absolute top-1/2 right-4.5 left-3/4 -translate-y-1/2 text-right text-slate-600 dark:text-slate-300"
-              >
-                <span className="sr-only">Close Menu</span>
-                <ArrowLeftIcon className="ml-auto size-7" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              className="grid size-9 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0070EB] dark:border-slate-700 dark:bg-[#0f172a] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
+              aria-label="Thu nhỏ thanh điều hướng"
+              title="Thu nhỏ sidebar"
+            >
+              <MenuIcon />
+            </button>
           </div>
 
           <div className="custom-scrollbar mt-8 flex-1 overflow-y-auto pr-2">

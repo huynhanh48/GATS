@@ -7,6 +7,10 @@ import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
 import requirePermission from '@src/middleware/requirePermission';
 import requireStaff from '@src/middleware/requireStaff';
+import {
+  authenticatedUserRateKey,
+  redisRateLimit,
+} from '@src/middleware/redisRateLimit';
 import FlashcardAdminService from '@src/services/FlashcardAdminService';
 
 import flashcardAdminHandlers from './flashcardAdminRouter';
@@ -14,6 +18,12 @@ import flashcardAdminHandlers from './flashcardAdminRouter';
 const apiRouter = Router();
 const deckRouter = Router({ mergeParams: true });
 const cardRouter = Router({ mergeParams: true });
+const aiGenerationLimit = redisRateLimit({
+  keyPrefix: 'ai:generation',
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyFn: authenticatedUserRateKey,
+});
 
 const requireCourseUpdate = (courseIdParam = 'courseId') =>
   requirePermission('update', RESOURCE_TYPES.COURSE, (req) => {
@@ -90,6 +100,7 @@ deckRouter.post(
   FlashcardAdminPaths.Decks.AiGenerate,
   errorHandle(attachDeckCourseId),
   errorHandle(requireCourseUpdate('courseId')),
+  errorHandle(aiGenerationLimit),
   errorHandle(flashcardAdminHandlers.generateCardsFromArticle),
 );
 

@@ -20,7 +20,7 @@ export default function SignUp() {
         <div className="custom-gradient-1 overflow-hidden rounded-2xl px-15 pt-12.5 dark:bg-dark-2! dark:bg-none">
           <Link className="mb-10 inline-flex items-center gap-2.5" href="/">
             <Image
-              src="/Group.svg"
+              src="/logo.png"
               alt="GATS"
               width={36}
               height={36}

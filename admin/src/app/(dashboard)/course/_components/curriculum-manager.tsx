@@ -136,7 +136,7 @@ export function CurriculumManager({ course }: CurriculumManagerProps) {
     setLoading(false);
 
     if (result.ok) {
-      toast.success(result.message);
+      toast.success(result.message, { duration: 2000 });
       setFormMode(null);
       router.refresh();
     } else {

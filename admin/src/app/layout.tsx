@@ -24,6 +24,15 @@ export const metadata: Metadata = {
   },
   description:
     "GATS Academy admin dashboard — courses, orders, users, and operations.",
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/favicon.ico" },
+      { url: "/logo.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }: PropsWithChildren) {

@@ -1,6 +1,6 @@
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import { appendSlugSuffix, slugify } from '@src/common/utils/slug';
 import { RouteError } from '@src/common/utils/route-errors';
+import { appendSlugSuffix, slugify } from '@src/common/utils/slug';
 import type { TagType } from '@src/db/schema/tag';
 import type {
   CreateTagInput,
@@ -46,10 +46,16 @@ async function resolveUniqueSlug(
 
 function assertTagForEntity(tag: Tag, entity: 'course' | 'post'): void {
   if (entity === 'course' && tag.type !== 'course' && tag.type !== 'global') {
-    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_FOR_ENTITY);
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      Errors.INVALID_FOR_ENTITY,
+    );
   }
   if (entity === 'post' && tag.type !== 'post' && tag.type !== 'global') {
-    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_FOR_ENTITY);
+    throw new RouteError(
+      HttpStatusCodes.BAD_REQUEST,
+      Errors.INVALID_FOR_ENTITY,
+    );
   }
 }
 
@@ -65,11 +71,14 @@ async function list(query: ListTagsQuery): Promise<{ data: TagWithCounts[] }> {
 
 async function create(input: CreateTagInput): Promise<Tag> {
   const slug = await resolveUniqueSlug(input.type, input.name, input.slug);
+  const sortOrder = input.sortOrder ?? (await TagRepo.getNextSortOrder());
   return TagRepo.create({
     name: input.name,
     slug,
     type: input.type,
     description: input.description ?? null,
+    level: input.level ?? null,
+    sortOrder,
   });
 }
 
@@ -79,11 +88,22 @@ async function update(id: string, input: UpdateTagInput): Promise<Tag> {
     throw new RouteError(HttpStatusCodes.NOT_FOUND, Errors.NOT_FOUND);
   }
 
-  const payload: Partial<{ name: string; slug: string; status: Tag['status']; description: string | null }> = {};
+  const payload: Partial<{
+    name: string;
+    slug: string;
+    status: Tag['status'];
+    level: string | null;
+    description: string | null;
+    sortOrder: number;
+  }> = {};
 
   if (input.name !== undefined) payload.name = input.name;
   if (input.status !== undefined) payload.status = input.status;
-  if (input.description !== undefined) payload.description = input.description;
+  if (input.level !== undefined) payload.level = input.level ?? null;
+  if (input.description !== undefined) {
+    payload.description = input.description ?? null;
+  }
+  if (input.sortOrder !== undefined) payload.sortOrder = input.sortOrder;
 
   if (input.slug !== undefined) {
     const slug = slugify(input.slug);
@@ -95,7 +115,12 @@ async function update(id: string, input: UpdateTagInput): Promise<Tag> {
     }
     payload.slug = slug;
   } else if (input.name !== undefined && input.name !== existing.name) {
-    payload.slug = await resolveUniqueSlug(existing.type, input.name, existing.slug, id);
+    payload.slug = await resolveUniqueSlug(
+      existing.type,
+      input.name,
+      existing.slug,
+      id,
+    );
   }
 
   const updated = await TagRepo.update(id, payload);
@@ -113,6 +138,18 @@ async function remove(id: string) {
   return { message: 'Tag deleted' };
 }
 
+async function reorder(
+  type: 'course' | 'post',
+  items: { id: string; sortOrder: number }[],
+): Promise<void> {
+  const tags = await TagRepo.findByIds(items.map((item) => item.id));
+  if (tags.length !== items.length) {
+    throw new RouteError(HttpStatusCodes.BAD_REQUEST, Errors.INVALID_IDS);
+  }
+  for (const tag of tags) assertTagForEntity(tag, type);
+  await TagRepo.reorder(items);
+}
+
 async function resolveTagIdsBySlugs(
   slugs: string[],
   entity: 'course' | 'post',
@@ -121,7 +158,9 @@ async function resolveTagIdsBySlugs(
     return [];
   }
 
-  const uniqueSlugs = [...new Set(slugs.map((s) => slugify(s)).filter(Boolean))];
+  const uniqueSlugs = [
+    ...new Set(slugs.map((s) => slugify(s)).filter(Boolean)),
+  ];
   const tags = await TagRepo.findBySlugsForEntity(uniqueSlugs, entity);
 
   if (tags.length !== uniqueSlugs.length) {
@@ -166,7 +205,10 @@ async function resolveTagIdsByIds(
   return uniqueIds;
 }
 
-async function syncPostTags(postId: string, tagSlugs?: string[]): Promise<TagPublic[]> {
+async function syncPostTags(
+  postId: string,
+  tagSlugs?: string[],
+): Promise<TagPublic[]> {
   if (tagSlugs === undefined) {
     const map = await PostTagRepo.findByPostIds([postId]);
     return map.get(postId) ?? [];
@@ -245,6 +287,7 @@ export default {
   create,
   update,
   remove,
+  reorder,
   resolveTagIdsBySlugs,
   resolveTagIdsByIds,
   syncPostTags,

@@ -36,7 +36,7 @@ export class ApiRequestError extends Error {
 export const apiClient: AxiosInstance = axios.create({
   baseURL: "/api/be",
   withCredentials: true,
-  timeout: 15_000,
+  timeout: 60_000,
   headers: {
     Accept: "application/json",
   },

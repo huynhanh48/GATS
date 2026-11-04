@@ -33,6 +33,9 @@ import BankAccountService from '@src/services/BankAccountService';
 import CartService from '@src/services/CartService';
 import CouponService from '@src/services/CouponService';
 import EnrollmentService from '@src/services/EnrollmentService';
+import MembershipService from '@src/services/MembershipService';
+import * as MembershipRepo from '@src/repos/MembershipRepo';
+import * as AiToolConfigRepo from '@src/repos/AiToolConfigRepo';
 import NotificationService from '@src/services/NotificationService';
 import { mailService } from '@src/common/utils/mail';
 import logger from 'jet-logger';
@@ -197,6 +200,81 @@ async function resolveCheckoutItems(
 }
 
 async function createOrder(userId: number, input: CreateOrderInput) {
+  if (input.prompt) {
+    const prompt = await AiToolConfigRepo.findByKey('prompt', input.prompt.itemKey);
+    if (!prompt || !prompt.isPublic || !prompt.isPaid || !prompt.payload) {
+      throw new RouteError(HttpStatusCodes.NOT_FOUND, 'Không tìm thấy Prompt trả phí');
+    }
+    if (await OrderRepo.hasPaidPrompt(userId, prompt.itemKey)) {
+      throw new RouteError(HttpStatusCodes.CONFLICT, 'Bạn đã sở hữu Prompt này');
+    }
+    const rawPrice = String((prompt.payload as Record<string, unknown>).price ?? '');
+    const price = Number(rawPrice.replace(/[^0-9]/g, ''));
+    if (!Number.isSafeInteger(price) || price <= 0) {
+      throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Giá Prompt không hợp lệ');
+    }
+    const order = await OrderRepo.createOrderWithItems({
+      userId,
+      totalAmount: price,
+      status: 'pending',
+      paymentMethod: input.paymentMethod,
+      customerName: input.customerName ?? null,
+      customerEmail: input.customerEmail ?? null,
+      customerPhone: input.customerPhone ?? null,
+      notes: input.notes ?? null,
+      promptItemKey: prompt.itemKey,
+      promptTitleSnapshot: prompt.title,
+      promptPriceSnapshot: price,
+    }, []);
+    return createPaymentForOrder(order, userId, input.paymentMethod);
+  }
+  if (input.membership) {
+    const plan = await MembershipRepo.findPlanById(input.membership.planId);
+    if (!plan || !plan.isActive) {
+      throw new RouteError(HttpStatusCodes.NOT_FOUND, 'Membership plan not found');
+    }
+    const price = input.membership.billingInterval === 'monthly'
+      ? plan.monthlyPrice
+      : plan.yearlyPrice;
+    if (price === null || price <= 0) {
+      throw new RouteError(HttpStatusCodes.BAD_REQUEST, 'Billing interval is not available');
+    }
+    let discountAmount = 0;
+    let appliedCouponId: string | null = null;
+    let appliedCouponCode: string | null = null;
+    if (input.couponCode) {
+      const result = await CouponService.validate(input.couponCode, price, {
+        scope: 'membership',
+        membershipPlanId: plan.id,
+      });
+      discountAmount = result.discountAmount;
+      appliedCouponId = result.coupon.id;
+      appliedCouponCode = result.coupon.code;
+    }
+    const order = await OrderRepo.createOrderWithItems(
+      {
+        userId,
+        totalAmount: Math.max(0, price - discountAmount),
+        status: 'pending',
+        paymentMethod: input.paymentMethod,
+        customerName: input.customerName ?? null,
+        customerEmail: input.customerEmail ?? null,
+        customerPhone: input.customerPhone ?? null,
+        notes: input.notes ?? null,
+        couponId: appliedCouponId,
+        couponCode: appliedCouponCode,
+        discountAmount,
+        membershipPlanId: plan.id,
+        membershipBillingInterval: input.membership.billingInterval,
+        membershipPriceSnapshot: price,
+      },
+      [],
+    );
+    if (appliedCouponId) {
+      await CouponService.commitRedemption(appliedCouponId, discountAmount, order.id, userId);
+    }
+    return createPaymentForOrder(order, userId, input.paymentMethod);
+  }
   const checkoutItems = await resolveCheckoutItems(userId, input);
 
   const prepared: Array<{
@@ -248,6 +326,7 @@ async function createOrder(userId: number, input: CreateOrderInput) {
     const { coupon, discountAmount: computed } = await CouponService.validate(
       input.couponCode,
       subtotal,
+      { scope: 'course' },
     );
     discountAmount = computed;
     appliedCouponId = coupon.id;
@@ -410,6 +489,7 @@ async function createOrder(userId: number, input: CreateOrderInput) {
         bankAccountSource: bank.source,
         bankAccountNumber: bank.accountNumber,
         bankName: bank.bankName,
+        bankCode: bank.bankCode,
         bankAccountName: bank.accountHolder,
         bankLabel: bank.label,
       },
@@ -432,6 +512,25 @@ async function createOrder(userId: number, input: CreateOrderInput) {
           : 'MoMo integration pending — use bank_transfer for now',
     },
   };
+}
+
+async function createPaymentForOrder(
+  order: OrderDetail,
+  userId: number,
+  paymentMethod: CreateOrderInput['paymentMethod'],
+) {
+  const txnRef = generateTxnRef();
+  const transaction = await TransactionRepo.create({
+    orderId: order.id, txnRef, amount: order.totalAmount, paymentMethod, status: 'pending',
+  });
+  if (order.totalAmount === 0) {
+    const paid = await processSuccessfulPayment(order.id, { txnRef, gatewayResponse: { source: 'coupon_zero' } });
+    return { order: paid.order, transaction: paid.transaction, payment: { method: paymentMethod, status: 'success' as const, amount: 0, txnRef } };
+  }
+  const expiresAt = getOrderPaymentExpiresAt(order.createdAt);
+  const bank = await BankAccountService.resolvePaymentBankAccount();
+  const transferContent = toSepayTransferContent(txnRef);
+  return { order, transaction, payment: { method: 'bank_transfer' as const, status: 'pending' as const, provider: 'sepay_qr' as const, txnRef, amount: order.totalAmount, qrUrl: buildSepayQrUrl(order.totalAmount, txnRef, bank), transferContent, expiresAt: expiresAt.toISOString(), expiresInMs: ORDER_PAYMENT_TTL_MS, bankAccountNumber: bank.accountNumber, bankName: bank.bankName, bankCode: bank.bankCode, bankAccountName: bank.accountHolder } };
 }
 
 async function processSuccessfulPayment(
@@ -504,6 +603,21 @@ async function processSuccessfulPayment(
     }
   }
 
+  if (
+    order.membershipPlanId &&
+    order.membershipBillingInterval &&
+    order.membershipPriceSnapshot !== null &&
+    order.membershipPriceSnapshot !== undefined
+  ) {
+    await MembershipService.activatePurchase({
+      userId: order.userId,
+      planId: order.membershipPlanId,
+      billingInterval: order.membershipBillingInterval,
+      priceSnapshot: order.membershipPriceSnapshot,
+      orderId,
+    });
+  }
+
   const courseTitles = order.items
     .map((item) => item.courseName || item.courseId)
     .join(', ');
@@ -513,6 +627,7 @@ async function processSuccessfulPayment(
     body: `${order.totalAmount.toLocaleString('vi-VN')} đ · ${courseTitles}`,
     href: `/orders/${orderId}`,
     entityId: orderId,
+    userId: order.userId,
   });
 
   void sendOrderLifecycleEmail('paid', {

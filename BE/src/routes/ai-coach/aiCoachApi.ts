@@ -1,13 +1,24 @@
 import { Router } from 'express';
 import { errorHandle } from '@src/middleware/errorHandle';
 import authMiddleware from '@src/middleware/authMiddleware';
+import {
+  authenticatedUserRateKey,
+  redisRateLimit,
+} from '@src/middleware/redisRateLimit';
 import aiCoachHandlers from './aiCoachRouter';
 
 const apiRouter = Router();
+const aiChatLimit = redisRateLimit({
+  keyPrefix: 'ai:chat',
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  keyFn: authenticatedUserRateKey,
+});
 
 apiRouter.post(
   '/chat',
   errorHandle(authMiddleware),
+  errorHandle(aiChatLimit),
   errorHandle(aiCoachHandlers.chat)
 );
 

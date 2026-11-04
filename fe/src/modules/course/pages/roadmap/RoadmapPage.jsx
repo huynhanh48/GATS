@@ -18,6 +18,7 @@ import { postService } from '@/modules/blog/services/postService';
 import BookFinLoading from '@/shared/components/BookFinLoading';
 import ReactFlowRoadmapCanvas from './components/ReactFlowRoadmapCanvas';
 import CustomRoadmapDesigner from './components/CustomRoadmapDesigner';
+import InteractiveRoadmapTimeline from './components/InteractiveRoadmapTimeline';
 
 // Predefined fallback structures for each of the 6 core categories
 const CATEGORY_META = {
@@ -529,18 +530,8 @@ export default function RoadmapPage() {
             <span className="text-slate-900 font-semibold">Roadmap</span>
           </div>
 
-          {/* Hero Banner Roadmap */}
-          <div className="relative w-full rounded-[12px] overflow-hidden shadow-sm select-none mb-6">
-            <div className="w-full relative overflow-hidden bg-slate-900 aspect-[16/6] sm:aspect-[16/5] md:aspect-[21/7] max-h-[420px] flex items-center justify-center">
-              <img
-                src="/roadmap/roadmap.webp"
-                alt="GATS AI Roadmap - Bản Đồ Kỹ Năng và Lộ Trình Đào Tạo Thực Chiến"
-                className="w-full h-full object-cover block"
-                loading="eager"
-                decoding="async"
-              />
-            </div>
-          </div>
+          {/* Hero Banner Roadmap - Chuyển đổi thành Interactive Code Component */}
+          <InteractiveRoadmapTimeline categories={categories} />
 
           {/* 6 Category Selection Tabs (Sticky Bar) */}
           <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 py-2 no-scrollbar">

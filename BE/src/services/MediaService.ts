@@ -12,8 +12,10 @@ import {
   ALLOWED_FILE_CONTENT_TYPES,
   ALLOWED_IMAGE_CONTENT_TYPES,
   buildMediaKey,
+  ensureFilenameExtension,
   MAX_FILE_UPLOAD_BYTES,
   MAX_IMAGE_UPLOAD_BYTES,
+  resolveMimeTypeFromFilename,
   sanitizeFilename,
   type ListMediaQuery,
   type MediaKind,
@@ -60,7 +62,19 @@ async function uploadMedia(
   const maxBytes =
     kind === 'thumbnail' ? MAX_IMAGE_UPLOAD_BYTES : MAX_FILE_UPLOAD_BYTES;
 
-  if (!allowed.has(file.mimetype)) {
+  let mimeType = (file.mimetype || '').toLowerCase().trim();
+  if (!allowed.has(mimeType)) {
+    const resolved = resolveMimeTypeFromFilename(
+      file.originalname,
+      kind === 'thumbnail' ? 'thumbnail' : 'file',
+    );
+    if (resolved && allowed.has(resolved)) {
+      mimeType = resolved;
+      file.mimetype = resolved;
+    }
+  }
+
+  if (!allowed.has(mimeType)) {
     throw new RouteError(
       HttpStatusCodes.BAD_REQUEST,
       Errors.INVALID_CONTENT_TYPE,
@@ -75,25 +89,32 @@ async function uploadMedia(
   }
 
   const mediaId = randomUUID();
-  const filename = sanitizeFilename(file.originalname);
+  let filename = sanitizeFilename(file.originalname);
+  filename = ensureFilenameExtension(filename, mimeType);
   const storageKey = buildMediaKey(kind, mediaId, filename);
 
+  let uploadedKey = storageKey;
   try {
-    await uploadFileFromPath(file.path, storageKey, file.mimetype);
-    const url = buildMinioPublicUrl(storageKey);
+    const uploadResult = await uploadFileFromPath(
+      file.path,
+      storageKey,
+      mimeType,
+    );
+    uploadedKey = uploadResult.storageKey;
+    const url = uploadResult.url;
 
     return await MediaRepo.create({
       id: mediaId,
       kind,
       originalName: filename,
-      storageKey,
-      mimeType: file.mimetype,
+      storageKey: uploadedKey,
+      mimeType,
       size: file.size,
       url,
       uploadedBy: userId ?? null,
     });
   } catch (error) {
-    await deleteObject(storageKey).catch(() => undefined);
+    await deleteObject(uploadedKey).catch(() => undefined);
     throw error;
   } finally {
     await unlink(file.path).catch(() => undefined);

@@ -34,6 +34,10 @@ export const NAV_DATA = [
             title: "Quản lý Quiz",
             url: "/course/quiz",
           },
+          {
+            title: "Quản lý Flashcard",
+            url: "/course/flashcards",
+          },
         ],
       },
       {
@@ -102,6 +106,31 @@ export const NAV_DATA = [
           {
             title: "Mã giảm giá",
             url: "/coupons",
+          },
+        ],
+      },
+      {
+        title: "Công cụ AI",
+        icon: Icons.SparklesIcon,
+        adminOnly: true,
+        items: [
+          { title: "Prompts", url: "/ai-tools/prompts" },
+          { title: "API Providers", url: "/ai-tools/api-providers" },
+          { title: "API Models", url: "/ai-tools/api-models" },
+          { title: "Skills", url: "/ai-tools/skills" },
+          { title: "MCP", url: "/ai-tools/mcps" },
+          { title: "Tools", url: "/ai-tools/tools" },
+          { title: "STEM", url: "/ai-tools/stem" },
+        ],
+      },
+      {
+        title: "Membership",
+        icon: Icons.PieChart,
+        adminOnly: true,
+        items: [
+          {
+            title: "Gói & hội viên",
+            url: "/memberships",
           },
         ],
       },

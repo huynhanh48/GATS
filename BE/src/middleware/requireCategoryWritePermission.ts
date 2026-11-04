@@ -3,8 +3,8 @@ import { NextFunction, Request, Response } from 'express';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { RouteError } from '@src/common/utils/route-errors';
 import { getRouteParam } from '@src/common/utils/route-params';
-import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import { categoryTypeEnum } from '@src/db/schema/category';
+import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import * as CategoryRepo from '@src/repos/CategoryRepo';
 import authorizationService from '@src/services/AuthorizationService';
 
@@ -27,9 +27,12 @@ export function requireCategoryWritePermission() {
 
     let categoryType: string | undefined;
 
-    if (req.method === 'POST') {
+    if (req.method === 'POST' || req.method === 'PUT') {
       const raw = req.body?.type;
-      if (typeof raw !== 'string' || !CATEGORY_TYPES.has(raw as 'course' | 'post')) {
+      if (
+        typeof raw !== 'string' ||
+        !CATEGORY_TYPES.has(raw as 'course' | 'post')
+      ) {
         throw new RouteError(
           HttpStatusCodes.BAD_REQUEST,
           'Invalid category type',

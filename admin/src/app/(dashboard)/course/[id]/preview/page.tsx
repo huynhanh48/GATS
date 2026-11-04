@@ -48,7 +48,7 @@ export default async function CoursePreviewPage({ params }: PageProps) {
           alt={course.title}
           width={960}
           height={360}
-          className="h-56 w-full bg-slate-100 object-contain p-3 dark:bg-slate-900"
+          className="h-56 w-full bg-slate-100 object-cover dark:bg-slate-900"
           unoptimized
         />
         <div className="p-6">

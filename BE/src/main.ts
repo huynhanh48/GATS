@@ -5,6 +5,7 @@ import '@src/db';
 import EnvVars from './common/constants/env';
 import BootstrapService from './services/BootstrapService';
 import DeviceService from './services/DeviceService';
+import { startApiModelSyncScheduler } from './services/ApiModelSyncService';
 import server from './server';
 
 /******************************************************************************
@@ -35,6 +36,7 @@ async function startServer(): Promise<void> {
       setInterval(() => {
         void DeviceService.processOutboxBatch().catch(() => undefined);
       }, 30_000);
+      startApiModelSyncScheduler();
     }
   });
 }

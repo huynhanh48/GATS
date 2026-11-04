@@ -4,11 +4,21 @@ import EnrollmentPaths from '@src/common/paths/enrollment';
 import authMiddleware from '@src/middleware/authMiddleware';
 import { errorHandle } from '@src/middleware/errorHandle';
 import idempotencyMiddleware from '@src/middleware/idempotencyMiddleware';
+import {
+  authenticatedUserRateKey,
+  redisRateLimit,
+} from '@src/middleware/redisRateLimit';
 import enrollmentHandlers from './enrollmentRouter';
 
 const apiRouter = Router();
 const enrollmentRouter = Router({ mergeParams: true });
 const meRouter = Router();
+const aiCoachReportLimit = redisRateLimit({
+  keyPrefix: 'ai:coach-report',
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  keyFn: authenticatedUserRateKey,
+});
 
 enrollmentRouter.post(
   EnrollmentPaths.Enrollment.Create,
@@ -39,6 +49,7 @@ enrollmentRouter.get(
 enrollmentRouter.post(
   EnrollmentPaths.Enrollment.LearnerAiCoach,
   errorHandle(authMiddleware),
+  errorHandle(aiCoachReportLimit),
   enrollmentHandlers.aiCoach,
 );
 enrollmentRouter.delete(

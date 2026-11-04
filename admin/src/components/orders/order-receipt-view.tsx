@@ -194,7 +194,7 @@ export function OrderReceiptView({ receipt, backHref }: Props) {
         <footer className="mt-8 border-t border-slate-200 pt-4 text-xs text-slate-500">
           Đây là biên lai thanh toán điện tử do {receipt.seller.name} cấp. Không
           phải hóa đơn GTGT. Vui lòng liên hệ{" "}
-          {receipt.seller.email ?? "support@gats.vn"} nếu cần hỗ trợ.
+          {receipt.seller.email ?? "gatsvn@gmail.com"} nếu cần hỗ trợ.
         </footer>
       </article>
 

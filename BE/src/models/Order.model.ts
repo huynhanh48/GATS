@@ -17,6 +17,13 @@ export const createOrderSchema = z.object({
   items: z.array(createOrderItemSchema).min(1).optional(),
   /** When true (default), checkout uses current cart items if `items` omitted */
   fromCart: z.boolean().default(true),
+  membership: z
+    .object({
+      planId: z.string().uuid(),
+      billingInterval: z.enum(['monthly', 'yearly']),
+    })
+    .optional(),
+  prompt: z.object({ itemKey: z.string().trim().min(1).max(160) }).optional(),
   paymentMethod: paymentMethodSchema,
   customerName: z.string().min(1).max(255).optional(),
   customerEmail: z.string().email().max(255).optional(),
@@ -54,6 +61,12 @@ export const orderRecordSchema = z.object({
   couponId: z.string().uuid().nullable().optional(),
   couponCode: z.string().nullable().optional(),
   discountAmount: z.number().int().min(0).default(0),
+  membershipPlanId: z.string().uuid().nullable().optional(),
+  membershipBillingInterval: z.enum(['monthly', 'yearly']).nullable().optional(),
+  membershipPriceSnapshot: z.number().int().min(0).nullable().optional(),
+  promptItemKey: z.string().nullable().optional(),
+  promptTitleSnapshot: z.string().nullable().optional(),
+  promptPriceSnapshot: z.number().int().min(0).nullable().optional(),
   paidAt: z.coerce.date().nullable(),
   refundReasonCode: z.string().nullable().optional(),
   refundReasonNote: z.string().nullable().optional(),

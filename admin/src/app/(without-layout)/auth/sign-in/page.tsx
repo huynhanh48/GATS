@@ -20,7 +20,7 @@ export default function SignIn() {
         <div className="bg-gradient-to-br from-[#eef] to-[#fff8fc] dark:from-[#1a222c] dark:to-[#1a222c] overflow-hidden rounded-2xl px-15 pt-12.5 border border-transparent dark:border-slate-800">
           <Link className="mb-10 inline-flex items-center gap-2.5" href="/">
             <Image
-              src="/Group.svg"
+              src="/logo.png"
               alt="GATS"
               width={36}
               height={36}

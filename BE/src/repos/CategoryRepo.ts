@@ -1,4 +1,17 @@
-import { and, count, eq, inArray, isNull, ne, type SQL } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  inArray,
+  ilike,
+  isNull,
+  ne,
+  or,
+  type SQL,
+} from 'drizzle-orm';
 
 import db from '@src/db';
 import {
@@ -17,18 +30,39 @@ import {
   parseCategoryPublic,
   parseCategoryWithCounts,
 } from '@src/models/Category.model';
+import * as CategoryTagRepo from '@src/repos/CategoryTagRepo';
 
 function parseRow(row: unknown): Category {
   return parseCategory(row);
 }
 
+export async function getNextSortOrder(type: CategoryType): Promise<number> {
+  const rows = await db
+    .select({ sortOrder: categoriesTable.sortOrder })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.type, type))
+    .orderBy(desc(categoriesTable.sortOrder))
+    .limit(1);
+  return (rows[0]?.sortOrder ?? -1) + 1;
+}
+
 export async function findAllWithCounts(options: {
   type: CategoryType;
   status?: CategoryStatus;
+  q?: string;
 }): Promise<CategoryWithCounts[]> {
   const conditions: SQL[] = [eq(categoriesTable.type, options.type)];
   if (options.status) {
     conditions.push(eq(categoriesTable.status, options.status));
+  }
+  if (options.q) {
+    const pattern = `%${options.q}%`;
+    conditions.push(
+      or(
+        ilike(categoriesTable.name, pattern),
+        ilike(categoriesTable.slug, pattern),
+      )!,
+    );
   }
 
   const rows = await db
@@ -36,17 +70,14 @@ export async function findAllWithCounts(options: {
       id: categoriesTable.id,
       name: categoriesTable.name,
       slug: categoriesTable.slug,
+      sortOrder: categoriesTable.sortOrder,
       type: categoriesTable.type,
       status: categoriesTable.status,
       description: categoriesTable.description,
       thumbnail: categoriesTable.thumbnail,
       icon: categoriesTable.icon,
-      parentId: categoriesTable.parentId,
-      sortOrder: categoriesTable.sortOrder,
-      seoTitle: categoriesTable.seoTitle,
-      seoDescription: categoriesTable.seoDescription,
-      courseCount: count(coursesTable.id),
-      postCount: count(postsTable.id),
+      courseCount: countDistinct(coursesTable.id),
+      postCount: countDistinct(postsTable.id),
     })
     .from(categoriesTable)
     .leftJoin(
@@ -68,23 +99,27 @@ export async function findAllWithCounts(options: {
       categoriesTable.id,
       categoriesTable.name,
       categoriesTable.slug,
+      categoriesTable.sortOrder,
       categoriesTable.type,
       categoriesTable.status,
       categoriesTable.description,
       categoriesTable.thumbnail,
       categoriesTable.icon,
-      categoriesTable.parentId,
-      categoriesTable.sortOrder,
-      categoriesTable.seoTitle,
-      categoriesTable.seoDescription,
     )
-    .orderBy(categoriesTable.sortOrder, categoriesTable.name);
+    .orderBy(asc(categoriesTable.sortOrder), asc(categoriesTable.name));
+
+  const [tagIdsByCategory, tagsByCategory] = await Promise.all([
+    CategoryTagRepo.findTagIdsByCategoryIds(rows.map((row) => row.id)),
+    CategoryTagRepo.findTagsByCategoryIds(rows.map((row) => row.id)),
+  ]);
 
   return rows.map((row) =>
     parseCategoryWithCounts({
       ...row,
       courseCount: Number(row.courseCount),
       postCount: Number(row.postCount),
+      tagIds: tagIdsByCategory.get(row.id) ?? [],
+      tags: tagsByCategory.get(row.id) ?? [],
     }),
   );
 }
@@ -96,6 +131,15 @@ export async function findById(id: string): Promise<Category | undefined> {
     .where(eq(categoriesTable.id, id))
     .limit(1);
   return rows[0] ? parseRow(rows[0]) : undefined;
+}
+
+export async function findByIds(ids: string[]): Promise<Category[]> {
+  if (ids.length === 0) return [];
+  const rows = await db
+    .select()
+    .from(categoriesTable)
+    .where(inArray(categoriesTable.id, ids));
+  return rows.map(parseRow);
 }
 
 export async function findByTypeAndSlug(
@@ -146,6 +190,7 @@ export async function findByCourseIds(
       name: categoriesTable.name,
       slug: categoriesTable.slug,
       type: categoriesTable.type,
+      description: categoriesTable.description,
     })
     .from(coursesTable)
     .leftJoin(categoriesTable, eq(coursesTable.categoryId, categoriesTable.id))
@@ -160,6 +205,7 @@ export async function findByCourseIds(
             name: row.name!,
             slug: row.slug!,
             type: row.type!,
+            description: row.description,
           })
         : null,
     );
@@ -183,6 +229,7 @@ export async function findByPostIds(
       name: categoriesTable.name,
       slug: categoriesTable.slug,
       type: categoriesTable.type,
+      description: categoriesTable.description,
     })
     .from(postsTable)
     .leftJoin(categoriesTable, eq(postsTable.categoryId, categoriesTable.id))
@@ -197,6 +244,7 @@ export async function findByPostIds(
             name: row.name!,
             slug: row.slug!,
             type: row.type!,
+            description: row.description,
           })
         : null,
     );
@@ -230,10 +278,45 @@ export async function remove(id: string): Promise<boolean> {
   return rows.length > 0;
 }
 
+export async function findUsageCounts(
+  id: string,
+): Promise<{ courseCount: number; postCount: number }> {
+  const [courseRows, postRows] = await Promise.all([
+    db
+      .select({ total: count() })
+      .from(coursesTable)
+      .where(
+        and(eq(coursesTable.categoryId, id), isNull(coursesTable.deletedAt)),
+      ),
+    db
+      .select({ total: count() })
+      .from(postsTable)
+      .where(and(eq(postsTable.categoryId, id), isNull(postsTable.deletedAt))),
+  ]);
+
+  return {
+    courseCount: Number(courseRows[0]?.total ?? 0),
+    postCount: Number(postRows[0]?.total ?? 0),
+  };
+}
+
 export async function countByType(type: CategoryType): Promise<number> {
   const rows = await db
     .select({ total: count() })
     .from(categoriesTable)
     .where(eq(categoriesTable.type, type));
   return Number(rows[0]?.total ?? 0);
+}
+
+export async function reorder(
+  items: { id: string; sortOrder: number }[],
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    for (const item of items) {
+      await tx
+        .update(categoriesTable)
+        .set({ sortOrder: item.sortOrder, updatedAt: new Date() })
+        .where(eq(categoriesTable.id, item.id));
+    }
+  });
 }

@@ -20,6 +20,7 @@ import type {
 import { CategorySelect } from "@/app/(dashboard)/category/_components/category-select";
 import { TagSelect } from "@/components/tags/tag-select";
 import { createPost, updatePost } from "../actions";
+import { ThumbnailFieldUpload } from "@/components/media/thumbnail-field-upload";
 
 const SimpleEditor = dynamic(
   () =>
@@ -229,6 +230,12 @@ export function PostFormPage({ mode, post }: PostFormPageProps) {
               name="thumbnail"
               placeholder="https://..."
               defaultValue={post?.thumbnail ?? ""}
+            />
+            <ThumbnailFieldUpload
+              inputId="thumbnail"
+              initialUrl={post?.thumbnail}
+              disabled={loading}
+              presetType="post"
             />
           </div>
 

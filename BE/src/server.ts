@@ -14,6 +14,7 @@ import CartApi from '@src/routes/cart/cartApi';
 import CategoryApi from '@src/routes/category/categoryApi';
 import CourseApi from '@src/routes/course/courseApi';
 import TagApi from '@src/routes/tag/tagApi';
+import LevelApi from '@src/routes/level/levelApi';
 import EnrollmentApi from '@src/routes/enrollment/enrollmentApi';
 import OrderApi from '@src/routes/order/orderApi';
 import PaymentApi from '@src/routes/payment/paymentApi';
@@ -39,6 +40,9 @@ import MobileApi from '@src/routes/mobile/mobileApi';
 import FlashcardAdminApi from '@src/routes/flashcard/flashcardAdminApi';
 import CourseChatPaths from '@src/common/paths/course-chat';
 import AiCoachApi from '@src/routes/ai-coach/aiCoachApi';
+import MembershipApi from '@src/routes/membership/membershipApi';
+import AiToolConfigApi from '@src/routes/ai-tool-config/aiToolConfigApi';
+import CourseMenuApi from '@src/routes/course-menu/courseMenuApi';
 import EnvVars, {
   assertProductionConfiguration,
   NodeEnvs,
@@ -103,6 +107,7 @@ app.use('/health', HealthApi);
 app.use(Paths._, AuthApi);
 app.use(Paths._, CategoryApi);
 app.use(Paths._, TagApi);
+app.use(Paths._, LevelApi);
 app.use(Paths._, CourseApi);
 app.use(Paths._, EnrollmentApi);
 app.use(Paths._, CartApi);
@@ -129,6 +134,9 @@ app.use(Paths._, MobileApi);
 app.use(Paths._, FlashcardAdminApi);
 app.use(CourseChatPaths._, CourseChatApi);
 app.use(Paths._ + '/ai-coach', AiCoachApi);
+app.use(Paths._, MembershipApi);
+app.use(Paths._, AiToolConfigApi);
+app.use(Paths._, CourseMenuApi);
 
 // Add error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

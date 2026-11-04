@@ -749,6 +749,7 @@ async function buildPlaybackPayload(
   video: NonNullable<Awaited<ReturnType<typeof VideoRepo.findById>>>,
   lesson: NonNullable<Awaited<ReturnType<typeof LessonRepo.findById>>>,
   userId: number | null,
+  previewLimitSeconds: number | null,
 ) {
   if (video.status !== 'ready' || (!video.hlsKey && !video.mp4Url)) {
     throw new RouteError(
@@ -782,6 +783,7 @@ async function buildPlaybackPayload(
       audioFlacKey: video.audioFlacKey,
       audioFlacUrl: buildAudioFlacUrl(video.audioFlacKey),
       mp4Url: video.mp4Url,
+      previewLimitSeconds,
       ...(progress ? { progress } : {}),
     },
   };
@@ -811,6 +813,7 @@ async function getPlayback(
     userId,
     courseId,
     lesson,
+    'video',
   );
   if (!canView) {
     throw new RouteError(
@@ -819,7 +822,8 @@ async function getPlayback(
     );
   }
 
-  return buildPlaybackPayload(courseId, video, lesson, userId);
+  const hasFullAccess = userId !== null && await CourseAccessService.canViewCourseContent(userId, courseId, { ...lesson, isPreview: false, isArticlePreview: false });
+  return buildPlaybackPayload(courseId, video, lesson, userId, hasFullAccess ? null : lesson.videoPreviewDurationSeconds);
 }
 
 /**
@@ -845,6 +849,7 @@ async function getPlaybackByLesson(
     userId,
     courseId,
     lesson,
+    'video',
   );
   if (!canView) {
     throw new RouteError(
@@ -858,7 +863,8 @@ async function getPlaybackByLesson(
     return { data: null };
   }
 
-  return buildPlaybackPayload(courseId, video, lesson, userId);
+  const hasFullAccess = userId !== null && await CourseAccessService.canViewCourseContent(userId, courseId, { ...lesson, isPreview: false, isArticlePreview: false });
+  return buildPlaybackPayload(courseId, video, lesson, userId, hasFullAccess ? null : lesson.videoPreviewDurationSeconds);
 }
 
 export type AiQuizSourceItem = {

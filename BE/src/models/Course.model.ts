@@ -12,7 +12,10 @@ export const courseStatusSchema = z.enum(courseStatusEnum.enumValues);
 export const courseLevelSchema = z.enum(courseLevelEnum.enumValues);
 
 const courseLevelQuerySchema = z
-  .enum([...courseLevelEnum.enumValues, 'basic'] as const)
+  .preprocess(
+    (value) => (typeof value === 'string' ? value.toLowerCase() : value),
+    z.enum([...courseLevelEnum.enumValues, 'basic'] as const),
+  )
   .transform((value) => (value === 'basic' ? 'beginner' : value));
 
 export const courseAuthorSchema = z.object({
@@ -27,8 +30,8 @@ export const courseRecordSchema = z.object({
   description: z.string().nullable(),
   thumbnail: z.string().nullable(),
   introVideo: z.string().nullable(),
-  price: z.number().int().min(0),
-  salePrice: z.number().int().min(0).nullable(),
+  price: z.number().int().min(-2),
+  salePrice: z.number().int().min(-2).nullable(),
   level: courseLevelSchema,
   status: courseStatusSchema,
   instructorId: z.number().int().positive().nullable(),
@@ -70,8 +73,8 @@ export const createCourseSchema = z
     description: z.string().optional(),
     thumbnail: z.string().max(512).optional(),
     intro_video: z.string().max(512).optional(),
-    price: z.number().int().min(0).default(0),
-    sale_price: z.number().int().min(0).optional(),
+    price: z.number().int().min(-2).default(0),
+    sale_price: z.number().int().min(-2).optional(),
     level: courseLevelSchema.default('beginner'),
     instructor_id: z.number().int().positive().optional(),
     category_id: z.string().uuid().optional(),
@@ -92,8 +95,8 @@ export const updateCourseSchema = z
     description: z.string().nullable().optional(),
     thumbnail: z.string().max(512).nullable().optional(),
     intro_video: z.string().max(512).nullable().optional(),
-    price: z.number().int().min(0).optional(),
-    sale_price: z.number().int().min(0).nullable().optional(),
+    price: z.number().int().min(-2).optional(),
+    sale_price: z.number().int().min(-2).nullable().optional(),
     level: courseLevelSchema.optional(),
     status: courseStatusSchema.optional(),
     instructor_id: z.number().int().positive().nullable().optional(),
@@ -233,6 +236,8 @@ export const courseDetailLessonSchema = z.object({
   type: lessonTypeSchema,
   order: z.number().int(),
   isPreview: z.boolean(),
+  isArticlePreview: z.boolean().default(false).optional(),
+  videoPreviewDurationSeconds: z.number().int().min(30).max(600).default(180).optional(),
   duration: z.number().int().nullable(),
   content: z.string().nullable().optional(),
   attachments: z.array(lessonAttachmentSchema).optional(),

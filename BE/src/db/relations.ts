@@ -1,6 +1,11 @@
 import { defineRelations } from 'drizzle-orm';
 
+import { aiCoachMessagesTable } from './schema/ai-coach-message';
+import { aiCoachSessionsTable } from './schema/ai-coach-session';
+import { bankAccountsTable } from './schema/bank-account';
+import { cartItemsTable, cartsTable } from './schema/cart';
 import { categoriesTable } from './schema/category';
+import { categoryTagsTable } from './schema/category-tag';
 import { commentsTable } from './schema/comment';
 import { commentLikesTable } from './schema/comment-like';
 import { coursesTable } from './schema/course';
@@ -14,6 +19,7 @@ import { lessonsTable } from './schema/lesson';
 import { lessonAttachmentsTable } from './schema/lesson-attachment';
 import { lessonProgressTable } from './schema/lesson-progress';
 import { mediaTable } from './schema/media';
+import { orderItemsTable, ordersTable } from './schema/order';
 import { permissionsTable } from './schema/permission';
 import { postsTable } from './schema/post';
 import { postLikesTable } from './schema/post-like';
@@ -24,16 +30,11 @@ import { quizQuestionAnswersTable } from './schema/quiz-question-answer';
 import { rolesTable } from './schema/role';
 import { rolePermissionsTable } from './schema/role-permission';
 import { tagsTable } from './schema/tag';
+import { transactionsTable } from './schema/transaction';
 import { usersTable } from './schema/user';
 import { userRolesTable } from './schema/user-role';
 import { videosTable } from './schema/video';
 import { videoRenditionsTable } from './schema/video-rendition';
-import { cartsTable, cartItemsTable } from './schema/cart';
-import { ordersTable, orderItemsTable } from './schema/order';
-import { transactionsTable } from './schema/transaction';
-import { bankAccountsTable } from './schema/bank-account';
-import { aiCoachSessionsTable } from './schema/ai-coach-session';
-import { aiCoachMessagesTable } from './schema/ai-coach-message';
 
 const tables = {
   usersTable,
@@ -43,6 +44,7 @@ const tables = {
   rolePermissionsTable,
   coursesTable,
   categoriesTable,
+  categoryTagsTable,
   tagsTable,
   courseTagsTable,
   courseIncludesTable,
@@ -200,14 +202,6 @@ export const relations = defineRelations(tables, (r) => ({
     }),
   },
   categoriesTable: {
-    parent: r.one.categoriesTable({
-      from: r.categoriesTable.parentId,
-      to: r.categoriesTable.id,
-    }),
-    children: r.many.categoriesTable({
-      from: r.categoriesTable.id,
-      to: r.categoriesTable.parentId,
-    }),
     courses: r.many.coursesTable({
       from: r.categoriesTable.id,
       to: r.coursesTable.categoryId,
@@ -215,6 +209,10 @@ export const relations = defineRelations(tables, (r) => ({
     posts: r.many.postsTable({
       from: r.categoriesTable.id,
       to: r.postsTable.categoryId,
+    }),
+    categoryTags: r.many.categoryTagsTable({
+      from: r.categoriesTable.id,
+      to: r.categoryTagsTable.categoryId,
     }),
   },
   tagsTable: {
@@ -225,6 +223,20 @@ export const relations = defineRelations(tables, (r) => ({
     postTags: r.many.postTagsTable({
       from: r.tagsTable.id,
       to: r.postTagsTable.tagId,
+    }),
+    categoryTags: r.many.categoryTagsTable({
+      from: r.tagsTable.id,
+      to: r.categoryTagsTable.tagId,
+    }),
+  },
+  categoryTagsTable: {
+    category: r.one.categoriesTable({
+      from: r.categoryTagsTable.categoryId,
+      to: r.categoriesTable.id,
+    }),
+    tag: r.one.tagsTable({
+      from: r.categoryTagsTable.tagId,
+      to: r.tagsTable.id,
     }),
   },
   courseTagsTable: {

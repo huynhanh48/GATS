@@ -15,11 +15,12 @@ import {
   parseListCoursesQuery,
   parseUpdateCourseInput,
 } from '@src/models/Course.model';
+import { parseUpsertCourseReviewInput } from '@src/models/CourseReview.model';
+import { parseCourseReviewCheckpointInput } from '@src/models/CourseReviewMilestone.model';
 import {
   parseCreateCourseSectionInput,
   parseUpdateCourseSectionInput,
 } from '@src/models/CourseSection.model';
-import { parseUpsertCourseReviewInput } from '@src/models/CourseReview.model';
 import {
   parseCreateLessonInput,
   parseUpdateLessonInput,
@@ -30,6 +31,7 @@ import {
 } from '@src/models/LessonAttachment.model';
 import { parseOnboardingAnswers } from '@src/models/Onboarding.model';
 import CategoryService from '@src/services/CategoryService';
+import CourseReviewMilestoneService from '@src/services/CourseReviewMilestoneService';
 import CourseSectionService from '@src/services/CourseSectionService';
 import CourseService from '@src/services/CourseService';
 import CurriculumService from '@src/services/CurriculumService';
@@ -55,6 +57,7 @@ async function listCategories(_req: Request, res: Response) {
     name: item.name,
     slug: item.slug,
     courseCount: item.courseCount,
+    tags: item.tags,
   }));
   return res.status(HttpStatusCodes.OK).json({ data });
 }
@@ -140,6 +143,15 @@ async function upsertReview(req: Request, res: Response) {
     getUuidRouteParam(req.params.courseId, 'courseId'),
     req.authUser!.id,
     parseUpsertCourseReviewInput(req.body),
+  );
+  return res.status(HttpStatusCodes.OK).json(result);
+}
+
+async function reviewCheckpoint(req: Request, res: Response) {
+  const result = await CourseReviewMilestoneService.checkpoint(
+    req.authUser!.id,
+    getUuidRouteParam(req.params.courseId, 'courseId'),
+    parseCourseReviewCheckpointInput(req.body),
   );
   return res.status(HttpStatusCodes.OK).json(result);
 }
@@ -334,6 +346,7 @@ export default {
   getById: errorHandle(getById),
   getMyReview: errorHandle(getMyReview),
   upsertReview: errorHandle(upsertReview),
+  reviewCheckpoint: errorHandle(reviewCheckpoint),
   getManagedById: errorHandle(getManagedById),
   listAiQuizSources: errorHandle(listAiQuizSources),
   listAiQuizTargets: errorHandle(listAiQuizTargets),

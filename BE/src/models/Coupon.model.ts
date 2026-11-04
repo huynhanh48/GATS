@@ -1,8 +1,9 @@
-import { couponTypeEnum } from '@src/db/schema/coupon';
+import { couponScopeEnum, couponTypeEnum } from '@src/db/schema/coupon';
 import { z } from 'zod';
 
 export const couponTypeSchema = z.enum(couponTypeEnum.enumValues);
 export type CouponTypeInput = z.infer<typeof couponTypeSchema>;
+export const couponScopeSchema = z.enum(couponScopeEnum.enumValues);
 
 const codeSchema = z
   .string()
@@ -16,6 +17,8 @@ export const createCouponSchema = z.object({
   code: codeSchema,
   description: z.string().trim().max(255).optional().or(z.literal('')),
   type: couponTypeSchema.default('percent'),
+  scope: couponScopeSchema.default('all'),
+  membershipPlanId: z.string().uuid().nullable().optional(),
   value: z.number().int().positive(),
   maxUses: z.number().int().positive().nullable().optional(),
   minOrderAmount: z.number().int().min(0).default(0),
@@ -43,6 +46,8 @@ export function parseCreateCouponInput(data: unknown): CreateCouponInput {
 export const updateCouponSchema = z.object({
   description: z.string().trim().max(255).nullable().optional(),
   type: couponTypeSchema.optional(),
+  scope: couponScopeSchema.optional(),
+  membershipPlanId: z.string().uuid().nullable().optional(),
   value: z.number().int().positive().optional(),
   maxUses: z.number().int().positive().nullable().optional(),
   minOrderAmount: z.number().int().min(0).optional(),
@@ -78,6 +83,8 @@ export function parseCouponListQuery(data: unknown): CouponListQuery {
 export const applyCouponSchema = z.object({
   code: codeSchema,
   orderAmount: z.number().int().min(0),
+  scope: z.enum(['course', 'membership']).default('course'),
+  membershipPlanId: z.string().uuid().optional(),
 });
 
 export type ApplyCouponInput = z.infer<typeof applyCouponSchema>;

@@ -26,13 +26,16 @@ COPY --from=rustfs /usr/bin/rustfs /usr/local/bin/rustfs
 
 WORKDIR /app
 
-# Dependencies — tách layer để sửa source không phải cài lại
+# Dependencies — tách layer để sửa source không phải cài lại.
+# `node_modules/.gats-lock` = bản sao package-lock.json đã cài. node_modules
+# nằm trong volume (rebuild image KHÔNG cập nhật volume), nên dev-entrypoint.sh
+# so file này để tự chạy `npm ci` khi danh sách package đổi.
 COPY be/package*.json ./be/
-RUN cd be && npm ci --include=dev
+RUN cd be && npm ci --include=dev && cp package-lock.json node_modules/.gats-lock
 COPY admin/package*.json ./admin/
-RUN cd admin && npm ci --include=dev
+RUN cd admin && npm ci --include=dev && cp package-lock.json node_modules/.gats-lock
 COPY fe/package*.json ./fe/
-RUN cd fe && npm ci --include=dev
+RUN cd fe && npm ci --include=dev && cp package-lock.json node_modules/.gats-lock
 
 # Source (image chạy được ngay kể cả khi không mount)
 COPY be ./be

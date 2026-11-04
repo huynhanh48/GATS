@@ -31,6 +31,8 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 function formatPrice(price: number, salePrice: number | null) {
+  if (price === 0) return "Miễn phí";
+  if (price < 0) return "Liên hệ";
   if (salePrice !== null && salePrice < price) {
     return `${salePrice.toLocaleString("vi-VN")}đ`;
   }

@@ -24,6 +24,7 @@ import * as QuizRepo from '@src/repos/QuizRepo';
 import * as RoleRepo from '@src/repos/RoleRepo';
 import * as TagRepo from '@src/repos/TagRepo';
 import * as UserRepo from '@src/repos/UserRepo';
+import { sql } from 'drizzle-orm';
 import { seedPermissions } from '@src/services/PermissionSeedService';
 
 export const RAG_COURSE_SLUG = 'rag-cho-doanh-nghiep-tu-pdf-den-chatbot';
@@ -60,6 +61,10 @@ const DEFAULT_COURSE_TAGS = [
   { name: 'Prompt Engineering', slug: 'prompt-engineering' },
   { name: 'Automation', slug: 'automation' },
   { name: 'Workflow', slug: 'workflow' },
+  { name: 'AI Agent', slug: 'ai-agent' },
+  { name: 'Machine Learning', slug: 'machine-learning' },
+  { name: 'Deep Learning', slug: 'deep-learning' },
+  { name: 'System Design', slug: 'system-design' },
 ] as const;
 
 const DEFAULT_POST_TAGS = [
@@ -126,14 +131,16 @@ async function ensureDevCategories(): Promise<void> {
 }
 
 async function ensureDevTags(): Promise<void> {
-  if ((await TagRepo.countByType('global')) === 0) {
-    for (const tag of DEFAULT_GLOBAL_TAGS) {
+  for (const tag of DEFAULT_GLOBAL_TAGS) {
+    const existing = await TagRepo.findByTypeAndSlug('global', tag.slug);
+    if (!existing) {
       await TagRepo.create({ name: tag.name, slug: tag.slug, type: 'global' });
     }
   }
 
-  if ((await TagRepo.countByType('course')) === 0) {
-    for (const tag of DEFAULT_COURSE_TAGS) {
+  for (const tag of DEFAULT_COURSE_TAGS) {
+    const existing = await TagRepo.findByTypeAndSlug('course', tag.slug);
+    if (!existing) {
       await TagRepo.create({ name: tag.name, slug: tag.slug, type: 'course' });
     }
   }
@@ -701,12 +708,42 @@ async function backfillCourseTags(): Promise<number> {
   let updated = 0;
 
   for (const course of courses.data) {
-    const tagMap = await CourseTagRepo.findByCourseIds([course.id]);
-    if ((tagMap.get(course.id) ?? []).length > 0) {
-      continue;
+    const slug = course.slug.toLowerCase();
+    const level = course.level;
+    const tagSlugs: string[] = [];
+
+    if (level === 'beginner') {
+      if (slug.includes('van-phong') || slug.includes('office') || slug.includes('ai-cho')) {
+        tagSlugs.push('chatgpt', 'gemini', 'prompt-engineering');
+      } else if (slug.includes('prompt')) {
+        tagSlugs.push('prompt-engineering', 'chatgpt');
+      } else if (slug.includes('marketing')) {
+        tagSlugs.push('gemini', 'chatgpt');
+      } else {
+        tagSlugs.push('prompt-engineering');
+      }
+    } else if (level === 'intermediate') {
+      if (slug.includes('automation') || slug.includes('tu-dong')) {
+        tagSlugs.push('automation', 'n8n', 'ai-agent');
+      } else if (slug.includes('rag') || slug.includes('fullstack')) {
+        tagSlugs.push('ai-agent', 'n8n');
+      } else {
+        tagSlugs.push('ai-agent', 'automation');
+      }
+    } else if (level === 'advanced') {
+      if (slug.includes('llm') || slug.includes('bootcamp')) {
+        tagSlugs.push('machine-learning', 'system-design');
+      } else if (slug.includes('nlp') || slug.includes('vision') || slug.includes('deep')) {
+        tagSlugs.push('deep-learning', 'machine-learning');
+      } else {
+        tagSlugs.push('machine-learning', 'system-design');
+      }
     }
-    await assignTagsToCourse(course.id, ['ai', 'prompt-engineering']);
-    updated += 1;
+
+    if (tagSlugs.length > 0) {
+      await assignTagsToCourse(course.id, tagSlugs);
+      updated += 1;
+    }
   }
 
   return updated;
@@ -1464,6 +1501,22 @@ export async function runDevBootstrapIfNeeded(): Promise<void> {
     return;
   }
 
+  try {
+    await db.execute(sql`ALTER TABLE "tags" ADD COLUMN IF NOT EXISTS "level" varchar(50);`);
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "category_tags" (
+        "category_id" uuid NOT NULL REFERENCES "categories"("id") ON DELETE CASCADE,
+        "tag_id" uuid NOT NULL REFERENCES "tags"("id") ON DELETE CASCADE,
+        "created_at" timestamp NOT NULL DEFAULT now(),
+        CONSTRAINT "category_tags_category_id_tag_id_pk" PRIMARY KEY ("category_id", "tag_id")
+      );
+      CREATE INDEX IF NOT EXISTS "idx_category_tags_category" ON "category_tags" ("category_id");
+      CREATE INDEX IF NOT EXISTS "idx_category_tags_tag" ON "category_tags" ("tag_id");
+    `);
+  } catch {
+    // Ignore if already exists or permission
+  }
+
   await ensureDevCategories();
 
   if (!EnvVars.AdminDefaultEmail || !EnvVars.AdminDefaultPassword) {
@@ -1482,6 +1535,10 @@ export async function runDevBootstrapIfNeeded(): Promise<void> {
   if (existingAdmin) {
     await ensureDevPostTags();
     await ensureDevCategories();
+    const { default: CourseMenuItemService } = await import(
+      '@src/services/CourseMenuItemService'
+    );
+    await CourseMenuItemService.ensureCategoryGroupsPersisted();
     const tagged = await backfillPostTags();
     const courseTagged = await backfillCourseTags();
     const categorized = await backfillPostCategories();
@@ -1508,6 +1565,8 @@ export async function runDevBootstrapIfNeeded(): Promise<void> {
         `Dev bootstrap: seeded default bank account ${seededBank.accountNumber}`,
       );
     }
+
+    await syncActiveInactiveApiModels();
 
     logger.info('Dev bootstrap skipped: admin user already exists');
     return;
@@ -1538,8 +1597,15 @@ export async function runDevBootstrapIfNeeded(): Promise<void> {
   );
 }
 
+export async function syncActiveInactiveApiModels(): Promise<void> {
+  const { syncFreeApiModels } = await import('@src/services/ApiModelSyncService');
+  await syncFreeApiModels();
+  logger.info('Dev bootstrap: synchronized OpenRouter API provider models');
+}
+
 export default {
   runDevBootstrapIfNeeded,
+  syncActiveInactiveApiModels,
   backfillRagCourseDetail,
   RAG_COURSE_SLUG,
 };

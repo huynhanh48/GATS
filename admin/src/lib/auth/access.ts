@@ -31,7 +31,9 @@ export function canAccessDashboardPath(
     pathname === "/course/category" ||
     pathname.startsWith("/course/category/") ||
     pathname === "/course/trash" ||
-    pathname.startsWith("/course/trash/")
+    pathname.startsWith("/course/trash/") ||
+    pathname === "/course/menu" ||
+    pathname.startsWith("/course/menu/")
   ) {
     return false;
   }

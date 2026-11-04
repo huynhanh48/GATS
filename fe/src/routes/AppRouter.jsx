@@ -43,6 +43,7 @@ const SkillsPage = lazy(() => import('@/modules/skills').then((m) => ({ default:
 const McpPage = lazy(() => import('@/modules/mcp/pages/mcp/McpPage'));
 const ApiPage = lazy(() => import('@/modules/api/pages/api/ApiPage'));
 const ToolsPage = lazy(() => import('@/modules/tools/pages/tools/ToolsPage'));
+const PromptsPage = lazy(() => import('@/modules/prompts').then((m) => ({ default: m.PromptsPage })));
 const StemPage = lazy(() => import('@/modules/stem').then((m) => ({ default: m.StemPage })));
 
 // Account Module
@@ -109,6 +110,7 @@ export default function AppRouter() {
 
             {/* Feature Routes */}
             <Route path="/skills" element={<SkillsPage />} />
+            <Route path="/prompts" element={<PromptsPage />} />
             <Route path="/mcp" element={<McpPage />} />
             <Route path="/api" element={<ApiPage />} />
             <Route path="/tools" element={<ToolsPage />} />

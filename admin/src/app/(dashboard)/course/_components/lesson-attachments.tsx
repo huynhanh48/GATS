@@ -23,8 +23,8 @@ import { lessonAttachmentsClient } from "@/services/lesson-attachments.client";
 import { mediaClient } from "@/services/media.client";
 
 const ACCEPT =
-  ".pdf,.doc,.docx,.md,.txt,.jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/webp,image/gif";
-const MAX_BYTES = 50 * 1024 * 1024;
+  ".pdf,.doc,.docx,.xls,.xlsx,.csv,.md,.txt,.jpg,.jpeg,.png,.gif,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,image/jpeg,image/png,image/webp,image/gif";
+const MAX_BYTES = 500 * 1024 * 1024;
 
 function formatBytes(bytes: number): string {
   if (!bytes || bytes <= 0) return "-";
@@ -39,6 +39,58 @@ type LessonAttachmentsProps = {
   /** Seed list from course detail while the dedicated list API loads. */
   initialAttachments?: LessonAttachment[];
 };
+
+type PendingLessonAttachmentsProps = {
+  files: MediaRecord[];
+  onChange: (files: MediaRecord[]) => void;
+  disabled?: boolean;
+};
+
+export function PendingLessonAttachments({ files, onChange, disabled }: PendingLessonAttachmentsProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const upload = async (file: File) => {
+    if (file.size > MAX_BYTES) {
+      toast.error("File vượt quá dung lượng tối đa 500MB");
+      return;
+    }
+    setUploading(true);
+    setProgress(0);
+    const res = await mediaClient.uploadFile(file, { onProgress: setProgress });
+    setUploading(false);
+    if (res.data?.media) {
+      onChange([...files, res.data.media]);
+      toast.success("Đã tải tài liệu, file sẽ được gắn khi lưu bài học");
+    } else {
+      toast.error(res.error?.message || "Tải tài liệu thất bại");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <input ref={inputRef} type="file" accept={ACCEPT} className="sr-only" onChange={(e) => { const file=e.target.files?.[0]; if(file) void upload(file); e.target.value=""; }} />
+      <button
+        type="button"
+        disabled={disabled || uploading}
+        onClick={() => inputRef.current?.click()}
+        className="flex min-h-24 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-stroke px-4 py-5 text-center transition hover:border-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-60 dark:border-dark-3"
+      >
+        {uploading ? <Loader2 className="size-6 animate-spin text-primary" /> : <UploadCloud className="size-6 text-primary" />}
+        <span className="text-sm font-semibold text-dark dark:text-white">{uploading ? `Đang tải ${progress}%` : "Chọn tài liệu từ máy"}</span>
+        <span className="text-xs text-dark-4 dark:text-dark-6">PDF, Word, Excel, CSV, MD, TXT hoặc hình ảnh · tối đa 500MB</span>
+      </button>
+      {files.length > 0 ? <div className="divide-y divide-stroke rounded-xl border border-stroke dark:divide-dark-3 dark:border-dark-3">{files.map(file => (
+        <div key={file.id} className="flex items-center gap-3 px-4 py-3">
+          <FileText className="size-5 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-dark dark:text-white">{file.originalName}</p><p className="text-xs text-dark-4">{formatBytes(file.size)} · Chờ gắn vào bài học</p></div>
+          <button type="button" onClick={() => onChange(files.filter(item => item.id !== file.id))} className="rounded-lg p-2 text-red-500 hover:bg-red-50" aria-label={`Bỏ ${file.originalName}`}><Trash2 className="size-4" /></button>
+        </div>
+      ))}</div> : null}
+    </div>
+  );
+}
 
 export function LessonAttachments({
   courseId,
@@ -74,7 +126,7 @@ export function LessonAttachments({
   const handleUpload = useCallback(
     async (file: File) => {
       if (file.size > MAX_BYTES) {
-        toast.error("File vượt quá dung lượng tối đa 50MB");
+        toast.error("File vượt quá dung lượng tối đa 500MB");
         return;
       }
 
@@ -247,7 +299,7 @@ export function LessonAttachments({
       </div>
 
       <p className="text-xs text-dark-4 dark:text-dark-6">
-        PDF, DOC, DOCX, MD, TXT, JPEG, PNG, WEBP, GIF — tối đa 50MB. Học viên có thể xem và tải xuống.
+        PDF, DOC, DOCX, MD, TXT, JPEG, PNG, WEBP, GIF — tối đa 500MB. Học viên có thể xem và tải xuống.
       </p>
 
       <div

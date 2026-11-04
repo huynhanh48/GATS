@@ -2,9 +2,9 @@
  * Apply CORS on the LongVan (S3-compatible) video bucket so browsers on
  * gats.vn / admin.gats.vn can:
  *   - PUT multipart upload parts (admin)
- *   - GET HLS playlists + .ts segments (fe via hls.js)
+ *   - GET HLS playlists + .ts segments (web-app via hls.js)
  *
- * Run from be/:
+ * Run from BE/:
  *   npx ts-node set-cors.ts
  * or with env already loaded:
  *   node -r dotenv/config -r ts-node/register set-cors.ts dotenv_config_path=./config/.env.development
@@ -37,10 +37,12 @@ const ALLOWED_ORIGINS = [
   'https://gats.vn',
   'https://www.gats.vn',
   'https://admin.gats.vn',
-  'http://localhost:3002',
-  'http://127.0.0.1:3002',
-  'http://localhost:3001',
-  'http://127.0.0.1:3001',
+  'http://localhost:3005',
+  'http://127.0.0.1:3005',
+  'http://localhost:9000',
+  'http://127.0.0.1:9000',
+  'http://localhost:9100',
+  'http://127.0.0.1:9100',
 ];
 
 async function setCors() {

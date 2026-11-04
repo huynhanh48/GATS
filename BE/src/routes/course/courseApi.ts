@@ -12,8 +12,8 @@ import optionalAuthMiddleware from '@src/middleware/optionalAuthMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
 import requireStaff from '@src/middleware/requireStaff';
 
-import courseHandlers from './courseRouter';
 import flashcardAdminHandlers from '../flashcard/flashcardAdminRouter';
+import courseHandlers from './courseRouter';
 
 const apiRouter = Router();
 const courseRouter = Router();
@@ -100,6 +100,11 @@ courseRouter.put(
   CoursePaths.Course.Review,
   errorHandle(authMiddleware),
   courseHandlers.upsertReview,
+);
+courseRouter.post(
+  CoursePaths.Course.ReviewCheckpoint,
+  errorHandle(authMiddleware),
+  courseHandlers.reviewCheckpoint,
 );
 
 courseRouter.get(

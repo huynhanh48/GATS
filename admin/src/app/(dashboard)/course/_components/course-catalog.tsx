@@ -21,7 +21,8 @@ type CourseCatalogProps = {
 };
 
 function formatPrice(price: number, salePrice: number | null) {
-  if (price <= 0) return "Miễn phí";
+  if (price === 0) return "Miễn phí";
+  if (price < 0) return "Liên hệ";
   if (salePrice !== null && salePrice < price) {
     return `${salePrice.toLocaleString("vi-VN")}đ`;
   }
@@ -59,13 +60,13 @@ function CourseCard({
     <article className="group flex h-full flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-700">
       <Link
         href={`/course/${course.id}`}
-        className="relative block aspect-video overflow-hidden bg-[#eaf2ff] p-2 dark:bg-[#0f2742]"
+        className="relative block aspect-video overflow-hidden bg-[#eaf2ff] dark:bg-[#0f2742]"
       >
         <Image
           src={thumb}
           alt={course.title}
           fill
-          className="object-contain"
+          className="object-cover"
           sizes="(max-width:768px) 100vw, 33vw"
           unoptimized
         />

@@ -71,7 +71,7 @@ const EnvVars = jetEnv({
   S3ForcePathStyle: defaultBool(true),
   /**
    * Browser-facing S3 endpoint for presigned PUT/GET (must be HTTPS on prod).
-   * Keep `S3_ENDPOINT` as the in-cluster URL (e.g. http://s3:9000) for the API/worker.
+   * Keep `S3_ENDPOINT` as the in-cluster URL (e.g. http://minio:9000) for the API/worker.
    */
   S3PublicEndpoint: optionalStr,
   S3PublicBaseUrl: optionalStr,
@@ -139,11 +139,17 @@ const EnvVars = jetEnv({
   FcmServiceAccountJson: optionalStr,
   /** FCM project id (optional if present in service account JSON) */
   FcmProjectId: optionalStr,
+  /** Enables the daily OpenRouter free-model catalogue synchronization. */
+  ApiModelSyncEnabled: defaultBool(true),
+  /** UTC hour (0-23) at which the daily catalogue synchronization runs. */
+  ApiModelSyncHourUtc: defaultNum(2),
   /** Seller identity on payment receipts (biên lai) */
   SellerName: defaultStr('GATS Academy'),
-  SellerAddress: defaultStr(''),
-  SellerEmail: defaultStr('support@gats.vn'),
-  SellerPhone: defaultStr(''),
+  SellerAddress: defaultStr(
+    'Tầng 2, Thanh Xuân Complex, số 6 Lê Văn Thiêm, Thanh Xuân, Hà Nội',
+  ),
+  SellerEmail: defaultStr('gatsvn@gmail.com'),
+  SellerPhone: defaultStr('090 1876888'),
   SellerTaxCode: optionalStr,
 });
 

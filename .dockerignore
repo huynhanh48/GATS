@@ -9,6 +9,7 @@ coverage
 README.md
 fe/node_modules
 fe/.next
+fe/dist
 admin/node_modules
 admin/.next
 be/node_modules

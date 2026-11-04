@@ -4,6 +4,7 @@ const CategoryPaths = {
     _: '/categories',
     List: '/',
     Create: '/',
+    Reorder: '/reorder',
     Update: '/:categoryId',
     Delete: '/:categoryId',
   },

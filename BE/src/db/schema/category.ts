@@ -8,7 +8,6 @@ import {
   uniqueIndex,
   uuid,
   varchar,
-  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
 export const categoryTypeEnum = pgEnum('category_type', ['course', 'post']);
@@ -26,14 +25,9 @@ export const categoriesTable = pgTable(
     description: text('description'),
     thumbnail: varchar('thumbnail', { length: 512 }),
     icon: varchar('icon', { length: 100 }),
+    sortOrder: integer('sort_order').notNull().default(0),
     type: categoryTypeEnum('type').notNull(),
     status: categoryStatusEnum('status').notNull().default('active'),
-    parentId: uuid('parent_id').references((): AnyPgColumn => categoriesTable.id, {
-      onDelete: 'set null',
-    }),
-    sortOrder: integer('sort_order').notNull().default(0),
-    seoTitle: varchar('seo_title', { length: 255 }),
-    seoDescription: varchar('seo_description', { length: 512 }),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
@@ -41,7 +35,7 @@ export const categoriesTable = pgTable(
     uniqueIndex('idx_categories_type_slug').on(table.type, table.slug),
     index('idx_categories_type').on(table.type),
     index('idx_categories_status').on(table.status),
-    index('idx_categories_parent').on(table.parentId),
+    index('idx_categories_sort_order').on(table.sortOrder),
   ],
 );
 

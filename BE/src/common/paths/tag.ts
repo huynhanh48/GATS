@@ -4,6 +4,7 @@ const TagPaths = {
     _: '/tags',
     List: '/',
     Create: '/',
+    Reorder: '/reorder',
     Update: '/:tagId',
     Delete: '/:tagId',
   },

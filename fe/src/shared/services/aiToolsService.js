@@ -206,6 +206,57 @@ export function formatTool(raw) {
 }
 
 /**
+ * Chuẩn hóa Prompt
+ */
+export function formatPrompt(raw) {
+  if (!raw) return null;
+  const payload = raw.payload || {};
+  const isFree = !raw.isPaid || !payload.price || payload.price === 0 || payload.price === 'Miễn phí';
+  const priceFormatted = isFree
+    ? 'Miễn phí'
+    : typeof payload.price === 'number'
+      ? `${Number(payload.price).toLocaleString('vi-VN')}đ`
+      : String(payload.price);
+
+  const rawCategory = payload.category || 'Prompt Engineering';
+  const category = rawCategory.replace(/\s*&\s*/g, ' và ');
+
+  return {
+    id: raw.id,
+    itemKey: raw.itemKey,
+    title: raw.title,
+    isPublic: raw.isPublic !== false,
+    isPaid: Boolean(raw.isPaid),
+    isFree,
+    price: priceFormatted,
+    priceValue: typeof payload.price === 'number' ? payload.price : 0,
+    category,
+    model: payload.model || 'Universal AI',
+    template: payload.template || '',
+    variables: Array.isArray(payload.variables) ? payload.variables : [],
+    tags: Array.isArray(payload.tags) ? payload.tags : [],
+    rating: payload.rating || 5.0,
+    salesCount: payload.salesCount || 0,
+    authorName: payload.authorName || 'GATS Academy',
+    authorBadge: payload.authorBadge || 'Official',
+    authorAvatar: payload.authorAvatar || '',
+    instructions: payload.instructions || '',
+    description:
+      payload.description ||
+      'Mẫu câu lệnh prompt chuyên sâu giúp tối ưu kết quả phản hồi của mô hình AI.',
+    image:
+      payload.image ||
+      payload.imageUrl ||
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+    websiteUrl: raw.websiteUrl || null,
+    modelBadgeColor: payload.modelBadgeColor || 'bg-blue-500/10 text-blue-600 border-blue-200',
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+    raw,
+  };
+}
+
+/**
  * Chuẩn hóa STEM
  */
 export function formatStem(raw) {
@@ -282,6 +333,8 @@ export const aiToolsService = {
         items = rawList.map(formatApiModel);
       } else if (type === 'tool') {
         items = rawList.map(formatTool);
+      } else if (type === 'prompt') {
+        items = rawList.map(formatPrompt);
       } else if (type === 'stem') {
         items = rawList.map(formatStem);
       } else {
@@ -310,6 +363,7 @@ export const aiToolsService = {
       if (type === 'mcp') return formatMcp(raw);
       if (type === 'api_model' || type === 'api_provider') return formatApiModel(raw);
       if (type === 'tool') return formatTool(raw);
+      if (type === 'prompt') return formatPrompt(raw);
       if (type === 'stem') return formatStem(raw);
       return formatSkill(raw);
     } catch (error) {

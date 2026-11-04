@@ -12,8 +12,10 @@ import {
 
 import { ordersTable } from './order';
 import { usersTable } from './user';
+import { membershipPlansTable } from './membership';
 
 export const couponTypeEnum = pgEnum('coupon_type', ['percent', 'fixed']);
+export const couponScopeEnum = pgEnum('coupon_scope', ['all', 'course', 'membership']);
 
 export const couponsTable = pgTable(
   'coupons',
@@ -22,6 +24,11 @@ export const couponsTable = pgTable(
     code: varchar('code', { length: 50 }).notNull(),
     description: varchar('description', { length: 255 }),
     type: couponTypeEnum('type').notNull().default('percent'),
+    scope: couponScopeEnum('scope').notNull().default('all'),
+    membershipPlanId: uuid('membership_plan_id').references(
+      () => membershipPlansTable.id,
+      { onDelete: 'set null' },
+    ),
     /** percent: 1-100, fixed: VND amount */
     value: integer('value').notNull(),
     /** null = unlimited uses */
@@ -68,5 +75,6 @@ export const couponRedemptionsTable = pgTable(
 export type Coupon = typeof couponsTable.$inferSelect;
 export type NewCoupon = typeof couponsTable.$inferInsert;
 export type CouponType = (typeof couponTypeEnum.enumValues)[number];
+export type CouponScope = (typeof couponScopeEnum.enumValues)[number];
 export type CouponRedemption = typeof couponRedemptionsTable.$inferSelect;
 export type NewCouponRedemption = typeof couponRedemptionsTable.$inferInsert;

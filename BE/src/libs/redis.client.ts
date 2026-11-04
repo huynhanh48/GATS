@@ -20,6 +20,16 @@ export function createRedisConnection(): IORedis {
   return connection;
 }
 
+export function createRateLimitRedisConnection(): IORedis {
+  const connection = new IORedis(EnvVars.RedisUrl, {
+    maxRetriesPerRequest: 1,
+    enableOfflineQueue: false,
+    connectTimeout: 2_000,
+  });
+  connections.add(connection);
+  return connection;
+}
+
 export async function closeRedisConnections(): Promise<void> {
   const closing = [...connections].map(async (connection) => {
     connections.delete(connection);

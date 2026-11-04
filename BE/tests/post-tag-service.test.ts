@@ -25,7 +25,6 @@ const postTag = {
   slug: 'nextjs',
   type: 'post' as const,
   status: 'active' as const,
-  description: null,
 };
 
 describe('post tag ID resolution', () => {

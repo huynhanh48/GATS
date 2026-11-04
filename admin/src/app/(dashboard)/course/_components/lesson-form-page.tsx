@@ -5,22 +5,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Save } from "lucide-react";
+import { ArrowLeft, FileText, Save, Video, PlayCircle, BookOpen } from "lucide-react";
 import DatePickerDemo from "@/components/shadcn-studio/date-picker/date-picker-08";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox"
+import { Checkbox } from "@/components/ui/checkbox";
 import type {
   CourseDetailLesson,
   CreateLessonInput,
   LessonType,
   UpdateLessonInput,
+  MediaRecord,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { createLesson, updateLesson } from "../actions";
-import { LessonAttachments } from "./lesson-attachments";
+import { LessonAttachments, PendingLessonAttachments } from "./lesson-attachments";
+import { lessonAttachmentsClient } from "@/services/lesson-attachments.client";
 import { fetchPosts } from "@/app/(dashboard)/post/actions";
 import type { PostListItem } from "@/lib/api/types";
 
@@ -104,6 +106,12 @@ export function LessonFormPage({
   const [type, setType] = useState<LessonType>(lesson?.type ?? "video");
   const [content, setContent] = useState(lesson?.content ?? "");
   const [isPreview, setIsPreview] = useState(lesson?.isPreview ?? false);
+  const [isArticlePreview, setIsArticlePreview] = useState(
+    lesson?.isArticlePreview ?? false,
+  );
+  const [videoPreviewDuration, setVideoPreviewDuration] = useState(
+    lesson?.videoPreviewDurationSeconds ?? 180,
+  );
   const [linkedPostId, setLinkedPostId] = useState<string>(
     lesson?.linkedPostId ?? lesson?.linkedPost?.id ?? "",
   );
@@ -112,6 +120,7 @@ export function LessonFormPage({
   const [postsLoading, setPostsLoading] = useState(true);
   const [postsError, setPostsError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<MediaRecord[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -146,6 +155,7 @@ export function LessonFormPage({
     const orderRaw = form.get("order")?.toString().trim();
     const durationRaw = form.get("duration")?.toString().trim();
     const isPreviewVal = isPreview;
+    const isArticlePreviewVal = isArticlePreview;
     const trimmedContent = content.trim();
 
     if (!title) {
@@ -164,6 +174,8 @@ export function LessonFormPage({
       title,
       type,
       is_preview: isPreviewVal,
+      is_article_preview: isArticlePreviewVal,
+      video_preview_duration_seconds: videoPreviewDuration,
       linked_post_id: linkedPostId ? linkedPostId : null,
       ...(description ? { description } : {}),
       ...(orderRaw ? { order: Number(orderRaw) } : {}),
@@ -178,21 +190,39 @@ export function LessonFormPage({
       mode === "edit" && lesson
         ? await updateLesson(courseId, lesson.id, input)
         : await createLesson(courseId, sectionId, input as CreateLessonInput);
-    setLoading(false);
-
     if (!result.ok) {
+      setLoading(false);
       toast.error(result.message);
       return;
     }
 
-    toast.success(result.message);
-
-    if (mode === "create" && "lessonId" in result && result.lessonId) {
-      router.push(`/course/${courseId}/lessons/${result.lessonId}/edit`);
+    const newLessonId =
+      "lessonId" in result && typeof result.lessonId === "string"
+        ? result.lessonId
+        : null;
+    if (mode === "create" && newLessonId) {
+      const attachResults = await Promise.all(
+        pendingAttachments.map((media) =>
+          lessonAttachmentsClient.attach(courseId, newLessonId, {
+            mediaId: media.id,
+            title: media.originalName,
+          }),
+        ),
+      );
+      const failedCount = attachResults.filter((item) => !item.data).length;
+      setLoading(false);
+      if (failedCount > 0) {
+        toast.warning(`Đã tạo bài học nhưng có ${failedCount} tài liệu chưa gắn được`);
+      } else {
+        toast.success(result.message);
+      }
+      router.push(`/course/${courseId}/lessons/${newLessonId}/edit`);
       router.refresh();
       return;
     }
 
+    setLoading(false);
+    toast.success(result.message);
     router.push(backHref);
     router.refresh();
   }
@@ -364,10 +394,11 @@ export function LessonFormPage({
               initialAttachments={lesson.attachments}
             />
           ) : (
-            <p className="rounded-xl border border-dashed border-stroke px-4 py-6 text-center text-sm text-dark-4 dark:border-dark-3 dark:text-dark-6">
-              Vui lòng tạo bài học trước khi thêm tài liệu đính kèm (PDF, DOC,
-              TXT…).
-            </p>
+            <PendingLessonAttachments
+              files={pendingAttachments}
+              onChange={setPendingAttachments}
+              disabled={loading}
+            />
           )}
         </section>
 
@@ -376,30 +407,110 @@ export function LessonFormPage({
           <h2 className="mb-4 text-lg font-semibold text-dark dark:text-white">
             Cài đặt khác
           </h2>
-          <div className="flex items-start gap-3 rounded-lg border border-stroke px-4 py-3 dark:border-dark-3">
-            <Checkbox
-              id="is_preview"
-              checked={isPreview}
-              onCheckedChange={(checked) => setIsPreview(checked === true)}
-              className="mt-0.5"
-            />
-            <input
-              type="hidden"
-              name="is_preview"
-              value={isPreview ? "on" : "off"}
-            />
-            <Label
-              htmlFor="is_preview"
-              className="cursor-pointer space-y-1"
-            >
-              <span className="block font-medium text-dark dark:text-white">Cho xem trước</span>
-              <span className="block text-xs font-normal text-dark-4 dark:text-dark-6">
-                Học viên chưa ghi danh vẫn xem được.
-              </span>
-            </Label>
+
+          <div className="space-y-3">
+            <span className="block text-sm font-semibold text-dark dark:text-white">
+              Cấu hình cho xem trước (Preview)
+            </span>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {/* Video Preview Option */}
+              <div
+                onClick={() => setIsPreview(!isPreview)}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+                  isPreview
+                    ? "border-primary/60 bg-primary/5 dark:border-primary/40 dark:bg-primary/10"
+                    : "border-stroke hover:border-stroke/80 dark:border-dark-3",
+                )}
+              >
+                <Checkbox
+                  id="is_preview"
+                  checked={isPreview}
+                  onCheckedChange={(checked) => setIsPreview(checked === true)}
+                  className="mt-0.5"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="hidden"
+                  name="is_preview"
+                  value={isPreview ? "on" : "off"}
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-6 items-center justify-center rounded-md bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 shrink-0">
+                      <PlayCircle className="size-3.5" />
+                    </span>
+                    <Label
+                      htmlFor="is_preview"
+                      className="cursor-pointer font-medium text-dark dark:text-white"
+                    >
+                      Xem trước Video
+                    </Label>
+                  </div>
+                  <span className="block text-xs font-normal text-dark-4 dark:text-dark-6">
+                    Học viên chưa ghi danh vẫn xem được video bài giảng này.
+                  </span>
+                </div>
+              </div>
+
+              {/* Article Preview Option */}
+              <div
+                onClick={() => setIsArticlePreview(!isArticlePreview)}
+                className={cn(
+                  "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+                  isArticlePreview
+                    ? "border-emerald-500/60 bg-emerald-50/50 dark:border-emerald-500/40 dark:bg-emerald-950/20"
+                    : "border-stroke hover:border-stroke/80 dark:border-dark-3",
+                )}
+              >
+                <Checkbox
+                  id="is_article_preview"
+                  checked={isArticlePreview}
+                  onCheckedChange={(checked) =>
+                    setIsArticlePreview(checked === true)
+                  }
+                  className="mt-0.5"
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <input
+                  type="hidden"
+                  name="is_article_preview"
+                  value={isArticlePreview ? "on" : "off"}
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-6 items-center justify-center rounded-md bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 shrink-0">
+                      <BookOpen className="size-3.5" />
+                    </span>
+                    <Label
+                      htmlFor="is_article_preview"
+                      className="cursor-pointer font-medium text-dark dark:text-white"
+                    >
+                      Xem trước Bài viết
+                    </Label>
+                  </div>
+                  <span className="block text-xs font-normal text-dark-4 dark:text-dark-6">
+                    Học viên chưa ghi danh vẫn đọc được bài viết gắn kèm hoặc nội dung bài học.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {isArticlePreview && !linkedPostId && !content.trim() && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                💡 Lưu ý: Bạn đang bật xem trước bài viết, hãy chọn một bài viết gắn kèm bên dưới hoặc soạn thảo nội dung để học viên có thể đọc thử.
+              </p>
+            )}
+            {isPreview ? (
+              <div className="max-w-xs space-y-2">
+                <Label htmlFor="video_preview_duration">Thời lượng video xem thử (giây)</Label>
+                <Input id="video_preview_duration" type="number" min={30} max={600} step={30} value={videoPreviewDuration} onChange={(event) => setVideoPreviewDuration(Math.min(600, Math.max(30, Number(event.target.value) || 180)))} />
+                <p className="text-xs text-dark-4">Mặc định 180 giây (3 phút), cho phép từ 30 giây đến 10 phút.</p>
+              </div>
+            ) : null}
           </div>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-5 space-y-2">
             <Label htmlFor="linked_post_id">Bài viết gắn với bài học</Label>
             <Input
               value={postQuery}

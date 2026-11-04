@@ -203,3 +203,24 @@ export async function assignMentorCourse(userId: number, courseId: string) {
     message: result.data?.message ?? "Đã phân công mentor",
   };
 }
+
+export async function grantCourseToUser(userId: number, courseId: string) {
+  const result = await beFetch<{ data?: { id: string } }>(`/courses/${courseId}/enrollments`, {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, source: "admin_granted" }),
+  });
+  if (!result.ok) return { ok: false, message: result.error ?? "Cấp khóa học thất bại" };
+  revalidatePath(`/users/${userId}`);
+  revalidatePath(`/course/${courseId}`);
+  return { ok: true, message: "Đã cấp khóa học cho tài khoản" };
+}
+
+export async function revokeCourseFromUser(userId: number, courseId: string) {
+  const result = await beFetch<{ message?: string }>(`/courses/${courseId}/enrollments/${userId}`, {
+    method: "DELETE",
+  });
+  if (!result.ok) return { ok: false, message: result.error ?? "Thu hồi khóa học thất bại" };
+  revalidatePath(`/users/${userId}`);
+  revalidatePath(`/course/${courseId}`);
+  return { ok: true, message: result.data?.message ?? "Đã thu hồi quyền học" };
+}

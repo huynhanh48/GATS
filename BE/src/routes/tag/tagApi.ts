@@ -5,10 +5,11 @@ import TagPaths from '@src/common/paths/tag';
 import { RouteError } from '@src/common/utils/route-errors';
 import { RESOURCE_TYPES } from '@src/db/schema/constants';
 import authMiddleware from '@src/middleware/authMiddleware';
+import { errorHandle } from '@src/middleware/errorHandle';
 import optionalAuthMiddleware from '@src/middleware/optionalAuthMiddleware';
 import requirePermission from '@src/middleware/requirePermission';
-import { errorHandle } from '@src/middleware/errorHandle';
 import authorizationService from '@src/services/AuthorizationService';
+
 import tagHandlers from './tagRouter';
 
 const apiRouter = Router();
@@ -64,6 +65,13 @@ tagRouter.post(
   errorHandle(authMiddleware),
   errorHandle(requireTagCreatePermission),
   tagHandlers.create,
+);
+
+tagRouter.put(
+  TagPaths.Tag.Reorder,
+  errorHandle(authMiddleware),
+  errorHandle(requireTagCreatePermission),
+  tagHandlers.reorder,
 );
 
 tagRouter.patch(

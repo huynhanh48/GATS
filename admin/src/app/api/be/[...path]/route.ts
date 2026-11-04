@@ -41,16 +41,17 @@ async function proxyRequest(
     headers.set("Origin", requestOrigin);
   }
 
-  const init: RequestInit = {
+  const init: RequestInit & { duplex?: "half" } = {
     method: request.method,
     headers,
     cache: "no-store",
   };
 
   if (request.method !== "GET" && request.method !== "HEAD") {
-    // Read as raw bytes so binary payloads (multipart file uploads) are
-    // forwarded intact. Using text() would corrupt non-UTF8 file content.
-    init.body = await request.arrayBuffer();
+    // We stream the body directly to the backend
+    init.body = request.body;
+    // Required for streaming bodies in Node.js fetch.
+    init.duplex = "half";
   }
 
   const backendResponse = await fetch(targetUrl.toString(), init);

@@ -2,9 +2,10 @@ import { Router } from 'express';
 
 import CategoryPaths from '@src/common/paths/category';
 import authMiddleware from '@src/middleware/authMiddleware';
+import { errorHandle } from '@src/middleware/errorHandle';
 import optionalAuthMiddleware from '@src/middleware/optionalAuthMiddleware';
 import requireCategoryWritePermission from '@src/middleware/requireCategoryWritePermission';
-import { errorHandle } from '@src/middleware/errorHandle';
+
 import categoryHandlers from './categoryRouter';
 
 const apiRouter = Router();
@@ -21,6 +22,13 @@ categoryRouter.post(
   errorHandle(authMiddleware),
   errorHandle(requireCategoryWritePermission()),
   categoryHandlers.create,
+);
+
+categoryRouter.put(
+  CategoryPaths.Category.Reorder,
+  errorHandle(authMiddleware),
+  errorHandle(requireCategoryWritePermission()),
+  categoryHandlers.reorder,
 );
 
 categoryRouter.patch(

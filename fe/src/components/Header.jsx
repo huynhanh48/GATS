@@ -15,6 +15,7 @@ import {
   Network,
   Wrench,
   Atom,
+  Terminal,
 } from 'lucide-react';
 import { useAuthStore, useAuthUiStore } from '@/modules/auth';
 import { courseService } from '@/modules/course/services/courseService';
@@ -111,6 +112,7 @@ export default function Header({ onOpenSearch, onOpenLogin }) {
         setMobileExpandedSection('courses');
       } else if (
         location.pathname.startsWith('/skills') ||
+        location.pathname.startsWith('/prompts') ||
         location.pathname.startsWith('/mcp') ||
         location.pathname.startsWith('/api') ||
         location.pathname.startsWith('/tools')
@@ -222,6 +224,17 @@ export default function Header({ onOpenSearch, onOpenLogin }) {
                       <div>
                         <strong>Skills</strong>
                         <p>Danh mục kỹ năng AI thực chiến</p>
+                      </div>
+                    </Link>
+                    <Link
+                      to="/prompts"
+                      onClick={() => setActiveDropdown(null)}
+                      className="feature-item cursor-pointer"
+                    >
+                      <Terminal size={16} className="feature-icon text-indigo-600" />
+                      <div>
+                        <strong>Prompts</strong>
+                        <p>Kho câu lệnh AI chuẩn hóa</p>
                       </div>
                     </Link>
                     <Link
@@ -515,7 +528,7 @@ export default function Header({ onOpenSearch, onOpenLogin }) {
               {/* 4. Tính năng */}
               <div className="mobile-nav-group">
                 <div 
-                  className={`mobile-nav-row ${['/skills', '/mcp', '/api', '/tools'].some(p => location.pathname.startsWith(p)) ? 'active-route' : ''}`}
+                  className={`mobile-nav-row ${['/skills', '/prompts', '/mcp', '/api', '/tools'].some(p => location.pathname.startsWith(p)) ? 'active-route' : ''}`}
                   onClick={() => toggleMobileSection('features')}
                 >
                   <span className="mobile-nav-title">Tính năng</span>
@@ -531,7 +544,7 @@ export default function Header({ onOpenSearch, onOpenLogin }) {
                     )}
                   </button>
                 </div>
-                {['/skills', '/mcp', '/api', '/tools'].some(p => location.pathname.startsWith(p)) && mobileExpandedSection !== 'features' && (
+                {['/skills', '/prompts', '/mcp', '/api', '/tools'].some(p => location.pathname.startsWith(p)) && mobileExpandedSection !== 'features' && (
                   <div className="mobile-active-line" />
                 )}
                 {mobileExpandedSection === 'features' && (
@@ -543,6 +556,14 @@ export default function Header({ onOpenSearch, onOpenLogin }) {
                     >
                       <Sparkles size={16} className="text-[#2563eb] shrink-0" />
                       <span>Skills (Kỹ năng AI thực chiến)</span>
+                    </Link>
+                    <Link
+                      to="/prompts"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="mobile-sub-link flex items-center gap-2"
+                    >
+                      <Terminal size={16} className="text-[#2563eb] shrink-0" />
+                      <span>Prompts (Kho câu lệnh chuẩn hóa)</span>
                     </Link>
                     <Link
                       to="/mcp"

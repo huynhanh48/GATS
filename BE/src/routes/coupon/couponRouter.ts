@@ -52,7 +52,10 @@ async function remove(req: Request, res: Response) {
 
 async function preview(req: Request, res: Response) {
   const input = parseApplyCouponInput(req.body);
-  const result = await CouponService.preview(input.code, input.orderAmount);
+  const result = await CouponService.preview(input.code, input.orderAmount, {
+    scope: input.scope,
+    membershipPlanId: input.membershipPlanId,
+  });
   return res.status(HttpStatusCodes.OK).json(result);
 }
 

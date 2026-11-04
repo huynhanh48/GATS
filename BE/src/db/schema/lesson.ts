@@ -38,6 +38,8 @@ export const lessonsTable = pgTable(
     order: integer('order').notNull(),
     content: text('content'),
     isPreview: boolean('is_preview').notNull().default(false),
+    isArticlePreview: boolean('is_article_preview').notNull().default(false),
+    videoPreviewDurationSeconds: integer('video_preview_duration_seconds').notNull().default(180),
     duration: integer('duration'),
     linkedPostId: uuid('linked_post_id').references(() => postsTable.id, {
       onDelete: 'set null',

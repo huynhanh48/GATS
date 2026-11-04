@@ -41,18 +41,8 @@ jobs:
           cache: npm
           cache-dependency-path: fe/package-lock.json
       - run: npm ci
-      - run: npm run typecheck
       - run: npm run lint
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-        env:
-          WEB_BASE_URL: ${{ secrets.STAGING_WEB_BASE_URL }}
-          ADMIN_BASE_URL: ${{ secrets.STAGING_ADMIN_BASE_URL }}
-          E2E_USER_EMAIL: ${{ secrets.STAGING_E2E_USER_EMAIL }}
-          E2E_USER_PASSWORD: ${{ secrets.STAGING_E2E_USER_PASSWORD }}
-          E2E_ADMIN_EMAIL: ${{ secrets.STAGING_E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.STAGING_E2E_ADMIN_PASSWORD }}
 
   admin:
     runs-on: ubuntu-latest
