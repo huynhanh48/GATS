@@ -1,6 +1,5 @@
 "use client";
 
-import dayjs from "dayjs";
 import { useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
@@ -10,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { CoursePublic } from "@/lib/api/types";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
+import { formatVnDate, formatVnDateTime } from "@/lib/datetime";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,7 +88,7 @@ const columns: ColumnDef<CoursePublic>[] = [
       const deletedAt = row.original.deletedAt;
       return (
         <span className="text-dark dark:text-white">
-          {deletedAt ? dayjs(deletedAt).format("DD/MM/YYYY HH:mm") : "—"}
+          {formatVnDateTime(deletedAt)}
         </span>
       );
     },

@@ -11,6 +11,7 @@ import { AdminPanel, StatusPill } from "@/components/Layouts/admin-surface";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatVnDate, formatVnDateTime } from "@/lib/datetime";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +78,7 @@ function currency(value: number) {
 function formatDate(value: string | null) {
   if (!value) return "—";
   try {
-    return new Date(value).toLocaleDateString("vi-VN");
+    return formatVnDate(value);
   } catch {
     return value;
   }

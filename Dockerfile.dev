@@ -22,6 +22,12 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && npm install -g pm2
 
+# Giờ Việt Nam cho MỌI tiến trình trong container (Node, Postgres, Redis, log...).
+# Chỉ đặt ENV TZ là chưa đủ: tiến trình không kế thừa TZ (vd Postgres chạy qua
+# `su`, script hệ thống) sẽ rơi về /etc/localtime.
+ENV TZ=Asia/Ho_Chi_Minh
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo "$TZ" > /etc/timezone
+
 COPY --from=rustfs /usr/bin/rustfs /usr/local/bin/rustfs
 
 WORKDIR /app

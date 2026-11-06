@@ -31,6 +31,13 @@ export const API = {
     SECTIONS: (courseId) => `${BASE_URL}/courses/${courseId}/sections`,
     ENROLL_COURSE: (courseId) => `${BASE_URL}/courses/${courseId}/enrollments`,
   },
+  QUIZ: {
+    /** Quiz của một bài học (kèm câu hỏi + lựa chọn, KHÔNG kèm đáp án đúng) */
+    LESSON_QUIZ: (courseId, lessonId) =>
+      `${BASE_URL}/courses/${courseId}/lessons/${lessonId}/quiz`,
+    /** Nộp bài một lần (không tạo attempt) */
+    SUBMIT: (quizId) => `${BASE_URL}/quizzes/${quizId}/submit`,
+  },
   ENROLLMENTS: {
     MY_ENROLLMENTS: `${BASE_URL}/me/enrollments`,
     ENROLL_COURSE: (courseId) => `${BASE_URL}/courses/${courseId}/enrollments`,

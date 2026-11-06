@@ -654,7 +654,7 @@ export function CourseCategoryManager({
   };
 
   return (
-    <div className="w-full rounded-2xl border border-stroke bg-white p-5 shadow-xs md:p-7 dark:border-dark-3 dark:bg-dark-2">
+    <div className="w-full rounded-xl border border-stroke bg-white p-5 shadow-xs md:p-7 dark:border-dark-3 dark:bg-dark-2">
       {/* Top Bar: Button + thêm on Left, Tabs on Right */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Button
@@ -817,8 +817,8 @@ export function CourseCategoryManager({
               const catIndex =
                 item.rawType === "category"
                   ? categoriesList.findIndex(
-                      (category) => category.id === item.id,
-                    )
+                    (category) => category.id === item.id,
+                  )
                   : item.rawType === "tag"
                     ? tagsList.findIndex((tag) => tag.id === item.id)
                     : -1;
@@ -858,7 +858,7 @@ export function CourseCategoryManager({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {(activeTab === "all" || activeTab === "tags") &&
-                        catIndex >= 0 ? (
+                          catIndex >= 0 ? (
                           <span className="inline-flex shrink-0 items-center justify-center rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] font-bold text-slate-600 dark:bg-dark-3 dark:text-slate-300">
                             #{catIndex + 1}
                           </span>
@@ -891,8 +891,8 @@ export function CourseCategoryManager({
                         </p>
                       ) : null}
                       {item.rawType === "category" &&
-                      item.tagIds &&
-                      item.tagIds.length > 0 ? (
+                        item.tagIds &&
+                        item.tagIds.length > 0 ? (
                         <div className="mt-1 flex flex-wrap items-center gap-1">
                           {item.tagIds.slice(0, 3).map((tagId) => {
                             const tag = initialTags.find((t) => t.id === tagId);
@@ -933,8 +933,8 @@ export function CourseCategoryManager({
                   {/* Thao tác */}
                   <div className="col-span-1 flex items-center justify-end gap-1">
                     {(activeTab === "all" || activeTab === "tags") &&
-                    catIndex >= 0 &&
-                    !searchQuery ? (
+                      catIndex >= 0 &&
+                      !searchQuery ? (
                       <div className="mr-1 hidden items-center gap-0.5 sm:flex">
                         <button
                           type="button"
@@ -970,8 +970,8 @@ export function CourseCategoryManager({
                         className="w-40 rounded-xl border border-stroke bg-white p-1 text-sm shadow-lg dark:border-dark-3 dark:bg-dark-2"
                       >
                         {(activeTab === "all" || activeTab === "tags") &&
-                        catIndex >= 0 &&
-                        !searchQuery ? (
+                          catIndex >= 0 &&
+                          !searchQuery ? (
                           <>
                             <DropdownMenuItem
                               disabled={catIndex === 0 || isReordering}

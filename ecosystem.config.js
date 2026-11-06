@@ -37,9 +37,13 @@ module.exports = {
     {
       // fe là SPA tĩnh: `vite build` -> fe/dist, phục vụ bằng `serve -s`
       // (-s = single-page app: mọi route đều trả index.html cho react-router).
+      // PHẢI dùng đường dẫn tuyệt đối: pm2 coi `script: "serve"` là module
+      // static server nội bộ của nó (lib/API/Serve.js) nên process sẽ crash
+      // liên tục với `Error: getaddrinfo ENOTFOUND -l`.
+      // `serve` được cài global trong Dockerfile -> /usr/local/bin/serve.
       name: "gats-fe",
       cwd: "./fe",
-      script: "serve",
+      script: "/usr/local/bin/serve",
       args: "-s dist -l 3002",
     },
   ],

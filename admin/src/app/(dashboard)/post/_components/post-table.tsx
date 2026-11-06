@@ -1,6 +1,5 @@
 "use client";
 
-import dayjs from "dayjs";
 import { useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
@@ -10,6 +9,7 @@ import type { PostListItem } from "@/lib/api/types";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
 import { AdminPanel, StatusPill } from "@/components/Layouts/admin-surface";
+import { formatVnDate, formatVnDateTime } from "@/lib/datetime";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,7 +62,7 @@ const columns: ColumnDef<PostListItem>[] = [
       const publishedAt = row.original.publishedAt ?? row.original.createdAt;
       return (
         <span className="text-dark-4 dark:text-dark-6">
-          {dayjs(publishedAt).format("DD/MM/YYYY")}
+          {formatVnDate(publishedAt)}
         </span>
       );
     },

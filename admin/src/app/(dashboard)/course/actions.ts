@@ -4,6 +4,8 @@ import { beFetch } from "@/lib/api/server";
 import type {
   AssignmentSubmissionsResponse,
   CourseDetail,
+  CourseDetailLesson,
+  CourseDetailSection,
   CourseExerciseHistory,
   CourseIncludeInput,
   CourseLearnersResponse,
@@ -183,13 +185,49 @@ export async function getCourseDetail(
   );
   if (!basic.ok || !basic.data?.course) return null;
 
-  const detail = await beFetch<{ course: CourseDetail }>(
-    `/courses/slug/${basic.data.course.slug}`,
-  );
+  const [detail, curriculum] = await Promise.all([
+    beFetch<{ course: CourseDetail }>(
+      `/courses/slug/${basic.data.course.slug}`,
+    ),
+    beFetch<{ data: CourseDetailSection[] }>(
+      `/courses/${id}/curriculum`,
+    ),
+  ]);
 
   if (detail.ok && detail.data?.course) {
-    return detail.data.course;
+    const courseDetail = detail.data.course;
+    if (curriculum.ok && Array.isArray(curriculum.data?.data)) {
+      // Dùng curriculum đầy đủ nội dung bài học cho admin
+      const curriculumSections = curriculum.data.data;
+      courseDetail.sections = curriculumSections.map((sec: CourseDetailSection) => ({
+        id: sec.id,
+        title: sec.title,
+        order: sec.order,
+        lessonCount: sec.lessons.length,
+        totalDurationSeconds: sec.lessons.reduce(
+          (sum: number, l: CourseDetailLesson) => sum + (l.duration ?? 0),
+          0,
+        ),
+        lessons: sec.lessons,
+      }));
+    }
+    return courseDetail;
   }
+
+  const sections: CourseDetailSection[] =
+    curriculum.ok && Array.isArray(curriculum.data?.data)
+      ? curriculum.data.data.map((sec: CourseDetailSection) => ({
+          id: sec.id,
+          title: sec.title,
+          order: sec.order,
+          lessonCount: sec.lessons.length,
+          totalDurationSeconds: sec.lessons.reduce(
+            (sum: number, l: CourseDetailLesson) => sum + (l.duration ?? 0),
+            0,
+          ),
+          lessons: sec.lessons,
+        }))
+      : [];
 
   return {
     ...basic.data.course,
@@ -198,13 +236,16 @@ export async function getCourseDetail(
       enrollmentCount: 0,
       ratingCount: 0,
       averageRating: null,
-      sectionCount: 0,
-      lessonCount: 0,
-      totalDurationSeconds: 0,
+      sectionCount: sections.length,
+      lessonCount: sections.reduce((sum, s) => sum + s.lessons.length, 0),
+      totalDurationSeconds: sections.reduce(
+        (sum, s) => sum + s.totalDurationSeconds,
+        0,
+      ),
     },
     learningOutcomes: [],
     includes: [],
-    sections: [],
+    sections,
   };
 }
 

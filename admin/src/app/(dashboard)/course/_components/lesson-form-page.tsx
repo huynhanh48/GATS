@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Save, Video, PlayCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, FileText, Save, Video, PlayCircle, BookOpen, HelpCircle } from "lucide-react";
 import DatePickerDemo from "@/components/shadcn-studio/date-picker/date-picker-08";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ import type {
   LessonType,
   UpdateLessonInput,
   MediaRecord,
+  Quiz,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { createLesson, updateLesson } from "../actions";
@@ -25,6 +26,8 @@ import { LessonAttachments, PendingLessonAttachments } from "./lesson-attachment
 import { lessonAttachmentsClient } from "@/services/lesson-attachments.client";
 import { fetchPosts } from "@/app/(dashboard)/post/actions";
 import type { PostListItem } from "@/lib/api/types";
+import { quizClient } from "@/services/quiz.client";
+import { QuizBuilder } from "../[id]/_components/quiz-builder";
 
 const LESSON_TYPE_OPTIONS: { value: LessonType; label: string; hint: string }[] =
   [
@@ -42,11 +45,6 @@ const LESSON_TYPE_OPTIONS: { value: LessonType; label: string; hint: string }[] 
       value: "quiz",
       label: "Quiz",
       hint: "Câu hỏi trắc nghiệm / tự luận sau khi lưu",
-    },
-    {
-      value: "assignment",
-      label: "Bài tập",
-      hint: "Nộp bài & chấm điểm sau khi lưu",
     },
   ];
 
@@ -122,6 +120,30 @@ export function LessonFormPage({
   const [loading, setLoading] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<MediaRecord[]>([]);
 
+  // Quiz data state for lesson
+  const [existingQuiz, setExistingQuiz] = useState<Quiz | null>(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const [quizLoaded, setQuizLoaded] = useState(false);
+
+  useEffect(() => {
+    if (mode === "edit" && lesson && type === "quiz" && !quizLoaded) {
+      void (async () => {
+        setLoadingQuiz(true);
+        try {
+          const res = await quizClient.getQuizByLessonAdmin(courseId, lesson.id);
+          if (res.data?.data) {
+            setExistingQuiz(res.data.data);
+          }
+        } catch {
+          // ignore or no quiz yet
+        } finally {
+          setLoadingQuiz(false);
+          setQuizLoaded(true);
+        }
+      })();
+    }
+  }, [mode, lesson, type, courseId, quizLoaded]);
+
   useEffect(() => {
     void (async () => {
       setPostsLoading(true);
@@ -177,12 +199,22 @@ export function LessonFormPage({
       is_article_preview: isArticlePreviewVal,
       video_preview_duration_seconds: videoPreviewDuration,
       linked_post_id: linkedPostId ? linkedPostId : null,
-      ...(description ? { description } : {}),
+      description: description ?? (mode === "edit" ? null : undefined),
       ...(orderRaw ? { order: Number(orderRaw) } : {}),
-      ...(durationSec !== undefined && !Number.isNaN(durationSec)
-        ? { duration: durationSec }
-        : {}),
-      ...(trimmedContent ? { content: trimmedContent } : {}),
+      duration:
+        durationSec !== undefined && !Number.isNaN(durationSec)
+          ? durationSec
+          : mode === "edit"
+            ? null
+            : undefined,
+      content:
+        type === "quiz"
+          ? (mode === "edit" ? null : undefined)
+          : trimmedContent
+            ? trimmedContent
+            : mode === "edit"
+              ? null
+              : undefined,
     };
 
     setLoading(true);
@@ -362,25 +394,73 @@ export function LessonFormPage({
           </div>
         </section>
 
-        {/* Tiptap Editor Section */}
-        <section className="min-w-0 max-w-full overflow-hidden rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-          <div className="flex items-center gap-2 border-b border-stroke px-5 py-4 sm:px-7 sm:py-5 dark:border-dark-3">
-            <FileText className="size-5 shrink-0 text-primary" />
-            <h2 className="text-lg font-semibold text-dark dark:text-white">
-              Nội dung chi tiết
-            </h2>
-          </div>
-
-          <div className="min-w-0">
-            <div className="min-w-0 max-w-full overflow-x-auto">
-              <SimpleEditor
-                value={content}
-                onChange={setContent}
-                className="simple-editor-embedded !border-0 !rounded-none min-h-[800px]"
-              />
+        {/* Tiptap Editor Section - Hide when Quiz */}
+        {type !== "quiz" && (
+          <section className="min-w-0 max-w-full overflow-hidden rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+            <div className="flex items-center gap-2 border-b border-stroke px-5 py-4 sm:px-7 sm:py-5 dark:border-dark-3">
+              <FileText className="size-5 shrink-0 text-primary" />
+              <h2 className="text-lg font-semibold text-dark dark:text-white">
+                Nội dung chi tiết
+              </h2>
             </div>
-          </div>
-        </section>
+
+            <div className="min-w-0">
+              <div className="min-w-0 max-w-full overflow-x-auto">
+                <SimpleEditor
+                  value={content}
+                  onChange={setContent}
+                  className="simple-editor-embedded !border-0 !rounded-none min-h-[800px]"
+                />
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Quiz Builder Section - Show when Quiz */}
+        {type === "quiz" && (
+          <section className="min-w-0 max-w-full rounded-[10px] border border-stroke bg-white p-5 shadow-1 sm:p-7 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+            <div className="flex items-center gap-2 border-b border-stroke pb-4 dark:border-dark-3">
+              <HelpCircle className="size-5 shrink-0 text-primary" />
+              <div>
+                <h2 className="text-lg font-semibold text-dark dark:text-white">
+                  Cấu hình & Câu hỏi Quiz
+                </h2>
+                <p className="text-xs text-dark-4 dark:text-dark-6">
+                  Tạo câu hỏi trắc nghiệm, đúng/sai, điền từ, hoặc trả lời ngắn cho bài học này
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              {mode === "create" ? (
+                <div className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-6 text-center">
+                  <HelpCircle className="mx-auto mb-2 size-8 text-primary" />
+                  <h3 className="text-sm font-semibold text-dark dark:text-white">
+                    Lưu bài học để bắt đầu thêm câu hỏi Quiz
+                  </h3>
+                  <p className="mx-auto mt-1 max-w-md text-xs text-dark-4 dark:text-dark-6">
+                    Sau khi nhấn <span className="font-semibold text-primary">"Tạo bài học"</span> ở góc trên, hệ thống sẽ tự động lưu bài học và chuyển bạn sang giao diện soạn thảo các câu hỏi Quiz ngay lập tức.
+                  </p>
+                </div>
+              ) : lesson ? (
+                loadingQuiz ? (
+                  <div className="flex min-h-[200px] items-center justify-center text-sm text-dark-4">
+                    Đang tải thông tin Quiz...
+                  </div>
+                ) : (
+                  <QuizBuilder
+                    key={existingQuiz?.id ?? "no-quiz"}
+                    courseId={courseId}
+                    lessonId={lesson.id}
+                    existingQuiz={existingQuiz}
+                    onCreated={(newQuiz) => setExistingQuiz(newQuiz)}
+                    autoOpenAddQuestion={!existingQuiz || (existingQuiz.questions?.length ?? 0) === 0}
+                  />
+                )
+              ) : null}
+            </div>
+          </section>
+        )}
 
         {/* Attachments Section */}
         <section className="min-w-0 max-w-full rounded-[10px] border border-stroke bg-white p-5 shadow-1 sm:p-7 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">

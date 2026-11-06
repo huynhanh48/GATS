@@ -264,6 +264,30 @@ export const courseService = {
     }
   },
 
+  /**
+   * Quiz của một bài học (member view).
+   * Trả về { id, title, description, questions[] } — KHÔNG kèm đáp án đúng.
+   */
+  async getLessonQuiz(courseId, lessonId) {
+    try {
+      const res = await httpClient.get(API.QUIZ.LESSON_QUIZ(courseId, lessonId));
+      return res?.data || null;
+    } catch (err) {
+      // 404 = bài học chưa có quiz, coi như rỗng thay vì lỗi
+      return null;
+    }
+  },
+
+  /**
+   * Nộp bài quiz một lần.
+   * @param {string} quizId
+   * @param {Array<{questionId: string, selectedAnswerId?: string, selectedAnswerIds?: string[], textAnswer?: string}>} answers
+   */
+  async submitQuiz(quizId, answers) {
+    const res = await httpClient.post(API.QUIZ.SUBMIT(quizId), { answers });
+    return res?.data || null;
+  },
+
   async updateLessonProgress(courseId, lessonId, payload = {}) {
     try {
       // Backend BE schema:

@@ -8,19 +8,28 @@ REDIS_DIR=/data/redis
 PG_BIN=$(dirname "$(ls /usr/lib/postgresql/*/bin/initdb | head -1)")
 
 # ---------------------------------------------------------------- Postgres
+mkdir -p "$PGDATA" /var/run/postgresql
+chown -R postgres:postgres "$PGDATA" /var/run/postgresql
+chmod 700 "$PGDATA"
+
+# Clean stale pid file if exists
+rm -f "$PGDATA/postmaster.pid"
+
 if [ ! -s "$PGDATA/PG_VERSION" ]; then
   echo "[dev] initdb $PGDATA"
-  mkdir -p "$PGDATA" /var/run/postgresql
-  chown -R postgres:postgres "$PGDATA" /var/run/postgresql
   su postgres -c "$PG_BIN/initdb -D $PGDATA --auth-local=trust --auth-host=scram-sha-256" >/dev/null
 fi
-mkdir -p /var/run/postgresql
-chown postgres:postgres /var/run/postgresql
+
 if ! su postgres -c "$PG_BIN/pg_ctl -D $PGDATA status" >/dev/null 2>&1; then
   echo "[dev] start postgres"
   su postgres -c "$PG_BIN/pg_ctl -D $PGDATA -l /var/lib/postgresql/pg.log -w start"
   su postgres -c "psql -q -c \"ALTER USER postgres PASSWORD 'postgres';\"" >/dev/null
 fi
+
+# Session DB phải là UTC để khớp cách Drizzle ghi/đọc `timestamp without time zone`
+# (xem be/src/common/constants/time.ts). Nếu để giờ Việt Nam, now()/defaultNow()
+# sẽ lệch 7 giờ so với dữ liệu do app ghi. Idempotent.
+su postgres -c "psql -q -c \"ALTER SYSTEM SET timezone = 'UTC';\" -c \"SELECT pg_reload_conf();\"" >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------- Redis
 mkdir -p "$REDIS_DIR"
@@ -42,9 +51,9 @@ fi
 node /app/docker/dev-s3-init.cjs
 
 # ---------------------------------------------------------------- node deps
-# node_modules nằm trong volume, nên rebuild image không cập nhật nó. So
-# package-lock.json với dấu `.gats-lock` (tạo lúc build image) để cài lại khi
-# danh sách package đổi — vd fe chuyển từ Next.js sang Vite.
+# node_modules nằm trong volume nên rebuild image KHÔNG cập nhật nó. So
+# package-lock.json với dấu `.gats-lock` (tạo lúc build image) để tự chạy
+# `npm ci` khi danh sách package đổi (vd fe chuyển từ Next.js sang Vite).
 sync_deps() {
   app="$1"
   lock="/app/$app/package-lock.json"
@@ -61,9 +70,12 @@ sync_deps fe
 # ---------------------------------------------------------------- database
 cd /app/be
 echo "[dev] migrate + seed database"
+# Fail fast: a migration error must stop the container, otherwise the dev
+# servers would run against a half-migrated schema.
 npm run db:migrate:versioned
 npm run db:seed
-npm run db:seed:permissions
+# Roles + permissions + tài khoản admin (ADMIN_DEFAULT_*) + 6 nhóm khoá học chính.
+DOTENV_CONFIG_PATH=./config/.env.development npm run db:seed:core
 
 # ---------------------------------------------------------------- apps
 cd /app

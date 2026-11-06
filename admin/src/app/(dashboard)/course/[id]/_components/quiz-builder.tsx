@@ -23,7 +23,6 @@ import type {
   UpdateQuizQuestionInput,
 } from "@/lib/api/types";
 import { quizClient } from "@/services/quiz.client";
-import { QuizAiGeneratePanel } from "./quiz-ai-generate-panel";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -31,19 +30,22 @@ const inputClass =
   "w-full rounded-lg border border-stroke bg-white px-4 py-2.5 text-dark outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 dark:border-dark-3 dark:bg-dark-2 dark:text-white";
 const labelClass = "mb-1.5 block text-sm font-medium text-dark dark:text-white";
 
-const QUESTION_TYPE_LABELS: Record<
-  Exclude<QuizQuestionType, "true_false">,
-  string
-> = {
+const QUESTION_TYPE_LABELS: Record<QuizQuestionType, string> = {
   single_choice: "Một đáp án",
-  multiple_choice: "Nhiều đáp án",
+  multiple_choice: "Nhiều đáp án (checkbox)",
+  true_false: "Đúng / Sai",
   fill_blank: "Điền vào chỗ trống",
+  short_answer: "Trả lời ngắn",
 };
 
-const QUESTION_TYPE_DISPLAY: Record<string, string> = {
-  ...QUESTION_TYPE_LABELS,
-  true_false: "Đúng / Sai",
-};
+const QUESTION_TYPE_DISPLAY: Record<string, string> = QUESTION_TYPE_LABELS;
+
+const TYPE_OPTIONS = Object.keys(QUESTION_TYPE_LABELS) as QuizQuestionType[];
+
+const TRUE_FALSE_OPTIONS: QuizOption[] = [
+  { content: "Đúng", is_correct: true, order: 0 },
+  { content: "Sai", is_correct: false, order: 1 },
+];
 
 function emptyOption(order: number): QuizOption {
   return { content: "", is_correct: false, order };
@@ -186,13 +188,23 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
     [{ content: "", is_exact: true }]
   );
 
-  // When type changes, reset answers
+  const isTrueFalse = type === "true_false";
+  const showOptions =
+    type === "single_choice" || type === "multiple_choice" || isTrueFalse;
+  const showAccepted = type === "fill_blank" || type === "short_answer";
+
+  // When type changes, reset answers to a sensible default for that type
   useEffect(() => {
     if (initial) return; // don't reset when editing
+    if (type === "true_false") {
+      setOptions(TRUE_FALSE_OPTIONS.map((option) => ({ ...option })));
+      return;
+    }
     if (type === "single_choice" || type === "multiple_choice") {
       setOptions([emptyOption(0), emptyOption(1)]);
+      return;
     }
-    if (type === "fill_blank") {
+    if (type === "fill_blank" || type === "short_answer") {
       setAcceptedAnswers([{ content: "", is_exact: true }]);
     }
   }, [type, initial]);
@@ -213,7 +225,7 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
   function validate(): string | null {
     if (!title.trim()) return "Tiêu đề câu hỏi là bắt buộc";
     const correct = options.filter((o) => o.is_correct);
-    if (type === "single_choice" || type === "multiple_choice") {
+    if (showOptions) {
       const filled = options.map((o) => o.content.trim()).filter(Boolean);
       if (filled.length < 2) return "Cần ít nhất 2 lựa chọn";
       const unique = new Set(filled.map((c) => c.toLowerCase()));
@@ -221,13 +233,13 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
         return "Các lựa chọn không được trùng nội dung";
       }
     }
-    if (type === "single_choice") {
+    if (type === "single_choice" || type === "true_false") {
       if (correct.length !== 1) return "Phải chọn đúng 1 đáp án đúng";
     }
     if (type === "multiple_choice") {
       if (correct.length < 2) return "Phải có ít nhất 2 đáp án đúng";
     }
-    if (type === "fill_blank") {
+    if (showAccepted) {
       const filled = acceptedAnswers.map((a) => a.content.trim()).filter(Boolean);
       if (!filled.length) return "Cần ít nhất 1 đáp án được chấp nhận";
       const unique = new Set(filled.map((c) => c.toLowerCase()));
@@ -248,14 +260,14 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
       ...(explanation.trim() ? { explanation: explanation.trim() } : {}),
       points,
       order,
-      ...(["single_choice", "multiple_choice"].includes(type)
+      ...(showOptions
         ? {
             options: options
               .filter((o) => o.content.trim())
               .map((o, i) => ({ content: o.content.trim(), is_correct: o.is_correct, order: i })),
           }
         : {}),
-      ...(type === "fill_blank"
+      ...(showAccepted
         ? {
             accepted_answers: acceptedAnswers
               .filter((a) => a.content.trim())
@@ -278,9 +290,6 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
     if (res.data) onSaved(res.data.data);
   }
 
-  const showOptions = ["single_choice", "multiple_choice"].includes(type);
-  const showAccepted = type === "fill_blank";
-
   return (
     <div className="rounded-lg border border-primary/30 bg-white p-4 dark:bg-dark-2">
       <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -296,21 +305,14 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
         <div>
           <label className={labelClass}>Loại câu hỏi</label>
           <select
-            value={
-              type === "true_false" && !initial
-                ? "single_choice"
-                : type
-            }
+            value={type}
             onChange={(e) => setType(e.target.value as QuizQuestionType)}
             disabled={saving || !!initial}
             className={inputClass}
           >
-            {(Object.keys(QUESTION_TYPE_LABELS) as Array<keyof typeof QUESTION_TYPE_LABELS>).map((t) => (
+            {TYPE_OPTIONS.map((t) => (
               <option key={t} value={t}>{QUESTION_TYPE_LABELS[t]}</option>
             ))}
-            {initial?.type === "true_false" ? (
-              <option value="true_false">Đúng / Sai (legacy — chỉ xem)</option>
-            ) : null}
           </select>
         </div>
       </div>
@@ -318,7 +320,7 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
       {showOptions && (
         <div className="mb-3">
           <label className={labelClass}>
-            Các lựa chọn {type === "multiple_choice" ? "(tick vào tất cả đáp án đúng)" : "(tick vào đáp án đúng)"}
+            Các lựa chọn {type === "multiple_choice" ? "(tick vào tất cả đáp án đúng)" : isTrueFalse ? "(tick vào đáp án đúng)" : "(tick vào đáp án đúng)"}
           </label>
           <div className="space-y-2">
             {options.map((opt, idx) => (
@@ -338,7 +340,7 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
                   placeholder={`Lựa chọn ${idx + 1}`}
                   className={inputClass}
                 />
-                {options.length > 2 && (
+                {!isTrueFalse && options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => setOptions((o) => o.filter((_, i) => i !== idx))}
@@ -349,14 +351,16 @@ function QuestionForm({ quizId, initial, order, onSaved, onCancel }: QuestionFor
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setOptions((o) => [...o, emptyOption(o.length)])}
-            disabled={saving}
-            className="mt-2 text-sm text-primary hover:underline"
-          >
-            + Thêm lựa chọn
-          </button>
+          {!isTrueFalse && (
+            <button
+              type="button"
+              onClick={() => setOptions((o) => [...o, emptyOption(o.length)])}
+              disabled={saving}
+              className="mt-2 text-sm text-primary hover:underline"
+            >
+              + Thêm lựa chọn
+            </button>
+          )}
         </div>
       )}
 
@@ -628,15 +632,6 @@ export function QuizBuilder({
       </h5>
 
       <QuizSettingsForm quizId={quiz.id} initial={quiz} />
-
-      <QuizAiGeneratePanel
-        courseId={courseId}
-        quizId={quiz.id}
-        onGenerated={(created) => {
-          if (created.length === 0) return;
-          setQuestions((qs) => [...qs, ...created]);
-        }}
-      />
 
       {/* Question list */}
       <div className="mb-3 space-y-3">

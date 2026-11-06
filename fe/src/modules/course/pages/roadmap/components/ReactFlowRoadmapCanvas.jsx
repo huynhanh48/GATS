@@ -47,19 +47,23 @@ export default function ReactFlowRoadmapCanvas({
     let currentTags = [];
     if (Array.isArray(category.tags) && category.tags.length > 0) {
       currentTags = category.tags;
-    } else if (category.milestones) {
+    } else if (category.milestones && category.milestones.some((m) => m.nodes && m.nodes.length > 0)) {
       currentTags = category.milestones.flatMap((m) =>
-        m.nodes.map((n) => ({
+        (m.nodes || []).map((n) => ({
           id: n.id,
           name: n.name,
           slug: n.tag?.toLowerCase().replace(/\s+/g, '-') || n.id,
         }))
       );
-    } else {
+    }
+    
+    // Nếu vẫn rỗng, fallback về các tags mẫu đầy đủ để đồ thị luôn hoàn chỉnh
+    if (!currentTags || currentTags.length === 0) {
       currentTags = [
         { id: 'chatgpt', name: 'ChatGPT', slug: 'chatgpt' },
-        { id: 'claude', name: 'Claude', slug: 'claude' },
-        { id: 'gemini', name: 'Gemini', slug: 'gemini' },
+        { id: 'gemini', name: 'Google Gemini', slug: 'gemini' },
+        { id: 'claude', name: 'Claude AI', slug: 'claude' },
+        { id: 'prompt-eng', name: 'Prompt Engineering', slug: 'prompt-engineering' },
       ];
     }
 
@@ -103,9 +107,9 @@ export default function ReactFlowRoadmapCanvas({
     const tagColumnWidth = totalLevelsWidth;
 
     const startX = 60;
-    const row0_Y = 40;   // Hàng Danh mục (Top)
-    const row1_Y = 210;  // Hàng Tags (Middle)
-    const row2_Y = 340;  // Hàng Levels (Bottom)
+    const row0_Y = 70;   // Hàng Danh mục (Top) - Tạo khoảng cách đệm trên
+    const row1_Y = 270;  // Hàng Tags (Middle)
+    const row2_Y = 420;  // Hàng Levels (Bottom)
 
     const rootNodeId = `root-category-${category.slug || 'cat'}`;
     
@@ -296,7 +300,7 @@ export default function ReactFlowRoadmapCanvas({
         onEdgesChange={onEdgesChange}
         fitView
         fitViewOptions={{
-          padding: 0.12,
+          padding: 0.18,
           includeHiddenNodes: false,
           minZoom: 0.4,
           maxZoom: 1,

@@ -1,3 +1,5 @@
+import { APP_TIME_ZONE } from "@/lib/timezone";
+
 export function formatMessageTime(timestamp: string) {
   const messageDate = new Date(timestamp);
   const now = new Date();
@@ -15,6 +17,7 @@ export function formatMessageTime(timestamp: string) {
     }
     // Otherwise show time like "4:39 PM"
     return messageDate.toLocaleTimeString("en-US", {
+      timeZone: APP_TIME_ZONE,
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
@@ -23,12 +26,16 @@ export function formatMessageTime(timestamp: string) {
 
   // For messages from this week, show day name
   if (diffInDays < 7) {
-    return messageDate.toLocaleDateString("en-US", { weekday: "long" });
+    return messageDate.toLocaleDateString("en-US", {
+      timeZone: APP_TIME_ZONE,
+      weekday: "long",
+    });
   }
 
   // For messages from this year, show date
   if (messageDate.getFullYear() === now.getFullYear()) {
     return messageDate.toLocaleDateString("en-US", {
+      timeZone: APP_TIME_ZONE,
       day: "numeric",
       month: "short",
     });
@@ -36,6 +43,7 @@ export function formatMessageTime(timestamp: string) {
 
   // For older messages, show date with year
   return messageDate.toLocaleDateString("en-US", {
+    timeZone: APP_TIME_ZONE,
     day: "numeric",
     month: "short",
     year: "numeric",

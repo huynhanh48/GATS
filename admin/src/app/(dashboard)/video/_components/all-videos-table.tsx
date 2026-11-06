@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { videoClient, type ListVideosResponse } from "@/services/video.client";
 import type { VideoWithDetails } from "@/lib/api/types";
+import { formatVnDate, formatVnDateTime } from "@/lib/datetime";
 import {
   Table,
   TableBody,
@@ -194,7 +195,7 @@ export function AllVideosTable() {
                       {vid.size ? formatBytes(vid.size) : "-"}
                     </TableCell>
                     <TableCell className="text-dark-4 dark:text-dark-6">
-                      {new Date(vid.createdAt).toLocaleDateString("en-GB")}
+                      {formatVnDate(vid.createdAt, "")}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

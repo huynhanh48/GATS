@@ -5,3 +5,4 @@ export { default as PlayerNotesTab } from './PlayerNotesTab';
 export { default as PlayerDiscussionsTab } from './PlayerDiscussionsTab';
 export { default as PlayerDiscussionsSidebar } from './PlayerDiscussionsSidebar';
 export { default as GatsHlsPlayer } from './GatsHlsPlayer';
+export { default as QuizLessonPanel } from './QuizLessonPanel';

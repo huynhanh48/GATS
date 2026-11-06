@@ -32,20 +32,6 @@ export default async function CourseCategoryPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader
-        eyebrow="Taxonomy"
-        title="Danh mục khóa học"
-        description="Quản lý danh mục, tags và cấp độ của các khóa học theo chuẩn hệ thống."
-        metrics={[
-          { label: "Tổng danh mục", value: categories.length, tone: "blue" },
-          { label: "Tags", value: tags.length, tone: "orange" },
-          {
-            label: "Đang dùng",
-            value: categories.filter((c) => c.status === "active").length,
-            tone: "green",
-          },
-        ]}
-      />
       <CourseCategoryManager
         initialCategories={categories}
         initialTags={tags}

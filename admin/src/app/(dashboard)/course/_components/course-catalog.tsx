@@ -187,17 +187,6 @@ export function CourseCatalog({
     <div className="space-y-4">
       <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5 dark:border-slate-800 dark:bg-slate-950">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="text-xs font-black tracking-[0.18em] text-[#0070EB] uppercase">
-              Course Catalog
-            </p>
-            <h2 className="mt-1 text-xl font-black text-slate-950 dark:text-white">
-              Khóa học GATS
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Đang hiển thị {courses.length} khóa học từ hệ thống.
-            </p>
-          </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
               <button

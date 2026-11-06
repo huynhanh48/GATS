@@ -261,7 +261,7 @@ export function AiGenPlayground() {
         setSkippedCount(skipped);
         toast.success(
           res.data?.message ??
-            `Sinh thành công ${questions.length} câu hỏi!${skipped ? ` (Bỏ qua ${skipped})` : ""}`,
+          `Sinh thành công ${questions.length} câu hỏi!${skipped ? ` (Bỏ qua ${skipped})` : ""}`,
         );
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Đã xảy ra lỗi khi gọi API";
@@ -284,289 +284,272 @@ export function AiGenPlayground() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-blue-200 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 p-5 dark:border-blue-900/50 dark:from-blue-950/30 dark:to-indigo-950/30">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center rounded-md bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-            Viava API v2.0
-          </span>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">
-            Sinh Quiz AI
-          </h2>
-        </div>
-        <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-          Chọn bài quiz đích và nguồn nội dung độc lập (video FLAC / URL S3 /
-          text). Không cần dán UUID.
-        </p>
-      </div>
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6 dark:border-slate-800 dark:bg-slate-950">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-              1. Quiz đích (gắn câu hỏi vào đâu)
-            </h3>
+        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6 dark:border-slate-800 dark:bg-slate-950">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            1. Quiz đích (gắn câu hỏi vào đâu)
+          </h3>
 
-            <div>
-              <label className={labelClass}>Khóa học</label>
-              <select
-                className={inputClass}
-                value={targetCourseId}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  setTargetCourseId(id);
-                  if (!sourceCourseId && id) setSourceCourseId(id);
-                }}
-                disabled={pending}
-              >
-                <option value="">— Chọn khóa học —</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={labelClass}>
-                Bài quiz {targetsLoading ? "(đang tải…)" : ""}
-              </label>
-              <select
-                className={inputClass}
-                value={selectedLessonId}
-                onChange={(e) => setSelectedLessonId(e.target.value)}
-                disabled={pending || !targetCourseId || targetsLoading}
-              >
-                {targets.length === 0 ? (
-                  <option value="">
-                    {targetCourseId
-                      ? "Khóa chưa có bài loại Quiz — thêm lesson Quiz trong Curriculum"
-                      : "Chọn khóa học trước"}
-                  </option>
-                ) : (
-                  targets.map((t) => (
-                    <option key={t.lessonId} value={t.lessonId}>
-                      {t.label}
-                      {t.hasQuiz ? "" : " (sẽ tự khởi tạo)"}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
-              <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
-                2. Nguồn nội dung (sinh từ đâu)
-              </h3>
-              <div className="mb-3 flex flex-wrap gap-2">
-                {(
-                  [
-                    ["course_flac", "Course video FLAC"],
-                    ["s3_flac_url", "URL S3 FLAC"],
-                    ["text", "Đoạn văn bản"],
-                  ] as const
-                ).map(([mode, label]) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    disabled={pending}
-                    onClick={() => setSourceMode(mode)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                      sourceMode === mode
-                        ? "bg-blue-600 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {sourceMode === "course_flac" && (
-                <>
-                  <div className="mb-3">
-                    <label className={labelClass}>Khóa học nguồn (video)</label>
-                    <select
-                      className={inputClass}
-                      value={sourceCourseId}
-                      onChange={(e) => setSourceCourseId(e.target.value)}
-                      disabled={pending}
-                    >
-                      <option value="">— Chọn khóa học —</option>
-                      {courses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>
-                      Video có FLAC {sourcesLoading ? "(đang tải…)" : ""}
-                    </label>
-                    <select
-                      className={inputClass}
-                      value={selectedVideoId}
-                      onChange={(e) => setSelectedVideoId(e.target.value)}
-                      disabled={pending || !sourceCourseId || sourcesLoading}
-                    >
-                      {sources.length === 0 ? (
-                        <option value="">
-                          {sourceCourseId
-                            ? "Không có video ready + FLAC"
-                            : "Chọn khóa học nguồn"}
-                        </option>
-                      ) : (
-                        sources.map((s) => (
-                          <option key={s.videoId} value={s.videoId}>
-                            {(s.title || s.videoId).slice(0, 80)}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {sourceMode === "s3_flac_url" && (
-                <div>
-                  <label className={labelClass}>URL S3 FLAC</label>
-                  <input
-                    className={inputClass}
-                    value={s3FlacUrl}
-                    onChange={(e) => setS3FlacUrl(e.target.value)}
-                    placeholder="https://…/audio.flac"
-                    disabled={pending}
-                  />
-                </div>
-              )}
-
-              {sourceMode === "text" && (
-                <div>
-                  <label className={labelClass}>Nội dung văn bản</label>
-                  <textarea
-                    className={`${inputClass} min-h-[140px]`}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    disabled={pending}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4 dark:border-slate-800">
-              <div>
-                <label className={labelClass}>Ngôn ngữ</label>
-                <input
-                  className={inputClass}
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  disabled={pending}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Trình độ</label>
-                <select
-                  className={inputClass}
-                  value={targetLevel}
-                  onChange={(e) => setTargetLevel(e.target.value)}
-                  disabled={pending}
-                >
-                  <option value="beginner">beginner</option>
-                  <option value="intermediate">intermediate</option>
-                  <option value="advanced">advanced</option>
-                  <option value="expert">expert</option>
-                </select>
-              </div>
-              <div>
-                <label className={labelClass}>Số câu hỏi</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  className={inputClass}
-                  value={questionCount}
-                  onChange={(e) =>
-                    setQuestionCount(Number(e.target.value) || 5)
-                  }
-                  disabled={pending}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Chi tiết</label>
-                <select
-                  className={inputClass}
-                  value={detailLevel}
-                  onChange={(e) => setDetailLevel(e.target.value)}
-                  disabled={pending}
-                >
-                  <option value="concise">concise</option>
-                  <option value="standard">standard</option>
-                  <option value="detailed">detailed</option>
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="button"
+          <div>
+            <label className={labelClass}>Khóa học</label>
+            <select
+              className={inputClass}
+              value={targetCourseId}
+              onChange={(e) => {
+                const id = e.target.value;
+                setTargetCourseId(id);
+                if (!sourceCourseId && id) setSourceCourseId(id);
+              }}
               disabled={pending}
-              onClick={handleGenerateQuiz}
-              className="mt-2 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50"
             >
-              {pending
-                ? "Đang gen trên server… (có thể vài phút với FLAC)"
-                : "Chạy thử Sinh Quiz AI"}
-            </button>
+              <option value="">— Chọn khóa học —</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6 dark:border-slate-800 dark:bg-slate-950">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                Kết quả Sinh Quiz
-              </h3>
-              {skippedCount !== null && (
-                <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                  Bỏ qua: {skippedCount}
-                </span>
+          <div>
+            <label className={labelClass}>
+              Bài quiz {targetsLoading ? "(đang tải…)" : ""}
+            </label>
+            <select
+              className={inputClass}
+              value={selectedLessonId}
+              onChange={(e) => setSelectedLessonId(e.target.value)}
+              disabled={pending || !targetCourseId || targetsLoading}
+            >
+              {targets.length === 0 ? (
+                <option value="">
+                  {targetCourseId
+                    ? "Khóa chưa có bài loại Quiz — thêm lesson Quiz trong Curriculum"
+                    : "Chọn khóa học trước"}
+                </option>
+              ) : (
+                targets.map((t) => (
+                  <option key={t.lessonId} value={t.lessonId}>
+                    {t.label}
+                    {t.hasQuiz ? "" : " (sẽ tự khởi tạo)"}
+                  </option>
+                ))
               )}
+            </select>
+          </div>
+
+          <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+            <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
+              2. Nguồn nội dung (sinh từ đâu)
+            </h3>
+            <div className="mb-3 flex flex-wrap gap-2">
+              {(
+                [
+                  ["course_flac", "Course video FLAC"],
+                  ["s3_flac_url", "URL S3 FLAC"],
+                  ["text", "Đoạn văn bản"],
+                ] as const
+              ).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setSourceMode(mode)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${sourceMode === mode
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                    }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-            {generatedQuestions.length === 0 ? (
-              <div className="flex h-64 flex-col items-center justify-center text-center text-slate-400">
-                <p className="text-sm">Chưa có dữ liệu quiz được sinh.</p>
-              </div>
-            ) : (
-              <div className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
-                {generatedQuestions.map((q, idx) => (
-                  <div
-                    key={q.id || idx}
-                    className="rounded-lg border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/50"
+
+            {sourceMode === "course_flac" && (
+              <>
+                <div className="mb-3">
+                  <label className={labelClass}>Khóa học nguồn (video)</label>
+                  <select
+                    className={inputClass}
+                    value={sourceCourseId}
+                    onChange={(e) => setSourceCourseId(e.target.value)}
+                    disabled={pending}
                   >
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                      Câu {idx + 1} [{q.type || "MCQ"}]
-                    </span>
-                    <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">
-                      {q.question || q.content || q.prompt}
-                    </p>
-                    {Array.isArray(q.answers) && (
-                      <div className="mt-2 space-y-1">
-                        {q.answers.map((a: any, i: number) => (
-                          <div
-                            key={i}
-                            className={`rounded px-2.5 py-1 text-xs ${
-                              a.isCorrect
-                                ? "bg-emerald-100 font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                : "bg-white text-slate-600 dark:bg-slate-800"
-                            }`}
-                          >
-                            {a.answer}
-                          </div>
-                        ))}
-                      </div>
+                    <option value="">— Chọn khóa học —</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    Video có FLAC {sourcesLoading ? "(đang tải…)" : ""}
+                  </label>
+                  <select
+                    className={inputClass}
+                    value={selectedVideoId}
+                    onChange={(e) => setSelectedVideoId(e.target.value)}
+                    disabled={pending || !sourceCourseId || sourcesLoading}
+                  >
+                    {sources.length === 0 ? (
+                      <option value="">
+                        {sourceCourseId
+                          ? "Không có video ready + FLAC"
+                          : "Chọn khóa học nguồn"}
+                      </option>
+                    ) : (
+                      sources.map((s) => (
+                        <option key={s.videoId} value={s.videoId}>
+                          {(s.title || s.videoId).slice(0, 80)}
+                        </option>
+                      ))
                     )}
-                  </div>
-                ))}
+                  </select>
+                </div>
+              </>
+            )}
+
+            {sourceMode === "s3_flac_url" && (
+              <div>
+                <label className={labelClass}>URL S3 FLAC</label>
+                <input
+                  className={inputClass}
+                  value={s3FlacUrl}
+                  onChange={(e) => setS3FlacUrl(e.target.value)}
+                  placeholder="https://…/audio.flac"
+                  disabled={pending}
+                />
+              </div>
+            )}
+
+            {sourceMode === "text" && (
+              <div>
+                <label className={labelClass}>Nội dung văn bản</label>
+                <textarea
+                  className={`${inputClass} min-h-[140px]`}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  disabled={pending}
+                />
               </div>
             )}
           </div>
+
+          <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4 dark:border-slate-800">
+            <div>
+              <label className={labelClass}>Ngôn ngữ</label>
+              <input
+                className={inputClass}
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                disabled={pending}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Trình độ</label>
+              <select
+                className={inputClass}
+                value={targetLevel}
+                onChange={(e) => setTargetLevel(e.target.value)}
+                disabled={pending}
+              >
+                <option value="beginner">beginner</option>
+                <option value="intermediate">intermediate</option>
+                <option value="advanced">advanced</option>
+                <option value="expert">expert</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Số câu hỏi</label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                className={inputClass}
+                value={questionCount}
+                onChange={(e) =>
+                  setQuestionCount(Number(e.target.value) || 5)
+                }
+                disabled={pending}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Chi tiết</label>
+              <select
+                className={inputClass}
+                value={detailLevel}
+                onChange={(e) => setDetailLevel(e.target.value)}
+                disabled={pending}
+              >
+                <option value="concise">concise</option>
+                <option value="standard">standard</option>
+                <option value="detailed">detailed</option>
+              </select>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            disabled={pending}
+            onClick={handleGenerateQuiz}
+            className="mt-2 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50"
+          >
+            {pending
+              ? "Đang gen trên server… (có thể vài phút với FLAC)"
+              : "Chạy thử Sinh Quiz AI"}
+          </button>
+        </div>
+
+        <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-6 dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Kết quả Sinh Quiz
+            </h3>
+            {skippedCount !== null && (
+              <span className="rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                Bỏ qua: {skippedCount}
+              </span>
+            )}
+          </div>
+          {generatedQuestions.length === 0 ? (
+            <div className="flex h-64 flex-col items-center justify-center text-center text-slate-400">
+              <p className="text-sm">Chưa có dữ liệu quiz được sinh.</p>
+            </div>
+          ) : (
+            <div className="max-h-[460px] space-y-3 overflow-y-auto pr-1">
+              {generatedQuestions.map((q, idx) => (
+                <div
+                  key={q.id || idx}
+                  className="rounded-lg border border-slate-200 bg-slate-50/50 p-3.5 dark:border-slate-800 dark:bg-slate-900/50"
+                >
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                    Câu {idx + 1} [{q.type || "MCQ"}]
+                  </span>
+                  <p className="mt-1 text-sm font-medium text-slate-800 dark:text-slate-200">
+                    {q.question || q.content || q.prompt}
+                  </p>
+                  {Array.isArray(q.answers) && (
+                    <div className="mt-2 space-y-1">
+                      {q.answers.map((a: any, i: number) => (
+                        <div
+                          key={i}
+                          className={`rounded px-2.5 py-1 text-xs ${a.isCorrect
+                              ? "bg-emerald-100 font-semibold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              : "bg-white text-slate-600 dark:bg-slate-800"
+                            }`}
+                        >
+                          {a.answer}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

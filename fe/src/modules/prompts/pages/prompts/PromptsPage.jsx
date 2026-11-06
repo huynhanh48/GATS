@@ -40,7 +40,8 @@ export default function PromptsPage() {
     async function loadPrompts() {
       setLoading(true);
       try {
-        const { items } = await aiToolsService.getItems('prompt');
+        // take=100 (mức tối đa BE cho phép) để FE không bị cắt ở 20 prompt.
+        const { items } = await aiToolsService.getItems('prompt', { take: 100 });
         if (mounted) {
           if (Array.isArray(items) && items.length > 0) {
             setPrompts(items);

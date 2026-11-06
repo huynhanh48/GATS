@@ -14,6 +14,8 @@ name: gats-academy
 
 x-backend-env: &backend-env
   NODE_ENV: production
+  # Giờ Việt Nam cho be/worker/admin/fe trong container `app`.
+  TZ: Asia/Ho_Chi_Minh
   PORT: "3000"
   HOST: 0.0.0.0
   DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is required}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@db:5432/${POSTGRES_DB:?POSTGRES_DB is required}
@@ -29,6 +31,8 @@ x-backend-env: &backend-env
   AUTH_COOKIE_DOMAIN: ${AUTH_COOKIE_DOMAIN:-}
   EMAIL_USER: ${EMAIL_USER:?EMAIL_USER is required}
   EMAIL_PASSWORD: ${EMAIL_PASSWORD:?EMAIL_PASSWORD is required}
+  # Hộp thư nhận thông báo lead tư vấn (trống = dùng EMAIL_USER).
+  LEAD_NOTIFY_EMAIL: ${LEAD_NOTIFY_EMAIL:-}
   APP_URL: ${APP_URL:?APP_URL is required}
   FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
@@ -54,6 +58,12 @@ x-backend-env: &backend-env
   BANK_ACCOUNT_NUMBER: ${BANK_ACCOUNT_NUMBER:-}
   BANK_NAME: ${BANK_NAME:-VietinBank}
   BANK_ACCOUNT_NAME: ${BANK_ACCOUNT_NAME:-}
+  # Người bán in trên biên lai thanh toán (trống = mặc định trong be).
+  SELLER_NAME: ${SELLER_NAME:-}
+  SELLER_ADDRESS: ${SELLER_ADDRESS:-}
+  SELLER_EMAIL: ${SELLER_EMAIL:-}
+  SELLER_PHONE: ${SELLER_PHONE:-}
+  SELLER_TAX_CODE: ${SELLER_TAX_CODE:-}
   SEPAY_API_KEY: ${SEPAY_API_KEY:?SEPAY_API_KEY is required}
   SEPAY_MERCHANT_ID: ${SEPAY_MERCHANT_ID:-}
   SEPAY_SECRET_KEY: ${SEPAY_SECRET_KEY:-}
@@ -77,6 +87,11 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
+      # LƯU Ý: session Postgres phải là UTC vì Drizzle ghi/đọc
+      # `timestamp without time zone` theo UTC (be/src/common/constants/time.ts).
+      # Đổi thành giờ Việt Nam sẽ làm now()/defaultNow() lệch 7 giờ.
+      TZ: UTC
+      PGTZ: UTC
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
@@ -91,6 +106,8 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
@@ -111,6 +128,12 @@ services:
       RUSTFS_VOLUMES: /data
     volumes:
       - s3_data:/data
+    # Ảnh/media (`MINIO_PUBLIC_BASE_URL`) phải mở được từ trình duyệt. S3 API
+    # chỉ publish trên LOOPBACK của VPS (không lộ ra Internet) để nginx chạy
+    # trên host proxy:  location /files-gats/ -> http://127.0.0.1:9010/
+    # (path-style: bucket nằm trong path). Video dùng LongVan thì không cần.
+    ports:
+      - "127.0.0.1:9010:9000"
 
   # One-shot: tạo bucket video + file, mở public-read cho bucket file.
   s3-init:

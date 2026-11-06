@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import dayjs from "dayjs";
 import { useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useRouter } from "next/navigation";
@@ -12,6 +11,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { CourseRowActions } from "./course-row-actions";
 import { Button } from "@/components/ui/button";
 import { AdminPanel, StatusPill } from "@/components/Layouts/admin-surface";
+import { formatVnDate, formatVnDateTime } from "@/lib/datetime";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -106,7 +106,7 @@ const columns: ColumnDef<CoursePublic>[] = [
     header: "Ngày tạo",
     cell: ({ row }) => (
       <span className="text-dark dark:text-white">
-        {dayjs(row.getValue<string>("createdAt")).format("DD/MM/YYYY")}
+        {formatVnDate(row.getValue<string>("createdAt"))}
       </span>
     ),
   },

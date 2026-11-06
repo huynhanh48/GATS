@@ -285,10 +285,67 @@ export default function CoursePlayerPage() {
     }
   };
 
+  /**
+   * Học viên vừa ĐẠT bài tập trắc nghiệm. BE đã tự đánh dấu bài học hoàn thành,
+   * FE chỉ cần đồng bộ lại tiến độ để mở khoá bài tiếp theo.
+   */
+  const handleQuizPassed = async () => {
+    if (!course?.id || !currentLesson?.id) return;
+    const currentIdStr = String(currentLesson.id);
+
+    setCompletedLessonIds((prev) => {
+      const updated = new Set(prev);
+      updated.add(currentIdStr);
+      try {
+        localStorage.setItem(
+          `gats_progress_${course.id || slug}`,
+          JSON.stringify(Array.from(updated))
+        );
+      } catch {
+        // Ignore
+      }
+      return updated;
+    });
+
+    try {
+      const [refreshedProgress, refreshedSections] = await Promise.all([
+        courseService.getCourseProgress(course.id),
+        courseService.getCourseCurriculum(course.id, slug),
+      ]);
+
+      if (refreshedProgress?.completedLessonIds) {
+        const merged = Array.from(
+          new Set([...refreshedProgress.completedLessonIds.map(String), currentIdStr])
+        );
+        setCompletedLessonIds(new Set(merged));
+        try {
+          localStorage.setItem(`gats_progress_${course.id || slug}`, JSON.stringify(merged));
+        } catch {
+          // Ignore
+        }
+      }
+
+      // Nạp lại giáo trình để cờ `locked` (chặn khoá học ở BE) + nội dung
+      // của bài vừa mở khoá được cập nhật.
+      if (Array.isArray(refreshedSections) && refreshedSections.length > 0) {
+        setSections(refreshedSections);
+      }
+    } catch {
+      // Ignore
+    }
+  };
+
   const handleCompleteAndNext = async () => {
     if (!currentLesson || !course?.id) return;
 
     const currentIdStr = String(currentLesson.id);
+
+    // Bài tập trắc nghiệm: chỉ hoàn thành khi học viên ĐẠT (BE chấm điểm).
+    // Không cho bấm "Hoàn thành" để vượt qua chặn khoá học.
+    if (currentLesson.type === 'quiz' && !completedLessonIds.has(currentIdStr)) {
+      toast.error('Bạn cần hoàn thành bài tập trắc nghiệm và đạt điểm yêu cầu để mở khoá bài tiếp theo.');
+      return;
+    }
 
     // 1. Cập nhật ngay UI state để mở khóa bài tiếp theo tức thì
     setCompletedLessonIds((prev) => {
@@ -431,6 +488,7 @@ export default function CoursePlayerPage() {
             course={course}
             isCompleted={completedLessonIds.has(currentLesson?.id)}
             onCompleteAndNext={handleCompleteAndNext}
+            onQuizPassed={handleQuizPassed}
             onPrevLesson={handlePrevLesson}
             hasPrev={hasPrev}
             hasNext={hasNext}

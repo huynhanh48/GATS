@@ -10,16 +10,6 @@ export const metadata: Metadata = {
 export default function AiGenPage() {
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        eyebrow="Hệ thống AI"
-        title="Công cụ Sinh Quiz AI"
-        description="Chọn bài quiz đích và nguồn nội dung để sinh câu hỏi tự động bằng Viava."
-        metrics={[
-          { label: "API Version", value: "Viava v2.0", tone: "blue" },
-          { label: "Quiz Types Map", value: "4 Dạng", tone: "green" },
-          { label: "Chế độ", value: "Sinh Quiz", tone: "orange" },
-        ]}
-      />
 
       <AiGenPlayground />
     </div>

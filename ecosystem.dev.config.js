@@ -17,11 +17,12 @@ module.exports = {
       env: { NODE_ENV: "development" },
     },
     {
+      // Admin dashboard listens on 3001 (matches docker-compose 3001:3001).
       name: "admin",
       cwd: "/app/admin",
       script: "npm",
       args: "run dev",
-      env: { NODE_ENV: "development" },
+      env: { NODE_ENV: "development", PORT: 3001 },
     },
     {
       name: "fe",

@@ -334,7 +334,11 @@ export type LessonCreateResponseData = {
 // ─── Quiz Types ──────────────────────────────────────────────────────────────
 
 export type QuizQuestionType =
-  "single_choice" | "multiple_choice" | "fill_blank" | "true_false";
+  | "single_choice"
+  | "multiple_choice"
+  | "fill_blank"
+  | "true_false"
+  | "short_answer";
 
 export type QuizOption = {
   id?: string;

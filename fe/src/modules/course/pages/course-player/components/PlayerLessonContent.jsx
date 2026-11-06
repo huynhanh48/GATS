@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import GatsHlsPlayer from './GatsHlsPlayer';
+import QuizLessonPanel from './QuizLessonPanel';
 import { resolveMediaUrl } from '@/shared/utils/media';
 import {
   FileText,
@@ -21,6 +22,7 @@ export default function PlayerLessonContent({
   course,
   isCompleted,
   onCompleteAndNext,
+  onQuizPassed,
   onPrevLesson,
   hasPrev,
   hasNext,
@@ -36,6 +38,8 @@ export default function PlayerLessonContent({
       </div>
     );
   }
+
+  const isQuizLesson = lesson.type === 'quiz';
 
   const lessonTypeLabel =
     lesson.type === 'video'
@@ -84,57 +88,60 @@ export default function PlayerLessonContent({
           </h1>
         </div>
 
-        {/* Khung Trình Chiếu GatsHlsPlayer Hỗ trợ HLS đa chất lượng (1080p, 720p, 360p) & Tốc độ phát */}
-        <div className="rounded-[10px] overflow-hidden bg-slate-950 border border-slate-200/80 shadow-md">
-          {lesson.type === 'video' || videoSrc ? (
-            <GatsHlsPlayer
-              src={videoSrc}
-              poster={posterUrl}
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={() => {
-                setVideoProgress(100);
-                if (onCompleteAndNext) onCompleteAndNext();
-              }}
-            />
-          ) : (
-            <div className="aspect-video flex items-center justify-center bg-slate-900 text-white p-6 text-center">
+        {isQuizLesson ? (
+          /* Bài tập trắc nghiệm: học viên phải đạt mới mở khoá bài tiếp theo */
+          <QuizLessonPanel
+            key={lesson.id}
+            lesson={lesson}
+            course={course}
+            isCompleted={isCompleted}
+            onPassed={onQuizPassed}
+          />
+        ) : (
+          <>
+            {/* Khung Trình Chiếu GatsHlsPlayer Hỗ trợ HLS đa chất lượng (1080p, 720p, 360p) & Tốc độ phát */}
+            <div className="rounded-[10px] overflow-hidden bg-slate-950 border border-slate-200/80 shadow-md">
+              {lesson.type === 'video' || videoSrc ? (
+                <GatsHlsPlayer
+                  src={videoSrc}
+                  poster={posterUrl}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={() => {
+                    setVideoProgress(100);
+                    if (onCompleteAndNext) onCompleteAndNext();
+                  }}
+                />
+              ) : (
+                <div className="aspect-video flex items-center justify-center bg-slate-900 text-white p-6 text-center">
+                  <div>
+                    <FileText size={40} className="mx-auto mb-2 text-blue-400" />
+                    <h3 className="text-lg font-bold">{lesson.title}</h3>
+                    <p className="text-xs text-slate-400 mt-1">Bài học dạng văn bản và tài liệu thực hành.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Thanh Tiến Độ Bài Học (Lesson Video Progress) */}
+            <div className="space-y-4 bg-white p-5 rounded-[10px] border border-slate-200/90 shadow-2xs">
               <div>
-                <FileText size={40} className="mx-auto mb-2 text-blue-400" />
-                <h3 className="text-lg font-bold">{lesson.title}</h3>
-                <p className="text-xs text-slate-400 mt-1">Bài học dạng văn bản và tài liệu thực hành.</p>
+                <div className="flex items-center justify-between text-xs font-bold text-[#273044] mb-2">
+                  <span>Tiến độ xem video bài học:</span>
+                  <span className="text-[#1a56db]">
+                    {isCompleted ? '100%' : `${videoProgress}%`}
+                  </span>
+                </div>
+                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${isCompleted ? 100 : videoProgress}%` }}
+                    className={`h-full transition-all duration-300 ${isCompleted || videoProgress === 100 ? 'bg-[#10b981]' : 'bg-[#1a56db]'
+                      }`}
+                  />
+                </div>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Thanh Tiến Độ Bài Học (Lesson Video Progress) */}
-        <div className="space-y-4 bg-white p-5 rounded-[10px] border border-slate-200/90 shadow-2xs">
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-[#273044] mb-2">
-              <span>Tiến độ xem video bài học:</span>
-              <span className="text-[#1a56db]">
-                {isCompleted ? '100%' : `${videoProgress}%`}
-              </span>
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                style={{ width: `${isCompleted ? 100 : videoProgress}%` }}
-                className={`h-full transition-all duration-300 ${isCompleted || videoProgress === 100 ? 'bg-[#10b981]' : 'bg-[#1a56db]'
-                  }`}
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between text-xs font-bold text-[#273044] mb-2">
-              <span>Tiến độ câu hỏi và bài tập:</span>
-              <span className="text-slate-500">0/3 hoàn thành</span>
-            </div>
-            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="w-0 h-full bg-amber-400" />
-            </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Nội dung chi tiết bài giảng / Bài viết hướng dẫn Tiptap */}
         <div className="bg-white p-6 sm:p-8 rounded-[10px] border border-slate-200/90 shadow-2xs space-y-6">

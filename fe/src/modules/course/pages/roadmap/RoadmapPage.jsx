@@ -329,7 +329,10 @@ export default function RoadmapPage() {
           // Set default active category if url param not yet set
           const initialCat = searchParams.get('cat');
           if (courseCats.length > 0 && !initialCat) {
-            const firstSlug = courseCats[0]?.slug || 'cowork';
+            // Ưu tiên slug thuộc 6 nhóm Roadmap (CATEGORY_META) để roadmap
+            // không rơi vào nhóm không tồn tại rồi phải dùng dữ liệu mẫu.
+            const coreCat = courseCats.find((c) => CATEGORY_META[c.slug]);
+            const firstSlug = coreCat?.slug || courseCats[0]?.slug || 'cowork';
             setActiveCategorySlug(firstSlug);
           }
         }
@@ -433,6 +436,11 @@ export default function RoadmapPage() {
           };
         }));
       }
+      // Chỉ sử dụng dynamicMilestones nếu có ít nhất 1 node hợp lệ
+      const hasValidDynamicNodes = dynamicMilestones.some(m => m.nodes && m.nodes.length > 0);
+      if (!hasValidDynamicNodes) {
+        dynamicMilestones = null;
+      }
     }
 
     return {
@@ -446,7 +454,7 @@ export default function RoadmapPage() {
       bgLight: meta.bgLight,
       border: meta.border,
       milestones: dynamicMilestones && dynamicMilestones.length > 0 ? dynamicMilestones : meta.milestones,
-      tags: fromApi?.tags || null
+      tags: fromApi?.tags && fromApi.tags.length > 0 ? fromApi.tags : null
     };
   }, [categories, activeCategorySlug]);
 
@@ -532,35 +540,11 @@ export default function RoadmapPage() {
 
           {/* Hero Banner Roadmap - Chuyển đổi thành Interactive Code Component */}
           <InteractiveRoadmapTimeline categories={categories} />
-
-          {/* 6 Category Selection Tabs (Sticky Bar) */}
-          <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 py-2 no-scrollbar">
-            {displayCategories.map((cat, idx) => {
-              const isActive = cat.slug === activeCategorySlug;
-              const meta = CATEGORY_META[cat.slug] || CATEGORY_META.cowork;
-              const TabIcon = meta.icon || BookOpen;
-
-              return (
-                <button
-                  key={cat.id || cat.slug || idx}
-                  type="button"
-                  onClick={() => handleSelectCategory(cat.slug)}
-                  className={`cursor-pointer inline-flex items-center gap-2.5 px-4 py-2.5 rounded-[10px] text-xs font-bold whitespace-nowrap transition-all duration-200 ${isActive
-                    ? 'bg-[#1a56db] text-white shadow-sm ring-2 ring-[#1a56db]/20'
-                    : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
-                    }`}
-                >
-                  <TabIcon size={15} className={isActive ? 'text-white' : 'text-slate-500'} />
-                  <span>{cat.name}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       </section>
 
       {/* Control Bar: View Mode Switcher & Interactive Tag Filters (Vuông vắn chuẩn Layout GATS) */}
-      <section className="container pt-6">
+      <section className="container pt-6 mb-8">
         <div className="bg-white rounded-[8px] border border-slate-200 p-3 sm:p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
           {/* View Mode Switcher */}
           <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-[8px] border border-slate-200 shrink-0">
@@ -626,7 +610,7 @@ export default function RoadmapPage() {
       </section>
 
       {/* Main Roadmap Interactive Canvas */}
-      <main className="container mt-6">
+      <main className="container mt-8 pt-2">
         {viewMode === 'flow' ? (
           <ReactFlowRoadmapCanvas
             category={currentCategory}

@@ -66,6 +66,10 @@ RUN apt-get update \
 
 WORKDIR /app
 
+# Giờ Việt Nam cho MỌI tiến trình trong container (be, worker, admin, fe, log...).
+ENV TZ=Asia/Ho_Chi_Minh
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo "$TZ" > /etc/timezone
+
 # Copy built admin dashboard
 COPY --from=admin-builder /app/admin/package*.json ./admin/
 COPY --from=admin-builder /app/admin/node_modules ./admin/node_modules

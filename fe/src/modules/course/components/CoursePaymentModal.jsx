@@ -534,28 +534,14 @@ export default function CoursePaymentModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-t border-slate-100 bg-slate-50 shrink-0">
-
-          {!isPaid && (
-            <button
-              type="button"
-              onClick={handleSuccess}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-[6px] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-            >
-              <CheckCircle2 size={14} />
-              <span>Đã thanh toán</span>
-            </button>
-          )}
-
+        <div className="flex items-center justify-end p-4 sm:p-5 border-t border-slate-100 bg-slate-50 shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className={`px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-[#273044] text-xs font-bold rounded-[6px] transition-colors cursor-pointer ${isPaid ? "ml-auto" : ""
-              }`}
+            className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-[#273044] text-xs font-bold rounded-[6px] transition-colors cursor-pointer"
           >
             Đóng
           </button>
-
         </div>
       </div>
     </div>
